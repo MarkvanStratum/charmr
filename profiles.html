@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Meet UK Girls on Charmer</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -14,36 +13,66 @@
       text-align: center;
       margin-bottom: 30px;
     }
-    #profiles-container {
+    .profiles-container {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 20px;
     }
     .profile-card {
       border: 1px solid #ccc;
-      padding: 15px;
       border-radius: 10px;
+      padding: 10px;
       text-align: center;
-      background: #f9f9f9;
     }
     .profile-card img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      margin-bottom: 10px;
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 6px;
     }
-    .profile-card a {
-      display: inline-block;
+    .profile-card button {
       margin-top: 10px;
-      text-decoration: none;
-      color: #007bff;
+      padding: 5px 10px;
     }
   </style>
 </head>
 <body>
   <h1>Meet UK Girls on Charmer</h1>
-  <div id="profiles-container">Loading profiles...</div>
+  <div id="profiles" class="profiles-container">
+    <!-- Profiles will be inserted here -->
+  </div>
 
+  <!-- girls.js should be loaded before the fetch code in case it defines helper functions -->
   <script src="girls.js"></script>
+
+  <script>
+    fetch('girls.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Failed to load girls.json');
+        }
+        return response.json();
+      })
+      .then(girls => {
+        const container = document.getElementById('profiles');
+        girls.forEach(girl => {
+          const card = document.createElement('div');
+          card.className = 'profile-card';
+          card.innerHTML = `
+            <img src="${girl.photo}" alt="${girl.name}" />
+            <h3>${girl.name}, ${girl.age}</h3>
+            <p>${girl.city}</p>
+            <a href="profile.html?id=${girl.id}">
+              <button>View Profile</button>
+            </a>
+          `;
+          container.appendChild(card);
+        });
+      })
+      .catch(error => {
+        console.error(error);
+        document.getElementById('profiles').innerText = 'Error loading profiles.';
+      });
+  </script>
 </body>
 </html>
