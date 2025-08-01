@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Chat - Charmer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      background: #ff4081;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+    }
+    #chat-window {
+      flex-grow: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f2f2f2;
+    }
+    .message {
+      max-width: 70%;
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 10px;
+      clear: both;
+    }
+    .message.user {
+      background: #ff4081;
+      color: white;
+      float: right;
+      text-align: right;
+    }
+    .message.girl {
+      background: white;
+      color: black;
+      float: left;
+      text-align: left;
+    }
+    form {
+      display: flex;
+      padding: 10px;
+      background: white;
+    }
+    input[type="text"] {
+      flex-grow: 1;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background: #ff4081;
+      border: none;
+      color: white;
+      padding: 0 15px;
+      margin-left: 10px;
+      font-size: 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <header id="chat-header">Chat</header>
+  <div id="chat-window"></div>
+  <form id="chat-form">
+    <input type="text" id="message-input" autocomplete="off" placeholder="Type your message..." required />
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    // Simulated girl profiles (subset, replace with actual from girls.json or fetch)
+    const girlsData = [
+      { id: 1, name: "Emma" },
+      { id: 2, name: "Sophie" },
+      { id: 3, name: "Chloe" },
+      { id: 300, name: "Isla" }
+    ];
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const girlId = parseInt(urlParams.get('girlId'));
+    const girl = girlsData.find(g => g.id === girlId) || { name: "Unknown Girl" };
+
+    document.getElementById('chat-header').textContent = `Chat with ${girl.name}`;
+
+    const chatWindow = document.getElementById('chat-window');
+    const form = document.getElementById('chat-form');
+    const input = document.getElementById('message-input');
+
+    function addMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      msgDiv.textContent = text;
+      chatWindow.appendChild(msgDiv);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // Simulate delayed first message from girl
+    function simulateFirstReply() {
+      const delay = Math.floor(Math.random() * 15 + 1) * 1000; // 1-15 sec (shortened for demo)
+      setTimeout(() => {
+        addMessage(`Hi there! 😊 I'm ${girl.name}. How are you?`, 'girl');
+      }, delay);
+    }
+
+    // Start the delayed first reply when page loads
+    simulateFirstReply();
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (!msg) return;
+      addMessage(msg, 'user');
+      input.value = '';
+
+      // Simulate girl reply with delay
+      const replyDelay = Math.floor(Math.random() * 5 + 1) * 1000; // 1-5 sec
+      setTimeout(() => {
+        addMessage(`Thanks for your message! 😊`, 'girl');
+      }, replyDelay);
+    });
+  </script>
+</body>
+</html>

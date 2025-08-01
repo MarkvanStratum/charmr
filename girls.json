@@ -1,37 +1,39 @@
 [
   {
     "id": 1,
-    "name": "Emily",
-    "age": 24,
-    "city": "New York",
-    "country": "USA",
-    "about": "Loves hiking, coffee, and good books.",
-    "photos": [
-      "https://via.placeholder.com/300x400?text=Emily+1",
-      "https://via.placeholder.com/300x400?text=Emily+2"
-    ]
+    "name": "Emma",
+    "age": 25,
+    "city": "London",
+    "country": "United Kingdom",
+    "image": "https://via.placeholder.com/150?text=Emma",
+    "description": "Loves hiking and coffee."
   },
   {
     "id": 2,
-    "name": "Sophia",
-    "age": 26,
-    "city": "Los Angeles",
-    "country": "USA",
-    "about": "Beach lover and yoga enthusiast.",
-    "photos": [
-      "https://via.placeholder.com/300x400?text=Sophia+1"
-    ]
+    "name": "Sophie",
+    "age": 28,
+    "city": "Manchester",
+    "country": "United Kingdom",
+    "image": "https://via.placeholder.com/150?text=Sophie",
+    "description": "Avid reader and music fan."
   },
   {
     "id": 3,
-    "name": "Isabella",
-    "age": 22,
-    "city": "Chicago",
-    "country": "USA",
-    "about": "Passionate about art and photography.",
-    "photos": [
-      "https://via.placeholder.com/300x400?text=Isabella+1",
-      "https://via.placeholder.com/300x400?text=Isabella+2"
-    ]
+    "name": "Chloe",
+    "age": 23,
+    "city": "Bristol",
+    "country": "United Kingdom",
+    "image": "https://via.placeholder.com/150?text=Chloe",
+    "description": "Enjoys painting and yoga."
+  },
+  // ... (Add 297 more with similar structure, covering UK towns and cities)
+  {
+    "id": 300,
+    "name": "Isla",
+    "age": 27,
+    "city": "Ipswich",
+    "country": "United Kingdom",
+    "image": "https://via.placeholder.com/150?text=Isla",
+    "description": "Loves the outdoors and cooking."
   }
 ]
