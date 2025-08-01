@@ -1,28 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="girls.js"></script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meet UK Girls on Charmer</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Meet UK Girls on Charmer</h1>
-  <div id="profiles-container" class="profiles"></div>
+  <header>
+    <h1>Meet UK Girls on Charmer</h1>
+  </header>
+
+  <main id="profiles-container" class="profiles-grid">
+    <!-- Profiles will load here -->
+  </main>
 
   <script src="girls.js"></script>
   <script>
-    const container = document.getElementById("profiles-container");
+    const container = document.getElementById('profiles-container');
 
     girls.forEach(girl => {
-      const card = document.createElement("div");
-      card.className = "girl-card";
+      const card = document.createElement('div');
+      card.className = 'profile-card';
       card.innerHTML = `
-        <img src="${girl.photo}" alt="${girl.name}" />
+        <img src="${girl.image}" alt="${girl.name}" class="profile-pic">
         <h2>${girl.name}, ${girl.age}</h2>
         <p>${girl.city}</p>
-        <a href="profile.html?id=${girl.id}">View Profile</a>
-        <a href="chat.html?id=${girl.id}">Chat</a>
+        <div class="btns">
+          <a href="profile.html?id=${girl.id}" class="button">View Profile</a>
+          <a href="chat.html?id=${girl.id}" class="button">Chat</a>
+        </div>
       `;
       container.appendChild(card);
     });

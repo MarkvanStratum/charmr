@@ -1,30 +1,33 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="girls.js"></script>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Girl Profile</title>
+  <title>Girl's Profile</title>
+  <link rel="stylesheet" href="style.css"/>
 </head>
 <body>
-  <div id="profile-container"></div>
+  <div class="profile-page" id="profile">
+    <!-- Profile content will load here -->
+  </div>
 
   <script src="girls.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
-    const girlId = parseInt(params.get("id"));
+    const girlId = parseInt(params.get('id'));
     const girl = girls.find(g => g.id === girlId);
 
     if (girl) {
-      document.getElementById("profile-container").innerHTML = `
-        <img src="${girl.photo}" alt="${girl.name}" />
+      const profileDiv = document.getElementById('profile');
+      profileDiv.innerHTML = `
+        <img src="${girl.image}" alt="${girl.name}" class="profile-pic-large">
         <h1>${girl.name}, ${girl.age}</h1>
-        <p><strong>City:</strong> ${girl.city}</p>
-        <p>${girl.description}</p>
-        <a href="chat.html?id=${girl.id}">Chat</a>
+        <h3>${girl.city}</h3>
+        <p class="bio">${girl.bio}</p>
+        <a href="chat.html?id=${girl.id}" class="button">Chat</a>
       `;
     } else {
-      document.getElementById("profile-container").innerText = "Profile not found.";
+      document.getElementById('profile').innerHTML = '<p>Profile not found.</p>';
     }
   </script>
 </body>
