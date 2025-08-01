@@ -1,165 +1,29 @@
-/* General Page Styles */
-body {
-  font-family: Arial, sans-serif;
-  background-color: #f9f9f9;
-  margin: 0;
-  padding: 0;
-}
-
-h1, h2, h3 {
-  font-weight: normal;
-  margin: 0;
-}
-
-h1 {
-  text-align: center;
-  margin: 20px 0;
-}
-
-/* Profiles Grid Layout */
 .profile-container {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Responsive grid */
-  gap: 20px; /* Space between cards */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
 }
 
 .profile-card {
   background: white;
   border: 1px solid #ddd;
   border-radius: 8px;
-  box-shadow: 0 0 5px rgba(0,0,0,0.1);
   text-align: center;
   padding: 10px;
-  transition: transform 0.2s;
-}
-
-.profile-card:hover {
-  transform: scale(1.03);
 }
 
 .profile-card img {
   width: 100%;
-  height: auto;
   border-radius: 8px;
 }
 
-.profile-card h3 {
-  margin: 10px 0 5px;
-}
-
-.profile-card p {
-  margin: 5px 0;
-}
-
-/* Buttons */
-.profile-card button,
-.button {
+.profile-card button {
   margin: 5px;
   padding: 5px 10px;
-  font-size: 0.9em;
-  cursor: pointer;
+  background-color: #ef476f;
+  color: white;
   border: none;
   border-radius: 4px;
-  background-color: #ef476f;
-  color: white;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.profile-card button:hover,
-.button:hover {
-  background-color: #d43d61;
-}
-
-/* Profile Page */
-.profile-page {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 0 5px rgba(0,0,0,0.1);
-  text-align: center;
-}
-
-.profile-pic-large {
-  width: 200px;
-  height: auto;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
-
-.bio {
-  font-size: 1em;
-  color: #555;
-  margin-top: 10px;
-}
-
-/* Chat Page */
-.chat-header {
-  display: flex;
-  align-items: center;
-  background-color: #f6f6f6;
-  padding: 10px;
-  border-bottom: 1px solid #ccc;
-}
-
-.chat-header img {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  margin-right: 15px;
-}
-
-.chat-box {
-  height: 400px;
-  overflow-y: scroll;
-  padding: 10px;
-  border: 1px solid #ccc;
-  background-color: #fff;
-}
-
-.message {
-  margin-bottom: 10px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  max-width: 70%;
-}
-
-.message.user {
-  background-color: #ef476f;
-  color: white;
-  margin-left: auto;
-}
-
-.message.girl {
-  background-color: #e0e0e0;
-  color: black;
-  margin-right: auto;
-}
-
-.chat-input {
-  display: flex;
-  margin-top: 10px;
-}
-
-.chat-input input {
-  flex: 1;
-  padding: 10px;
-  border: 1px solid #ccc;
-}
-
-.chat-input button {
-  padding: 10px 20px;
-  background-color: #ef476f;
-  color: white;
-  border: none;
   cursor: pointer;
-}
-
-.chat-input button:hover {
-  background-color: #d43d61;
 }

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,101 +6,128 @@
   <title>Chat</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    body {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .chat-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
     .chat-header {
       display: flex;
       align-items: center;
-      background-color: #f6f6f6;
+      background-color: #ef476f;
+      color: white;
       padding: 10px;
-      border-bottom: 1px solid #ccc;
     }
     .chat-header img {
-      width: 60px;
-      height: 60px;
+      width: 50px;
+      height: 50px;
       border-radius: 50%;
-      margin-right: 15px;
+      margin-right: 10px;
+      border: 2px solid white;
     }
     .chat-box {
-      height: 400px;
-      overflow-y: scroll;
+      flex: 1;
       padding: 10px;
-      border: 1px solid #ccc;
-      background-color: #fff;
+      overflow-y: auto;
+      background-color: #fff0f3;
     }
     .message {
-      margin-bottom: 10px;
+      margin: 8px 0;
+      padding: 8px 12px;
+      border-radius: 15px;
+      max-width: 70%;
+      display: inline-block;
+      word-wrap: break-word;
     }
     .message.user {
-      text-align: right;
-      color: blue;
+      background-color: #ef476f;
+      color: white;
+      align-self: flex-end;
     }
     .message.girl {
-      text-align: left;
-      color: green;
+      background-color: #f1f1f1;
+      color: black;
+      align-self: flex-start;
     }
     .chat-input {
       display: flex;
-      margin-top: 10px;
+      border-top: 1px solid #ccc;
     }
     .chat-input input {
       flex: 1;
       padding: 10px;
+      border: none;
+      font-size: 14px;
     }
     .chat-input button {
-      padding: 10px 20px;
+      background-color: #ef476f;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    .chat-input button:hover {
+      background-color: #d43d61;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="chat-container">
     <div class="chat-header">
-      <img src="images/girl1.jpg" alt="Girl's photo" id="chatPhoto">
-      <h2 id="chatName">Amelia Smith</h2>
+      <img id="chatPhoto" src="" alt="Girl Photo">
+      <h2 id="chatName"></h2>
     </div>
-    <div class="chat-box" id="chatBox">
-      <!-- Messages will go here -->
-    </div>
+    <div class="chat-box" id="chatBox"></div>
     <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Type your message..." />
+      <input type="text" id="messageInput" placeholder="Type a message...">
       <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
+  <script src="girls.js"></script>
   <script>
+    const params = new URLSearchParams(window.location.search);
+    const girlId = parseInt(params.get('id'));
+    const girl = girls.find(g => g.id === girlId);
+
+    document.getElementById('chatName').textContent = girl.name;
+    document.getElementById('chatPhoto').src = girl.image;
+
     const chatBox = document.getElementById('chatBox');
-    const messageInput = document.getElementById('messageInput');
 
     function sendMessage() {
-      const msg = messageInput.value.trim();
-      if (msg === '') return;
+      const input = document.getElementById('messageInput');
+      if (!input.value.trim()) return;
 
       const userMsg = document.createElement('div');
       userMsg.className = 'message user';
-      userMsg.textContent = msg;
+      userMsg.textContent = input.value;
       chatBox.appendChild(userMsg);
       chatBox.scrollTop = chatBox.scrollHeight;
-
-      messageInput.value = '';
+      input.value = '';
 
       setTimeout(() => {
+        const replies = ["Hey 😊", "How are you?", "Nice to hear from you!", "Tell me more about you..."];
+        const reply = replies[Math.floor(Math.random() * replies.length)];
         const girlMsg = document.createElement('div');
         girlMsg.className = 'message girl';
-        girlMsg.textContent = getAutoReply();
+        girlMsg.textContent = reply;
         chatBox.appendChild(girlMsg);
         chatBox.scrollTop = chatBox.scrollHeight;
-      }, Math.random() * (15000 - 1000) + 1000); // 1–15 sec
-    }
-
-    function getAutoReply() {
-      const replies = [
-        "Hey you 🙂",
-        "How’s your day going?",
-        "What brings you here?",
-        "You seem nice 😄",
-        "Tell me something interesting about you.",
-        "I like chatting with new people!",
-        "Hmm… I like your vibe 😌"
-      ];
-      return replies[Math.floor(Math.random() * replies.length)];
+      }, Math.floor(Math.random() * 15000) + 1000); // 1–15 sec delay
     }
   </script>
 </body>

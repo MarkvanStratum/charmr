@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Profile</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #f2e6ff, #ffffff);
+      font-family: Arial, sans-serif;
+    }
+    .profile-container {
+      max-width: 600px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .profile-container img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-bottom: 15px;
+      border: 3px solid #6a3fb5;
+    }
+    .profile-container h2 {
+      margin-bottom: 5px;
+      color: #6a3fb5;
+    }
+    .profile-container p {
+      margin: 8px 0;
+      color: #444;
+    }
+    .profile-buttons button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      background: #6a3fb5;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+    .profile-buttons button:hover {
+      background: #562e94;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-container">
+    <img src="https://via.placeholder.com/120" alt="User Photo">
+    <h2>John Doe</h2>
+    <p><strong>Email:</strong> johndoe@email.com</p>
+    <p><strong>Password:</strong> ********</p>
+    <p><strong>Country:</strong> United Kingdom</p>
+    <p><strong>City:</strong> London</p>
+    <p><strong>Credits left:</strong> 12 messages</p>
+    <div class="profile-buttons">
+      <button>Edit Profile</button>
+      <button>Logout</button>
+    </div>
+  </div>
+</body>
+</html>
