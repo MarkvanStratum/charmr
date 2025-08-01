@@ -2,13 +2,34 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Profile Detail - Charmer</title>
-  <link rel="stylesheet" href="styles.css" />
+  <title>Girl Profile</title>
+  <script src="girls.js" defer></script>
 </head>
 <body>
-  <div id="profile-detail" class="profile-detail"></div>
+  <div id="profile">
+    <p>Loading profile...</p>
+  </div>
 
-  <script src="script.js"></script>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const params = new URLSearchParams(window.location.search);
+      const id = parseInt(params.get("id"));
+      const girl = girls.find(g => g.id === id);
+      const profileDiv = document.getElementById("profile");
+
+      if (!girl) {
+        profileDiv.innerHTML = "<h2>Profile not found.</h2>";
+        return;
+      }
+
+      profileDiv.innerHTML = `
+        <h2>${girl.name}, ${girl.age}</h2>
+        <img src="${girl.image}" alt="${girl.name}" width="150"><br>
+        <strong>City:</strong> ${girl.city}<br><br>
+        <p>${girl.description}</p>
+        <a href="profiles.html">← Back to profiles</a>
+      `;
+    });
+  </script>
 </body>
 </html>

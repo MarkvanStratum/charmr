@@ -1,25 +1,27 @@
-fetch('girls.json')
-  .then(response => response.json())
-  .then(data => {
-    const container = document.getElementById('profiles-container');
-    container.innerHTML = ''; // Clear loading message
-
-    data.forEach(girl => {
-      const card = document.createElement('div');
-      card.className = 'profile-card';
-
-      card.innerHTML = `
-        <h2>${girl.name}, ${girl.age}</h2>
-        <p><strong>${girl.city}</strong></p>
-        <img src="${girl.image || 'placeholder.jpg'}" alt="${girl.name}" />
-        <p>${girl.description}</p>
-        <a href="#">Chat with ${girl.name}</a>
-      `;
-
-      container.appendChild(card);
-    });
-  })
-  .catch(error => {
-    document.getElementById('profiles-container').innerText = 'Failed to load profiles.';
-    console.error('Error loading profiles:', error);
-  });
+const girls = [
+  {
+    id: 1,
+    name: "Amelia White",
+    age: 28,
+    city: "London",
+    image: "https://via.placeholder.com/150",
+    description: "Just a laid back girl who loves coffee and rainy Sundays."
+  },
+  {
+    id: 2,
+    name: "Sophie Carter",
+    age: 24,
+    city: "Manchester",
+    image: "https://via.placeholder.com/150",
+    description: "I'm super into live music and long walks at night. Not your average gal x"
+  },
+  {
+    id: 3,
+    name: "Chloe Knight",
+    age: 30,
+    city: "Bristol",
+    image: "https://via.placeholder.com/150",
+    description: "Bit of a bookworm 📚 but love a cheeky pint too."
+  }
+  // Add up to 300 later
+];
