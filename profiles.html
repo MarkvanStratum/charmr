@@ -2,91 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Charmer - UK Girls Profiles</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f7f7f7;
-      margin: 0;
-      padding: 20px;
-    }
-    .profile-container {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: center;
-    }
-    .profile-card {
-      background: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      width: 180px;
-      padding: 15px;
-      text-align: center;
-    }
-    .profile-card img {
-      border-radius: 50%;
-      width: 150px;
-      height: 150px;
-      object-fit: cover;
-      margin-bottom: 10px;
-    }
-    .profile-name {
-      font-weight: bold;
-      font-size: 18px;
-    }
-    .profile-details {
-      font-size: 14px;
-      color: #555;
-      margin-bottom: 10px;
-    }
-    .chat-button {
-      background-color: #ff4081;
-      border: none;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 5px;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-      font-size: 14px;
-    }
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Meet UK Girls on Charmer</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <h1>Meet UK Girls on Charmer</h1>
-  <div class="profile-container" id="profiles"></div>
+  <header>
+    <h1>Meet UK Girls on Charmer</h1>
+  </header>
 
-  <script>
-    async function loadProfiles() {
-      try {
-        const response = await fetch('girls.json');
-        const girls = await response.json();
+  <main>
+    <div id="profile-container" class="profile-grid"></div>
+  </main>
 
-        const container = document.getElementById('profiles');
-        container.innerHTML = '';
-
-        girls.forEach(girl => {
-          const card = document.createElement('div');
-          card.className = 'profile-card';
-
-          card.innerHTML = `
-            <img src="${girl.image}" alt="${girl.name}" />
-            <div class="profile-name">${girl.name}, ${girl.age}</div>
-            <div class="profile-details">${girl.city}, ${girl.country}</div>
-            <div class="profile-details">${girl.description}</div>
-            <a href="chat.html?girlId=${girl.id}" class="chat-button">Chat with this girl</a>
-          `;
-
-          container.appendChild(card);
-        });
-      } catch (e) {
-        console.error('Error loading profiles:', e);
-      }
-    }
-
-    loadProfiles();
-  </script>
+  <script src="girls.js"></script>
 </body>
 </html>

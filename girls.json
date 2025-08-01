@@ -1,39 +1,37 @@
 [
   {
     "id": 1,
-    "name": "Emma",
-    "age": 25,
+    "name": "Chloe",
+    "age": 24,
     "city": "London",
-    "country": "United Kingdom",
-    "image": "https://via.placeholder.com/150?text=Emma",
-    "description": "Loves hiking and coffee."
+    "image": "https://via.placeholder.com/150"
   },
   {
     "id": 2,
     "name": "Sophie",
-    "age": 28,
+    "age": 26,
     "city": "Manchester",
-    "country": "United Kingdom",
-    "image": "https://via.placeholder.com/150?text=Sophie",
-    "description": "Avid reader and music fan."
+    "image": "https://via.placeholder.com/150"
   },
   {
     "id": 3,
-    "name": "Chloe",
-    "age": 23,
+    "name": "Ella",
+    "age": 22,
     "city": "Bristol",
-    "country": "United Kingdom",
-    "image": "https://via.placeholder.com/150?text=Chloe",
-    "description": "Enjoys painting and yoga."
+    "image": "https://via.placeholder.com/150"
   },
-  // ... (Add 297 more with similar structure, covering UK towns and cities)
   {
-    "id": 300,
-    "name": "Isla",
+    "id": 4,
+    "name": "Lucy",
+    "age": 29,
+    "city": "Liverpool",
+    "image": "https://via.placeholder.com/150"
+  },
+  {
+    "id": 5,
+    "name": "Amelia",
     "age": 27,
-    "city": "Ipswich",
-    "country": "United Kingdom",
-    "image": "https://via.placeholder.com/150?text=Isla",
-    "description": "Loves the outdoors and cooking."
+    "city": "Glasgow",
+    "image": "https://via.placeholder.com/150"
   }
 ]
