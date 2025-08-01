@@ -1,0 +1,158 @@
+// chat.js
+
+const ChatManager = (function () {
+  const chatWindows = document.getElementById('chat-windows');
+  const inbox = document.getElementById('inbox');
+  const inboxList = document.getElementById('inbox-list');
+  const inboxCount = document.getElementById('inbox-count');
+  const chats = {}; // keyed by girl.name
+  let unreadCount = 0;
+
+  function createChatWindow(girl) {
+    if (chats[girl.name]) return chats[girl.name].element; // Already open
+
+    // Chat window container
+    const chatEl = document.createElement('div');
+    chatEl.className = 'chat-window';
+    chatEl.id = `chat-${girl.name.replace(/\s+/g, '-')}`;
+
+    chatEl.innerHTML = `
+      <div class="chat-header">
+        <img src="${girl.photos[0]}" alt="${girl.name}" class="chat-avatar"/>
+        <span class="chat-name">${girl.name}</span>
+        <button class="chat-close" title="Close chat">×</button>
+      </div>
+      <div class="chat-messages"></div>
+      <form class="chat-form">
+        <input type="text" placeholder="Type a message..." autocomplete="off" required />
+        <button type="submit">Send</button>
+      </form>
+    `;
+
+    // Close chat
+    chatEl.querySelector('.chat-close').addEventListener('click', () => {
+      chatEl.remove();
+      delete chats[girl.name];
+    });
+
+    // Handle sending message
+    const form = chatEl.querySelector('.chat-form');
+    const input = form.querySelector('input');
+    const messages = chatEl.querySelector('.chat-messages');
+
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      const msg = input.value.trim();
+      if (!msg) return;
+      addMessage('user', msg);
+      input.value = '';
+
+      // Trigger AI reply with delay (1-15 minutes for first reply, then 15-60 seconds)
+      if (!chats[girl.name].firstReplyDone) {
+        chats[girl.name].firstReplyDone = true;
+        const delay = randomInt(60000, 900000); // 1-15 min
+        setTimeout(() => {
+          addMessage('girl', generateReply(girl, msg));
+        }, delay);
+      } else {
+        const delay = randomInt(15000, 60000); // 15-60 sec
+        setTimeout(() => {
+          addMessage('girl', generateReply(girl, msg));
+        }, delay);
+      }
+    });
+
+    function addMessage(sender, text) {
+      const div = document.createElement('div');
+      div.className = `chat-message ${sender}`;
+      div.textContent = text;
+      messages.appendChild(div);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    chats[girl.name] = { element: chatEl, firstReplyDone: false };
+    chatWindows.appendChild(chatEl);
+    return chatEl;
+  }
+
+  function openChat(girl) {
+    const chatEl = createChatWindow(girl);
+    chatEl.style.display = 'block';
+    chatEl.querySelector('input').focus();
+  }
+
+  function toggleInbox() {
+    if (inbox.classList.contains('hidden')) {
+      inbox.classList.remove('hidden');
+    } else {
+      inbox.classList.add('hidden');
+    }
+  }
+
+  // Girls initiate chats - simulate some girls sending initial messages after user logs in
+  function simulateIncomingChats(girls) {
+    // Pick random girls to initiate chat (e.g., 2 to 5)
+    const numInitiators = randomInt(2, 5);
+    const initiators = [];
+    while (initiators.length < numInitiators) {
+      const girl = girls[randomInt(0, girls.length - 1)];
+      if (!initiators.includes(girl)) initiators.push(girl);
+    }
+
+    initiators.forEach((girl, i) => {
+      const delay = randomInt(10000, 30000) * (i + 1); // staggered delays
+      setTimeout(() => {
+        unreadCount++;
+        inboxCount.textContent = unreadCount;
+        const item = document.createElement('li');
+        item.textContent = `${girl.name}: ${generateOpeningLine()}`;
+        item.onclick = () => {
+          unreadCount--;
+          inboxCount.textContent = unreadCount;
+          openChat(girl);
+          // Remove message from inbox after opening
+          item.remove();
+        };
+        inboxList.appendChild(item);
+      }, delay);
+    });
+  }
+
+  function generateReply(girl, userMsg) {
+    const replies = [
+      "ohh interesting! tell me more x",
+      "haha ur funny 😂",
+      "u seem cool. wht do u do?",
+      "aw i like that 😌",
+      "u from around here?",
+      "hmm idk... maybe 😉"
+    ];
+    return replies[randomInt(0, replies.length - 1)];
+  }
+
+  function generateOpeningLine() {
+    const lines = [
+      "hey u look cute 😘",
+      "heyyy where r u from?",
+      "u free to chat now?",
+      "just saw ur profile... 👀",
+      "would love to get to know u x"
+    ];
+    return lines[randomInt(0, lines.length - 1)];
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  return {
+    openChat,
+    toggleInbox,
+    simulateIncomingChats
+  };
+})();
+
+// After loading girls.json, simulate incoming chats
+fetch('girls.json')
+  .then(res => res.json())
+  .then(data => ChatManager.simulateIncomingChats(data));
