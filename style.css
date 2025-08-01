@@ -1,64 +1,142 @@
-body, html {
+/* General body styling */
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f7f9fc;
   margin: 0;
-  padding: 0;
-  font-family: Arial, sans-serif;
-  height: 100%;
+  padding: 20px;
+  color: #333;
 }
 
-.background {
-  background-image: url('Image1.jpg');
-  background-size: cover;
-  background-position: center;
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  filter: brightness(0.6);
+/* Heading */
+h1 {
+  text-align: center;
+  color: #222;
+  margin-bottom: 30px;
+  font-weight: 700;
+  font-size: 2.5rem;
+  letter-spacing: 1px;
 }
 
-.signup-container {
-  max-width: 400px;
-  background: rgba(255, 255, 255, 0.95);
+/* Profiles container: grid */
+#profiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+/* Each profile card */
+.profile-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+  padding: 15px;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.profile-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+}
+
+/* Profile image */
+.profile-card img {
+  border-radius: 50%;
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-bottom: 10px;
+  border: 3px solid #e91e63;
+}
+
+/* Name and age */
+.profile-card strong {
+  display: block;
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+  color: #e91e63;
+}
+
+/* City text */
+.profile-card em {
+  color: #777;
+  font-style: normal;
+  font-size: 0.9rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+/* View Profile link */
+.profile-card a {
+  display: inline-block;
+  text-decoration: none;
+  background-color: #e91e63;
+  color: white;
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background-color 0.3s ease;
+}
+
+.profile-card a:hover {
+  background-color: #c2185b;
+}
+
+/* Profile page styling */
+#profile {
+  max-width: 600px;
+  margin: 40px auto;
+  background: white;
   padding: 30px;
-  border-radius: 10px;
-  margin: 5% auto;
-  box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.3);
-}
-
-.signup-container h1 {
-  margin-top: 0;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
   text-align: center;
 }
 
-.signup-container form {
-  display: flex;
-  flex-direction: column;
+#profile img {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid #e91e63;
+  margin-bottom: 20px;
 }
 
-.signup-container label {
-  margin: 10px 0 5px;
-  font-weight: bold;
+#profile h2 {
+  color: #e91e63;
+  margin-bottom: 8px;
+  font-size: 2rem;
 }
 
-.signup-container input,
-.signup-container select {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+#profile p {
+  font-size: 1rem;
+  color: #555;
+  margin-bottom: 25px;
+  line-height: 1.4;
 }
 
-.signup-container button {
-  margin-top: 20px;
-  padding: 12px;
-  background-color: #f46c9f;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background 0.3s ease;
+#profile a {
+  text-decoration: none;
+  color: #e91e63;
+  font-weight: 600;
+  font-size: 1rem;
 }
 
-.signup-container button:hover {
-  background-color: #d85788;
+#profile a:hover {
+  text-decoration: underline;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  #profiles {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  }
+
+  #profile {
+    padding: 20px;
+  }
 }
