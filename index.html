@@ -2,14 +2,53 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Charmer Dating</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>FlirtAI - Sign Up</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>Welcome to Charmer Dating</h1>
-    <p><a href="profiles.html">View Girls Profiles</a></p>
+  <div class="background"></div>
+
+  <div class="signup-container">
+    <h1>Welcome to FlirtAI</h1>
+    <p>Flirt with AI companions who match your vibe!</p>
+
+    <form id="signup-form">
+      <label for="gender">I am a:</label>
+      <select id="gender" name="gender" required>
+        <option value="" disabled selected>Select gender</option>
+        <option value="man">Man</option>
+        <option value="woman">Woman</option>
+        <option value="nonbinary">Non-binary</option>
+      </select>
+
+      <label for="lookingFor">Looking for a:</label>
+      <select id="lookingFor" name="lookingFor" required>
+        <option value="" disabled selected>Select preference</option>
+        <option value="woman">Woman</option>
+        <option value="man">Man</option>
+        <option value="any">Anyone</option>
+      </select>
+
+      <label for="country">Country:</label>
+      <input type="text" id="country" name="country" required placeholder="e.g., USA" />
+
+      <label for="city">City:</label>
+      <input type="text" id="city" name="city" required placeholder="e.g., New York" />
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required placeholder="Enter your email" />
+
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required placeholder="Create a password" />
+
+      <label for="phone">Phone Number (optional):</label>
+      <input type="tel" id="phone" name="phone" placeholder="Optional" />
+
+      <button type="submit">Sign Up</button>
+    </form>
   </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
