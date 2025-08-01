@@ -1,0 +1,37 @@
+[
+  {
+    "id": 1,
+    "name": "Emily",
+    "age": 24,
+    "city": "New York",
+    "country": "USA",
+    "about": "Loves hiking, coffee, and good books.",
+    "photos": [
+      "https://via.placeholder.com/300x400?text=Emily+1",
+      "https://via.placeholder.com/300x400?text=Emily+2"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Sophia",
+    "age": 26,
+    "city": "Los Angeles",
+    "country": "USA",
+    "about": "Beach lover and yoga enthusiast.",
+    "photos": [
+      "https://via.placeholder.com/300x400?text=Sophia+1"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Isabella",
+    "age": 22,
+    "city": "Chicago",
+    "country": "USA",
+    "about": "Passionate about art and photography.",
+    "photos": [
+      "https://via.placeholder.com/300x400?text=Isabella+1",
+      "https://via.placeholder.com/300x400?text=Isabella+2"
+    ]
+  }
+]
