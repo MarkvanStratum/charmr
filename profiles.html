@@ -1,39 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="style.css" />
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meet UK Girls on Charmer</title>
-  <script src="girls.js" defer></script>
-  <style>
-    .profile-card {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin: 10px;
-      display: inline-block;
-      text-align: center;
-      width: 150px;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <h1>Meet UK Girls on Charmer</h1>
-  <div id="profiles"></div>
+  <div id="profiles-container" class="profiles"></div>
 
+  <script src="girls.js"></script>
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const container = document.getElementById("profiles");
-      girls.forEach(girl => {
-        const div = document.createElement("div");
-        div.className = "profile-card";
-        div.innerHTML = `
-          <img src="${girl.image}" alt="${girl.name}" width="100"><br>
-          <strong>${girl.name}, ${girl.age}</strong><br>
-          <em>${girl.city}</em><br>
-          <a href="profile.html?id=${girl.id}">View Profile</a>
-        `;
-        container.appendChild(div);
-      });
+    const container = document.getElementById("profiles-container");
+
+    girls.forEach(girl => {
+      const card = document.createElement("div");
+      card.className = "girl-card";
+      card.innerHTML = `
+        <img src="${girl.photo}" alt="${girl.name}" />
+        <h2>${girl.name}, ${girl.age}</h2>
+        <p>${girl.city}</p>
+        <a href="profile.html?id=${girl.id}">View Profile</a>
+        <a href="chat.html?id=${girl.id}">Chat</a>
+      `;
+      container.appendChild(card);
     });
   </script>
 </body>

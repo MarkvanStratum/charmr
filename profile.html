@@ -1,36 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<link rel="stylesheet" href="style.css" />
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Girl Profile</title>
-  <script src="girls.js" defer></script>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="profile">
-    <p>Loading profile...</p>
-  </div>
+  <div id="profile-container"></div>
 
+  <script src="girls.js"></script>
   <script>
-    window.addEventListener("DOMContentLoaded", () => {
-      const params = new URLSearchParams(window.location.search);
-      const id = parseInt(params.get("id"));
-      const girl = girls.find(g => g.id === id);
-      const profileDiv = document.getElementById("profile");
+    const params = new URLSearchParams(window.location.search);
+    const girlId = parseInt(params.get("id"));
+    const girl = girls.find(g => g.id === girlId);
 
-      if (!girl) {
-        profileDiv.innerHTML = "<h2>Profile not found.</h2>";
-        return;
-      }
-
-      profileDiv.innerHTML = `
-        <h2>${girl.name}, ${girl.age}</h2>
-        <img src="${girl.image}" alt="${girl.name}" width="150"><br>
-        <strong>City:</strong> ${girl.city}<br><br>
+    if (girl) {
+      document.getElementById("profile-container").innerHTML = `
+        <img src="${girl.photo}" alt="${girl.name}" />
+        <h1>${girl.name}, ${girl.age}</h1>
+        <p><strong>City:</strong> ${girl.city}</p>
         <p>${girl.description}</p>
-        <a href="profiles.html">← Back to profiles</a>
+        <a href="chat.html?id=${girl.id}">Chat</a>
       `;
-    });
+    } else {
+      document.getElementById("profile-container").innerText = "Profile not found.";
+    }
   </script>
 </body>
 </html>
