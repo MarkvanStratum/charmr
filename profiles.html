@@ -2,66 +2,61 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Meet UK Girls on Charmer</title>
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f8f8f8;
+    }
+    h1 {
+      text-align: center;
+      color: #cc3366;
+    }
+    #profiles-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 30px;
+    }
+    .girl-card {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    .girl-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+    .girl-card h3 {
+      margin: 10px 0 5px;
+      font-size: 18px;
+    }
+    .girl-card p {
+      margin: 0;
+      font-size: 14px;
+      color: #555;
+    }
+    .girl-card a {
+      display: inline-block;
+      margin-top: 10px;
+      color: #cc3366;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .girl-card a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>Meet UK Girls on Charmer</h1>
-    <div id="inbox-icon" title="Inbox (0)" onclick="toggleInbox()">💌 <span id="inbox-count">0</span></div>
-  </header>
+  <h1>Meet UK Girls on Charmer</h1>
+  <div id="profiles-container"></div>
 
-  <main id="profiles-container"></main>
-
-  <div id="inbox" class="hidden">
-    <h2>Inbox</h2>
-    <ul id="inbox-list"></ul>
-  </div>
-
-  <div id="chat-windows"></div>
-
-  <script src="girls.json" type="application/json" id="girls-data"></script>
-  <script src="chat.js"></script>
-  <script>
-    // Load girls data and render profiles
-    fetch('girls.json')
-      .then(res => res.json())
-      .then(data => {
-        window.girlsData = data;
-        renderProfiles(data);
-      });
-
-    function renderProfiles(girls) {
-      const container = document.getElementById('profiles-container');
-      container.innerHTML = '';
-      girls.forEach((girl, i) => {
-        const profileCard = document.createElement('div');
-        profileCard.className = 'profile-card';
-        profileCard.innerHTML = `
-          <img src="${girl.photos[0]}" alt="Photo of ${girl.name}" />
-          <h3>${girl.name}, ${girl.age}</h3>
-          <p>${girl.city}, ${girl.country}</p>
-          <button onclick="openProfile(${i})">View Profile</button>
-          <button onclick="openChat(${i})">Chat with ${girl.name}</button>
-        `;
-        container.appendChild(profileCard);
-      });
-    }
-
-    function openProfile(index) {
-      // Redirect to profile.html with query ?id=index
-      window.location.href = `profile.html?id=${index}`;
-    }
-
-    function openChat(index) {
-      ChatManager.openChat(window.girlsData[index]);
-    }
-
-    // Inbox toggle (will be implemented in chat.js)
-    function toggleInbox() {
-      ChatManager.toggleInbox();
-    }
-  </script>
+  <script src="girls.js"></script>
 </body>
 </html>
