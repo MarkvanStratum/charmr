@@ -3,63 +3,64 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Girl Profile - Charmer</title>
+  <title>Meet UK Girls on Charmer</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
-    <h1>Charmer</h1>
-    <button onclick="goBack()">← Back to Profiles</button>
+    <h1>Meet UK Girls on Charmer</h1>
+    <div id="inbox-icon" title="Inbox (0)" onclick="toggleInbox()">💌 <span id="inbox-count">0</span></div>
   </header>
 
-  <main id="profile-container"></main>
+  <main id="profiles-container"></main>
+
+  <div id="inbox" class="hidden">
+    <h2>Inbox</h2>
+    <ul id="inbox-list"></ul>
+  </div>
 
   <div id="chat-windows"></div>
 
+  <script src="girls.json" type="application/json" id="girls-data"></script>
   <script src="chat.js"></script>
   <script>
-    function getQueryParam(name) {
-      const params = new URLSearchParams(window.location.search);
-      return params.get(name);
+    // Load girls data and render profiles
+    fetch('girls.json')
+      .then(res => res.json())
+      .then(data => {
+        window.girlsData = data;
+        renderProfiles(data);
+      });
+
+    function renderProfiles(girls) {
+      const container = document.getElementById('profiles-container');
+      container.innerHTML = '';
+      girls.forEach((girl, i) => {
+        const profileCard = document.createElement('div');
+        profileCard.className = 'profile-card';
+        profileCard.innerHTML = `
+          <img src="${girl.photos[0]}" alt="Photo of ${girl.name}" />
+          <h3>${girl.name}, ${girl.age}</h3>
+          <p>${girl.city}, ${girl.country}</p>
+          <button onclick="openProfile(${i})">View Profile</button>
+          <button onclick="openChat(${i})">Chat with ${girl.name}</button>
+        `;
+        container.appendChild(profileCard);
+      });
     }
 
-    function goBack() {
-      window.location.href = 'profiles.html';
+    function openProfile(index) {
+      // Redirect to profile.html with query ?id=index
+      window.location.href = `profile.html?id=${index}`;
     }
 
-    const girlIndex = getQueryParam('id');
-    if (!girlIndex || isNaN(girlIndex)) {
-      document.getElementById('profile-container').innerText = 'Profile not found.';
-    } else {
-      fetch('girls.json')
-        .then(res => res.json())
-        .then(girls => {
-          const girl = girls[girlIndex];
-          if (!girl) {
-            document.getElementById('profile-container').innerText = 'Profile not found.';
-            return;
-          }
-          renderProfile(girl);
-          window.girl = girl; // For chat usage
-        });
+    function openChat(index) {
+      ChatManager.openChat(window.girlsData[index]);
     }
 
-    function renderProfile(girl) {
-      const container = document.getElementById('profile-container');
-      container.innerHTML = `
-        <div class="profile-detail">
-          <div class="profile-photos">
-            ${girl.photos.map(photo => `<img src="${photo}" alt="Photo of ${girl.name}" />`).join('')}
-          </div>
-          <div class="profile-info">
-            <h2>${girl.name}, ${girl.age}</h2>
-            <p><strong>From:</strong> ${girl.city}, ${girl.country}</p>
-            <h3>About me</h3>
-            <p class="about-me">${girl.bio}</p>
-            <button onclick="ChatManager.openChat(window.girl)">Chat with ${girl.name}</button>
-          </div>
-        </div>
-      `;
+    // Inbox toggle (will be implemented in chat.js)
+    function toggleInbox() {
+      ChatManager.toggleInbox();
     }
   </script>
 </body>
