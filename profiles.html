@@ -71,10 +71,19 @@
   </style>
 </head>
 <body>
+<body>
+
 <!-- Notification Banner -->
-<div id="message-notification" class="hidden">
-  <strong id="notif-name">Sophie</strong>: <span id="notif-text">Hey, what are you up to? 😉</span>
+<div id="message-notification" class="hidden" onclick="window.location.href='inbox.html'">
+  <img id="notif-avatar" src="" alt="Avatar">
+  <div class="notif-text">
+    <strong id="notif-name"></strong>
+    <p id="notif-message"></p>
+  </div>
 </div>
+
+<!-- The rest of your page content follows -->
+
 <!-- Add this at the very top of <body>, above your current content -->
 <nav style="display:flex; justify-content:flex-end; align-items:center; padding:10px 20px; background:#f0f0f0; border-bottom:1px solid #ccc;">
   <a href="inbox.html" title="Inbox" style="margin-right:20px; color:#333; font-size:24px; text-decoration:none;">
