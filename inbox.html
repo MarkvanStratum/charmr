@@ -81,33 +81,39 @@
     async function loadMessages() {
       try {
         const res = await fetch('https://charmr-jfmc.onrender.com/api/messages/user1');
-        const messages = await res.json();
+        const data = await res.json();
 
         const container = document.getElementById('messageList');
         container.innerHTML = '';
 
-        if (messages.length === 0) {
+        const chatKeys = Object.keys(data);
+        if (chatKeys.length === 0) {
           container.innerHTML = '<p>No messages yet.</p>';
           return;
         }
 
-        messages.reverse().forEach(msg => {
-          // Find matching girl by name
-          const girl = girls.find(g => g.name === msg.from);
+        chatKeys.forEach(chatKey => {
+          const chatMessages = data[chatKey];
+          if (chatMessages.length > 0) {
+            const lastMessage = chatMessages[chatMessages.length - 1];
 
-          const card = document.createElement('a');
-          // Use girl.id if found, else fallback to #
-          card.href = girl ? `chat.html?id=${girl.id}` : '#';
-          card.className = 'message-card';
-          card.innerHTML = `
-            <img src="${msg.avatar}" alt="${msg.from}">
-            <div class="message-info">
-              <strong>${msg.from}</strong>
-              <p>${msg.text}</p>
-              <div class="message-time">${new Date(msg.time).toLocaleString()}</div>
-            </div>
-          `;
-          container.appendChild(card);
+            // Extract girlId from chatKey "user1-girlId"
+            const girlId = parseInt(chatKey.split('-')[1]);
+            const girl = girls.find(g => g.id === girlId);
+
+            const card = document.createElement('a');
+            card.href = `chat.html?id=${girlId}`;
+            card.className = 'message-card';
+            card.innerHTML = `
+              <img src="${girl ? girl.image : 'default-avatar.png'}" alt="${girl ? girl.name : 'Unknown'}">
+              <div class="message-info">
+                <strong>${girl ? girl.name : 'Unknown'}</strong>
+                <p>${lastMessage.text}</p>
+                <div class="message-time">${new Date().toLocaleString()}</div>
+              </div>
+            `;
+            container.appendChild(card);
+          }
         });
       } catch (err) {
         console.error('Error loading messages:', err);
