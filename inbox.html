@@ -74,6 +74,9 @@
     <p>Loading messages...</p>
   </div>
 
+  <!-- Load girls.js so we can find the ID by name -->
+  <script src="girls.js"></script>
+
   <script>
     async function loadMessages() {
       try {
@@ -89,8 +92,12 @@
         }
 
         messages.reverse().forEach(msg => {
+          // Find matching girl by name
+          const girl = girls.find(g => g.name === msg.from);
+
           const card = document.createElement('a');
-          card.href = `chat.html?girl=${encodeURIComponent(msg.from)}`;
+          // Use girl.id if found, else fallback to #
+          card.href = girl ? `chat.html?id=${girl.id}` : '#';
           card.className = 'message-card';
           card.innerHTML = `
             <img src="${msg.avatar}" alt="${msg.from}">
