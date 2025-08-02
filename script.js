@@ -72,3 +72,42 @@ document.addEventListener('DOMContentLoaded', () => {
     loadProfile();
   }
 });
+<script>
+function showNotification(name, message, avatar) {
+  const notif = document.getElementById('message-notification');
+  document.getElementById('notif-name').textContent = name;
+  document.getElementById('notif-message').textContent = message;
+  document.getElementById('notif-avatar').src = avatar;
+
+  notif.classList.remove('hidden');
+
+  // Slide down
+  setTimeout(() => {
+    notif.classList.add('show');
+  }, 10);
+
+  // Hide after 4 seconds
+  setTimeout(() => {
+    notif.classList.remove('show');
+    setTimeout(() => notif.classList.add('hidden'), 400);
+  }, 4000);
+}
+
+// Test: Wait 5 seconds after page load, then show a sample notification
+setTimeout(() => {
+  showNotification(
+    "Sophie",
+    "Hey, what are you up to? 😉",
+    "https://randomuser.me/api/portraits/women/1.jpg"
+  );
+}, 5000);
+</script>
+
+}
+
+// Test trigger
+// You can remove this later — it just lets you click anywhere to test the popup
+document.body.addEventListener('click', () => {
+  showNotification("Sophie", "Hey, what are you up to? 😉");
+});
+
