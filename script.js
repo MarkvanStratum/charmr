@@ -93,13 +93,15 @@ function showNotification(name, message, avatar) {
   }, 4000);
 }
 
-// Test: Wait 5 seconds after page load, then show a sample notification
+// TEST: Show notification after 5 seconds
 setTimeout(() => {
   showNotification(
     "Sophie",
     "Hey, what are you up to? 😉",
     "https://randomuser.me/api/portraits/women/1.jpg"
   );
+}, 5000);
+
 }, 5000);
 </script>
 
