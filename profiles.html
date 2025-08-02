@@ -71,22 +71,9 @@
   </style>
 </head>
 <body>
-
 <!-- Notification Banner -->
 <div id="message-notification" class="hidden">
   <strong id="notif-name">Sophie</strong>: <span id="notif-text">Hey, what are you up to? 😉</span>
-
-<!-- Notification Banner -->
-<div id="message-notification" class="hidden" onclick="window.location.href='inbox.html'">
-  <img id="notif-avatar" src="" alt="Avatar">
-  <div class="notif-text">
-    <strong id="notif-name"></strong>
-    <p id="notif-message"></p>
-  </div>
-</div>
-
-<!-- The rest of your page content follows -->
-
 </div>
 <!-- Add this at the very top of <body>, above your current content -->
 <nav style="display:flex; justify-content:flex-end; align-items:center; padding:10px 20px; background:#f0f0f0; border-bottom:1px solid #ccc;">
@@ -106,107 +93,43 @@
     <!-- Profiles will be loaded here -->
   </div>
 
-  <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("profileContainer");
-
-  fetch("https://charmr-jfmc.onrender.com/api/profiles")
-    .then(res => res.json())
-    .then(girls => {
-      container.innerHTML = ""; // clear old content
-      girls.forEach(girl => {
-        const card = document.createElement("div");
-        card.className = "profile-card";
-        card.innerHTML = `
-          <img src="${girl.image}" alt="${girl.name}">
-          <h3>${girl.name}</h3>
-          <p>Age: ${girl.age}</p>
-          <p>City: ${girl.city}</p>
-          <div class="btn-group">
-            <button onclick="window.location.href='profile.html?id=${girl.id}'">View Profile</button>
-            <button onclick="window.location.href='chat.html?id=${girl.id}'">Chat</button>
-          </div>
-        `;
-        container.appendChild(card);
-      });
-    })
-    .catch(err => {
-      console.error("Error loading profiles:", err);
-      container.innerHTML = "<p>Failed to load profiles.</p>";
-    });
-});
-</script>
+  <script src="girls.js"></script>
 <script>
-  const backendUrl = "https://charmr-jfmc.onrender.com"; // Your backend URL
+window.onload = function() {
+    const backendUrl = "https://charmr-jfmc.onrender.com"; // your backend URL
+    let lastMessageTime = null;
 
-  async function fetchUnreadCount() {
-    try {
-      const res = await fetch(`${backendUrl}/messages/unreadCount?userId=1`);
-      if (!res.ok) throw new Error("Failed to fetch unread count");
-      const data = await res.json();
-      return data.unreadCount || 0;
-    } catch (error) {
-      console.error(error);
-      return 0;
+    function showNotification(from, text) {
+        const notif = document.createElement("div");
+        notif.className = "notification-popup";
+        notif.innerHTML = `<strong>${from}</strong>: ${text}`;
+        notif.onclick = () => window.location.href = "inbox.html";
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 5000);
     }
-  }
 
-  async function updateInboxBadge() {
-    const count = await fetchUnreadCount();
-    const badge = document.getElementById("inboxBadge");
-    if (count > 0) {
-      badge.textContent = count;
-      badge.style.display = "inline-block";
-    } else {
-      badge.style.display = "none";
-    }
-  }
+    async function checkForNewMessages() {
+        try {
+            const res = await fetch(`${backendUrl}/api/messages/user1`);
+            const msgs = await res.json();
+            if (msgs.length === 0) return;
 
-  // Run on page load
-  updateInboxBadge();
-
-  // Update badge every 15 seconds
-  setInterval(updateInboxBadge, 15000);
-</script>
-<script>
-const backendUrl = "https://charmr-jfmc.onrender.com"; // your backend URL
-let lastMessageTime = null; // track most recent message time
-
-function showNotification(from, text) {
-    const notif = document.createElement("div");
-    notif.className = "notification-popup";
-    notif.innerHTML = `<strong>${from}</strong>: ${text}`;
-
-    notif.onclick = () => {
-        window.location.href = "inbox.html";
-    };
-
-    document.body.appendChild(notif);
-
-    setTimeout(() => notif.remove(), 5000);
-}
-
-async function checkForNewMessages() {
-    try {
-        const res = await fetch(`${backendUrl}/api/messages/user1`);
-        const msgs = await res.json();
-
-        if (msgs.length === 0) return;
-
-        const latest = msgs[msgs.length - 1]; // last message in array
-
-        // Only trigger if it's a new one
-        if (!lastMessageTime || new Date(latest.time) > new Date(lastMessageTime)) {
-            lastMessageTime = latest.time;
-            showNotification(latest.from, latest.text);
+            const latest = msgs[msgs.length - 1];
+            if (!lastMessageTime || new Date(latest.time) > new Date(lastMessageTime)) {
+                lastMessageTime = latest.time;
+                showNotification(latest.from, latest.text);
+            }
+        } catch (err) {
+            console.error("Error fetching messages", err);
         }
-    } catch (err) {
-        console.error("Error fetching messages", err);
     }
-}
 
-// check every 5 seconds
-setInterval(checkForNewMessages, 5000);
+    // Start checking after 5 seconds, then every 5 seconds
+    setTimeout(() => {
+        checkForNewMessages();
+        setInterval(checkForNewMessages, 5000);
+    }, 5000);
+};
 </script>
 
 <style>
