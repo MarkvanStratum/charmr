@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -8,8 +7,9 @@ app.use(cors());
 app.use(express.json());
 
 // === PROFILES ===
-// Replace this with your full 300-profile array
+// Replace this with your full 300-profile array (example here with 3 profiles)
 const girls = [
+  
   { id: 1, name: "Evie Hughes", age: 29, city: "Aberdeen", image: "https://randomuser.me/api/portraits/women/1.jpg" },
   { id: 2, name: "Evie Lewis", age: 35, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/2.jpg" },
   { id: 3, name: "Grace Johnson", age: 20, city: "London", image: "https://randomuser.me/api/portraits/women/3.jpg" },
@@ -314,8 +314,11 @@ const girls = [
 
 // === MESSAGES STORAGE ===
 let messages = {
-  "user1": [] // store messages here for test user
+  "user1": []
 };
+
+// For unique message IDs
+let messageIdCounter = 1;
 
 // === FLIRTY MESSAGE LIST ===
 const flirtyMessages = [
@@ -340,16 +343,45 @@ app.get('/api/messages/:userId', (req, res) => {
   res.json(messages[userId] || []);
 });
 
+// === API: Get unread messages count for a user ===
+app.get('/api/messages/unreadCount', (req, res) => {
+  const userId = req.query.userId;
+  if (!userId) {
+    return res.status(400).json({ error: "Missing or invalid userId" });
+  }
+  const userMessages = messages[userId] || [];
+  const unreadCount = userMessages.filter(msg => !msg.read).length;
+  res.json({ unreadCount });
+});
+
+// === API: Mark messages as read (optional) ===
+app.post('/api/messages/markRead', (req, res) => {
+  const { userId, messageIds } = req.body;
+  if (!userId || !Array.isArray(messageIds)) {
+    return res.status(400).json({ error: "Missing userId or messageIds" });
+  }
+  if (!messages[userId]) messages[userId] = [];
+
+  messages[userId].forEach(msg => {
+    if (messageIds.includes(msg.id)) {
+      msg.read = true;
+    }
+  });
+  res.json({ success: true });
+});
+
 // === Function: Random girl sends message ===
 function sendRandomMessageToUser(userId) {
   const randomGirl = girls[Math.floor(Math.random() * girls.length)];
   const randomMessage = flirtyMessages[Math.floor(Math.random() * flirtyMessages.length)];
-  
+
   const newMsg = {
+    id: messageIdCounter++,
     from: randomGirl.name,
     avatar: randomGirl.image,
     text: randomMessage,
-    time: new Date().toISOString()
+    time: new Date().toISOString(),
+    read: false
   };
 
   if (!messages[userId]) {
@@ -362,10 +394,10 @@ function sendRandomMessageToUser(userId) {
 
 // === Simulate new message every 60 seconds ===
 setInterval(() => {
-  sendRandomMessageToUser("user1"); // later: replace with real logged-in user ID
-}, 60000); // 60000 ms = 1 minute
+  sendRandomMessageToUser("user1"); // Replace with real user ID as needed
+}, 60000);
 
-// Start server
+// === Start server ===
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
