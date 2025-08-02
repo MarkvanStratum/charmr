@@ -440,6 +440,21 @@ app.get("/api/messages/:userId/:girlId", (req, res) => {
   res.json(messages[chatKey] || []);
 });
 
+// New route to get all messages for a user across all girls
+app.get("/api/messages/:userId", (req, res) => {
+  const { userId } = req.params;
+  const userMessages = {};
+
+  // Loop over all chat keys and gather messages for this user
+  for (const chatKey in messages) {
+    if (chatKey.startsWith(userId + "-")) {
+      userMessages[chatKey] = messages[chatKey];
+    }
+  }
+
+  res.json(userMessages);
+});
+
 app.post("/api/chat", async (req, res) => {
   const { userId, girlId, message } = req.body;
 
