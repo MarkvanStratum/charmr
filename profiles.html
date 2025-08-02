@@ -99,11 +99,20 @@ window.onload = function() {
     const backendUrl = "https://charmr-jfmc.onrender.com"; // your backend URL
     let lastMessageTime = null;
 
-    function showNotification(from, text) {
+    function showNotification(from, text, avatar) {
         const notif = document.createElement("div");
         notif.className = "notification-popup";
-        notif.innerHTML = `<strong>${from}</strong>: ${text}`;
+
+        notif.innerHTML = `
+            <img src="${avatar}" alt="${from}" class="notif-avatar">
+            <div class="notif-text">
+                <strong>${from}</strong>
+                <p>${text}</p>
+            </div>
+        `;
+
         notif.onclick = () => window.location.href = "inbox.html";
+
         document.body.appendChild(notif);
         setTimeout(() => notif.remove(), 5000);
     }
@@ -117,14 +126,14 @@ window.onload = function() {
             const latest = msgs[msgs.length - 1];
             if (!lastMessageTime || new Date(latest.time) > new Date(lastMessageTime)) {
                 lastMessageTime = latest.time;
-                showNotification(latest.from, latest.text);
+                showNotification(latest.from, latest.text, latest.avatar || "default-avatar.png");
             }
         } catch (err) {
             console.error("Error fetching messages", err);
         }
     }
 
-    // Start checking after 5 seconds, then every 5 seconds
+    // Start polling after 5s, check every 5s
     setTimeout(() => {
         checkForNewMessages();
         setInterval(checkForNewMessages, 5000);
@@ -134,23 +143,50 @@ window.onload = function() {
 
 <style>
 .notification-popup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     position: fixed;
-    top: 10px;
-    right: 10px;
-    background: #ff4081;
-    color: white;
-    padding: 12px 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    top: 15px;
+    right: 15px;
+    background: white;
+    color: black;
+    padding: 10px 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     cursor: pointer;
-    font-weight: bold;
+    font-family: Arial, sans-serif;
+    max-width: 280px;
+    animation: slideIn 0.4s ease forwards;
     z-index: 1000;
-    animation: slideDown 0.5s ease forwards;
 }
 
-@keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to { opacity: 1; transform: translateY(0); }
+.notif-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.notif-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.notif-text strong {
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.notif-text p {
+    font-size: 13px;
+    margin: 0;
+    color: #555;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
 }
 </style>
 
