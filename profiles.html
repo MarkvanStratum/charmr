@@ -71,6 +71,10 @@
   </style>
 </head>
 <body>
+<!-- Notification Banner -->
+<div id="message-notification" class="hidden">
+  <strong id="notif-name">Sophie</strong>: <span id="notif-text">Hey, what are you up to? 😉</span>
+</div>
 <!-- Add this at the very top of <body>, above your current content -->
 <nav style="display:flex; justify-content:flex-end; align-items:center; padding:10px 20px; background:#f0f0f0; border-bottom:1px solid #ccc;">
   <a href="inbox.html" title="Inbox" style="margin-right:20px; color:#333; font-size:24px; text-decoration:none;">
@@ -89,6 +93,36 @@
     <!-- Profiles will be loaded here -->
   </div>
 
-  <script src="girls.js"></script>
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("profileContainer");
+
+  fetch("https://charmr-jfmc.onrender.com/api/profiles")
+    .then(res => res.json())
+    .then(girls => {
+      container.innerHTML = ""; // clear old content
+      girls.forEach(girl => {
+        const card = document.createElement("div");
+        card.className = "profile-card";
+        card.innerHTML = `
+          <img src="${girl.image}" alt="${girl.name}">
+          <h3>${girl.name}</h3>
+          <p>Age: ${girl.age}</p>
+          <p>City: ${girl.city}</p>
+          <div class="btn-group">
+            <button onclick="window.location.href='profile.html?id=${girl.id}'">View Profile</button>
+            <button onclick="window.location.href='chat.html?id=${girl.id}'">Chat</button>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    })
+    .catch(err => {
+      console.error("Error loading profiles:", err);
+      container.innerHTML = "<p>Failed to load profiles.</p>";
+    });
+});
+</script>
+
 </body>
 </html>
