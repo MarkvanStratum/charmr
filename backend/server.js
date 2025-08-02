@@ -317,8 +317,6 @@ const profiles = [
   { id: 300, name: "Amelia Edwards", age: 27, city: "Wigan", image: "https://randomuser.me/api/portraits/women/0.jpg" }
 ];
 
-};
-
 // Hardcoded first messages for hybrid start
 const firstMessages = {
 1: "hey what you up to rn? feel like bein a bit naughty 😉",
