@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { Configuration, OpenAIApi } = require("openai");
+const OpenAI = require('openai'); // ✅ v4 import
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,10 +9,9 @@ app.use(cors());
 app.use(express.json());
 
 // === OPENAI SETUP ===
-const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY, // set this in Render environment variables
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY // Make sure this is set in Render
 });
-const openai = new OpenAIApi(configuration);
 
 // === PROFILES (short version for now) ===
 const girls = [
@@ -96,7 +95,7 @@ function sendRandomMessageToUser(userId) {
 
 // === Simulate new message every 60 seconds ===
 setInterval(() => {
-  sendRandomMessageToUser("user1"); // Replace with real logged-in user ID
+  sendRandomMessageToUser("user1");
 }, 60000);
 
 // === OPENAI CHAT ENDPOINT ===
@@ -108,19 +107,19 @@ app.post('/api/chat', async (req, res) => {
   }
 
   try {
-    const completion = await openai.createChatCompletion({
-      model: "gpt-4o-mini",
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini", // Or "gpt-3.5-turbo" if cheaper
       messages: [
         { role: "system", content: "You are a flirtatious girl chatting with a guy." },
         { role: "user", content: userMessage }
       ],
       max_tokens: 150,
-      temperature: 0.8,
+      temperature: 0.8
     });
 
-    const reply = completion.data.choices[0].message.content.trim();
+    const reply = completion.choices[0].message.content.trim();
 
-    // Save AI's reply into messages list
+    // Save AI's reply
     const randomGirl = girls.find(g => g.id === parseInt(chatWithUserId)) || girls[0];
     const aiMsg = {
       id: messageIdCounter++,
@@ -136,7 +135,7 @@ app.post('/api/chat', async (req, res) => {
     res.json({ reply });
 
   } catch (error) {
-    console.error("OpenAI error:", error.response?.data || error.message);
+    console.error("OpenAI error:", error);
     res.status(500).json({ error: "Failed to get response from AI" });
   }
 });
