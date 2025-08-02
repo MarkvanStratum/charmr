@@ -43,13 +43,14 @@
       padding: 10px;
       overflow-y: auto;
       background-color: #fff0f3;
+      display: flex;
+      flex-direction: column;
     }
     .message {
       margin: 8px 0;
       padding: 8px 12px;
       border-radius: 15px;
       max-width: 70%;
-      display: inline-block;
       word-wrap: break-word;
     }
     .message.user {
@@ -99,35 +100,51 @@
 
   <script src="girls.js"></script>
   <script>
+    const backendUrl = "https://charmr-jfmc.onrender.com"; // your backend URL
     const params = new URLSearchParams(window.location.search);
     const girlId = parseInt(params.get('id'));
     const girl = girls.find(g => g.id === girlId);
 
+    const userId = "user1"; // for now, static; later from logged-in user
+    const chatBox = document.getElementById('chatBox');
+
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
-    const chatBox = document.getElementById('chatBox');
-
-    function sendMessage() {
-      const input = document.getElementById('messageInput');
-      if (!input.value.trim()) return;
-
-      const userMsg = document.createElement('div');
-      userMsg.className = 'message user';
-      userMsg.textContent = input.value;
-      chatBox.appendChild(userMsg);
+    function appendMessage(text, sender) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      msgDiv.textContent = text;
+      chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const messageText = input.value.trim();
+      if (!messageText) return;
+
+      // Show user's message instantly
+      appendMessage(messageText, 'user');
       input.value = '';
 
-      setTimeout(() => {
-        const replies = ["Hey 😊", "How are you?", "Nice to hear from you!", "Tell me more about you..."];
-        const reply = replies[Math.floor(Math.random() * replies.length)];
-        const girlMsg = document.createElement('div');
-        girlMsg.className = 'message girl';
-        girlMsg.textContent = reply;
-        chatBox.appendChild(girlMsg);
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }, Math.floor(Math.random() * 15000) + 1000); // 1–15 sec delay
+      try {
+        const res = await fetch(`${backendUrl}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, girlId, message: messageText })
+        });
+
+        const data = await res.json();
+        if (data.reply) {
+          appendMessage(data.reply, 'girl');
+        } else {
+          appendMessage("(No reply received)", 'girl');
+        }
+      } catch (err) {
+        console.error("Chat error:", err);
+        appendMessage("(Error contacting AI)", 'girl');
+      }
     }
   </script>
 </body>
