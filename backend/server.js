@@ -1,10 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { json } from "body-parser";
-import { config } from "dotenv";
 import OpenAI from "openai";
-
-config(); // Load .env variables
 
 const app = express();
 const PORT = process.env.PORT || 10000;
