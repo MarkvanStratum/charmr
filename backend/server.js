@@ -317,9 +317,8 @@ const profiles = [
   { id: 300, name: "Amelia Edwards", age: 27, city: "Wigan", image: "https://randomuser.me/api/portraits/women/0.jpg" }
 ];
 
-// Hardcoded first messages for hybrid start
-const firstMessages = {
-1: "hey what you up to rn? feel like bein a bit naughty 😉",
+const personalities = {
+  1: "hey what you up to rn? feel like bein a bit naughty 😉",
 2: "u look trouble... in a good way 😏",
 3: "sooo bored… fancy entertaining me?",
 4: "hiya stranger, wanna keep me company 2nite?",
@@ -421,6 +420,13 @@ const firstMessages = {
 100: "what trouble are u gettin into 2nite?"
 };
 
+// Hardcoded first messages for hybrid start
+const firstMessages = {
+  1: "Hey! I'm Amelia, love music festivals. What about you?",
+  2: "Hello! Olivia here. Fancy a chat about art or wine?",
+  3: "Hi! Sophia loves adventures. Got any spontaneous plans?"
+};
+
 let conversations = {};
 let messages = {};
 
@@ -433,7 +439,6 @@ app.get("/api/messages/:userId/:girlId", (req, res) => {
   const chatKey = `${userId}-${girlId}`;
   res.json(messages[chatKey] || []);
 });
-
 // New route to get all messages for a user across all girls
 app.get("/api/messages/:userId", (req, res) => {
   const { userId } = req.params;
@@ -502,28 +507,6 @@ app.post("/api/chat", async (req, res) => {
     res.status(500).json({ error: "Failed to get AI reply" });
   }
 });
-// === Function to send a random canned message to a user ===
-function sendRandomMessageToUser(userId) {
-  const randomGirl = profiles[Math.floor(Math.random() * profiles.length)];
-  const randomMessage = flirtyMessages[Math.floor(Math.random() * flirtyMessages.length)];
-
-  const chatKey = `${userId}-${randomGirl.id}`;
-  if (!messages[chatKey]) messages[chatKey] = [];
-
-  messages[chatKey].push({
-    from: randomGirl.name,
-    avatar: randomGirl.image,
-    text: randomMessage,
-    time: new Date().toISOString()
-  });
-
-  console.log(`New canned message from ${randomGirl.name} to ${userId}: ${randomMessage}`);
-}
-
-// === Send a random canned message every 60 seconds ===
-setInterval(() => {
-  sendRandomMessageToUser("user1"); // Later: replace with actual logged-in user ID
-}, 60000); // 1 minute
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
