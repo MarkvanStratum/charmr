@@ -1,13 +1,11 @@
 const express = require('express');
-const cors = require('cors');
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
 app.use(express.json());
 
-// Dummy profile data
+// === PROFILES ===
+// Replace this with your full 300-profile array
 const girls = [
   { id: 1, name: "Evie Hughes", age: 29, city: "Aberdeen", image: "https://randomuser.me/api/portraits/women/1.jpg" },
   { id: 2, name: "Evie Lewis", age: 35, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/2.jpg" },
@@ -311,30 +309,60 @@ const girls = [
   { id: 300, name: "Amelia Edwards", age: 27, city: "Wigan", image: "https://randomuser.me/api/portraits/women/0.jpg" }
 ];
 
-// Dummy messages for a user
-const messages = {
-  "user1": [
-    { from: "Amelia White", message: "Hey you, how's your day?", time: "2025-08-01T10:00:00Z" },
-    { from: "Olivia Smith", message: "Can't wait to chat more ;)", time: "2025-08-01T11:15:00Z" }
-  ]
+// === MESSAGES STORAGE ===
+let messages = {
+  "user1": [] // store messages here for test user
 };
 
-// Test route
-app.get('/', (req, res) => {
-  res.json({ message: 'Backend is running!' });
-});
+// === FLIRTY MESSAGE LIST ===
+const flirtyMessages = [
+  "Hey you 😉 What are you doing right now?",
+  "I was just thinking about you 😘",
+  "Wanna have a little chat? 😏",
+  "Miss me yet? 😜",
+  "You looked cute in your profile picture 😍",
+  "I can't stop smiling when I think about you ❤️",
+  "So… what are you wearing? 😉",
+  "You seem like trouble… I like trouble 😈"
+];
 
-// API to get profiles
+// === API: Get profiles ===
 app.get('/api/profiles', (req, res) => {
   res.json(girls);
 });
 
-// API to get messages for a specific user
+// === API: Get messages for a user ===
 app.get('/api/messages/:userId', (req, res) => {
   const userId = req.params.userId;
   res.json(messages[userId] || []);
 });
 
+// === Function: Random girl sends message ===
+function sendRandomMessageToUser(userId) {
+  const randomGirl = girls[Math.floor(Math.random() * girls.length)];
+  const randomMessage = flirtyMessages[Math.floor(Math.random() * flirtyMessages.length)];
+  
+  const newMsg = {
+    from: randomGirl.name,
+    avatar: randomGirl.image,
+    text: randomMessage,
+    time: new Date().toISOString()
+  };
+
+  if (!messages[userId]) {
+    messages[userId] = [];
+  }
+
+  messages[userId].push(newMsg);
+  console.log(`New message from ${randomGirl.name} to ${userId}: ${randomMessage}`);
+}
+
+// === Simulate new message every 60 seconds ===
+setInterval(() => {
+  sendRandomMessageToUser("user1"); // later: replace with real logged-in user ID
+}, 60000); // 60000 ms = 1 minute
+
+// Start server
 app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
