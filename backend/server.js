@@ -511,25 +511,28 @@ app.post("/api/send-initial-message", (req, res) => {
     return res.status(400).json({ error: "Missing userId or girlId" });
   }
 
+  const girl = profiles.find(g => g.id === girlId);
+  if (!girl) {
+    return res.status(404).json({ error: "Girl not found" });
+  }
+
   const chatKey = `${userId}-${girlId}`;
   const firstMsg = firstMessages[girlId] || "Hi there!";
 
-  // Ensure storage exists
   if (!messages[chatKey]) messages[chatKey] = [];
   if (!conversations[userId]) conversations[userId] = {};
   if (!conversations[userId][girlId]) conversations[userId][girlId] = [];
 
-  // Prevent duplicates
   const alreadySent = messages[chatKey].some(
-    msg => msg.from === "assistant" && msg.text === firstMsg
+    msg => msg.from === girl.name && msg.text === firstMsg
   );
   if (alreadySent) {
     return res.json({ message: "Initial message already sent" });
   }
 
-  // Add message
   messages[chatKey].push({
-    from: "assistant",
+    from: girl.name,
+    avatar: girl.image,
     text: firstMsg,
     time: new Date().toISOString()
   });
