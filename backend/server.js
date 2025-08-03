@@ -22,11 +22,9 @@ const profiles = [
 const personalities = {};
 
 const firstMessages = {
-  1: "Hey! I'm bored. Wht r u doin?",
-  2: "Hello! Im kind hrny whatsup?",
-  3: "Hi! I'm really looking for some D right now. Where are you?"
-4: "Hey!"
-5: "Can we meet?"
+  1: "Hey! I'm Amelia, love music festivals. What about you?",
+  2: "Hello! Olivia here. Fancy a chat about art or wine?",
+  3: "Hi! Sophia loves adventures. Got any spontaneous plans?"
 };
 
 let conversations = {};
