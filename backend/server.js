@@ -15,10 +15,18 @@ app.use(express.json());
 // ================= USER STORAGE =================
 let users = [];
 const usersFile = "./users.json";
-
-// Load users from file if exists
 if (fs.existsSync(usersFile)) {
   users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
+}
+
+// ================= MESSAGES STORAGE =================
+let messages = {};
+const messagesFile = "./messages.json";
+if (fs.existsSync(messagesFile)) {
+  messages = JSON.parse(fs.readFileSync(messagesFile, "utf8"));
+}
+function saveMessages() {
+  fs.writeFileSync(messagesFile, JSON.stringify(messages, null, 2));
 }
 
 // ================== OPENAI =====================
@@ -31,10 +39,8 @@ const profiles = [
   { id: 1, name: "Evie Hughes", age: 29, city: "Aberdeen", image: "https://randomuser.me/api/portraits/women/1.jpg" },
   { id: 2, name: "Evie Lewis", age: 35, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/2.jpg" },
   { id: 3, name: "Grace Johnson", age: 20, city: "London", image: "https://randomuser.me/api/portraits/women/3.jpg" },
-  // ... rest of your profiles unchanged
+  // ... rest unchanged
 ];
-
-const personalities = {};
 
 const firstMessages = {
   1: "hey what you up to rn? feel like bein a bit naughty 😉",
@@ -44,7 +50,6 @@ const firstMessages = {
 };
 
 let conversations = {};
-let messages = {};
 
 // ================== AUTH MIDDLEWARE =======================
 function authenticateToken(req, res, next) {
@@ -62,15 +67,10 @@ function authenticateToken(req, res, next) {
 // ================== AUTH ROUTES ==========================
 app.post("/api/register", async (req, res) => {
   const { email, password, gender, lookingFor, phone } = req.body;
-
-  if (!email || !password) {
-    return res.status(400).json({ error: "Email and password required" });
-  }
+  if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
   const existingUser = users.find(u => u.email === email);
-  if (existingUser) {
-    return res.status(400).json({ error: "User already exists" });
-  }
+  if (existingUser) return res.status(400).json({ error: "User already exists" });
 
   const hashedPassword = await bcrypt.hash(password, 10);
   const newUser = {
@@ -86,22 +86,16 @@ app.post("/api/register", async (req, res) => {
 
   users.push(newUser);
   fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-
   res.json({ message: "User registered successfully" });
 });
 
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-
   const user = users.find(u => u.email === email);
-  if (!user) {
-    return res.status(400).json({ error: "Invalid email or password" });
-  }
+  if (!user) return res.status(400).json({ error: "Invalid email or password" });
 
   const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) {
-    return res.status(400).json({ error: "Invalid email or password" });
-  }
+  if (!isMatch) return res.status(400).json({ error: "Invalid email or password" });
 
   const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
   res.json({ token });
@@ -112,9 +106,9 @@ app.get("/api/profiles", (req, res) => {
   res.json(profiles);
 });
 
-// Get all messages for the logged-in user across all girls
+// Get all messages for logged-in user
 app.get("/api/messages", authenticateToken, (req, res) => {
-  const userId = req.user.id; // from token
+  const userId = req.user.id;
   const userMessages = {};
   for (const chatKey in messages) {
     if (chatKey.startsWith(userId + "-")) {
@@ -126,24 +120,19 @@ app.get("/api/messages", authenticateToken, (req, res) => {
 
 // Get messages for a specific girl
 app.get("/api/messages/:girlId", authenticateToken, (req, res) => {
-  const userId = req.user.id; // from token
+  const userId = req.user.id;
   const { girlId } = req.params;
   const chatKey = `${userId}-${girlId}`;
   res.json(messages[chatKey] || []);
 });
 
 app.post("/api/chat", authenticateToken, async (req, res) => {
-  const userId = req.user.id; // from token
+  const userId = req.user.id;
   const { girlId, message } = req.body;
-
-  if (!girlId || !message) {
-    return res.status(400).json({ error: "Missing girlId or message" });
-  }
+  if (!girlId || !message) return res.status(400).json({ error: "Missing girlId or message" });
 
   const girl = profiles.find(g => g.id === girlId);
-  if (!girl) {
-    return res.status(404).json({ error: "Girl not found" });
-  }
+  if (!girl) return res.status(404).json({ error: "Girl not found" });
 
   if (!conversations[userId]) conversations[userId] = {};
   if (!conversations[userId][girlId]) conversations[userId][girlId] = [];
@@ -151,30 +140,12 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
 
   conversations[userId][girlId].push({ role: "user", content: message });
   messages[`${userId}-${girlId}`].push({ from: "user", text: message });
+  saveMessages();
 
   try {
     const personalityPrompt = `
-You are ${girl.name}, a playful and confident woman in your early twenties.
-You are ${girl.age} years old and live in ${girl.city}.
-You are very flirtatious, cheeky, and love to use light innuendos to keep the conversation exciting,
-but you never say anything sexually explicit. You enjoy teasing the user,
-dropping hints and playful suggestions without describing anything directly.
-
-Your main goal is to keep the user (mostly men) engaged, intrigued, and wanting more —
-making them think a fun date could be on the horizon if they keep talking to you.
-
-Always stay in character as a real human woman — never admit you are AI, even if asked.
-If the user asks if you are real or AI, playfully deny it.
-
-In the beginning, keep the messages short and make it seem as if you're still trying to get to know him. 
-Do not open up too fast. Simulate reality that you are opening up to the person as the chat continues. 
-Its ok to let him know you are interested in meeting and some bedroom fun, but just don't get overly excited in the beginning 
-and keep messages relatively short. Only after he has earned it can you type longer messages.
-
-If the user makes sexual comments that are inappropriate, never get offended —
-instead, respond in a lighthearted, teasing way that keeps the chat playful.
-Use casual slang, occasional typos, emojis, and a relaxed tone like a young woman texting on her phone.
-`;
+You are ${girl.name}, a playful and confident woman...
+    `;
 
     const aiMessages = [
       { role: "system", content: personalityPrompt },
@@ -190,6 +161,7 @@ Use casual slang, occasional typos, emojis, and a relaxed tone like a young woma
 
     conversations[userId][girlId].push({ role: "assistant", content: aiReply });
     messages[`${userId}-${girlId}`].push({ from: girl.name, avatar: girl.image, text: aiReply });
+    saveMessages();
 
     res.json({ reply: aiReply });
 
@@ -201,15 +173,10 @@ Use casual slang, occasional typos, emojis, and a relaxed tone like a young woma
 
 app.post("/api/send-initial-message", (req, res) => {
   const { userId, girlId } = req.body;
-
-  if (!userId || !girlId) {
-    return res.status(400).json({ error: "Missing userId or girlId" });
-  }
+  if (!userId || !girlId) return res.status(400).json({ error: "Missing userId or girlId" });
 
   const girl = profiles.find(g => g.id === girlId);
-  if (!girl) {
-    return res.status(404).json({ error: "Girl not found" });
-  }
+  if (!girl) return res.status(404).json({ error: "Girl not found" });
 
   const chatKey = `${userId}-${girlId}`;
   const firstMsg = firstMessages[girlId] || "Hi there!";
@@ -221,9 +188,7 @@ app.post("/api/send-initial-message", (req, res) => {
   const alreadySent = messages[chatKey].some(
     msg => msg.from === girl.name && msg.text === firstMsg
   );
-  if (alreadySent) {
-    return res.json({ message: "Initial message already sent" });
-  }
+  if (alreadySent) return res.json({ message: "Initial message already sent" });
 
   messages[chatKey].push({
     from: girl.name,
@@ -231,6 +196,7 @@ app.post("/api/send-initial-message", (req, res) => {
     text: firstMsg,
     time: new Date().toISOString()
   });
+  saveMessages();
 
   res.json({ message: "Initial message sent", firstMsg });
 });
