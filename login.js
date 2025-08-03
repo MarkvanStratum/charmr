@@ -5,22 +5,24 @@ document.getElementById("login-form").addEventListener("submit", async function 
   const password = document.getElementById("password").value.trim();
 
   try {
-    const res = await fetch("https://your-backend-url/api/login", {
+    const res = await fetch("https://charmr-jfmc.onrender.com/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
     });
 
     const data = await res.json();
-    if (data.token) {
+
+    if (res.ok && data.token) {
       localStorage.setItem("authToken", data.token);
       alert("Login successful!");
-      window.location.href = "profiles.html";
+      window.location.href = "profiles.html"; // redirect to profiles page
     } else {
-      alert(data.error || "Login failed");
+      alert(data.error || "Login failed. Please check your email and password.");
+      console.error("Login error:", data);
     }
   } catch (err) {
-    console.error(err);
-    alert("Error logging in.");
+    console.error("Network or server error:", err);
+    alert("Error logging in. Please try again later.");
   }
 });
