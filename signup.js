@@ -11,7 +11,7 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
   if (phone) payload.phone = phone;
 
   try {
-    const response = await fetch("https://your-backend-url/api/register", {
+    const response = await fetch("https://charmr-jfmc.onrender.com/api/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -21,12 +21,13 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
 
     if (response.ok) {
       alert("Registration successful! Please log in.");
-      window.location.href = "login.html"; // redirect to login page
+      window.location.href = "login.html";
     } else {
-      alert(data.error || "Registration failed.");
+      alert(`Registration failed: ${data.error || JSON.stringify(data)}`);
+      console.error("Registration error response:", data);
     }
   } catch (err) {
-    console.error(err);
-    alert("Error registering. Please try again later.");
+    console.error("Fetch error:", err);
+    alert("Error registering. Please check the console for details.");
   }
 });
