@@ -63,6 +63,20 @@
       color: black;
       align-self: flex-start;
     }
+    .message.typing {
+      font-style: italic;
+      color: #888;
+      animation: blink 1s infinite;
+      max-width: 40px;
+      padding: 8px;
+      text-align: center;
+      border-radius: 50%;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
     .chat-input {
       display: flex;
       border-top: 1px solid #ccc;
@@ -111,12 +125,20 @@
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
-    function appendMessage(text, sender) {
+    function appendMessage(text, sender, isTyping = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
       msgDiv.textContent = text;
+      if (isTyping) {
+        msgDiv.classList.add('typing');
+      }
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
+      return msgDiv;
+    }
+
+    function randomDelay(min = 700, max = 2000) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
     async function sendMessage() {
@@ -128,14 +150,23 @@
       appendMessage(messageText, 'user');
       input.value = '';
 
+      // Show typing bubble
+      const typingBubble = appendMessage("...", 'girl', true);
+
       try {
         const res = await fetch(`${backendUrl}/api/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId, girlId, message: messageText })
         });
-
         const data = await res.json();
+
+        // Random delay to simulate typing
+        await new Promise(resolve => setTimeout(resolve, randomDelay()));
+
+        // Remove typing bubble
+        typingBubble.remove();
+
         if (data.reply) {
           appendMessage(data.reply, 'girl');
         } else {
@@ -143,6 +174,7 @@
         }
       } catch (err) {
         console.error("Chat error:", err);
+        typingBubble.remove();
         appendMessage("(Error contacting AI)", 'girl');
       }
     }
