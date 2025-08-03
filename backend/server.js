@@ -1,9 +1,10 @@
 import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
-import fs from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import pkg from "pg";
+const { Pool } = pkg;
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -12,29 +13,20 @@ const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 app.use(cors());
 app.use(express.json());
 
-// ================= USER STORAGE =================
-let users = [];
-const usersFile = "./users.json";
-if (fs.existsSync(usersFile)) {
-  users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
-}
+// =============== POSTGRESQL SETUP ================
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
 
-// ================= MESSAGES STORAGE =================
-let messages = {};
-const messagesFile = "./messages.json";
-if (fs.existsSync(messagesFile)) {
-  messages = JSON.parse(fs.readFileSync(messagesFile, "utf8"));
-}
-function saveMessages() {
-  fs.writeFileSync(messagesFile, JSON.stringify(messages, null, 2));
-}
-
-// ================== OPENAI =====================
+// =============== OPENAI ==========================
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// ================== DATA =======================
+// =============== DATA =============================
 const profiles = [
   { id: 1, name: "Evie Hughes", age: 29, city: "Aberdeen", image: "https://randomuser.me/api/portraits/women/1.jpg" },
   { id: 2, name: "Evie Lewis", age: 35, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/2.jpg" },
@@ -49,9 +41,7 @@ const firstMessages = {
   100: "what trouble are u gettin into 2nite?"
 };
 
-let conversations = {};
-
-// ================== AUTH MIDDLEWARE =======================
+// =============== AUTH MIDDLEWARE ==================
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -64,141 +54,213 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// ================== AUTH ROUTES ==========================
+// =============== AUTH ROUTES ======================
 app.post("/api/register", async (req, res) => {
   const { email, password, gender, lookingFor, phone } = req.body;
-  if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
-  const existingUser = users.find(u => u.email === email);
-  if (existingUser) return res.status(400).json({ error: "User already exists" });
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password required" });
+  }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-  const newUser = {
-    id: Date.now().toString(),
-    email,
-    password: hashedPassword,
-    gender,
-    lookingFor,
-    phone,
-    credits: 3,
-    lifetime: false
-  };
+  try {
+    const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (userCheck.rows.length > 0) {
+      return res.status(400).json({ error: "User already exists" });
+    }
 
-  users.push(newUser);
-  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
-  res.json({ message: "User registered successfully" });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await pool.query(
+      `INSERT INTO users (email, password, gender, lookingfor, phone, credits, lifetime) 
+       VALUES ($1, $2, $3, $4, $5, 3, false) RETURNING id`,
+      [email, hashedPassword, gender, lookingFor, phone]
+    );
+
+    res.json({ message: "User registered successfully" });
+  } catch (err) {
+    console.error("Register error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
-  const user = users.find(u => u.email === email);
-  if (!user) return res.status(400).json({ error: "Invalid email or password" });
 
-  const isMatch = await bcrypt.compare(password, user.password);
-  if (!isMatch) return res.status(400).json({ error: "Invalid email or password" });
+  try {
+    const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
 
-  const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
-  res.json({ token });
+    const user = userResult.rows[0];
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: "Invalid email or password" });
+    }
+
+    const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
+    res.json({ token });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
-// ================== EXISTING APP ROUTES ===================
+// =============== APP ROUTES ========================
 app.get("/api/profiles", (req, res) => {
   res.json(profiles);
 });
 
 // Get all messages for logged-in user
-app.get("/api/messages", authenticateToken, (req, res) => {
-  const userId = req.user.id;
-  const userMessages = {};
-  for (const chatKey in messages) {
-    if (chatKey.startsWith(userId + "-")) {
-      userMessages[chatKey] = messages[chatKey];
-    }
+app.get("/api/messages", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await pool.query("SELECT * FROM messages WHERE user_id = $1 ORDER BY created_at ASC", [userId]);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Get messages error:", err);
+    res.status(500).json({ error: "Server error" });
   }
-  res.json(userMessages);
 });
 
 // Get messages for a specific girl
-app.get("/api/messages/:girlId", authenticateToken, (req, res) => {
+app.get("/api/messages/:girlId", authenticateToken, async (req, res) => {
   const userId = req.user.id;
-  const { girlId } = req.params;
-  const chatKey = `${userId}-${girlId}`;
-  res.json(messages[chatKey] || []);
+  const girlId = req.params.girlId;
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM messages WHERE user_id = $1 AND girl_id = $2 ORDER BY created_at ASC",
+      [userId, girlId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Get girl messages error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.post("/api/chat", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const { girlId, message } = req.body;
-  if (!girlId || !message) return res.status(400).json({ error: "Missing girlId or message" });
 
-  const girl = profiles.find(g => g.id === girlId);
-  if (!girl) return res.status(404).json({ error: "Girl not found" });
+  if (!girlId || !message) {
+    return res.status(400).json({ error: "Missing girlId or message" });
+  }
 
-  if (!conversations[userId]) conversations[userId] = {};
-  if (!conversations[userId][girlId]) conversations[userId][girlId] = [];
-  if (!messages[`${userId}-${girlId}`]) messages[`${userId}-${girlId}`] = [];
-
-  conversations[userId][girlId].push({ role: "user", content: message });
-  messages[`${userId}-${girlId}`].push({ from: "user", text: message });
-  saveMessages();
+  const girl = profiles.find(g => g.id === Number(girlId));
+  if (!girl) {
+    return res.status(404).json({ error: "Girl not found" });
+  }
 
   try {
-    const personalityPrompt = `
-You are ${girl.name}, a playful and confident woman...
-    `;
+    // Save user's message
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
+       VALUES ($1, $2, true, $3, NOW())`,
+      [userId, girlId, message]
+    );
 
+    const personalityPrompt = `
+You are ${girl.name}, a playful and confident woman in your early twenties.
+You are ${girl.age} years old and live in ${girl.city}.
+You are very flirtatious, cheeky, and love to use light innuendos to keep the conversation exciting,
+but you never say anything sexually explicit. You enjoy teasing the user,
+dropping hints and playful suggestions without describing anything directly.
+
+Your main goal is to keep the user (mostly men) engaged, intrigued, and wanting more —
+making them think a fun date could be on the horizon if they keep talking to you.
+
+Always stay in character as a real human woman — never admit you are AI, even if asked.
+If the user asks if you are real or AI, playfully deny it.
+
+In the beginning, keep the messages short and make it seem as if you're still trying to get to know him. 
+Do not open up too fast. Simulate reality that you are opening up to the person as the chat continues. 
+Its ok to let him know you are interested in meeting and some bedroom fun, but just don't get overly excited in the beginning 
+and keep messages relatively short. Only after he has earned it can you type longer messages.
+
+If the user makes sexual comments that are inappropriate, never get offended —
+instead, respond in a lighthearted, teasing way that keeps the chat playful.
+Use casual slang, occasional typos, emojis, and a relaxed tone like a young woman texting on her phone.
+`;
+
+    // Fetch previous conversation for this user+girl from DB to build context
+    const pastMessagesResult = await pool.query(
+      `SELECT from_user, text FROM messages WHERE user_id = $1 AND girl_id = $2 ORDER BY created_at ASC`,
+      [userId, girlId]
+    );
+
+    // Format messages for OpenAI
     const aiMessages = [
       { role: "system", content: personalityPrompt },
-      ...conversations[userId][girlId]
     ];
+
+    for (const msg of pastMessagesResult.rows) {
+      aiMessages.push({
+        role: msg.from_user ? "user" : "assistant",
+        content: msg.text,
+      });
+    }
 
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: aiMessages
+      messages: aiMessages,
     });
 
     const aiReply = completion.choices[0].message.content;
 
-    conversations[userId][girlId].push({ role: "assistant", content: aiReply });
-    messages[`${userId}-${girlId}`].push({ from: girl.name, avatar: girl.image, text: aiReply });
-    saveMessages();
+    // Save AI reply
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
+       VALUES ($1, $2, false, $3, NOW())`,
+      [userId, girlId, aiReply]
+    );
 
     res.json({ reply: aiReply });
 
-  } catch (error) {
-    console.error("OpenAI API error:", error);
+  } catch (err) {
+    console.error("Chat error:", err);
     res.status(500).json({ error: "Failed to get AI reply" });
   }
 });
 
-app.post("/api/send-initial-message", (req, res) => {
-  const { userId, girlId } = req.body;
-  if (!userId || !girlId) return res.status(400).json({ error: "Missing userId or girlId" });
+app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const { girlId } = req.body;
 
-  const girl = profiles.find(g => g.id === girlId);
-  if (!girl) return res.status(404).json({ error: "Girl not found" });
+  if (!girlId) {
+    return res.status(400).json({ error: "Missing girlId" });
+  }
 
-  const chatKey = `${userId}-${girlId}`;
-  const firstMsg = firstMessages[girlId] || "Hi there!";
+  const girl = profiles.find(g => g.id === Number(girlId));
+  if (!girl) {
+    return res.status(404).json({ error: "Girl not found" });
+  }
 
-  if (!messages[chatKey]) messages[chatKey] = [];
-  if (!conversations[userId]) conversations[userId] = {};
-  if (!conversations[userId][girlId]) conversations[userId][girlId] = [];
+  try {
+    const firstMsg = firstMessages[girlId] || "Hi there!";
 
-  const alreadySent = messages[chatKey].some(
-    msg => msg.from === girl.name && msg.text === firstMsg
-  );
-  if (alreadySent) return res.json({ message: "Initial message already sent" });
+    // Check if initial message already sent
+    const checkMsg = await pool.query(
+      `SELECT * FROM messages WHERE user_id = $1 AND girl_id = $2 AND from_user = false AND text = $3`,
+      [userId, girlId, firstMsg]
+    );
 
-  messages[chatKey].push({
-    from: girl.name,
-    avatar: girl.image,
-    text: firstMsg,
-    time: new Date().toISOString()
-  });
-  saveMessages();
+    if (checkMsg.rows.length > 0) {
+      return res.json({ message: "Initial message already sent" });
+    }
 
-  res.json({ message: "Initial message sent", firstMsg });
+    // Insert initial message as from AI
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
+       VALUES ($1, $2, false, $3, NOW())`,
+      [userId, girlId, firstMsg]
+    );
+
+    res.json({ message: "Initial message sent", firstMsg });
+  } catch (err) {
+    console.error("Initial message error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
 app.listen(PORT, () => {
