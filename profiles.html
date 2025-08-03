@@ -71,83 +71,124 @@
   </style>
 </head>
 <body>
-
+<!-- Notification Banner -->
+<div id="message-notification" class="hidden">
+  <strong id="notif-name">Sophie</strong>: <span id="notif-text">Hey, what are you up to? 😉</span>
+</div>
+<!-- Add this at the very top of <body>, above your current content -->
 <nav style="display:flex; justify-content:flex-end; align-items:center; padding:10px 20px; background:#f0f0f0; border-bottom:1px solid #ccc;">
   <a href="inbox.html" title="Inbox" style="margin-right:20px; color:#333; font-size:24px; text-decoration:none;">
-    &#9993;
+    &#9993; <!-- Envelope symbol -->
   </a>
   <a href="myprofile.html" title="My Profile" style="color:#333; font-size:24px; text-decoration:none;">
-    &#128100;
+    &#128100; <!-- User symbol -->
   </a>
 </nav>
 
-<header>
-  <h1>Meet UK Girls on Charmer</h1>
-</header>
+  <header>
+    <h1>Meet UK Girls on Charmer</h1>
+  </header>
 
-<div class="profile-container" id="profileContainer">
-  <!-- Profiles will be loaded here -->
-</div>
+  <div class="profile-container" id="profileContainer">
+    <!-- Profiles will be loaded here -->
+  </div>
 
-<script src="girls.js"></script>
+  <script src="girls.js"></script>
 <script>
-  const backendUrl = "https://charmr-jfmc.onrender.com";
-  const userId = "user1";
+window.onload = function() {
+    const backendUrl = "https://charmr-jfmc.onrender.com"; // your backend URL
+    let lastMessageTime = null;
 
-  // Send initial messages from random girls
-  async function sendInitialMessagesRandom(profiles, count = 2) {
-    const shuffled = [...profiles].sort(() => Math.random() - 0.5);
-    const selected = shuffled.slice(0, count);
+    function showNotification(from, text, avatar) {
+        const notif = document.createElement("div");
+        notif.className = "notification-popup";
 
-    for (const girl of selected) {
-      try {
-        const res = await fetch(`${backendUrl}/api/send-initial-message`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, girlId: girl.id })
-        });
-        const data = await res.json();
-        console.log(`Initial message from ${girl.name}: ${data.message}`);
-      } catch (err) {
-        console.error("Error sending initial message:", err);
-      }
-    }
-  }
-
-  async function loadProfiles() {
-    try {
-      const res = await fetch(`${backendUrl}/api/profiles`);
-      const profiles = await res.json();
-
-      const container = document.getElementById("profileContainer");
-      container.innerHTML = "";
-
-      profiles.forEach(profile => {
-        const card = document.createElement("div");
-        card.className = "profile-card";
-        card.innerHTML = `
-          <img src="${profile.image}" alt="${profile.name}" />
-          <h3>${profile.name}</h3>
-          <p>Age: ${profile.age}</p>
-          <p>City: ${profile.city}</p>
-          <div class="btn-group">
-            <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
-            <button onclick="window.location.href='profile.html?id=${profile.id}'">View Profile</button>
-          </div>
+        notif.innerHTML = `
+            <img src="${avatar}" alt="${from}" class="notif-avatar">
+            <div class="notif-text">
+                <strong>${from}</strong>
+                <p>${text}</p>
+            </div>
         `;
-        container.appendChild(card);
-      });
 
-      // After loading profiles, send initial messages from 2 random girls
-      await sendInitialMessagesRandom(profiles, 2);
+        notif.onclick = () => window.location.href = "inbox.html";
 
-    } catch (err) {
-      console.error("Error loading profiles:", err);
+        document.body.appendChild(notif);
+        setTimeout(() => notif.remove(), 5000);
     }
-  }
 
-  window.onload = loadProfiles;
+    async function checkForNewMessages() {
+        try {
+            const res = await fetch(`${backendUrl}/api/messages/user1`);
+            const msgs = await res.json();
+            if (msgs.length === 0) return;
+
+            const latest = msgs[msgs.length - 1];
+            if (!lastMessageTime || new Date(latest.time) > new Date(lastMessageTime)) {
+                lastMessageTime = latest.time;
+                showNotification(latest.from, latest.text, latest.avatar || "default-avatar.png");
+            }
+        } catch (err) {
+            console.error("Error fetching messages", err);
+        }
+    }
+
+    // Start polling after 5s, check every 5s
+    setTimeout(() => {
+        checkForNewMessages();
+        setInterval(checkForNewMessages, 5000);
+    }, 5000);
+};
 </script>
+
+<style>
+.notification-popup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: white;
+    color: black;
+    padding: 10px 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    cursor: pointer;
+    font-family: Arial, sans-serif;
+    max-width: 280px;
+    animation: slideIn 0.4s ease forwards;
+    z-index: 1000;
+}
+
+.notif-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.notif-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.notif-text strong {
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.notif-text p {
+    font-size: 13px;
+    margin: 0;
+    color: #555;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to { opacity: 1; transform: translateX(0); }
+}
+</style>
 
 </body>
 </html>
