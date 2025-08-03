@@ -130,11 +130,13 @@ app.get("/api/messages/:userId", authenticateToken, (req, res) => {
 });
 
 app.post("/api/chat", authenticateToken, async (req, res) => {
-  const { userId, girlId, message } = req.body;
+  const userId = req.user.id; // from token
+  const { girlId, message } = req.body;
 
-  if (!userId || !girlId || !message) {
-    return res.status(400).json({ error: "Missing userId, girlId, or message" });
+  if (!girlId || !message) {
+    return res.status(400).json({ error: "Missing girlId or message" });
   }
+
 
   const girl = profiles.find(g => g.id === girlId);
   if (!girl) {
