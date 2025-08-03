@@ -360,7 +360,7 @@ const profiles = [
   { id: 297, name: "Florence Davies", age: 22, city: "Derry", image: "https://randomuser.me/api/portraits/women/97.jpg" },
   { id: 298, name: "Ava Evans", age: 22, city: "Liverpool", image: "https://randomuser.me/api/portraits/women/98.jpg" },
   { id: 299, name: "Freya Robinson", age: 31, city: "Wakefield", image: "https://randomuser.me/api/portraits/women/99.jpg" },
-  { id: 300, name: "Amelia Edwards", age: 27, city: "Wigan"
+  { id: 300, name: "Amelia Edwards", age: 27, city: "Wigan"}
   // ... rest unchanged
 ];
 
