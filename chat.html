@@ -114,14 +114,19 @@
 
   <script src="girls.js"></script>
   <script>
-    const backendUrl = "https://charmr-jfmc.onrender.com"; // your backend URL
+    const backendUrl = "https://charmr-jfmc.onrender.com"; 
+    const token = localStorage.getItem("authToken");
+
+    // Redirect to login if no token
+    if (!token) {
+      window.location.href = "login.html";
+    }
+
     const params = new URLSearchParams(window.location.search);
     const girlId = parseInt(params.get('id'));
     const girl = girls.find(g => g.id === girlId);
 
-    const userId = "user1"; // for now, static; later from logged-in user
     const chatBox = document.getElementById('chatBox');
-
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
@@ -129,9 +134,7 @@
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
       msgDiv.textContent = text;
-      if (isTyping) {
-        msgDiv.classList.add('typing');
-      }
+      if (isTyping) msgDiv.classList.add('typing');
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
       return msgDiv;
@@ -141,42 +144,51 @@
       return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    async function loadMessages() {
+      try {
+        const res = await fetch(`${backendUrl}/api/messages/me/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        chatBox.innerHTML = "";
+        data.forEach(msg => appendMessage(msg.text, msg.from === "user" ? "user" : "girl"));
+      } catch (err) {
+        console.error("Error loading messages:", err);
+      }
+    }
+
     async function sendMessage() {
       const input = document.getElementById('messageInput');
       const messageText = input.value.trim();
       if (!messageText) return;
 
-      // Show user's message instantly
       appendMessage(messageText, 'user');
       input.value = '';
 
-      // Show typing bubble
       const typingBubble = appendMessage("...", 'girl', true);
 
       try {
         const res = await fetch(`${backendUrl}/api/chat`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, girlId, message: messageText })
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ girlId, message: messageText })
         });
         const data = await res.json();
 
-        // Random delay to simulate typing
         await new Promise(resolve => setTimeout(resolve, randomDelay()));
-
-        // Remove typing bubble
         typingBubble.remove();
 
-        if (data.reply) {
-          appendMessage(data.reply, 'girl');
-        } else {
-          appendMessage("(No reply received)", 'girl');
-        }
+        appendMessage(data.reply || "(No reply received)", 'girl');
       } catch (err) {
-  console.error("Chat error:", err);
-  // silently fail — no message appended to keep the illusion
+        console.error("Chat error:", err);
+        typingBubble.remove();
       }
     }
+
+    loadMessages();
   </script>
 </body>
 </html>
