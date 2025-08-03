@@ -173,9 +173,8 @@
           appendMessage("(No reply received)", 'girl');
         }
       } catch (err) {
-        console.error("Chat error:", err);
-        typingBubble.remove();
-        appendMessage("(Error contacting AI)", 'girl');
+  console.error("Chat error:", err);
+  // silently fail — no message appended to keep the illusion
       }
     }
   </script>
