@@ -12,7 +12,6 @@
       margin: 0;
       padding: 0;
     }
-
     header {
       background-color: #6a3fb5;
       padding: 15px;
@@ -20,13 +19,11 @@
       text-align: center;
       font-size: 20px;
     }
-
     .message-list {
       padding: 15px;
       max-width: 600px;
       margin: auto;
     }
-
     .message-card {
       display: flex;
       align-items: center;
@@ -38,29 +35,24 @@
       text-decoration: none;
       color: inherit;
     }
-
     .message-card img {
       width: 50px;
       height: 50px;
       border-radius: 50%;
       margin-right: 15px;
     }
-
     .message-info {
       flex: 1;
     }
-
     .message-info strong {
       font-size: 16px;
       color: #333;
     }
-
     .message-info p {
       margin: 5px 0 0;
       font-size: 14px;
       color: #666;
     }
-
     .message-time {
       font-size: 12px;
       color: #999;
@@ -74,9 +66,7 @@
     <p>Loading messages...</p>
   </div>
 
-  <!-- Load girls.js so we can find the ID by name -->
   <script src="girls.js"></script>
-
   <script>
     async function loadMessages() {
       try {
@@ -96,8 +86,6 @@
           const chatMessages = data[chatKey];
           if (chatMessages.length > 0) {
             const lastMessage = chatMessages[chatMessages.length - 1];
-
-            // Extract girlId from chatKey "user1-girlId"
             const girlId = parseInt(chatKey.split('-')[1]);
             const girl = girls.find(g => g.id === girlId);
 
@@ -109,7 +97,7 @@
               <div class="message-info">
                 <strong>${girl ? girl.name : 'Unknown'}</strong>
                 <p>${lastMessage.text}</p>
-                <div class="message-time">${new Date().toLocaleString()}</div>
+                <div class="message-time">${lastMessage.time ? new Date(lastMessage.time).toLocaleString() : ''}</div>
               </div>
             `;
             container.appendChild(card);
