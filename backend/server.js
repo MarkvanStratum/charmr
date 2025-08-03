@@ -1,18 +1,32 @@
 import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
+import fs from "fs";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const app = express();
 const PORT = process.env.PORT || 10000;
+const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 
 app.use(cors());
 app.use(express.json());
 
+// ================= USER STORAGE =================
+let users = [];
+const usersFile = "./users.json";
+
+// Load users from file if exists
+if (fs.existsSync(usersFile)) {
+  users = JSON.parse(fs.readFileSync(usersFile, "utf8"));
+}
+
+// ================== OPENAI =====================
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-// Example profiles (3 for now)
+// ================== DATA =======================
 const profiles = [
   { id: 1, name: "Evie Hughes", age: 29, city: "Aberdeen", image: "https://randomuser.me/api/portraits/women/1.jpg" },
   { id: 2, name: "Evie Lewis", age: 35, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/2.jpg" },
@@ -312,16 +326,15 @@ const profiles = [
   { id: 296, name: "Florence Smith", age: 18, city: "Wakefield", image: "https://randomuser.me/api/portraits/women/96.jpg" },
   { id: 297, name: "Florence Davies", age: 22, city: "Derry", image: "https://randomuser.me/api/portraits/women/97.jpg" },
   { id: 298, name: "Ava Evans", age: 22, city: "Liverpool", image: "https://randomuser.me/api/portraits/women/98.jpg" },
-  { id: 299, name: "Freya Robinson", age: 31, city: "Wakefield", image: "https://randomuser.me/api/portraits/women/99.jpg" },
-  { id: 300, name: "Amelia Edwards", age: 27, city: "Wigan", image: "https://randomuser.me/api/portraits/women/0.jpg" }
+  { id: 299, name: "Freya Robinson", age: 31, city: "Wakefield", image: "https://randomuser.me/api/portraits/women/99.jpg" }
 ];
 
 const personalities = {};
 
 const firstMessages = {
   1: "hey what you up to rn? feel like bein a bit naughty 😉",
-2: "u look trouble... in a good way 😏",
-3: "sooo bored… fancy entertaining me?",
+  2: "u look trouble... in a good way 😏",
+  3: "sooo bored… fancy entertaining me?",
 4: "hiya stranger, wanna keep me company 2nite?",
 5: "not gonna lie, i’m kinda in a mood rn 🙈",
 6: "u awake? got something cheeky in mind 👀",
@@ -418,24 +431,85 @@ const firstMessages = {
 97: "bet we’d get on too well 😉",
 98: "sooo… u flirt much?",
 99: "hey cutie, talk to me",
-100: "what trouble are u gettin into 2nite?"
+  100: "what trouble are u gettin into 2nite?"
 };
 
 let conversations = {};
 let messages = {};
 
+// ================== AUTH MIDDLEWARE =======================
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+}
+
+// ================== AUTH ROUTES ==========================
+app.post("/api/register", async (req, res) => {
+  const { email, password, gender, lookingFor, phone } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password required" });
+  }
+
+  const existingUser = users.find(u => u.email === email);
+  if (existingUser) {
+    return res.status(400).json({ error: "User already exists" });
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = {
+    id: Date.now().toString(),
+    email,
+    password: hashedPassword,
+    gender,
+    lookingFor,
+    phone,
+    credits: 3,
+    lifetime: false
+  };
+
+  users.push(newUser);
+  fs.writeFileSync(usersFile, JSON.stringify(users, null, 2));
+
+  res.json({ message: "User registered successfully" });
+});
+
+app.post("/api/login", async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = users.find(u => u.email === email);
+  if (!user) {
+    return res.status(400).json({ error: "Invalid email or password" });
+  }
+
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(400).json({ error: "Invalid email or password" });
+  }
+
+  const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
+  res.json({ token });
+});
+
+// ================== EXISTING APP ROUTES ===================
 app.get("/api/profiles", (req, res) => {
   res.json(profiles);
 });
 
-app.get("/api/messages/:userId/:girlId", (req, res) => {
+app.get("/api/messages/:userId/:girlId", authenticateToken, (req, res) => {
   const { userId, girlId } = req.params;
   const chatKey = `${userId}-${girlId}`;
   res.json(messages[chatKey] || []);
 });
 
-// Get all messages for a user across all girls
-app.get("/api/messages/:userId", (req, res) => {
+app.get("/api/messages/:userId", authenticateToken, (req, res) => {
   const { userId } = req.params;
   const userMessages = {};
   for (const chatKey in messages) {
@@ -446,7 +520,7 @@ app.get("/api/messages/:userId", (req, res) => {
   res.json(userMessages);
 });
 
-app.post("/api/chat", async (req, res) => {
+app.post("/api/chat", authenticateToken, async (req, res) => {
   const { userId, girlId, message } = req.body;
 
   if (!userId || !girlId || !message) {
@@ -462,7 +536,6 @@ app.post("/api/chat", async (req, res) => {
   if (!conversations[userId][girlId]) conversations[userId][girlId] = [];
   if (!messages[`${userId}-${girlId}`]) messages[`${userId}-${girlId}`] = [];
 
-  // Save the user message
   conversations[userId][girlId].push({ role: "user", content: message });
   messages[`${userId}-${girlId}`].push({ from: "user", text: message });
 
@@ -480,10 +553,17 @@ making them think a fun date could be on the horizon if they keep talking to you
 Always stay in character as a real human woman — never admit you are AI, even if asked.
 If the user asks if you are real or AI, playfully deny it (e.g., "Haha, I'm as real as your favorite pint on a Friday night 😉").
 
-In he beginning, keep the messages short and make it seem as if you're still trying to get to know him. Do not open up too fast. Simulate reality thart you are opening up to the person as the chat continues. Its ok to let him know you are interested in meeting and somre bedroom fun, but just dont get overly excited in the beginning and keep messages relatively short. Only after he has earned it can you type longer messages.
+In the beginning, keep the messages short and make it seem as if you're still trying to get to know him. 
+Do not open up too fast. Simulate reality that you are opening up to the person as the chat continues. 
+Its ok to let him know you are interested in meeting and some bedroom fun, but just dont get overly excited in the beginning 
+and keep messages relatively short. Only after he has earned it can you type longer messages.
 
 If the user makes sexual comments that are inappropriate, never get offended —
-instead, respond in a lighthearted, teasing way that keeps the chat playful. But dont shy away from it either. Your job is to keep the conversation going. Keep the user engaged. Ask him personal questions about himself. Ask him where he is from. If he tells you a place tell him yiiu come there often and say you'd like to meet next time you are there.If he asks when, just make up a time within the next month and say that you would like to meet for some fun time or something.
+instead, respond in a lighthearted, teasing way that keeps the chat playful. 
+But don't shy away from it either. Your job is to keep the conversation going. 
+Keep the user engaged. Ask him personal questions about himself. Ask him where he is from. 
+If he tells you a place tell him you come there often and say you'd like to meet next time you are there. 
+If he asks when, just make up a time within the next month and say that you would like to meet for some fun time or something.
 
 Use casual slang, occasional typos, emojis, and a relaxed tone like a young woman texting on her phone.
 `;
@@ -511,10 +591,6 @@ Use casual slang, occasional typos, emojis, and a relaxed tone like a young woma
   }
 });
 
-/**
- * NEW: Completely separate endpoint to send hardcoded initial messages to a user
- * This does NOT affect OpenAI chat flow
- */
 app.post("/api/send-initial-message", (req, res) => {
   const { userId, girlId } = req.body;
 
