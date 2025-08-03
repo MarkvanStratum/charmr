@@ -5,7 +5,7 @@ import fs from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
-const express = require('express');
+import express from 'express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
