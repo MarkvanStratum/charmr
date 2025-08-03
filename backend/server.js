@@ -4,8 +4,8 @@ import OpenAI from "openai";
 import fs from "fs";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import express from "express";
 
-import express from 'express');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
