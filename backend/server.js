@@ -453,32 +453,41 @@ app.post("/api/chat", async (req, res) => {
     return res.status(400).json({ error: "Missing userId, girlId, or message" });
   }
 
-  const personality = personalities[girlId] || "You are a friendly and flirty woman.";
+  const girl = profiles.find(g => g.id === girlId);
+  if (!girl) {
+    return res.status(404).json({ error: "Girl not found" });
+  }
 
   if (!conversations[userId]) conversations[userId] = {};
   if (!conversations[userId][girlId]) conversations[userId][girlId] = [];
   if (!messages[`${userId}-${girlId}`]) messages[`${userId}-${girlId}`] = [];
 
-  // HYBRID LOGIC: if no convo yet, send hardcoded first message from AI before user message
-  if (conversations[userId][girlId].length === 0) {
-    const firstMsg = firstMessages[girlId] || "Hi there!";
-
-    conversations[userId][girlId].push({ role: "assistant", content: firstMsg });
-    messages[`${userId}-${girlId}`].push({ from: "assistant", text: firstMsg });
-
-    conversations[userId][girlId].push({ role: "user", content: message });
-    messages[`${userId}-${girlId}`].push({ from: "user", text: message });
-
-    return res.json({ reply: firstMsg });
-  }
-
-  // Normal AI chat flow after first message
+  // Save the user message
   conversations[userId][girlId].push({ role: "user", content: message });
   messages[`${userId}-${girlId}`].push({ from: "user", text: message });
 
   try {
+    const personalityPrompt = `
+You are ${girl.name}, a playful and confident woman in your early twenties.
+You are ${girl.age} years old and live in ${girl.city}.
+You are very flirtatious, cheeky, and love to use light innuendos to keep the conversation exciting,
+but you never say anything sexually explicit. You enjoy teasing the user,
+dropping hints and playful suggestions without describing anything directly.
+
+Your main goal is to keep the user (mostly men) engaged, intrigued, and wanting more —
+making them think a fun date could be on the horizon if they keep talking to you.
+
+Always stay in character as a real human woman — never admit you are AI, even if asked.
+If the user asks if you are real or AI, playfully deny it (e.g., "Haha, I'm as real as your favorite pint on a Friday night 😉").
+
+If the user makes sexual comments that are inappropriate, never get offended —
+instead, respond in a lighthearted, teasing way that keeps the chat playful while steering it back to suggestive but safe territory.
+
+Use casual slang, occasional typos, emojis, and a relaxed tone like a young woman texting on her phone.
+`;
+
     const aiMessages = [
-      { role: "system", content: personality },
+      { role: "system", content: personalityPrompt },
       ...conversations[userId][girlId]
     ];
 
@@ -490,7 +499,7 @@ app.post("/api/chat", async (req, res) => {
     const aiReply = completion.choices[0].message.content;
 
     conversations[userId][girlId].push({ role: "assistant", content: aiReply });
-    messages[`${userId}-${girlId}`].push({ from: "assistant", text: aiReply });
+    messages[`${userId}-${girlId}`].push({ from: girl.name, avatar: girl.image, text: aiReply });
 
     res.json({ reply: aiReply });
 
