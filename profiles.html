@@ -72,11 +72,6 @@
 </head>
 <body>
 
-<!-- Notification Banner -->
-<div id="message-notification" class="hidden">
-  <strong id="notif-name">Sophie</strong>: <span id="notif-text">Hey, what are you up to? 😉</span>
-</div>
-
 <nav style="display:flex; justify-content:flex-end; align-items:center; padding:10px 20px; background:#f0f0f0; border-bottom:1px solid #ccc;">
   <a href="inbox.html" title="Inbox" style="margin-right:20px; color:#333; font-size:24px; text-decoration:none;">
     &#9993;
@@ -96,12 +91,11 @@
 
 <script src="girls.js"></script>
 <script>
-  const backendUrl = "https://charmr-jfmc.onrender.com"; // Backend URL
-  const userId = "user1"; // Static user for now
+  const backendUrl = "https://charmr-jfmc.onrender.com";
+  const userId = "user1";
 
-  // Function to send initial messages from random girls
+  // Send initial messages from random girls
   async function sendInitialMessagesRandom(profiles, count = 2) {
-    // Shuffle profiles
     const shuffled = [...profiles].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, count);
 
@@ -120,7 +114,6 @@
     }
   }
 
-  // Load profiles from backend and display them
   async function loadProfiles() {
     try {
       const res = await fetch(`${backendUrl}/api/profiles`);
@@ -137,11 +130,15 @@
           <h3>${profile.name}</h3>
           <p>Age: ${profile.age}</p>
           <p>City: ${profile.city}</p>
+          <div class="btn-group">
+            <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
+            <button onclick="window.location.href='profile.html?id=${profile.id}'">View Profile</button>
+          </div>
         `;
         container.appendChild(card);
       });
 
-      // Send random initial messages after loading profiles
+      // After loading profiles, send initial messages from 2 random girls
       await sendInitialMessagesRandom(profiles, 2);
 
     } catch (err) {
@@ -151,50 +148,6 @@
 
   window.onload = loadProfiles;
 </script>
-
-<style>
-  .notification-popup {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    background: white;
-    color: black;
-    padding: 10px 15px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    max-width: 280px;
-    animation: slideIn 0.4s ease forwards;
-    z-index: 1000;
-  }
-  .notif-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-  }
-  .notif-text {
-    display: flex;
-    flex-direction: column;
-  }
-  .notif-text strong {
-    font-size: 14px;
-    margin-bottom: 3px;
-  }
-  .notif-text p {
-    font-size: 13px;
-    margin: 0;
-    color: #555;
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(100%); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-</style>
 
 </body>
 </html>
