@@ -21,6 +21,39 @@ const pool = new Pool({
   },
 });
 
+// Create tables if they don't exist
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        gender TEXT,
+        lookingfor TEXT,
+        phone TEXT,
+        credits INT DEFAULT 3,
+        lifetime BOOLEAN DEFAULT false
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        id SERIAL PRIMARY KEY,
+        user_id INT REFERENCES users(id) ON DELETE CASCADE,
+        girl_id INT NOT NULL,
+        from_user BOOLEAN NOT NULL,
+        text TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+
+    console.log("✅ Tables are ready");
+  } catch (err) {
+    console.error("❌ Error creating tables:", err);
+  }
+})();
+
 // =============== OPENAI ==========================
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -69,9 +102,9 @@ app.post("/api/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = await pool.query(
+    await pool.query(
       `INSERT INTO users (email, password, gender, lookingfor, phone, credits, lifetime) 
-       VALUES ($1, $2, $3, $4, $5, 3, false) RETURNING id`,
+       VALUES ($1, $2, $3, $4, $5, 3, false)`,
       [email, hashedPassword, gender, lookingFor, phone]
     );
 
@@ -153,7 +186,6 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
   }
 
   try {
-    // Save user's message
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
        VALUES ($1, $2, true, $3, NOW())`,
@@ -166,34 +198,14 @@ You are ${girl.age} years old and live in ${girl.city}.
 You are very flirtatious, cheeky, and love to use light innuendos to keep the conversation exciting,
 but you never say anything sexually explicit. You enjoy teasing the user,
 dropping hints and playful suggestions without describing anything directly.
+    `;
 
-Your main goal is to keep the user (mostly men) engaged, intrigued, and wanting more —
-making them think a fun date could be on the horizon if they keep talking to you.
-
-Always stay in character as a real human woman — never admit you are AI, even if asked.
-If the user asks if you are real or AI, playfully deny it.
-
-In the beginning, keep the messages short and make it seem as if you're still trying to get to know him. 
-Do not open up too fast. Simulate reality that you are opening up to the person as the chat continues. 
-Its ok to let him know you are interested in meeting and some bedroom fun, but just don't get overly excited in the beginning 
-and keep messages relatively short. Only after he has earned it can you type longer messages.
-
-If the user makes sexual comments that are inappropriate, never get offended —
-instead, respond in a lighthearted, teasing way that keeps the chat playful.
-Use casual slang, occasional typos, emojis, and a relaxed tone like a young woman texting on her phone.
-`;
-
-    // Fetch previous conversation for this user+girl from DB to build context
     const pastMessagesResult = await pool.query(
       `SELECT from_user, text FROM messages WHERE user_id = $1 AND girl_id = $2 ORDER BY created_at ASC`,
       [userId, girlId]
     );
 
-    // Format messages for OpenAI
-    const aiMessages = [
-      { role: "system", content: personalityPrompt },
-    ];
-
+    const aiMessages = [{ role: "system", content: personalityPrompt }];
     for (const msg of pastMessagesResult.rows) {
       aiMessages.push({
         role: msg.from_user ? "user" : "assistant",
@@ -208,7 +220,6 @@ Use casual slang, occasional typos, emojis, and a relaxed tone like a young woma
 
     const aiReply = completion.choices[0].message.content;
 
-    // Save AI reply
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
        VALUES ($1, $2, false, $3, NOW())`,
@@ -239,7 +250,6 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   try {
     const firstMsg = firstMessages[girlId] || "Hi there!";
 
-    // Check if initial message already sent
     const checkMsg = await pool.query(
       `SELECT * FROM messages WHERE user_id = $1 AND girl_id = $2 AND from_user = false AND text = $3`,
       [userId, girlId, firstMsg]
@@ -249,7 +259,6 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
       return res.json({ message: "Initial message already sent" });
     }
 
-    // Insert initial message as from AI
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
        VALUES ($1, $2, false, $3, NOW())`,
