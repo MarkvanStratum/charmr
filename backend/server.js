@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import OpenAI from "openai";
 import fs from "fs";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const app = express();
