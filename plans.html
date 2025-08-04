@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Get Premium – Charmr</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .plans-container {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #ef476f;
+      margin-bottom: 30px;
+    }
+    .plan {
+      border: 2px solid #ef476f;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .plan h2 {
+      margin: 0 0 10px;
+      color: #ef476f;
+    }
+    .plan p {
+      margin: 0 0 15px;
+      color: #333;
+    }
+    .plan button {
+      padding: 10px 20px;
+      background-color: #ef476f;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .plan button:hover {
+      background-color: #d43d61;
+    }
+  </style>
+</head>
+<body>
+  <div class="plans-container">
+    <h1>Upgrade to Premium</h1>
+
+    <div class="plan">
+      <h2>10 Messages</h2>
+      <p>£5 – Just a little tease.</p>
+      <button onclick="buyPlan('10')">Buy Now</button>
+    </div>
+
+    <div class="plan">
+      <h2>50 Messages</h2>
+      <p>£20 – Stay longer and flirt more.</p>
+      <button onclick="buyPlan('50')">Buy Now</button>
+    </div>
+
+    <div class="plan">
+      <h2>Unlimited Messages</h2>
+      <p>£99 – Chat with any girl, any time.</p>
+      <button onclick="buyPlan('unlimited')">Buy Now</button>
+    </div>
+  </div>
+
+  <script>
+    async function buyPlan(planType) {
+      const token = localStorage.getItem("authToken");
+      if (!token) {
+        window.location.href = "login.html";
+        return;
+      }
+
+      try {
+        const res = await fetch("https://charmr-jfmc.onrender.com/api/create-checkout-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ plan: planType })
+        });
+
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          alert("Something went wrong. Please try again.");
+        }
+      } catch (err) {
+        console.error("Checkout error:", err);
+        alert("Unable to start checkout. Please try again.");
+      }
+    }
+  </script>
+</body>
+</html>
