@@ -130,6 +130,22 @@ app.post("/api/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
+    // ✅ Seed initial messages if none exist for this user
+    const msgCheck = await pool.query("SELECT 1 FROM messages WHERE user_id = $1 LIMIT 1", [user.id]);
+    if (msgCheck.rows.length === 0) {
+      // pick 3-5 random girls
+      const shuffled = [...profiles].sort(() => 0.5 - Math.random());
+      const selected = shuffled.slice(0, Math.floor(Math.random() * 3) + 3);
+      for (const girl of selected) {
+        const text = firstMessages[girl.id] || "Hi there!";
+        await pool.query(
+          `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
+           VALUES ($1, $2, false, $3, NOW())`,
+          [user.id, girl.id, text]
+        );
+      }
+    }
+
     const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
     res.json({ token });
   } catch (err) {
@@ -143,7 +159,7 @@ app.get("/api/profiles", (req, res) => {
   res.json(profiles);
 });
 
-// ✅ FIXED: Group messages by girlId for frontend compatibility
+// ✅ Group messages by girlId for frontend compatibility
 app.get("/api/messages", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -152,7 +168,6 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
       [userId]
     );
 
-    // Group messages into { "userId-girlId": [messages] }
     const grouped = {};
     for (const msg of result.rows) {
       const chatKey = `${userId}-${msg.girl_id}`;
@@ -285,6 +300,24 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     res.json({ message: "Initial message sent", firstMsg });
   } catch (err) {
     console.error("Initial message error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ New endpoint: send one random girl message to logged-in user
+app.post("/api/send-random-message", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  try {
+    const girl = profiles[Math.floor(Math.random() * profiles.length)];
+    const text = firstMessages[girl.id] || "Hi there 😉";
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text, created_at)
+       VALUES ($1, $2, false, $3, NOW())`,
+      [userId, girl.id, text]
+    );
+    res.json({ message: "Random message sent", girl });
+  } catch (err) {
+    console.error("Random message error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
