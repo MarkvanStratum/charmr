@@ -117,7 +117,6 @@
     const backendUrl = "https://charmr-jfmc.onrender.com"; 
     const token = localStorage.getItem("authToken");
 
-    // Redirect to login if no token
     if (!token) {
       window.location.href = "login.html";
     }
@@ -146,12 +145,12 @@
 
     async function loadMessages() {
       try {
-        const res = await fetch(`${backendUrl}/api/messages/me/${girlId}`, {
+        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
         chatBox.innerHTML = "";
-        data.forEach(msg => appendMessage(msg.text, msg.from === "user" ? "user" : "girl"));
+        data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
       } catch (err) {
         console.error("Error loading messages:", err);
       }
@@ -162,9 +161,31 @@
       const messageText = input.value.trim();
       if (!messageText) return;
 
+      try {
+        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const existing = await res.json();
+        const sentCount = existing.filter(m => m.from_user).length;
+
+        if (sentCount >= 3) {
+          appendMessage(`You've run out of free messages. Get premium to continue chatting with ${girl.name}. Visit the plans page.`, 'girl');
+          const link = document.createElement('a');
+          link.href = 'plans.html';
+          link.textContent = 'Upgrade Now';
+          link.style.color = '#ef476f';
+          link.style.marginTop = '5px';
+          chatBox.appendChild(link);
+          chatBox.scrollTop = chatBox.scrollHeight;
+          return;
+        }
+      } catch (err) {
+        console.error("Credit check error:", err);
+        return;
+      }
+
       appendMessage(messageText, 'user');
       input.value = '';
-
       const typingBubble = appendMessage("...", 'girl', true);
 
       try {
