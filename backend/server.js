@@ -59,7 +59,68 @@ const profiles = [
   { id: 1, name: "Evie Hughes", age: 29, city: "Aberdeen", image: "https://randomuser.me/api/portraits/women/1.jpg" },
   { id: 2, name: "Evie Lewis", age: 35, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/2.jpg" },
   { id: 3, name: "Grace Johnson", age: 20, city: "London", image: "https://randomuser.me/api/portraits/women/3.jpg" },
-  
+  { id: 4, name: "Amelia Davies", age: 27, city: "Swansea", image: "https://randomuser.me/api/portraits/women/4.jpg" },
+  { id: 5, name: "Charlotte Hall", age: 37, city: "Glasgow", image: "https://randomuser.me/api/portraits/women/5.jpg" },
+  { id: 6, name: "Evie White", age: 25, city: "Exeter", image: "https://randomuser.me/api/portraits/women/6.jpg" },
+  { id: 7, name: "Sophie Evans", age: 23, city: "Bristol", image: "https://randomuser.me/api/portraits/women/7.jpg" },
+  { id: 8, name: "Isla Wilson", age: 40, city: "Belfast", image: "https://randomuser.me/api/portraits/women/8.jpg" },
+  { id: 9, name: "Amelia Lewis", age: 22, city: "Norwich", image: "https://randomuser.me/api/portraits/women/9.jpg" },
+  { id: 10, name: "Freya Evans", age: 37, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/10.jpg" },
+  { id: 11, name: "Sophie Williams", age: 36, city: "Cambridge", image: "https://randomuser.me/api/portraits/women/11.jpg" },
+  { id: 12, name: "Scarlett Thomas", age: 21, city: "Bristol", image: "https://randomuser.me/api/portraits/women/12.jpg" },
+  { id: 13, name: "Daisy White", age: 37, city: "Basingstoke", image: "https://randomuser.me/api/portraits/women/13.jpg" },
+  { id: 14, name: "Freya Wright", age: 23, city: "Wolverhampton", image: "https://randomuser.me/api/portraits/women/14.jpg" },
+  { id: 15, name: "Freya Jones", age: 36, city: "London", image: "https://randomuser.me/api/portraits/women/15.jpg" },
+  { id: 16, name: "Sophie White", age: 40, city: "Swindon", image: "https://randomuser.me/api/portraits/women/16.jpg" },
+  { id: 17, name: "Olivia Brown", age: 27, city: "Leicester", image: "https://randomuser.me/api/portraits/women/17.jpg" },
+  { id: 18, name: "Olivia Evans", age: 37, city: "Worcester", image: "https://randomuser.me/api/portraits/women/18.jpg" },
+  { id: 19, name: "Evie Wilson", age: 19, city: "Coventry", image: "https://randomuser.me/api/portraits/women/19.jpg" },
+  { id: 20, name: "Sophie Thompson", age: 26, city: "Cambridge", image: "https://randomuser.me/api/portraits/women/20.jpg" },
+  { id: 21, name: "Sophia Hall", age: 31, city: "Dundee", image: "https://randomuser.me/api/portraits/women/21.jpg" },
+  { id: 22, name: "Ella Hughes", age: 20, city: "York", image: "https://randomuser.me/api/portraits/women/22.jpg" },
+  { id: 23, name: "Amelia Wright", age: 18, city: "Cardiff", image: "https://randomuser.me/api/portraits/women/23.jpg" },
+  { id: 24, name: "Florence Edwards", age: 34, city: "Bath", image: "https://randomuser.me/api/portraits/women/24.jpg" },
+  { id: 25, name: "Sophia Wilson", age: 21, city: "Stoke-on-Trent", image: "https://randomuser.me/api/portraits/women/25.jpg" },
+  { id: 26, name: "Lily White", age: 20, city: "Blackpool", image: "https://randomuser.me/api/portraits/women/26.jpg" },
+  { id: 27, name: "Ava Brown", age: 38, city: "Milton Keynes", image: "https://randomuser.me/api/portraits/women/27.jpg" },
+  { id: 28, name: "Daisy Lewis", age: 20, city: "Basingstoke", image: "https://randomuser.me/api/portraits/women/28.jpg" },
+  { id: 29, name: "Ava Walker", age: 29, city: "Slough", image: "https://randomuser.me/api/portraits/women/29.jpg" },
+  { id: 30, name: "Jessica Brown", age: 35, city: "Newport", image: "https://randomuser.me/api/portraits/women/30.jpg" },
+  { id: 31, name: "Daisy Smith", age: 19, city: "Belfast", image: "https://randomuser.me/api/portraits/women/31.jpg" },
+  { id: 32, name: "Mia Wright", age: 24, city: "Dundee", image: "https://randomuser.me/api/portraits/women/32.jpg" },
+  { id: 33, name: "Isla Thompson", age: 34, city: "Leeds", image: "https://randomuser.me/api/portraits/women/33.jpg" },
+  { id: 34, name: "Olivia Johnson", age: 40, city: "Newport", image: "https://randomuser.me/api/portraits/women/34.jpg" },
+  { id: 35, name: "Sophie Thompson", age: 37, city: "Belfast", image: "https://randomuser.me/api/portraits/women/35.jpg" },
+  { id: 36, name: "Amelia Lewis", age: 19, city: "Bath", image: "https://randomuser.me/api/portraits/women/36.jpg" },
+  { id: 37, name: "Grace White", age: 37, city: "Oxford", image: "https://randomuser.me/api/portraits/women/37.jpg" },
+  { id: 38, name: "Ella Evans", age: 27, city: "Slough", image: "https://randomuser.me/api/portraits/women/38.jpg" },
+  { id: 39, name: "Sophie Edwards", age: 18, city: "Reading", image: "https://randomuser.me/api/portraits/women/39.jpg" },
+  { id: 40, name: "Charlotte Wilson", age: 23, city: "Luton", image: "https://randomuser.me/api/portraits/women/40.jpg" },
+  { id: 41, name: "Daisy White", age: 40, city: "Swindon", image: "https://randomuser.me/api/portraits/women/41.jpg" },
+  { id: 42, name: "Poppy White", age: 40, city: "Exeter", image: "https://randomuser.me/api/portraits/women/42.jpg" },
+  { id: 43, name: "Amelia Evans", age: 32, city: "Slough", image: "https://randomuser.me/api/portraits/women/43.jpg" },
+  { id: 44, name: "Ella Johnson", age: 34, city: "Milton Keynes", image: "https://randomuser.me/api/portraits/women/44.jpg" },
+  { id: 45, name: "Mia Johnson", age: 22, city: "Middlesbrough", image: "https://randomuser.me/api/portraits/women/45.jpg" },
+  { id: 46, name: "Charlotte Walker", age: 40, city: "Kingston upon Hull", image: "https://randomuser.me/api/portraits/women/46.jpg" },
+  { id: 47, name: "Emily Johnson", age: 24, city: "Telford", image: "https://randomuser.me/api/portraits/women/47.jpg" },
+  { id: 48, name: "Freya Brown", age: 29, city: "Peterborough", image: "https://randomuser.me/api/portraits/women/48.jpg" },
+  { id: 49, name: "Charlotte White", age: 39, city: "Nottingham", image: "https://randomuser.me/api/portraits/women/49.jpg" },
+  { id: 50, name: "Florence Evans", age: 19, city: "Nottingham", image: "https://randomuser.me/api/portraits/women/50.jpg" },
+  { id: 51, name: "Evie Wilson", age: 27, city: "Cardiff", image: "https://randomuser.me/api/portraits/women/51.jpg" },
+  { id: 52, name: "Lily Thomas", age: 25, city: "Newcastle", image: "https://randomuser.me/api/portraits/women/52.jpg" },
+  { id: 53, name: "Daisy Hughes", age: 34, city: "London", image: "https://randomuser.me/api/portraits/women/53.jpg" },
+  { id: 54, name: "Emily Wilson", age: 24, city: "Birmingham", image: "https://randomuser.me/api/portraits/women/54.jpg" },
+  { id: 55, name: "Isla Brown", age: 21, city: "Colchester", image: "https://randomuser.me/api/portraits/women/55.jpg" },
+  { id: 56, name: "Poppy Taylor", age: 25, city: "Manchester", image: "https://randomuser.me/api/portraits/women/56.jpg" },
+  { id: 57, name: "Daisy Smith", age: 28, city: "Stockport", image: "https://randomuser.me/api/portraits/women/57.jpg" },
+  { id: 58, name: "Isabella Walker", age: 40, city: "Bolton", image: "https://randomuser.me/api/portraits/women/58.jpg" },
+  { id: 59, name: "Isla Williams", age: 21, city: "Inverness", image: "https://randomuser.me/api/portraits/women/59.jpg" },
+  { id: 60, name: "Isabella Wright", age: 39, city: "Preston", image: "https://randomuser.me/api/portraits/women/60.jpg" },
+  { id: 61, name: "Charlotte Davies", age: 35, city: "Ipswich", image: "https://randomuser.me/api/portraits/women/61.jpg" },
+  { id: 62, name: "Amelia Davies", age: 26, city: "Newcastle", image: "https://randomuser.me/api/portraits/women/62.jpg" },
+  { id: 63, name: "Isla Wilson", age: 25, city: "Peterborough", image: "https://randomuser.me/api/portraits/women/63.jpg" },
+  { id: 64, name: "Isabella Hall", age: 21, city: "Liverpool", image: "https://randomuser.me/api/portraits/women/64.jpg" },
+  { id: 65, name: "Poppy Brown", age: 37, city: "Kingston upon Hull", image: "https://randomuser.me/api/
 ];
 
 const firstMessages = {
@@ -230,30 +291,21 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
 });
 app.post("/api/create-checkout-session", authenticateToken, async (req, res) => {
   const { plan } = req.body;
-
   const priceMap = {
-    "10": "price_1RsLy5CVovIV0BJMYTTwTnEr",        // £5 - Subscription
-    "50": "price_1RsLz3CVovIV0BJMmoMBkE2F",        // £20 - Subscription
-    "unlimited": "price_1RsM0LCVovIV0BJMbz2hArkY"  // £99 - One-time
-  };
-
-  const modeMap = {
-    "10": "subscription",
-    "50": "subscription",
-    "unlimited": "payment"
+    "10": "price_1RsLy5CVovIV0BJMYTTwTnEr",        // £5
+    "50": "price_1RsLz3CVovIV0BJMmoMBkE2F",        // £20
+    "unlimited": "price_1RsM0LCVovIV0BJMbz2hArkY"  // £99
   };
 
   const selectedPrice = priceMap[plan];
-  const selectedMode = modeMap[plan];
-
-  if (!selectedPrice || !selectedMode) {
+  if (!selectedPrice) {
     return res.status(400).json({ error: "Invalid plan selected" });
   }
 
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      mode: selectedMode,
+      mode: "subscription",
       line_items: [
         {
           price: selectedPrice,
@@ -267,7 +319,7 @@ app.post("/api/create-checkout-session", authenticateToken, async (req, res) => 
 
     res.json({ url: session.url });
   } catch (error) {
-    console.error("Stripe checkout error:", error?.raw || error.message || error);
+    console.error("Stripe checkout error:", error);
     res.status(500).json({ error: "Failed to create checkout session" });
   }
 });
