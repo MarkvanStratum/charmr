@@ -14,6 +14,35 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 
+import bodyParser from "body-parser"; // Add this at the top if not present
+app.post('/api/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('❌ Webhook signature verification failed.', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object;
+      console.log('✅ Payment received for:', session.customer_email);
+      // TODO: Lookup user by email and update their credits/lifetime status
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.status(200).send('Received');
+});
+
+
 app.use(cors());
 // Stripe needs raw body for webhooks
 app.use((req, res, next) => {
@@ -651,32 +680,5 @@ app.post("/api/create-checkout-session", authenticateToken, async (req, res) => 
   }
 });
 
-import bodyParser from "body-parser"; // Add this at the top if not present
-app.post('/api/webhook', express.raw({ type: 'application/json' }), (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
-
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-  } catch (err) {
-    console.error('❌ Webhook signature verification failed.', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object;
-      console.log('✅ Payment received for:', session.customer_email);
-      // TODO: Lookup user by email and update their credits/lifetime status
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  res.status(200).send('Received');
-});
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
