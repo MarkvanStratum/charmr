@@ -87,6 +87,31 @@ function authenticateToken(req, res, next) {
   });
 }
 
+// --- New: Keep track of active intervals per user ---
+const activeMessageIntervals = new Map();
+
+// Helper: send a random first message from a random girl to a user
+async function sendRandomGirlMessage(userId) {
+  // Get all girl IDs from firstMessages keys (numbers)
+  const girlIds = Object.keys(firstMessages).map(k => Number(k));
+  if (girlIds.length === 0) return;
+
+  // Pick a random girl ID (allow repeats)
+  const randomGirlId = girlIds[Math.floor(Math.random() * girlIds.length)];
+  const msgText = firstMessages[randomGirlId];
+
+  try {
+    // Insert the message for that user and girl
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text, created_at)
+       VALUES ($1, $2, false, $3, NOW())`,
+      [userId, randomGirlId, msgText]
+    );
+  } catch (err) {
+    console.error("Error sending random girl message:", err);
+  }
+}
+
 // =============== AUTH ROUTES ======================
 app.post("/api/register", async (req, res) => {
   const { email, password, gender, lookingFor, phone } = req.body;
@@ -130,23 +155,50 @@ app.post("/api/login", async (req, res) => {
       return res.status(400).json({ error: "Invalid email or password" });
     }
 
-    // ✅ Seed initial messages if none exist for this user
-    const msgCheck = await pool.query("SELECT 1 FROM messages WHERE user_id = $1 LIMIT 1", [user.id]);
-    if (msgCheck.rows.length === 0) {
-      // pick 3-5 random girls
-      const shuffled = [...profiles].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, Math.floor(Math.random() * 3) + 3);
-      for (const girl of selected) {
-        const text = firstMessages[girl.id] || "Hi there!";
-        await pool.query(
-          `INSERT INTO messages (user_id, girl_id, from_user, text, created_at) 
-           VALUES ($1, $2, false, $3, NOW())`,
-          [user.id, girl.id, text]
-        );
-      }
+    const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
+
+    // --- Start random message interval for this user ---
+    if (activeMessageIntervals.has(user.id)) {
+      clearTimeout(activeMessageIntervals.get(user.id).timeout);
+      clearInterval(activeMessageIntervals.get(user.id).interval);
+      activeMessageIntervals.delete(user.id);
     }
 
-    const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
+    // Timer stop after 30 minutes
+    const stopTimeMs = 30 * 60 * 1000;
+
+    // Recursive function to send messages at random intervals 12–20 sec
+    function scheduleNextMessage() {
+      const intervalMs = 12000 + Math.floor(Math.random() * 8000); // 12k-20k ms
+
+      const interval = setTimeout(async () => {
+        await sendRandomGirlMessage(user.id);
+        scheduleNextMessage();
+      }, intervalMs);
+
+      // Store this timeout so we can clear it if needed
+      activeMessageIntervals.get(user.id).timeout = interval;
+    }
+
+    // Initialize entry
+    activeMessageIntervals.set(user.id, { timeout: null, interval: null });
+
+    // Start scheduling
+    scheduleNextMessage();
+
+    // Stop after 30 minutes
+    const stopTimeout = setTimeout(() => {
+      const entry = activeMessageIntervals.get(user.id);
+      if (entry) {
+        if (entry.timeout) clearTimeout(entry.timeout);
+        if (entry.interval) clearInterval(entry.interval);
+        activeMessageIntervals.delete(user.id);
+      }
+    }, stopTimeMs);
+
+    // Save the stopTimeout so we can clear on logout or relogin if needed
+    activeMessageIntervals.get(user.id).interval = stopTimeout;
+
     res.json({ token });
   } catch (err) {
     console.error("Login error:", err);
@@ -159,7 +211,7 @@ app.get("/api/profiles", (req, res) => {
   res.json(profiles);
 });
 
-// ✅ Group messages by girlId for frontend compatibility
+// ✅ FIXED: Group messages by girlId for frontend compatibility
 app.get("/api/messages", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
@@ -168,6 +220,7 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
       [userId]
     );
 
+    // Group messages into { "userId-girlId": [messages] }
     const grouped = {};
     for (const msg of result.rows) {
       const chatKey = `${userId}-${msg.girl_id}`;
@@ -300,24 +353,6 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     res.json({ message: "Initial message sent", firstMsg });
   } catch (err) {
     console.error("Initial message error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// ✅ New endpoint: send one random girl message to logged-in user
-app.post("/api/send-random-message", authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  try {
-    const girl = profiles[Math.floor(Math.random() * profiles.length)];
-    const text = firstMessages[girl.id] || "Hi there 😉";
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text, created_at)
-       VALUES ($1, $2, false, $3, NOW())`,
-      [userId, girl.id, text]
-    );
-    res.json({ message: "Random message sent", girl });
-  } catch (err) {
-    console.error("Random message error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
