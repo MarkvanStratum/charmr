@@ -62,28 +62,22 @@
           throw new Error("Unauthorized or failed to fetch");
         }
 
-        const data = await res.json(); // data is an array of messages
+        const data = await res.json(); // data is an object, not array
 
-        if (!data.length) {
+        if (Object.keys(data).length === 0) {
           document.getElementById('messageList').innerHTML = '<p>No messages yet.</p>';
           return;
         }
 
-        // Group messages by girl_id
-        const grouped = data.reduce((acc, msg) => {
-          if (!acc[msg.girl_id]) acc[msg.girl_id] = [];
-          acc[msg.girl_id].push(msg);
-          return acc;
-        }, {});
-
         const container = document.getElementById('messageList');
         container.innerHTML = '';
 
-        for (const girlIdStr in grouped) {
-          const girlId = Number(girlIdStr);
-          const msgs = grouped[girlId];
+        for (const key in data) {
+          const msgs = data[key];
           const lastMessage = msgs[msgs.length - 1];
 
+          // Extract girlId from "userId-girlId"
+          const girlId = Number(key.split('-')[1]);
           const girl = girls.find(g => g.id === girlId) || { name: 'Unknown', image: 'default-avatar.png' };
 
           const card = document.createElement('a');
@@ -94,7 +88,7 @@
             <div class="message-info">
               <strong>${girl.name}</strong>
               <p>${lastMessage.text}</p>
-              <div class="message-time">${new Date(lastMessage.created_at).toLocaleString()}</div>
+              <div class="message-time">${new Date(lastMessage.time).toLocaleString()}</div>
             </div>
           `;
           container.appendChild(card);
