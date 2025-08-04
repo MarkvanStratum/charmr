@@ -87,31 +87,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// --- New: Keep track of active intervals per user ---
-const activeMessageIntervals = new Map();
-
-// Helper: send a random first message from a random girl to a user
-async function sendRandomGirlMessage(userId) {
-  // Get all girl IDs from firstMessages keys (numbers)
-  const girlIds = Object.keys(firstMessages).map(k => Number(k));
-  if (girlIds.length === 0) return;
-
-  // Pick a random girl ID (allow repeats)
-  const randomGirlId = girlIds[Math.floor(Math.random() * girlIds.length)];
-  const msgText = firstMessages[randomGirlId];
-
-  try {
-    // Insert the message for that user and girl
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text, created_at)
-       VALUES ($1, $2, false, $3, NOW())`,
-      [userId, randomGirlId, msgText]
-    );
-  } catch (err) {
-    console.error("Error sending random girl message:", err);
-  }
-}
-
 // =============== AUTH ROUTES ======================
 app.post("/api/register", async (req, res) => {
   const { email, password, gender, lookingFor, phone } = req.body;
@@ -156,49 +131,6 @@ app.post("/api/login", async (req, res) => {
     }
 
     const token = jwt.sign({ id: user.id, email: user.email }, SECRET_KEY, { expiresIn: "7d" });
-
-    // --- Start random message interval for this user ---
-    if (activeMessageIntervals.has(user.id)) {
-      clearTimeout(activeMessageIntervals.get(user.id).timeout);
-      clearInterval(activeMessageIntervals.get(user.id).interval);
-      activeMessageIntervals.delete(user.id);
-    }
-
-    // Timer stop after 30 minutes
-    const stopTimeMs = 30 * 60 * 1000;
-
-    // Recursive function to send messages at random intervals 12–20 sec
-    function scheduleNextMessage() {
-      const intervalMs = 12000 + Math.floor(Math.random() * 8000); // 12k-20k ms
-
-      const interval = setTimeout(async () => {
-        await sendRandomGirlMessage(user.id);
-        scheduleNextMessage();
-      }, intervalMs);
-
-      // Store this timeout so we can clear it if needed
-      activeMessageIntervals.get(user.id).timeout = interval;
-    }
-
-    // Initialize entry
-    activeMessageIntervals.set(user.id, { timeout: null, interval: null });
-
-    // Start scheduling
-    scheduleNextMessage();
-
-    // Stop after 30 minutes
-    const stopTimeout = setTimeout(() => {
-      const entry = activeMessageIntervals.get(user.id);
-      if (entry) {
-        if (entry.timeout) clearTimeout(entry.timeout);
-        if (entry.interval) clearInterval(entry.interval);
-        activeMessageIntervals.delete(user.id);
-      }
-    }, stopTimeMs);
-
-    // Save the stopTimeout so we can clear on logout or relogin if needed
-    activeMessageIntervals.get(user.id).interval = stopTimeout;
-
     res.json({ token });
   } catch (err) {
     console.error("Login error:", err);
@@ -353,6 +285,42 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     res.json({ message: "Initial message sent", firstMsg });
   } catch (err) {
     console.error("Initial message error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// === NEW: Notifications endpoint for profile page ===
+app.get("/api/notifications", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // For each girl, get the last AI message (from_user = false)
+    // This query gets last message per girl for the user
+    const result = await pool.query(
+      `
+      SELECT DISTINCT ON (girl_id) girl_id, text, created_at
+      FROM messages
+      WHERE user_id = $1 AND from_user = false
+      ORDER BY girl_id, created_at DESC
+      `,
+      [userId]
+    );
+
+    // Map results with profiles data
+    const notifications = result.rows.map(row => {
+      const girlProfile = profiles.find(g => g.id === row.girl_id);
+      return {
+        girlId: row.girl_id,
+        name: girlProfile?.name || "Unknown",
+        image: girlProfile?.image || null,
+        lastMessage: row.text,
+        time: row.created_at,
+      };
+    });
+
+    res.json(notifications);
+  } catch (err) {
+    console.error("Notifications error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
