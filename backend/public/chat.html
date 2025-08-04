@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .chat-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      background-color: #ef476f;
+      color: white;
+      padding: 10px;
+    }
+    .chat-header img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 10px;
+      border: 2px solid white;
+    }
+    .chat-box {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background-color: #fff0f3;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      margin: 8px 0;
+      padding: 8px 12px;
+      border-radius: 15px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .message.user {
+      background-color: #ef476f;
+      color: white;
+      align-self: flex-end;
+    }
+    .message.girl {
+      background-color: #f1f1f1;
+      color: black;
+      align-self: flex-start;
+    }
+    .message.typing {
+      font-style: italic;
+      color: #888;
+      animation: blink 1s infinite;
+      max-width: 40px;
+      padding: 8px;
+      text-align: center;
+      border-radius: 50%;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      font-size: 14px;
+    }
+    .chat-input button {
+      background-color: #ef476f;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    .chat-input button:hover {
+      background-color: #d43d61;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img id="chatPhoto" src="" alt="Girl Photo">
+      <h2 id="chatName"></h2>
+    </div>
+    <div class="chat-box" id="chatBox"></div>
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type a message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script src="girls.js"></script>
+  <script>
+    const backendUrl = "https://charmr-jfmc.onrender.com"; 
+    const token = localStorage.getItem("authToken");
+
+    if (!token) {
+      window.location.href = "login.html";
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const girlId = parseInt(params.get('id'));
+    const girl = girls.find(g => g.id === girlId);
+
+    const chatBox = document.getElementById('chatBox');
+    document.getElementById('chatName').textContent = girl.name;
+    document.getElementById('chatPhoto').src = girl.image;
+
+    function appendMessage(text, sender, isTyping = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      msgDiv.textContent = text;
+      if (isTyping) msgDiv.classList.add('typing');
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return msgDiv;
+    }
+
+    function randomDelay(min = 700, max = 2000) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    async function loadMessages() {
+      try {
+        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        chatBox.innerHTML = "";
+        data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
+      } catch (err) {
+        console.error("Error loading messages:", err);
+      }
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const messageText = input.value.trim();
+      if (!messageText) return;
+
+      try {
+        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const existing = await res.json();
+        const sentCount = existing.filter(m => m.from_user).length;
+
+        if (sentCount >= 3) {
+          appendMessage(`Hey, I'd really like to meet you for some bedroom fun ;) ;), but you're out of credits. Click below for Premium and Let's meet up! OK? :) ;)`, 'girl');
+          const link = document.createElement('a');
+          link.href = 'plans.html';
+          link.textContent = '💎 Get Premium';
+          link.style.display = 'block';
+          link.style.color = '#ef476f';
+          link.style.marginTop = '5px';
+          link.style.textAlign = 'right';
+          chatBox.appendChild(link);
+          chatBox.scrollTop = chatBox.scrollHeight;
+          return;
+        }
+      } catch (err) {
+        console.error("Credit check error:", err);
+        return;
+      }
+
+      appendMessage(messageText, 'user');
+      input.value = '';
+      const typingBubble = appendMessage("...", 'girl', true);
+
+      try {
+        const res = await fetch(`${backendUrl}/api/chat`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ girlId, message: messageText })
+        });
+        const data = await res.json();
+
+        await new Promise(resolve => setTimeout(resolve, randomDelay()));
+        typingBubble.remove();
+
+        appendMessage(data.reply || "(No reply received)", 'girl');
+      } catch (err) {
+        console.error("Chat error:", err);
+        typingBubble.remove();
+      }
+    }
+
+    loadMessages();
+  </script>
+</body>
+</html>
