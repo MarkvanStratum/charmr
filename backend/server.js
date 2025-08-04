@@ -652,7 +652,7 @@ app.post("/api/create-checkout-session", authenticateToken, async (req, res) => 
 });
 
 import bodyParser from "body-parser"; // Add this at the top if not present
-app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+app.post('/api/webhook', express.raw({ type: 'application/json' }), (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
