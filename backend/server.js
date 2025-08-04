@@ -5,6 +5,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pkg from "pg";
 import Stripe from "stripe";
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const { Pool } = pkg;
@@ -14,7 +17,15 @@ const PORT = process.env.PORT || 10000;
 const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 
 app.use(cors());
-app.use(express.json());
+// Stripe needs raw body for webhooks
+app.use((req, res, next) => {
+  if (req.originalUrl === '/webhook') {
+    express.raw({ type: 'application/json' })(req, res, next);
+  } else {
+    express.json()(req, res, next);
+  }
+});
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -359,11 +370,106 @@ const profiles = [
 ];
 
 const firstMessages = {
-  1: "hey what you up to rn? feel like bein a bit naughty 😉",
-  2: "u look trouble... in a good way 😏",
-  3: "sooo bored… fancy entertaining me?",
-  4: "hiya stranger, wanna keep me company 2nite?",
-  5: "not gonna lie, i’m kinda in a mood rn 🙈"
+  1: "what are you doing… or who? 😈",
+2: "you home... or somewhere u shouldn’t be? 😏",
+3: "is your phone in your hand or should i wait? 👀",
+4: "u busy... or just bored like me? 😘",
+5: "are u always this quiet, or just playing? 😉",
+6: "you alone... or pretending? 😈",
+7: "u always keep strangers up this late? 😏",
+8: "scrolling... or looking for trouble? 😇",
+9: "mind if i interrupt whatever you’re not doing? 😜",
+10: "are u texting anyone naughtier? 😘",
+11: "you up for something... unplanned? 😏",
+12: "are u free or tied up? 😉",
+13: "texting anyone else you shouldn’t be? 😈",
+14: "do you always answer strangers this fast? 😇",
+15: "are you in bed... or on the edge of it? 👀",
+16: "is this how u start bad ideas too? 😏",
+17: "lying down... or ready for more? 😜",
+18: "do u text back or tease first? 😘",
+19: "are your hands busy or just waiting? 😈",
+20: "you usually this easy to distract? 😉",
+21: "u hiding somewhere quiet... or just bored? 😏",
+22: "u ever reply to flirty strangers? 😇",
+23: "waiting for a sign… or something better? 😜",
+24: "what’s in your head... or should i guess? 😈",
+25: "are u here to chat... or not really? 😏",
+26: "do you usually behave... or lie about it? 😉",
+27: "thinking clean... or pretending? 😘",
+28: "are u alone or should i lower my tone? 👀",
+29: "is it bad i texted first... or just bold? 😇",
+30: "you always answer mystery girls? 😈",
+31: "u in the mood for something unfiltered? 😏",
+32: "are u half-dressed or just half-awake? 😉",
+33: "typing slow... or being careful? 😘",
+34: "u look like someone who likes risk... just sayin 😈",
+35: "are u waiting on someone... or hoping it's me? 😏",
+36: "you the flirty type or the shy one? 😇",
+37: "what would u do if i didn’t stop? 😉",
+38: "anyone else got your attention right now? 😈",
+39: "do u like slow replies... or fast moves? 😘",
+40: "you more ‘let’s chat’ or ‘let’s see’ type? 😏",
+41: "do you usually play along or lead? 😇",
+42: "should i stop here... or keep pushing? 😈",
+43: "are you home alone or not for long? 😘",
+44: "u want fun or just the idea of it? 😜",
+45: "how curious are you right now? 😉",
+46: "what’s keeping you up... or who? 😏",
+47: "are u the type to say no... or pretend first? 😈",
+48: "u better at talking or doing? 😇",
+49: "would you answer if i called? 😘",
+50: "do you always flirt back... or just with me? 😉",
+51: "who do you think’s gonna behave first? 😈",
+52: "u ever let convos go too far? 😏",
+53: "would u rather talk or tease? 😘",
+54: "are you where you’re supposed to be? 👀",
+55: "how easy are you to tempt, really? 😇",
+56: "are you all words or action too? 😈",
+57: "text me something you shouldn’t 👀",
+58: "you usually fall for strangers or just me? 😏",
+59: "who’s stopping us... besides us? 😉",
+60: "are u home or should i keep it PG? 😘",
+61: "you gonna lead or follow this time? 😈",
+62: "do u prefer rules or breaking them? 😇",
+63: "how many messages til we cross a line? 😏",
+64: "are you trying to behave or just pretending? 😉",
+65: "how far is too far for you? 😈",
+66: "do u start convos or just end them? 😘",
+67: "would u be saying yes... or just not saying no? 😏",
+68: "u ready to say something bad yet? 😉",
+69: "are u alone because u want to be? 😇",
+70: "do u flirt for fun... or results? 😈",
+71: "are you done being good for today? 😘",
+72: "what’s on your mind... or who? 😏",
+73: "should i be the first or the worst? 😉",
+74: "do u ever start something u can’t stop? 😈",
+75: "you like a little trouble, right? 😇",
+76: "would u rather talk here... or somewhere private? 😘",
+77: "what are u hoping happens next? 😏",
+78: "do u play innocent or not at all? 😈",
+79: "do u always text back... or am i lucky? 😉",
+80: "how bored are you really? 😘",
+81: "how much can i get away with tonight? 😇",
+82: "do u say what u think... or just what’s safe? 😏",
+83: "are u ready to make this interesting? 😈",
+84: "who said strangers can’t have fun? 😉",
+85: "do u always flirt back or just sometimes? 😘",
+86: "would it be worse if i stopped texting... or didn’t? 😈",
+87: "do u prefer slow burns or fast fires? 😏",
+88: "are u being good or just lying about it? 😇",
+89: "how bad would it be if i kept going? 😉",
+90: "you gonna stop me or help me? 😘",
+91: "are u always this curious with strangers? 😏",
+92: "should we stop... or just get better at it? 😈",
+93: "do u want tame or wild tonight? 😉",
+94: "what would u do if i was there right now? 👀",
+95: "is this how bad ideas start... or end? 😇",
+96: "do u enjoy mystery... or unwrapping it? 😈",
+97: "how long should i keep teasing? 😘",
+98: "are u bored... or about to be bad? 😏",
+99: "do u like control... or losing it? 😉",
+100: "how far is your imagination going rn? 😈"
 };
 
 function authenticateToken(req, res, next) {
@@ -545,6 +651,34 @@ app.post("/api/create-checkout-session", authenticateToken, async (req, res) => 
     console.error("Stripe checkout error:", error);
     res.status(500).json({ error: "Failed to create checkout session" });
   }
+});
+
+import bodyParser from "body-parser"; // Add this at the top if not present
+app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('❌ Webhook signature verification failed.', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+      const session = event.data.object;
+      console.log('✅ Payment received for:', session.customer_email);
+      // TODO: Lookup user by email and update their credits/lifetime status
+      break;
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.status(200).send('Received');
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
