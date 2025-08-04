@@ -44,6 +44,7 @@
 
   <script src="girls.js"></script>
   <script>
+    // Fetch all messages for all girls from backend grouped by girlId
     async function loadMessages() {
       const token = localStorage.getItem("authToken");
       if (!token) {
@@ -52,53 +53,72 @@
       }
 
       try {
-        const res = await fetch('https://charmr-jfmc.onrender.com/api/messages', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
+        // Our backend does not provide a direct "all messages grouped by girl" endpoint,
+        // so let's simulate by fetching messages for each girl from profiles list.
 
-        if (!res.ok) {
-          throw new Error("Unauthorized or failed to fetch");
-        }
+        const girls = window.girls || [];
 
-        const data = await res.json(); // data is an object, not array
-
-        if (Object.keys(data).length === 0) {
-          document.getElementById('messageList').innerHTML = '<p>No messages yet.</p>';
+        if (girls.length === 0) {
+          document.getElementById('messageList').innerHTML = '<p>No profiles loaded.</p>';
           return;
         }
 
         const container = document.getElementById('messageList');
         container.innerHTML = '';
 
-        for (const key in data) {
-          const msgs = data[key];
-          const lastMessage = msgs[msgs.length - 1];
+        // Fetch messages per girl, in parallel
+        const allPromises = girls.map(async (girl) => {
+          const res = await fetch(`https://charmr-jfmc.onrender.com/api/messages/${girl.id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (!res.ok) return null;
+          const msgs = await res.json();
+          return { girl, msgs };
+        });
 
-          // Extract girlId from "userId-girlId"
-          const girlId = Number(key.split('-')[1]);
-          const girl = girls.find(g => g.id === girlId) || { name: 'Unknown', image: 'default-avatar.png' };
+        const results = await Promise.all(allPromises);
+
+        // Filter only girls with messages
+        const filtered = results.filter(r => r && r.msgs.length > 0);
+
+        if (filtered.length === 0) {
+          container.innerHTML = '<p>No messages yet.</p>';
+          return;
+        }
+
+        // Sort girls by most recent message date descending
+        filtered.sort((a, b) => {
+          const lastA = new Date(a.msgs[a.msgs.length -1].created_at || a.msgs[a.msgs.length -1].time);
+          const lastB = new Date(b.msgs[b.msgs.length -1].created_at || b.msgs[b.msgs.length -1].time);
+          return lastB - lastA;
+        });
+
+        // Render message cards
+        filtered.forEach(({ girl, msgs }) => {
+          const lastMessage = msgs[msgs.length - 1];
+          const time = new Date(lastMessage.created_at || lastMessage.time).toLocaleString();
 
           const card = document.createElement('a');
-          card.href = `chat.html?id=${girlId}`;
+          card.href = `chat.html?id=${girl.id}`;
           card.className = 'message-card';
           card.innerHTML = `
             <img src="${girl.image}" alt="${girl.name}">
             <div class="message-info">
               <strong>${girl.name}</strong>
               <p>${lastMessage.text}</p>
-              <div class="message-time">${new Date(lastMessage.time).toLocaleString()}</div>
+              <div class="message-time">${time}</div>
             </div>
           `;
           container.appendChild(card);
-        }
+        });
+
       } catch (err) {
         console.error('Error loading messages:', err);
         document.getElementById('messageList').innerHTML = '<p>Failed to load messages.</p>';
       }
     }
 
+    // Poll the inbox every 30 seconds
     loadMessages();
     setInterval(loadMessages, 30000);
   </script>
