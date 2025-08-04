@@ -68,6 +68,48 @@
     .btn-group button:hover {
       background-color: #d43d61;
     }
+
+    .notification-popup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: white;
+      color: black;
+      padding: 10px 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      cursor: pointer;
+      font-family: Arial, sans-serif;
+      max-width: 280px;
+      animation: slideIn 0.4s ease forwards;
+      z-index: 1000;
+    }
+    .notif-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .notif-text {
+      display: flex;
+      flex-direction: column;
+    }
+    .notif-text strong {
+      font-size: 14px;
+      margin-bottom: 3px;
+    }
+    .notif-text p {
+      font-size: 13px;
+      margin: 0;
+      color: #555;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(100%); }
+      to { opacity: 1; transform: translateX(0); }
+    }
   </style>
 </head>
 <body>
@@ -89,14 +131,18 @@
   <!-- Profiles will be loaded here -->
 </div>
 
-<script src="girls.js"></script>
 <script>
 window.onload = async function() {
     const backendUrl = "https://charmr-jfmc.onrender.com";
-    const userId = "user1"; // Replace with logged-in user later
+    const token = localStorage.getItem("authToken");
     let lastMessageTime = null;
 
-    // Load profiles and render them
+    if (!token) {
+        alert("You're not logged in. Please log in to receive messages.");
+        return;
+    }
+
+    // Load and render profiles
     async function loadProfiles() {
         const res = await fetch(`${backendUrl}/api/profiles`);
         const profiles = await res.json();
@@ -120,21 +166,31 @@ window.onload = async function() {
         return profiles;
     }
 
-    // Send initial messages from random girls
-    async function sendInitialMessages(profiles) {
-        const selected = [...profiles].sort(() => Math.random() - 0.5).slice(0, 2);
-        for (const girl of selected) {
-            await fetch(`${backendUrl}/api/send-initial-message`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId, girlId: girl.id })
-            });
-        }
-        console.log("Initial messages sent from random girls.");
+    // Send a canned message every 3–30 seconds
+    function getRandomDelay() {
+        return Math.floor(Math.random() * (30000 - 3000 + 1)) + 3000;
     }
 
-    const profiles = await loadProfiles();
-    await sendInitialMessages(profiles);
+    function sendRandomMessageLoop(profiles) {
+        async function sendRandomMessage() {
+            const girl = profiles[Math.floor(Math.random() * profiles.length)];
+            try {
+                await fetch(`${backendUrl}/api/send-initial-message`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ girlId: girl.id })
+                });
+                console.log(`💌 Message sent from ${girl.name}`);
+            } catch (err) {
+                console.error("❌ Message send failed:", err);
+            }
+            setTimeout(sendRandomMessage, getRandomDelay());
+        }
+        sendRandomMessage();
+    }
 
     function showNotification(from, text, avatar) {
         const notif = document.createElement("div");
@@ -152,7 +208,9 @@ window.onload = async function() {
     }
 
     async function checkForNewMessages() {
-        const res = await fetch(`${backendUrl}/api/messages/${userId}`);
+        const res = await fetch(`${backendUrl}/api/messages`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
         const msgsByChat = await res.json();
         const allMsgs = Object.values(msgsByChat).flat();
         if (allMsgs.length === 0) return;
@@ -163,56 +221,16 @@ window.onload = async function() {
         }
     }
 
+    const profiles = await loadProfiles();
+    sendRandomMessageLoop(profiles);
+
+    // Start polling for notifications
     setTimeout(() => {
         checkForNewMessages();
         setInterval(checkForNewMessages, 5000);
     }, 5000);
 };
 </script>
-
-<style>
-.notification-popup {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    position: fixed;
-    top: 15px;
-    right: 15px;
-    background: white;
-    color: black;
-    padding: 10px 15px;
-    border-radius: 12px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    cursor: pointer;
-    font-family: Arial, sans-serif;
-    max-width: 280px;
-    animation: slideIn 0.4s ease forwards;
-    z-index: 1000;
-}
-.notif-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-.notif-text {
-    display: flex;
-    flex-direction: column;
-}
-.notif-text strong {
-    font-size: 14px;
-    margin-bottom: 3px;
-}
-.notif-text p {
-    font-size: 13px;
-    margin: 0;
-    color: #555;
-}
-@keyframes slideIn {
-    from { opacity: 0; transform: translateX(100%); }
-    to { opacity: 1; transform: translateX(0); }
-}
-</style>
 
 </body>
 </html>
