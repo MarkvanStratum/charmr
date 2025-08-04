@@ -169,12 +169,14 @@
         const sentCount = existing.filter(m => m.from_user).length;
 
         if (sentCount >= 3) {
-          appendMessage(`You've run out of free messages. Get premium to continue chatting with ${girl.name}. Visit the plans page.`, 'girl');
+          appendMessage(`${girl.name} wants to meet you for some bedroom fun, but you're out of credits. Click below for Premium and meet with ${girl.name}.`, 'girl');
           const link = document.createElement('a');
           link.href = 'plans.html';
-          link.textContent = 'Upgrade Now';
+          link.textContent = '💎 Get Premium';
+          link.style.display = 'block';
           link.style.color = '#ef476f';
           link.style.marginTop = '5px';
+          link.style.textAlign = 'right';
           chatBox.appendChild(link);
           chatBox.scrollTop = chatBox.scrollHeight;
           return;
