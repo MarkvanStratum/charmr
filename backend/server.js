@@ -13,7 +13,6 @@ const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 app.use(cors());
 app.use(express.json());
 
-// =============== POSTGRESQL SETUP ================
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
@@ -51,15 +50,12 @@ const pool = new Pool({
   }
 })();
 
-// =============== OPENAI SETUP =====================
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// =============== HARDCODED PROFILES ==============
 const profiles = [
   { id: 1, name: "Evie Hughes", age: 29, city: "Aberdeen", image: "https://randomuser.me/api/portraits/women/1.jpg" },
   { id: 2, name: "Grace Johnson", age: 24, city: "London", image: "https://randomuser.me/api/portraits/women/2.jpg" },
   { id: 3, name: "Amelia Lewis", age: 31, city: "Manchester", image: "https://randomuser.me/api/portraits/women/3.jpg" }
-  // Add more if needed
 ];
 
 const firstMessages = {
@@ -70,7 +66,6 @@ const firstMessages = {
   5: "not gonna lie, i’m kinda in a mood rn 🙈"
 };
 
-// =============== MIDDLEWARE =======================
 function authenticateToken(req, res, next) {
   const authHeader = req.headers["authorization"];
   const token = authHeader && authHeader.split(" ")[1];
@@ -82,7 +77,6 @@ function authenticateToken(req, res, next) {
   });
 }
 
-// =============== AUTH ROUTES ======================
 app.post("/api/register", async (req, res) => {
   const { email, password, gender, lookingFor, phone } = req.body;
   if (!email || !password) return res.status(400).json({ error: "Email and password required" });
@@ -121,12 +115,10 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// =============== PROFILE ROUTE =====================
 app.get("/api/profiles", (req, res) => {
   res.json(profiles);
 });
 
-// =============== MESSAGE ROUTES ====================
 app.get("/api/messages", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   try {
@@ -147,6 +139,23 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
     res.json(grouped);
   } catch (err) {
     console.error("Message fetch error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ ADDED: Get messages between user and a specific girl
+app.get("/api/messages/:girlId", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const girlId = req.params.girlId;
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM messages WHERE user_id = $1 AND girl_id = $2 ORDER BY created_at ASC",
+      [userId, girlId]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Error fetching messages with girl:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -195,7 +204,6 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
   }
 });
 
-// =============== RANDOM MESSAGE SEEDING ==============
 app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const { girlId } = req.body;
