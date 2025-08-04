@@ -4,6 +4,9 @@ import OpenAI from "openai";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pkg from "pg";
+import Stripe from "stripe";
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 const { Pool } = pkg;
 
 const app = express();
@@ -519,6 +522,40 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   } catch (err) {
     console.error("Initial message error:", err);
     res.status(500).json({ error: "Server error" });
+  }
+});
+app.post("/api/create-checkout-session", authenticateToken, async (req, res) => {
+  const { plan } = req.body;
+  const priceMap = {
+    "10": "price_1RsLy5CVovIV0BJMYTTwTnEr",        // £5
+    "50": "price_1RsLz3CVovIV0BJMmoMBkE2F",        // £20
+    "unlimited": "price_1RsM0LCVovIV0BJMbz2hArkY"  // £99
+  };
+
+  const selectedPrice = priceMap[plan];
+  if (!selectedPrice) {
+    return res.status(400).json({ error: "Invalid plan selected" });
+  }
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "subscription",
+      line_items: [
+        {
+          price: selectedPrice,
+          quantity: 1,
+        },
+      ],
+      success_url: "https://chatbait.co/success",
+      cancel_url: "https://chatbait.co/cancel",
+      metadata: { userId: req.user.id.toString() },
+    });
+
+    res.json({ url: session.url });
+  } catch (error) {
+    console.error("Stripe checkout error:", error);
+    res.status(500).json({ error: "Failed to create checkout session" });
   }
 });
 
