@@ -599,6 +599,11 @@ if (!user) {
     if (!user.lifetime && user.credits <= 0) {
       return res.status(403).json({ error: "I really wanna meet you, but you're out of credits I see. Please buy more so we can meet!" });
     }
+// Deduct 1 credit ONLY when user sends a message (not for AI replies)
+if (!user.lifetime) {
+  await pool.query("UPDATE users SET credits = credits - 1 WHERE id = $1", [userId]);
+}
+
 
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, true, $3)`,
@@ -696,7 +701,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
     const amountMap = {
       "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
       "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
-      "price_1Rse1SEJXIhiKzYGhUalpwBS": 9900,
+      "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
     };
 
     const amount = amountMap[priceId];
