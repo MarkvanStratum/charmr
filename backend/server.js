@@ -735,9 +735,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  // Handle the event
-  switch (event.type) {
-    case 'payment_intent.succeeded': {
+  case 'payment_intent.succeeded': {
   const session = event.data.object;
   const userId = session.metadata?.userId;
   const priceId = session.metadata?.priceId;
@@ -747,8 +745,30 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   const amountMap = {
     "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
     "price_1RsdzREJXIhiKzYG45b69nSl": 50,
-    "price_1Rse1SEJXIhiKzYGhUalpwBS": 1000000,
+    "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime", // ✅ Set flag
   };
+
+  const value = amountMap[priceId];
+
+  if (userId && value !== undefined) {
+    try {
+      if (value === "lifetime") {
+        await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
+        console.log(`✅ Granted lifetime access to user ${userId}`);
+      } else {
+        await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
+        console.log(`✅ Added ${value} credits to user ${userId}`);
+      }
+    } catch (err) {
+      console.error("❌ Failed to update credits/lifetime:", err.message);
+    }
+  } else {
+    console.error("❌ Missing userId or invalid priceId in metadata");
+  }
+
+  break;
+}
+
 
   const creditsToAdd = amountMap[priceId];
 
