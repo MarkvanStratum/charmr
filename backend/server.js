@@ -634,14 +634,36 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   const girl = profiles.find(g => g.id === Number(girlId));
   if (!girl) return res.status(404).json({ error: "Girl not found" });
 
-  const messages = Object.values(firstMessages);
-  const text = messages[Math.floor(Math.random() * messages.length)];
-
   try {
+    // ✅ 1. Check user's credit balance
+    const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
+    const user = userRes.rows[0];
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    if (!user.lifetime && user.credits <= 0) {
+      return res.status(403).json({ error: "You’ve run out of messages. Please purchase more credits." });
+    }
+
+    // ✅ 2. Insert the message
+    const messages = Object.values(firstMessages);
+    const text = messages[Math.floor(Math.random() * messages.length)];
+
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, false, $3)`,
       [userId, girlId, text]
     );
+
+    // ✅ 3. Deduct 1 credit if not lifetime
+    if (!user.lifetime) {
+      await pool.query("UPDATE users SET credits = credits - 1 WHERE id = $1", [userId]);
+    }
+
+    res.json({ message: "Initial message sent", text });
+  } catch (err) {
+    console.error("Initial message error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
     res.json({ message: "Initial message sent", text });
   } catch (err) {
     console.error("Initial message error:", err);
