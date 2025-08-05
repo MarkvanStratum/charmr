@@ -106,7 +106,7 @@
   </form>
 
   <script>
-    const stripe = Stripe("YOUR_PUBLISHABLE_KEY"); // Replace with your actual Stripe publishable key
+    const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q"); // Replace with your actual Stripe publishable key
     const elements = stripe.elements();
     const card = elements.create("card");
     card.mount("#card-element");
