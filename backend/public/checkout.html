@@ -121,17 +121,18 @@
       const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
       const name = document.getElementById("cardholder-name").value;
 
+      const mode = "subscription"; // all current plans are subscriptions
+
       try {
         const res = await fetch("/api/create-checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId: selectedPlan }),
+          body: JSON.stringify({ priceId: selectedPlan, mode }),
         });
 
         const data = await res.json();
-        if (data.success) {
-          // ✅ redirect to profiles.html on success
-          window.location.href = "profiles.html";
+        if (data.url) {
+          window.location.href = data.url;
         } else {
           message.textContent = "An error occurred. Please try again.";
         }

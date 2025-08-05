@@ -652,8 +652,8 @@ app.post("/api/create-checkout-session", authenticateToken, async (req, res) => 
           quantity: 1,
         },
       ],
-      success_url: "https://yourdomain.com/success",
-      cancel_url: "https://yourdomain.com/cancel",
+      success_url: "https://charmr.xyz/profiles.html",
+      cancel_url: "https://charmr.xyz/profiles.html",
       metadata: { userId: req.user.id.toString() },
     });
 
