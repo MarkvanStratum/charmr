@@ -114,6 +114,8 @@
 </head>
 <body>
 
+<div id="credit-info">Loading credits...</div>
+
 <nav style="display:flex; justify-content:flex-end; align-items:center; padding:10px 20px; background:#f0f0f0; border-bottom:1px solid #ccc;">
   <a href="inbox.html" title="Inbox" style="margin-right:20px; color:#333; font-size:24px; text-decoration:none;">
     &#9993;
@@ -134,7 +136,7 @@
 <script>
 window.onload = async function() {
     const backendUrl = "https://charmr-jfmc.onrender.com";
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
     let lastMessageTime = null;
 
     if (!token) {
@@ -230,6 +232,32 @@ window.onload = async function() {
         setInterval(checkForNewMessages, 5000);
     }, 5000);
 };
+</script>
+<script>
+async function loadCredits() {
+  const token = localStorage.getItem("authToken");
+  if (!token) return;
+
+  try {
+    const res = await fetch("https://charmr-jfmc.onrender.com/api/credits", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    const data = await res.json();
+    if (data.lifetime) {
+      document.getElementById("credit-info").textContent = "💎 Unlimited Credits";
+    } else {
+      document.getElementById("credit-info").textContent = `💌 ${data.credits} Messages Remaining`;
+    }
+  } catch (err) {
+    console.error("Error fetching credits:", err);
+    document.getElementById("credit-info").textContent = "Unable to load credits.";
+  }
+}
+
+loadCredits();
 </script>
 
 </body>
