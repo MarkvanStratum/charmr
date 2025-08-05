@@ -735,58 +735,40 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  case 'payment_intent.succeeded': {
-  const session = event.data.object;
-  const userId = session.metadata?.userId;
-  const priceId = session.metadata?.priceId;
+  // ✅ THIS is where the switch starts
+  switch (event.type) {
+    case 'payment_intent.succeeded': {
+      const session = event.data.object;
+      const userId = session.metadata?.userId;
+      const priceId = session.metadata?.priceId;
 
-  console.log('✅ Payment received for user ID:', userId, 'with price ID:', priceId);
+      console.log('✅ Payment received for user ID:', userId, 'with price ID:', priceId);
 
-  const amountMap = {
-    "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
-    "price_1RsdzREJXIhiKzYG45b69nSl": 50,
-    "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime", // ✅ Set flag
-  };
+      const amountMap = {
+        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
+        "price_1RsdzREJXIhiKzYG45b69nSl": 50,
+        "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
+      };
 
-  const value = amountMap[priceId];
+      const value = amountMap[priceId];
 
-  if (userId && value !== undefined) {
-    try {
-      if (value === "lifetime") {
-        await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
-        console.log(`✅ Granted lifetime access to user ${userId}`);
+      if (userId && value !== undefined) {
+        try {
+          if (value === "lifetime") {
+            await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
+            console.log(`✅ Lifetime access granted to user ${userId}`);
+          } else {
+            await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
+            console.log(`✅ Added ${value} credits to user ${userId}`);
+          }
+        } catch (err) {
+          console.error("❌ Failed to update user payment record:", err.message);
+        }
       } else {
-        await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
-        console.log(`✅ Added ${value} credits to user ${userId}`);
+        console.error("❌ Missing userId or invalid priceId in metadata");
       }
-    } catch (err) {
-      console.error("❌ Failed to update credits/lifetime:", err.message);
-    }
-  } else {
-    console.error("❌ Missing userId or invalid priceId in metadata");
-  }
 
-  break;
-}
-
-
-  const creditsToAdd = amountMap[priceId];
-
-  if (userId && creditsToAdd !== undefined) {
-    try {
-      await pool.query(
-        `UPDATE users SET credits = credits + $1 WHERE id = $2`,
-        [creditsToAdd, userId]
-      );
-      console.log(`✅ Added ${creditsToAdd} credits to user ${userId}`);
-    } catch (err) {
-      console.error("❌ Failed to update credits in DB:", err.message);
-    }
-  } else {
-    console.error("❌ Missing userId or invalid priceId in metadata");
-  }
-
-  break;
+      break;
     }
 
     default:
@@ -795,6 +777,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
   res.status(200).send('Received');
 });
+
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
