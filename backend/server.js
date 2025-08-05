@@ -742,9 +742,9 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   console.log('✅ Payment received for user ID:', userId, 'with price ID:', priceId);
 
   const amountMap = {
-    "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 5,
-    "price_1RsdzREJXIhiKzYG45b69nSl": 20,
-    "price_1Rse1SEJXIhiKzYGhUalpwBS": 99,
+    "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
+    "price_1RsdzREJXIhiKzYG45b69nSl": 50,
+    "price_1Rse1SEJXIhiKzYGhUalpwBS": 1000000,
   };
 
   const creditsToAdd = amountMap[priceId];
