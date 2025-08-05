@@ -669,10 +669,8 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
       [userId, girlId, text]
     );
 
-    // ✅ 3. Deduct 1 credit if not lifetime
-    if (!user.lifetime) {
-      await pool.query("UPDATE users SET credits = credits - 1 WHERE id = $1", [userId]);
-    }
+    // ✅ No credit deduction — girl is starting the chat
+
 
     res.json({ message: "Initial message sent", text });
   } catch (err) {
