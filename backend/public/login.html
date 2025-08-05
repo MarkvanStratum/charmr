@@ -43,10 +43,10 @@
         const data = await response.json();
 
         if (response.ok) {
-          // Save token to local storage
-          localStorage.setItem("authToken", data.token);
+          // ✅ Save token using correct key for backend
+          localStorage.setItem("token", data.token);
           alert("Login successful!");
-          window.location.href = "profiles.html"; // redirect after login
+          window.location.href = "profiles.html";
         } else {
           alert(data.error || "Login failed. Please check your credentials.");
         }
