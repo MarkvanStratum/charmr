@@ -1,40 +1,146 @@
-<script>
-  const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q"); // Replace with your actual Stripe publishable key
-  const elements = stripe.elements();
-  const card = elements.create("card");
-  card.mount("#card-element");
-
-  const form = document.getElementById("payment-form");
-  const message = document.getElementById("message");
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    message.textContent = "";
-
-    const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
-    const name = document.getElementById("cardholder-name").value;
-    const mode = "subscription"; // all current plans are subscriptions
-    const token = localStorage.getItem("authToken"); // ✅ get token for Authorization header
-
-    try {
-      const res = await fetch("https://charmr-jfmc.onrender.com/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}` // ✅ include token here
-        },
-        body: JSON.stringify({ priceId: selectedPlan, mode }),
-      });
-
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        message.textContent = "An error occurred. Please try again.";
-      }
-    } catch (err) {
-      console.error(err);
-      message.textContent = "Something went wrong. Try again.";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Checkout</title>
+  <script src="https://js.stripe.com/v3/"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #fdf2f8;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 20px;
+      min-height: 100vh;
+      margin: 0;
     }
-  });
-</script>
+
+    #payment-form {
+      background: white;
+      padding: 25px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .plan {
+      display: flex;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .plan input[type="radio"] {
+      margin-right: 10px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 16px;
+    }
+
+    #card-element {
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      background: #f9f9f9;
+    }
+
+    #submit {
+      width: 100%;
+      background-color: #ef476f;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    #submit:hover {
+      background-color: #d43d61;
+    }
+
+    #message {
+      margin-top: 15px;
+      font-size: 14px;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+  <form id="payment-form">
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
+      <label for="plan5">💌 10 Messages (avg. 2 hookups) – £5</label>
+    </div>
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
+      <label for="plan20">🔥 50 Messages (avg. 15 hookups) – £20</label>
+    </div>
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1Rse1SEJXIhiKzYGhUalpwBS" id="plan99">
+      <label for="plan99">💎 Unlimited (unlimited hookups) – £99</label>
+    </div>
+
+    <label for="cardholder-name">Name on card</label>
+    <input type="text" id="cardholder-name" placeholder="Full name" required />
+
+    <div id="card-element"><!-- Stripe injects card input here --></div>
+
+    <button type="submit" id="submit">Pay</button>
+    <div id="message"></div>
+  </form>
+
+  <script>
+    const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q"); // Replace with your actual Stripe publishable key
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
+
+    const form = document.getElementById("payment-form");
+    const message = document.getElementById("message");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      message.textContent = "";
+
+      const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
+      const name = document.getElementById("cardholder-name").value;
+
+      const mode = "subscription"; // all current plans are subscriptions
+
+      try {
+        const res = await fetch("https://charmr-jfmc.onrender.com/api/create-checkout-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ priceId: selectedPlan, mode }),
+        });
+
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+        } else {
+          message.textContent = "An error occurred. Please try again.";
+        }
+      } catch (err) {
+        console.error(err);
+        message.textContent = "Something went wrong. Try again.";
+      }
+    });
+  </script>
+</body>
+</html>
