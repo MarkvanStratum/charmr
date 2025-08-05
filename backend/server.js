@@ -729,7 +729,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
   // Handle the event
   switch (event.type) {
-    case 'checkout.session.completed': {
+    case 'payment_intent.succeeded': {
   const session = event.data.object;
   const userId = session.metadata?.userId;
   const priceId = session.metadata?.priceId;
