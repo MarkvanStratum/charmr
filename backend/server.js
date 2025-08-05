@@ -642,7 +642,6 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
 
     if (!user.lifetime && user.credits <= 0) {
       return res.status(403).json({ error: "You’ve run out of messages. Please purchase more credits." });
-    }
 
     // ✅ 2. Insert the message
     const messages = Object.values(firstMessages);
