@@ -503,10 +503,20 @@ app.post("/api/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
     await pool.query(
-      `INSERT INTO users (email, password, gender, lookingfor, phone) VALUES ($1, $2, $3, $4, $5)`,
-      [email, hashedPassword, gender, lookingFor, phone]
-    );
-    res.json({ message: "User registered successfully" });
+  `INSERT INTO users (email, password, gender, lookingfor, phone) VALUES ($1, $2, $3, $4, $5)`,
+  [email, hashedPassword, gender, lookingFor, phone]
+);
+
+// Get the new user's ID
+const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
+const newUser = newUserResult.rows[0];
+
+// Create a token for the new user
+const token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET_KEY, { expiresIn: "7d" });
+
+// Send the token back
+res.json({ token });
+
   } catch (err) {
     console.error("Register error:", err);
     res.status(500).json({ error: "Server error" });

@@ -20,6 +20,9 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
     const data = await response.json();
 
     if (response.ok) {
+      if (data.token) {
+        localStorage.setItem("token", data.token); // ✅ Save the token
+      }
       alert("Registration successful! Please log in.");
       window.location.href = "login.html";
     } else {
