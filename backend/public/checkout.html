@@ -106,7 +106,7 @@
   </form>
 
   <script>
-    const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q"); // Replace with your actual Stripe publishable key
+    const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
     const elements = stripe.elements();
     const card = elements.create("card");
     card.mount("#card-element");
@@ -121,24 +121,33 @@
       const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
       const name = document.getElementById("cardholder-name").value;
 
-      const mode = "subscription"; // all current plans are subscriptions
-
       try {
-        const res = await fetch("https://charmr-jfmc.onrender.com/api/create-checkout-session", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${localStorage.getItem("authToken")}`
-  },
-  body: JSON.stringify({ priceId: selectedPlan, mode }),
-});
-
+        const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+          },
+          body: JSON.stringify({ priceId: selectedPlan }),
+        });
 
         const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-        } else {
-          message.textContent = "An error occurred. Please try again.";
+        if (!data.clientSecret) {
+          message.textContent = "Payment failed to start. Try again.";
+          return;
+        }
+
+        const result = await stripe.confirmCardPayment(data.clientSecret, {
+          payment_method: {
+            card: card,
+            billing_details: { name },
+          }
+        });
+
+        if (result.error) {
+          message.textContent = result.error.message;
+        } else if (result.paymentIntent.status === "succeeded") {
+          window.location.href = "/profiles.html";
         }
       } catch (err) {
         console.error(err);
