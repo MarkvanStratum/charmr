@@ -725,16 +725,42 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
 
   // Handle the event
   switch (event.type) {
-    case 'checkout.session.completed':
+    case 'checkout.session.completed': {
       const session = event.data.object;
-      console.log('✅ Payment received for:', session.customer_email);
-      // TODO: Lookup user by email and update their credits/lifetime status
+      const userId = session.metadata?.userId;
+      const priceId = session.metadata?.priceId;
+
+      console.log('✅ Payment received for user ID:', userId);
+
+      const amountMap = {
+        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 5,
+        "price_1RsdzREJXIhiKzYG45b69nSl": 20,
+        "price_1Rse1SEJXIhiKzYGhUalpwBS": 99,
+      };
+
+      const creditsToAdd = amountMap[priceId];
+
+      (async () => {
+        if (userId && creditsToAdd !== undefined) {
+          await pool.query(
+            `UPDATE users SET credits = credits + $1 WHERE id = $2`,
+            [creditsToAdd, userId]
+          );
+          console.log(`✅ Added ${creditsToAdd} credits to user ${userId}`);
+        } else {
+          console.error("❌ Missing userId or invalid priceId in metadata");
+        }
+      })(); // <-- Async wrapper ends here
+
       break;
+    }
+
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
 
   res.status(200).send('Received');
 });
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
