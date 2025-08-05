@@ -510,6 +510,14 @@ app.post("/api/register", async (req, res) => {
 // Get the new user's ID
 const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
 const newUser = newUserResult.rows[0];
+const token = jwt.sign(
+  { id: newUser.id, email: newUser.email },
+  SECRET_KEY,
+  { expiresIn: "7d" }
+);
+
+res.json({ message: "User registered successfully", token });
+
 
 // Create a token for the new user
 const token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET_KEY, { expiresIn: "7d" });
