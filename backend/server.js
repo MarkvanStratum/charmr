@@ -587,6 +587,11 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
 
     const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
     const user = userRes.rows[0];
+console.log("🧠 Chat user credits check:", {
+  userId,
+  credits: user?.credits,
+  lifetime: user?.lifetime
+});
 if (!user) {
   return res.status(404).json({ error: "User not found" });
 }
