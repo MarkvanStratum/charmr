@@ -665,12 +665,6 @@ app.post("/api/create-checkout-session", authenticateToken, async (req, res) => 
   }
 });
 
-    res.json({ url: session.url });
-  } catch (error) {
-    console.error("Stripe checkout error:", error);
-    res.status(500).json({ error: "Failed to create checkout session" });
-  }
-});
 
 import bodyParser from "body-parser"; // Add this at the top if not present
 app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
