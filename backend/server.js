@@ -730,33 +730,35 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   // Handle the event
   switch (event.type) {
     case 'checkout.session.completed': {
-      const session = event.data.object;
-      const userId = session.metadata?.userId;
-      const priceId = session.metadata?.priceId;
+  const session = event.data.object;
+  const userId = session.metadata?.userId;
+  const priceId = session.metadata?.priceId;
 
-      console.log('✅ Payment received for user ID:', userId);
+  console.log('✅ Payment received for user ID:', userId, 'with price ID:', priceId);
 
-      const amountMap = {
-        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 5,
-        "price_1RsdzREJXIhiKzYG45b69nSl": 20,
-        "price_1Rse1SEJXIhiKzYGhUalpwBS": 99,
-      };
+  const amountMap = {
+    "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 5,
+    "price_1RsdzREJXIhiKzYG45b69nSl": 20,
+    "price_1Rse1SEJXIhiKzYGhUalpwBS": 99,
+  };
 
-      const creditsToAdd = amountMap[priceId];
+  const creditsToAdd = amountMap[priceId];
 
-      (async () => {
-        if (userId && creditsToAdd !== undefined) {
-          await pool.query(
-            `UPDATE users SET credits = credits + $1 WHERE id = $2`,
-            [creditsToAdd, userId]
-          );
-          console.log(`✅ Added ${creditsToAdd} credits to user ${userId}`);
-        } else {
-          console.error("❌ Missing userId or invalid priceId in metadata");
-        }
-      })(); // <-- Async wrapper ends here
+  if (userId && creditsToAdd !== undefined) {
+    try {
+      await pool.query(
+        `UPDATE users SET credits = credits + $1 WHERE id = $2`,
+        [creditsToAdd, userId]
+      );
+      console.log(`✅ Added ${creditsToAdd} credits to user ${userId}`);
+    } catch (err) {
+      console.error("❌ Failed to update credits in DB:", err.message);
+    }
+  } else {
+    console.error("❌ Missing userId or invalid priceId in metadata");
+  }
 
-      break;
+  break;
     }
 
     default:
