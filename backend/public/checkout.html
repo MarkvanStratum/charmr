@@ -125,10 +125,14 @@
 
       try {
         const res = await fetch("https://charmr-jfmc.onrender.com/api/create-checkout-session", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId: selectedPlan, mode }),
-        });
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${localStorage.getItem("authToken")}`
+  },
+  body: JSON.stringify({ priceId: selectedPlan, mode }),
+});
+
 
         const data = await res.json();
         if (data.url) {
