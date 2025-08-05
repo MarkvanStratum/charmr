@@ -581,9 +581,8 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
   const girl = profiles.find(g => g.id === Number(girlId));
   if (!girl) return res.status(404).json({ error: "Girl not found" });
 
-  try {
+  try { // ✅ THIS is the part you were missing
 
-    // ⬇️ Add this block
     const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
     const user = userRes.rows[0];
     if (!user.lifetime && user.credits <= 0) {
@@ -621,11 +620,13 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
     );
 
     res.json({ reply });
-  } catch (err) {
+
+  } catch (err) { // ✅ NOW this makes sense — it closes the try above
     console.error("Chat error:", err);
     res.status(500).json({ error: "AI response failed" });
   }
 });
+
 
 app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   const userId = req.user.id;
