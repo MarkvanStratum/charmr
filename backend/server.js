@@ -550,13 +550,15 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
         text: msg.text,
         time: msg.created_at
       });
+    } // ✅ Close the for loop
 
-    res.json(grouped);
+    res.json(grouped); // ✅ Then respond
   } catch (err) {
     console.error("Message fetch error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 // ✅ ADDED: Get messages between user and a specific girl
 app.get("/api/messages/:girlId", authenticateToken, async (req, res) => {
