@@ -583,6 +583,14 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
   if (!girl) return res.status(404).json({ error: "Girl not found" });
 
   try {
+
+    // ⬇️ Add this block
+    const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
+    const user = userRes.rows[0];
+    if (!user.lifetime && user.credits <= 0) {
+      return res.status(403).json({ error: "You’ve run out of messages. Please purchase more credits." });
+    }
+
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, true, $3)`,
       [userId, girlId, message]
@@ -640,6 +648,19 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+app.get("/api/credits", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
+    if (result.rows.length === 0) return res.status(404).json({ error: "User not found" });
+
+    res.json(result.rows[0]); // { credits: 10, lifetime: false }
+  } catch (err) {
+    console.error("Credit fetch error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   const { priceId } = req.body;
 
