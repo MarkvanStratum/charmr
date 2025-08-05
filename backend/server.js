@@ -754,13 +754,15 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
       if (userId && value !== undefined) {
         try {
-          if (value === "lifetime") {
-            await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
-            console.log(`✅ Lifetime access granted to user ${userId}`);
-          } else {
-            await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
-            console.log(`✅ Added ${value} credits to user ${userId}`);
-          }
+            if (value === "lifetime") {
+  await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
+  console.log(`✅ Lifetime access granted to user ${userId}`);
+} else {
+  await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
+  console.log(`✅ Added ${value} credits to user ${userId}`);
+}
+
+     
         } catch (err) {
           console.error("❌ Failed to update user payment record:", err.message);
         }
