@@ -587,8 +587,12 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
 
     const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
     const user = userRes.rows[0];
+if (!user) {
+  return res.status(404).json({ error: "User not found" });
+}
+
     if (!user.lifetime && user.credits <= 0) {
-      return res.status(403).json({ error: "You’ve run out of messages. Please purchase more credits." });
+      return res.status(403).json({ error: "I really wanna meet you, but you're out of credits I see. Please buy more so we can meet!" });
     }
 
     await pool.query(
@@ -710,7 +714,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 
 
 import bodyParser from "body-parser"; // Add this at the top if not present
-app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
