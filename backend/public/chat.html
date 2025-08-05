@@ -174,22 +174,6 @@
           },
           body: JSON.stringify({ girlId, message: messageText })
         });
-
-        if (res.status === 403) {
-          typingBubble.remove();
-          appendMessage(`Hey, I'd really like to meet you for some bedroom fun ;) ;), but you're out of credits. Click below for Premium and Let's meet up! OK? :) ;)`, 'girl');
-          const link = document.createElement('a');
-          link.href = 'checkout.html';
-          link.textContent = '💎 Get Premium';
-          link.style.display = 'block';
-          link.style.color = '#ef476f';
-          link.style.marginTop = '5px';
-          link.style.textAlign = 'right';
-          chatBox.appendChild(link);
-          chatBox.scrollTop = chatBox.scrollHeight;
-          return;
-        }
-
         const data = await res.json();
 
         await new Promise(resolve => setTimeout(resolve, randomDelay()));
