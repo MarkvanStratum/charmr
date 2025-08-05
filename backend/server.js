@@ -641,29 +641,30 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   }
 });
 app.post("/api/create-checkout-session", authenticateToken, async (req, res) => {
-  const { priceId, isOneTime } = req.body;
-
+  const { priceId, mode } = req.body; // <-- get price ID and mode from frontend
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      mode: isOneTime ? "payment" : "subscription",
+      mode: mode || "subscription", // allow mode override
       line_items: [
         {
           price: priceId,
           quantity: 1,
         },
       ],
-      success_url: "https://chatbait.co/success",
-      cancel_url: "https://chatbait.co/cancel",
+      success_url: "https://yourdomain.com/success",
+      cancel_url: "https://yourdomain.com/cancel",
       metadata: { userId: req.user.id.toString() },
     });
 
     res.json({ url: session.url });
+
   } catch (err) {
-    console.error("Stripe checkout error:", err);
+    console.error("Stripe checkout error:", err.message);
     res.status(500).json({ error: "Something went wrong" });
   }
 });
+
 
 
 import bodyParser from "body-parser"; // Add this at the top if not present
