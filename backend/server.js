@@ -550,7 +550,6 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
         text: msg.text,
         time: msg.created_at
       });
-    }
 
     res.json(grouped);
   } catch (err) {
@@ -642,6 +641,7 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
 
     if (!user.lifetime && user.credits <= 0) {
       return res.status(403).json({ error: "You’ve run out of messages. Please purchase more credits." });
+    }
 
     // ✅ 2. Insert the message
     const messages = Object.values(firstMessages);
@@ -663,13 +663,7 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-    res.json({ message: "Initial message sent", text });
-  } catch (err) {
-    console.error("Initial message error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-app.get("/api/credits", authenticateToken, async (req, res) => {
+    app.get("/api/credits", authenticateToken, async (req, res) => {
   try {
     const userId = req.user.id;
     const result = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
