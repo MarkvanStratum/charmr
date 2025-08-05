@@ -53,16 +53,58 @@
 <body>
   <div class="profile-container">
     <img src="https://via.placeholder.com/120" alt="User Photo">
-    <h2>John Doe</h2>
-    <p><strong>Email:</strong> johndoe@email.com</p>
-    <p><strong>Password:</strong> ********</p>
-    <p><strong>Country:</strong> United Kingdom</p>
-    <p><strong>City:</strong> London</p>
-    <p><strong>Credits left:</strong> 12 messages</p>
+    <h2 id="username">Loading...</h2>
+    <p><strong>Email:</strong> <span id="email">Loading...</span></p>
+    <p><strong>Credits left:</strong> <span id="credits">Loading...</span></p>
+    <p><strong>Lifetime access:</strong> <span id="lifetime">Loading...</span></p>
     <div class="profile-buttons">
       <button>Edit Profile</button>
-      <button>Logout</button>
+      <button onclick="logout()">Logout</button>
     </div>
   </div>
+
+  <script>
+    async function loadProfile() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("You must be logged in");
+        window.location.href = "/login.html";
+        return;
+      }
+
+      try {
+        // 🔹 Fetch credits and lifetime info
+        const creditRes = await fetch("/api/credits", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const creditData = await creditRes.json();
+        if (!creditRes.ok) throw new Error(creditData.error || "Failed to fetch credits");
+
+        // 🔹 Decode token to extract user email
+        const [, payload] = token.split(".");
+        const decoded = JSON.parse(atob(payload));
+        const email = decoded.email;
+
+        document.getElementById("email").innerText = email;
+        document.getElementById("username").innerText = email.split("@")[0];
+        document.getElementById("credits").innerText = creditData.lifetime
+          ? "Unlimited"
+          : `${creditData.credits} messages`;
+        document.getElementById("lifetime").innerText = creditData.lifetime ? "Yes ✅" : "No";
+
+      } catch (err) {
+        console.error("Profile error:", err);
+        alert("Could not load your profile.");
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem("token");
+      window.location.href = "/login.html";
+    }
+
+    loadProfile();
+  </script>
 </body>
 </html>
