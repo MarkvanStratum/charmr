@@ -641,13 +641,15 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   }
 });
 app.post("/api/create-checkout-session", authenticateToken, async (req, res) => {
+  const { priceId, isOneTime } = req.body;
+
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
-      mode: "subscription",
+      mode: isOneTime ? "payment" : "subscription",
       line_items: [
         {
-          price: "price_1RsLy5CVovIV0BJMYTTwTnEr", // ✅ this is your specific price ID
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -655,6 +657,13 @@ app.post("/api/create-checkout-session", authenticateToken, async (req, res) => 
       cancel_url: "https://chatbait.co/cancel",
       metadata: { userId: req.user.id.toString() },
     });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("Stripe checkout error:", err);
+    res.status(500).json({ error: "Something went wrong" });
+  }
+});
 
     res.json({ url: session.url });
   } catch (error) {
