@@ -542,10 +542,11 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-  } catch (err) {
+   catch (err) {
     console.error("Login error:", err);
     res.status(500).json({ error: "Server error" });
   }
+
 
 app.get("/api/profiles", (req, res) => {
   res.json(profiles);
