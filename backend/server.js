@@ -520,7 +520,7 @@ res.json({ message: "User registered successfully", token });
 
 
 // Create a token for the new user
-const token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET_KEY, { expiresIn: "7d" });
+token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET_KEY, { expiresIn: "7d" });
 
 // Send the token back
 res.json({ token });
