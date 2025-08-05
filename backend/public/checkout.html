@@ -124,7 +124,7 @@
       const mode = "subscription"; // all current plans are subscriptions
 
       try {
-        const res = await fetch("/api/create-checkout-session", {
+        const res = await fetch("https://charmr-jfmc.onrender.com/api/create-checkout-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ priceId: selectedPlan, mode }),

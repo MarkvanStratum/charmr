@@ -640,7 +640,7 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
-app.post("/api/create-checkout-session", authenticateToken, async (req, res) => {
+app.post("/api/create-checkout-session", async (req, res) => {
   const { priceId, mode } = req.body; // <-- get price ID and mode from frontend
   try {
     const session = await stripe.checkout.sessions.create({
