@@ -139,32 +139,50 @@ window.onload = async function() {
     const token = localStorage.getItem("token");
     let lastMessageTime = null;
 
+    // ✅ redirect if not logged in
     if (!token) {
-        alert("You're not logged in. Please log in to receive messages.");
+        window.location.href = "login.html";
         return;
     }
 
     async function loadProfiles() {
-        const res = await fetch(`${backendUrl}/api/profiles`);
-        const profiles = await res.json();
-        const container = document.getElementById("profileContainer");
-        container.innerHTML = "";
-        profiles.forEach(profile => {
-            const card = document.createElement("div");
-            card.className = "profile-card";
-            card.innerHTML = `
-                <img src="${profile.image}" alt="${profile.name}">
-                <h3>${profile.name}</h3>
-                <p>Age: ${profile.age}</p>
-                <p>City: ${profile.city}</p>
-                <div class="btn-group">
-                  <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
-                  <button onclick="window.location.href='profile.html?id=${profile.id}'">View Profile</button>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-        return profiles;
+        try {
+            const res = await fetch(`${backendUrl}/api/profiles`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
+
+            if (res.status === 401 || res.status === 403) {
+                alert("You're not logged in. Redirecting...");
+                localStorage.removeItem("token");
+                window.location.href = "login.html";
+                return;
+            }
+
+            const profiles = await res.json();
+            const container = document.getElementById("profileContainer");
+            container.innerHTML = "";
+            profiles.forEach(profile => {
+                const card = document.createElement("div");
+                card.className = "profile-card";
+                card.innerHTML = `
+                    <img src="${profile.image}" alt="${profile.name}">
+                    <h3>${profile.name}</h3>
+                    <p>Age: ${profile.age}</p>
+                    <p>City: ${profile.city}</p>
+                    <div class="btn-group">
+                      <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
+                      <button onclick="window.location.href='profile.html?id=${profile.id}'">View Profile</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+            return profiles;
+        } catch (err) {
+            console.error("Error loading profiles:", err);
+            alert("Something went wrong. Please log in again.");
+            localStorage.removeItem("token");
+            window.location.href = "login.html";
+        }
     }
 
     function getRandomDelay() {
@@ -222,7 +240,9 @@ window.onload = async function() {
     }
 
     const profiles = await loadProfiles();
-    sendRandomMessageLoop(profiles);
+    if (profiles) {
+        sendRandomMessageLoop(profiles);
+    }
 
     setTimeout(() => {
         checkForNewMessages();
@@ -233,7 +253,7 @@ window.onload = async function() {
 
 <script>
 async function loadCredits() {
-  const token = localStorage.getItem("token"); // ✅ FIXED: using the correct token key
+  const token = localStorage.getItem("token");
   if (!token) return;
 
   try {

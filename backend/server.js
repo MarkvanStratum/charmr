@@ -552,7 +552,7 @@ app.post("/api/login", async (req, res) => {
 // 👇 Then you continue like normal
 
 
-app.get("/api/profiles", (req, res) => {
+app.get("/api/profiles", authenticateToken, (req, res) => {
   res.json(profiles);
 });
 
