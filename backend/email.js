@@ -23,7 +23,32 @@ export async function sendWelcomeEmail(toEmail, toName = 'there') {
   }
 }
 
-// Simple sanitization to avoid XSS in user-controlled strings like toName
+// Sends a password reset email with a secure reset link
+export async function sendPasswordResetEmail(toEmail, resetLink) {
+  try {
+    const sender = { email: 'no-reply@charmr.xyz', name: 'Charmr' };
+    const subject = 'Reset Your Charmr Password';
+    const htmlContent = `
+      <p>Hi there,</p>
+      <p>You requested a password reset. Click the link below to reset it:</p>
+      <p><a href="${resetLink}" target="_blank">${resetLink}</a></p>
+      <p>If you didn't request this, just ignore this email.</p>
+    `;
+
+    await transactionalEmailApi.sendTransacEmail({
+      sender,
+      to: [{ email: toEmail }],
+      subject,
+      htmlContent,
+    });
+
+    console.log(`✅ Password reset email sent to ${toEmail}`);
+  } catch (error) {
+    console.error('❌ Error sending password reset email:', error);
+  }
+}
+
+// Basic sanitization for HTML inputs
 export function sanitizeHtml(str) {
   return String(str).replace(/[&<>"']/g, match => ({
     '&': '&amp;',
