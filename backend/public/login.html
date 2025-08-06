@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>FlirtAI - Login</title>
   <link rel="stylesheet" href="./styles.css" />
-</head>
+</head>a
 <body>
   <div class="background"></div>
 
@@ -43,10 +43,10 @@
         const data = await response.json();
 
         if (response.ok) {
-          // ✅ Save token using correct key for backend
-          localStorage.setItem("token", data.token);
-          alert("Login successful!");
-          window.location.href = "profiles.html";
+  localStorage.setItem("token", data.token);
+  localStorage.removeItem("cachedMessages"); // ✅ prevent data leaks between users
+  alert("Login successful!");
+  window.location.href = "profiles.html";
         } else {
           alert(data.error || "Login failed. Please check your credentials.");
         }

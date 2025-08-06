@@ -100,9 +100,10 @@
     }
 
     function logout() {
-      localStorage.removeItem("token");
-      window.location.href = "/login.html";
-    }
+  localStorage.removeItem("token");
+  localStorage.removeItem("cachedMessages"); // ✅ extra cleanup
+  window.location.href = "/login.html";
+}
 
     loadProfile();
   </script>
