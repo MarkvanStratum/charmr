@@ -2804,7 +2804,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   res.status(200).send('Received');
 });
 
-const Deductor = require('./services/deductor'); // adjust path if needed
+import Deductor from './services/deductor.js';
+ // adjust path if needed
 
 // Example user object
 const user = { name: "Alice", credits: 50 };
