@@ -2804,18 +2804,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   res.status(200).send('Received');
 });
 
-import Deductor from './services/deductor.js';
- // adjust path if needed
-
-// Example user object
-const user = { name: "Alice", credits: 50 };
-
-// Try to deduct 10 credits
-if (Deductor.call({ user, amount: 10 })) {
-  console.log("✅ Proceed with action");
-} else {
-  console.log("❌ Block action due to insufficient credits");
-}
 
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
