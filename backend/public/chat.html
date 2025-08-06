@@ -190,20 +190,9 @@
           btn.style.padding = "8px 12px";
           btn.style.borderRadius = "6px";
           btn.style.cursor = "pointer";
-          btn.onclick = async () => {
-            const res = await fetch(`${backendUrl}/api/create-checkout-session`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${token}`
-              },
-              body: JSON.stringify({ priceId: "price_1RsdzREJXIhiKzYG45b69nSl", mode: "subscription" }) // £20 plan
-            });
-            const session = await res.json();
-            if (session.url) {
-              window.location.href = session.url;
-            }
-          };
+          btn.onclick = () => {
+  window.location.href = "/checkout.html";
+};
 
           chatBox.appendChild(btn);
           chatBox.scrollTop = chatBox.scrollHeight;
