@@ -7,12 +7,20 @@ import pkg from "pg";
 import Stripe from "stripe";
 import path from "path";
 import { fileURLToPath } from "url";
+import SibApiV3Sdk from 'sib-api-v3-sdk';
+
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = defaultClient.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+
+const transactionalEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const { Pool } = pkg;
 
@@ -25,6 +33,28 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+app.post('/send-email', async (req, res) => {
+  const { toEmail, subject, htmlContent } = req.body;
+
+  const sender = { email: 'you@example.com', name: 'Your App' }; // Change this to your verified sender
+  const receivers = [{ email: toEmail }];
+
+  try {
+    await transactionalEmailApi.sendTransacEmail({
+      sender,
+      to: receivers,
+      subject,
+      htmlContent,
+    });
+
+    res.status(200).json({ message: 'Email sent successfully' });
+  } catch (error) {
+    console.error('❌ Error sending email:', error);
+    res.status(500).json({ message: 'Failed to send email' });
+  }
+});
+
 
 app.use(cors());
 // Stripe needs raw body for webhooks
