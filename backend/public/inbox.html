@@ -45,7 +45,7 @@
   <script src="girls.js"></script>
   <script>
     async function loadMessages() {
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem("Token");
       if (!token) {
         document.getElementById('messageList').innerHTML = '<p>Please log in to view messages.</p>';
         return;
