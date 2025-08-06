@@ -129,6 +129,14 @@
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
+    const outOfCreditMessages = [
+      "😢 Looks like we're out of flirty fuel. Wanna top up those credits?",
+      "🪙 Oops! You’ve run out of charm coins. Recharge and let's continue 😉",
+      "💔 I was just about to say something naughty, but… no credits 😭",
+      "✨ You broke my heart *and* the bank. Buy more credits, cutie?",
+      "😇 No credits, no kisses. Let's fix that 😘"
+    ];
+
     function appendMessage(text, sender, isTyping = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
@@ -174,12 +182,16 @@
           },
           body: JSON.stringify({ girlId, message: messageText })
         });
-        const data = await res.json();
 
-        await new Promise(resolve => setTimeout(resolve, randomDelay()));
+        const data = await res.json();
         typingBubble.remove();
 
-        appendMessage(data.reply || "(No reply received)", 'girl');
+        if (!res.ok && res.status === 403 && data?.error?.includes("out of credits")) {
+          const randomMsg = outOfCreditMessages[Math.floor(Math.random() * outOfCreditMessages.length)];
+          appendMessage(randomMsg, 'girl');
+        } else {
+          appendMessage(data.reply || "(No reply received)", 'girl');
+        }
       } catch (err) {
         console.error("Chat error:", err);
         typingBubble.remove();
