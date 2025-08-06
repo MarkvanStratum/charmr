@@ -9,6 +9,9 @@ import path from "path";
 import { fileURLToPath } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import { sendWelcomeEmail } from './email.js';
+import crypto from 'crypto';
+import { sendPasswordResetEmail } from './email.js';
+
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -2570,6 +2573,61 @@ res.json({ token });
     res.status(500).json({ error: "Server error" });
   }
 });
+
+app.post("/api/request-password-reset", async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    const userResult = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ error: "No account with that email found" });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 1000 * 60 * 30); // 30 min
+
+    await pool.query(
+      "UPDATE users SET reset_token = $1, reset_token_expires = $2 WHERE email = $3",
+      [resetToken, expires, email]
+    );
+
+    await sendPasswordResetEmail(email, resetToken);
+
+    res.json({ message: "Reset link sent if the email is registered." });
+  } catch (err) {
+    console.error("Reset request error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+app.post("/api/reset-password", async (req, res) => {
+  const { token, password } = req.body;
+
+  try {
+    const userResult = await pool.query(
+      "SELECT * FROM users WHERE reset_token = $1 AND reset_token_expires > NOW()",
+      [token]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ error: "Invalid or expired token" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      "UPDATE users SET password = $1, reset_token = NULL, reset_token_expires = NULL WHERE reset_token = $2",
+      [hashedPassword, token]
+    );
+
+    res.json({ message: "Password reset successful!" });
+  } catch (err) {
+    console.error("Reset password error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
 
 app.post("/api/login", async (req, res) => {
   const { email, password } = req.body;
