@@ -1,3 +1,4 @@
+// Sends a welcome email to a new user
 export async function sendWelcomeEmail(toEmail, toName = 'there') {
   try {
     const sender = { email: 'no-reply@charmr.xyz', name: 'Charmr' };
@@ -22,8 +23,8 @@ export async function sendWelcomeEmail(toEmail, toName = 'there') {
   }
 }
 
-// Optional: Simple sanitization to avoid XSS if `toName` is user-controlled
-function sanitizeHtml(str) {
+// Simple sanitization to avoid XSS in user-controlled strings like toName
+export function sanitizeHtml(str) {
   return String(str).replace(/[&<>"']/g, match => ({
     '&': '&amp;',
     '<': '&lt;',
