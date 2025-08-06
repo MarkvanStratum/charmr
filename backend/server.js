@@ -8,7 +8,7 @@ import Stripe from "stripe";
 import path from "path";
 import { fileURLToPath } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
-
+import { sendWelcomeEmail } from './email.js';
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -2547,6 +2547,9 @@ app.post("/api/register", async (req, res) => {
   [email, hashedPassword, gender, lookingFor, phone]
 );
 
+await sendWelcomeEmail(email);
+
+
 // Get the new user's ID
 const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
 const newUser = newUserResult.rows[0];
@@ -2555,6 +2558,10 @@ const token = jwt.sign(
   SECRET_KEY,
   { expiresIn: "7d" }
 );
+
+await sendWelcomeEmail(email);
+
+
 res.json({ token });
 
 
