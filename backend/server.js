@@ -516,14 +516,9 @@ const token = jwt.sign(
   { expiresIn: "7d" }
 );
 
-res.json({ message: "User registered successfully", token });
-
-
-// Create a token for the new user
-token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET_KEY, { expiresIn: "7d" });
-
-// Send the token back
+const token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET_KEY, { expiresIn: "7d" });
 res.json({ token });
+
 
   } catch (err) {
     console.error("Register error:", err);
@@ -552,7 +547,7 @@ app.post("/api/login", async (req, res) => {
 // 👇 Then you continue like normal
 
 
-app.get("/api/profiles", authenticateToken, (req, res) => {
+app.get("/api/profiles", (req, res) => {
   res.json(profiles);
 });
 
