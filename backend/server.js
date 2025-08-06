@@ -515,8 +515,6 @@ const token = jwt.sign(
   SECRET_KEY,
   { expiresIn: "7d" }
 );
-
-const token = jwt.sign({ id: newUser.id, email: newUser.email }, SECRET_KEY, { expiresIn: "7d" });
 res.json({ token });
 
 
