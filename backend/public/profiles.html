@@ -155,7 +155,6 @@ window.onload = async function() {
             card.innerHTML = `
                 <img src="${profile.image}" alt="${profile.name}">
                 <h3>${profile.name}</h3>
-                <p>Age: ${profile.age}</p>
                 <p>City: ${profile.city}</p>
                 <div class="btn-group">
                   <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
@@ -233,7 +232,7 @@ window.onload = async function() {
 
 <script>
 async function loadCredits() {
-  const token = localStorage.getItem("token"); // ✅ FIXED: using the correct token key
+  const token = localStorage.getItem("token");
   if (!token) return;
 
   try {
