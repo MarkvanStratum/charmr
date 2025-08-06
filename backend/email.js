@@ -1,3 +1,23 @@
+import SibApiV3Sdk from 'sib-api-v3-sdk';
+
+// Brevo SDK setup
+const defaultClient = SibApiV3Sdk.ApiClient.instance;
+const apiKey = defaultClient.authentications['api-key'];
+apiKey.apiKey = process.env.BREVO_API_KEY;
+
+const transactionalEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
+
+// Basic sanitization for HTML inputs
+function sanitizeHtml(str) {
+  return String(str).replace(/[&<>"']/g, match => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;',
+  }[match]));
+}
+
 // Sends a welcome email to a new user
 export async function sendWelcomeEmail(toEmail, toName = 'there') {
   try {
@@ -19,7 +39,7 @@ export async function sendWelcomeEmail(toEmail, toName = 'there') {
 
     console.log(`✅ Welcome email sent to ${toEmail}`);
   } catch (error) {
-    console.error('❌ Error sending welcome email:', error);
+    console.error('❌ Error sending welcome email:', error.response?.body || error);
   }
 }
 
@@ -35,6 +55,8 @@ export async function sendPasswordResetEmail(toEmail, resetLink) {
       <p>If you didn't request this, just ignore this email.</p>
     `;
 
+    console.log("🚀 Sending reset email with link:", resetLink); // Debug log
+
     await transactionalEmailApi.sendTransacEmail({
       sender,
       to: [{ email: toEmail }],
@@ -44,17 +66,6 @@ export async function sendPasswordResetEmail(toEmail, resetLink) {
 
     console.log(`✅ Password reset email sent to ${toEmail}`);
   } catch (error) {
-    console.error('❌ Error sending password reset email:', error);
+    console.error('❌ Error sending password reset email:', error.response?.body || error);
   }
-}
-
-// Basic sanitization for HTML inputs
-export function sanitizeHtml(str) {
-  return String(str).replace(/[&<>"']/g, match => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;',
-  }[match]));
 }
