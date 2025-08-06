@@ -2723,7 +2723,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
     const amountMap = {
       "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
       "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
-      "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
+      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": "lifetime"
     };
 
     const amount = amountMap[priceId];
