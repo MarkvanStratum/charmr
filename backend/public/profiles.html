@@ -140,9 +140,11 @@ window.onload = async function() {
     let lastMessageTime = null;
 
     if (!token) {
-        alert("You're not logged in. Please log in to receive messages.");
-        return;
-    }
+    alert("You're not logged in. Please log in to receive messages.");
+    window.location.href = "https://charmr.xyz/login.html";
+    return;
+}
+
 
     async function loadProfiles() {
         const res = await fetch(`${backendUrl}/api/profiles`);
