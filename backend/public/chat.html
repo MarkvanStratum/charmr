@@ -129,14 +129,6 @@
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
-    const outOfCreditMessages = [
-      "😢 Looks like we're out of flirty fuel. Wanna top up those credits?",
-      "🪙 Oops! You’ve run out of charm coins. Recharge and let's continue 😉",
-      "💔 I was just about to say something naughty, but… no credits 😭",
-      "✨ You broke my heart *and* the bank. Buy more credits, cutie?",
-      "😇 No credits, no kisses. Let's fix that 😘"
-    ];
-
     function appendMessage(text, sender, isTyping = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
@@ -183,15 +175,46 @@
           body: JSON.stringify({ girlId, message: messageText })
         });
 
+        if (res.status === 403) {
+          const data = await res.json();
+          typingBubble.remove();
+
+          appendMessage(data.error || "You're out of credits!", 'girl');
+
+          const btn = document.createElement("button");
+          btn.textContent = "🔁 Buy More Credits";
+          btn.style.marginTop = "10px";
+          btn.style.background = "#ef476f";
+          btn.style.color = "white";
+          btn.style.border = "none";
+          btn.style.padding = "8px 12px";
+          btn.style.borderRadius = "6px";
+          btn.style.cursor = "pointer";
+          btn.onclick = async () => {
+            const res = await fetch(`${backendUrl}/api/create-checkout-session`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${token}`
+              },
+              body: JSON.stringify({ priceId: "price_1RsdzREJXIhiKzYG45b69nSl", mode: "subscription" }) // £20 plan
+            });
+            const session = await res.json();
+            if (session.url) {
+              window.location.href = session.url;
+            }
+          };
+
+          chatBox.appendChild(btn);
+          chatBox.scrollTop = chatBox.scrollHeight;
+          return;
+        }
+
         const data = await res.json();
+        await new Promise(resolve => setTimeout(resolve, randomDelay()));
         typingBubble.remove();
 
-        if (!res.ok && res.status === 403 && data?.error?.includes("out of credits")) {
-          const randomMsg = outOfCreditMessages[Math.floor(Math.random() * outOfCreditMessages.length)];
-          appendMessage(randomMsg, 'girl');
-        } else {
-          appendMessage(data.reply || "(No reply received)", 'girl');
-        }
+        appendMessage(data.reply || "(No reply received)", 'girl');
       } catch (err) {
         console.error("Chat error:", err);
         typingBubble.remove();
