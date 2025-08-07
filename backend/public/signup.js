@@ -21,10 +21,11 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
 
     if (response.ok) {
       if (data.token) {
-        localStorage.setItem("token", data.token); // ✅ Save the token
+        // Set the authentication token as a cookie
+        document.cookie = "authToken=" + data.token + "; path=/; expires=" + new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toUTCString() + "; secure; HttpOnly; SameSite=Strict";
       }
       alert("Registration successful! Please log in.");
-      window.location.href = "login.html";
+      window.location.href = "profiles.html";
     } else {
       alert(`Registration failed: ${data.error || JSON.stringify(data)}`);
       console.error("Registration error response:", data);
