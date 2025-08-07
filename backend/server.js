@@ -2943,7 +2943,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
           quantity: 1,
         },
       ],
-      success_url: `${req.headers.origin}/success.html`,
+      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/cancel.html`,
     });
 
