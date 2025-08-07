@@ -51,34 +51,36 @@
   </div>
   <script src="https://cdn.goaffpro.com/js/affiliate.js" type="text/javascript"></script>
 <script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const priceId = urlParams.get('priceId');
+  window.onload = function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const priceId = urlParams.get('priceId');
 
-  const priceMap = {
-    "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 5.00,
-    "price_1RsdzREJXIhiKzYG45b69nSl": 20.00,
-    "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 99.00
-  };
-
-  if (priceId && priceMap[priceId]) {
-    const netAmount = priceMap[priceId];
-    const orderId = Date.now(); // Or use your own real order ID
-
-    window.goaffpro_order = {
-      number: orderId,
-      total: netAmount
+    const priceMap = {
+      "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 5.00,
+      "price_1RsdzREJXIhiKzYG45b69nSl": 20.00,
+      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 99.00
     };
 
-    if (typeof window.goaffproTrackConversion !== "undefined") {
-      window.goaffproTrackConversion(window.goaffpro_order);
-    } else {
-      console.warn("GoAffPro tracking not ready");
-    }
-  } else {
-    console.warn("Price ID not found or invalid:", priceId);
-  }
-</script>
+    if (priceId && priceMap[priceId]) {
+      const netAmount = priceMap[priceId];
+      const orderId = Date.now();
 
+      window.goaffpro_order = {
+        number: orderId,
+        total: netAmount
+      };
+
+      if (typeof window.goaffproTrackConversion !== "undefined") {
+        window.goaffproTrackConversion(window.goaffpro_order);
+        console.log("✅ Conversion tracked:", window.goaffpro_order);
+      } else {
+        console.warn("❌ GoAffPro tracking not ready");
+      }
+    } else {
+      console.warn("⚠️ Price ID not found or invalid:", priceId);
+    }
+  };
+</script>
 
 </body>
 </html>
