@@ -2928,26 +2928,27 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Premium Chat Credits',
-              description: 'Unlock 100 credits',
-            },
-            unit_amount: 499, // $4.99
-          },
-          quantity: 1,
+  payment_method_types: ['card'],
+  mode: 'payment',
+  line_items: [
+    {
+      price_data: {
+        currency: 'usd',
+        product_data: {
+          name: 'Premium Chat Credits',
+          description: 'Unlock 100 credits',
         },
-      ],
-      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/cancel.html`,
-    });
+        unit_amount: 499,
+      },
+      quantity: 1,
+    },
+  ],
+  success_url: `${req.headers.origin}/thankyou.html?session_id={CHECKOUT_SESSION_ID}`,  // ✅ FIXED
+  cancel_url: `${req.headers.origin}/cancel.html`,
+});
 
-    res.json({ url: session.url });
+
+    res.json({ id: session.id });
   } catch (err) {
     console.error('Stripe error:', err);
     res.status(500).json({ error: 'Something went wrong.' });
