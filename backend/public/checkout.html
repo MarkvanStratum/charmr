@@ -123,34 +123,24 @@
       const name = document.getElementById("cardholder-name").value;
 
       try {
-        const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({ priceId: selectedPlan }),
-        });
+        const res = await fetch("https://charmr-jfmc.onrender.com/api/create-checkout-session", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${localStorage.getItem("token")}`
+  },
+  body: JSON.stringify({ priceId: selectedPlan }),
+});
+
 
         const data = await res.json();
-        if (!data.clientSecret) {
-          message.textContent = "Payment failed to start. Try again.";
-          return;
-        }
+if (!data.id) {
+  message.textContent = "Payment failed to start. Try again.";
+  return;
+}
 
-        const result = await stripe.confirmCardPayment(data.clientSecret, {
-          payment_method: {
-            card: card,
-            billing_details: { name },
-          }
-        });
-
-        if (result.error) {
-          message.textContent = result.error.message;
-        } else if (result.paymentIntent.status === "succeeded") {
-          window.location.href = "/thankyou.html";
-        }
-      } catch (err) {
+await stripe.redirectToCheckout({ sessionId: data.id });
+} catch (err) {
         console.error(err);
         message.textContent = "Something went wrong. Try again.";
       }
