@@ -40,7 +40,7 @@ app.get('/', (req, res) => {
 app.post('/send-email', async (req, res) => {
   const { toEmail, subject, htmlContent } = req.body;
 
-  const sender = { email: 'you@example.com', name: 'Your App' }; // Change this to your verified sender
+  const sender = { email: 'no-reply@charmr.xyz', name: 'Your App' }; // Change this to your verified sender
   const receivers = [{ email: toEmail }];
 
   try {
