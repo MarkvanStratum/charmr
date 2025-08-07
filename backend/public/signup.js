@@ -25,7 +25,7 @@ document.getElementById("signup-form").addEventListener("submit", async (e) => {
         document.cookie = "authToken=" + data.token + "; path=/; expires=" + new Date(new Date().getTime() + 7 * 24 * 60 * 60 * 1000).toUTCString() + "; secure; HttpOnly; SameSite=Strict";
       }
       alert("Registration successful! Please log in.");
-      window.location.href = "profiles.html";
+      window.location.href = "login.html";
     } else {
       alert(`Registration failed: ${data.error || JSON.stringify(data)}`);
       console.error("Registration error response:", data);
