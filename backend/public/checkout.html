@@ -148,7 +148,8 @@
         if (result.error) {
           message.textContent = result.error.message;
         } else if (result.paymentIntent.status === "succeeded") {
-          window.location.href = "/thankyou.html";
+          window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
+
         }
       } catch (err) {
         console.error(err);
