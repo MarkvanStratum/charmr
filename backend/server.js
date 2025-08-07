@@ -75,6 +75,29 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+app.get("/api/get-stripe-session", async (req, res) => {
+  try {
+    const sessionId = req.query.session_id;
+
+    if (!sessionId) {
+      return res.status(400).json({ error: "Missing session_id" });
+    }
+
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+    res.json({
+      id: session.id,
+      amount_subtotal: session.amount_subtotal,
+      amount_total: session.amount_total,
+      currency: session.currency
+    });
+  } catch (error) {
+    console.error("Error fetching Stripe session:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
 (async () => {
   try {
     await pool.query(`
