@@ -79,15 +79,18 @@ const pool = new Pool({
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        gender TEXT,
-        lookingfor TEXT,
-        phone TEXT,
-        credits INT DEFAULT 3,
-        lifetime BOOLEAN DEFAULT false
-      );
+  id SERIAL PRIMARY KEY,  -- unique identifier for each user
+  email TEXT UNIQUE NOT NULL,  -- user's email (must be unique)
+  password TEXT NOT NULL,  -- user's password (hashed)
+  gender TEXT,  -- user's gender
+  lookingfor TEXT,  -- what the user is looking for (e.g., relationship, friendship)
+  phone TEXT,  -- user's phone number
+  credits INT DEFAULT 3,  -- initial credits for the user, default is 3
+  lifetime BOOLEAN DEFAULT false,  -- indicates whether the user has a lifetime membership
+  reset_token TEXT,  -- token generated for password reset
+  reset_token_expires TIMESTAMP  -- expiration time for the reset token
+);
+
     `);
 
     await pool.query(`
