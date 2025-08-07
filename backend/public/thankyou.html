@@ -62,7 +62,7 @@
 
   if (priceId && priceMap[priceId]) {
     const netAmount = priceMap[priceId];
-    const orderId = Date.now(); // Random ID or replace with your own logic
+    const orderId = Date.now(); // Or use your own real order ID
 
     window.goaffpro_order = {
       number: orderId,
@@ -71,9 +71,14 @@
 
     if (typeof window.goaffproTrackConversion !== "undefined") {
       window.goaffproTrackConversion(window.goaffpro_order);
+    } else {
+      console.warn("GoAffPro tracking not ready");
     }
+  } else {
+    console.warn("Price ID not found or invalid:", priceId);
   }
 </script>
+
 
 </body>
 </html>
