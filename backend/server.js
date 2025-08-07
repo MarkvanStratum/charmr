@@ -2836,30 +2836,30 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
   }
 });
 
-app.post("/api/create-checkout-session", authenticateToken, async (req, res) => {
+app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   const { priceId } = req.body;
 
   try {
-    const session = await stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1
-        }
-      ],
+    // Lookup price based on priceId (you can store the amounts instead if needed)
+    const amountMap = {
+      "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
+      "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
+      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 10000000
+    };
+
+    const amount = amountMap[priceId];
+    if (!amount) return res.status(400).json({ error: "Invalid priceId" });
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
       currency: "gbp",
-      success_url: `${req.headers.origin}/thankyou.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/cancel.html`,
-      metadata: {
-        userId: req.user.id.toString()
-      }
+      metadata: { userId: req.user.id.toString(), priceId },
     });
 
-    res.json({ id: session.id });
+    res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
-    console.error("Checkout Session error:", err.message);
-    res.status(500).json({ error: "Failed to create checkout session" });
+    console.error("PaymentIntent error:", err.message);
+    res.status(500).json({ error: "Failed to create payment intent" });
   }
 });
 
@@ -2927,23 +2927,28 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
-    const { priceId } = req.body;
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: 'Premium Chat Credits',
+              description: 'Unlock 100 credits',
+            },
+            unit_amount: 499, // $4.99
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
 
-const session = await stripe.checkout.sessions.create({
-  mode: 'payment',
-  line_items: [
-    {
-      price: priceId, // ← coming from the frontend
-      quantity: 1
-    }
-  ],
-  success_url: `${req.headers.origin}/thankyou.html?session_id={CHECKOUT_SESSION_ID}`,
-  cancel_url: `${req.headers.origin}/cancel.html`,
-});
+      cancel_url: `${req.headers.origin}/cancel.html`,
+    });
 
-
-
-    res.json({ id: session.id });
+    res.json({ url: session.url });
   } catch (err) {
     console.error('Stripe error:', err);
     res.status(500).json({ error: 'Something went wrong.' });
