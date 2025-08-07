@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Thank You | Charmr</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 2rem 3rem;
+      text-align: center;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #7c3aed;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+    a.button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: #7c3aed;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    a.button:hover {
+      background-color: #5b21b6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Thank You for Your Purchase!</h1>
+    <p>Your payment was successful. You're now part of Charmr ✨</p>
+    <a href="profile.html" class="button">Go to Your Profile</a>
+  </div>
+
+  <!-- GoAffPro conversion tracking pixel -->
+  <script type="text/javascript">
+    window.goaffpro_order = {
+      number: "#1001",   // Replace this dynamically if needed
+      total: 1000        // Replace with actual purchase amount
+    };
+    if (typeof window.goaffproTrackConversion !== "undefined") {
+      window.goaffproTrackConversion(window.goaffpro_order);
+    }
+  </script>
+</body>
+</html>

@@ -80,6 +80,7 @@
       color: red;
     }
   </style>
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
   <form id="payment-form">
@@ -147,7 +148,7 @@
         if (result.error) {
           message.textContent = result.error.message;
         } else if (result.paymentIntent.status === "succeeded") {
-          window.location.href = "/profiles.html";
+          window.location.href = "/thankyou.html";
         }
       } catch (err) {
         console.error(err);
