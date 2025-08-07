@@ -47,17 +47,32 @@
   <div class="container">
     <h1>Thank You for Your Purchase!</h1>
     <p>Your payment was successful. You're now part of Charmr ✨</p>
-    <a href="profile.html" class="button">Go to Your Profile</a>
+    <a href="profiles.html" class="button">Go to Your Profile</a>
   </div>
+  <script src="https://cdn.goaffpro.com/js/affiliate.js" type="text/javascript"></script>
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const sessionId = urlParams.get('session_id');
 
-  <!-- GoAffPro conversion tracking pixel -->
-  <script type="text/javascript">
-    window.goaffpro_order = {
-      number: "#1001",   // Replace this dynamically if needed
-      total: 1000        // Replace with actual purchase amount
-    };
-    if (typeof window.goaffproTrackConversion !== "undefined") {
-      window.goaffproTrackConversion(window.goaffpro_order);
+    if (sessionId) {
+      fetch(`/api/get-stripe-session?session_id=${sessionId}`)
+        .then(res => res.json())
+        .then(session => {
+          const netAmount = session.amount_subtotal / 100; // from pence to pounds
+          const orderId = session.id;
+
+          window.goaffpro_order = {
+            number: orderId,
+            total: netAmount
+          };
+
+          if (typeof window.goaffproTrackConversion !== "undefined") {
+            window.goaffproTrackConversion(window.goaffpro_order);
+          }
+        })
+        .catch(err => {
+          console.error("Error fetching Stripe session:", err);
+        });
     }
   </script>
 </body>
