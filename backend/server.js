@@ -108,7 +108,7 @@ app.get("/api/get-stripe-session", async (req, res) => {
   gender TEXT,  -- user's gender
   lookingfor TEXT,  -- what the user is looking for (e.g., relationship, friendship)
   phone TEXT,  -- user's phone number
-  credits INT DEFAULT 3,  -- initial credits for the user, default is 3
+  credits INT DEFAULT 7,  -- initial credits for the user, default is 3
   lifetime BOOLEAN DEFAULT false,  -- indicates whether the user has a lifetime membership
   reset_token TEXT,  -- token generated for password reset
   reset_token_expires TIMESTAMP  -- expiration time for the reset token
