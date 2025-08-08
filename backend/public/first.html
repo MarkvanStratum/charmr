@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Limited-Time Offer</title>
+
+  <!-- (Optional) Keep your analytics/affiliate, if you want consistency -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date()); gtag('config', 'G-FDQ6REQWS8');
+  </script>
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <style>
+    :root{
+      --bg2:#ffe3ea;
+      --primary:#d61b5a;
+      --primary-600:#b21449;
+      --ring: rgba(214,27,90,.35);
+      --form-pink:#ffe6ee;
+      --ink:#1a1a1a;
+    }
+    *{box-sizing:border-box;}
+
+    html,body{
+      margin:0; padding:0; min-height:100%;
+      font-family: system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,sans-serif;
+      color:var(--ink);
+      background: linear-gradient(to bottom, #fff 0%, var(--bg2) 100%);
+    }
+
+    /* Logo bar */
+    .logo-bar{
+      background:#fff; border-bottom:1px solid #f0f0f0;
+      padding:20px; display:flex; justify-content:center; align-items:center;
+    }
+    .logo-bar img{height:56px; width:auto; display:block;}
+
+    main{ max-width:1100px; margin:0 auto; padding:20px; }
+
+    .card{
+      background:var(--form-pink);
+      border-radius:18px;
+      border:1px solid rgba(214,27,90,.18);
+      box-shadow:0 20px 60px rgba(214,27,90,.10);
+      max-width:720px; margin:12px auto 24px; padding:24px;
+      text-align:center;
+    }
+
+    h1{
+      margin:0 0 8px; font-size:2rem; color:var(--primary-600);
+    }
+    .sub{
+      margin:0 0 16px; color:#333; font-size:1.05rem;
+    }
+
+    .prices{
+      display:flex; justify-content:center; gap:16px; flex-wrap:wrap; margin:10px 0 18px;
+    }
+    .badge{
+      background:#fff; border:1px solid #f0d6de; border-radius:12px;
+      padding:10px 14px; font-weight:800; color:#222;
+    }
+    .strike{ text-decoration: line-through; color:#777; font-weight:600; }
+
+    #countdown{
+      font-weight:800; font-size:1.25rem; margin: 6px 0 16px; color:#111;
+    }
+
+    /* CTA */
+    #cta-button{
+      display:block; width:fit-content; margin: 0 auto;
+      text-decoration:none;
+    }
+    .cta{
+      padding: 14px 22px; font-size:1.05rem; font-weight:800;
+      border:none; border-radius:12px; cursor:pointer;
+      background: linear-gradient(180deg, var(--primary), var(--primary-600));
+      color:#fff; transition: filter .15s ease-in-out, transform .02s ease-in-out;
+    }
+    .cta:hover{ filter:brightness(1.08); }
+    .cta:active{ transform: translateY(1px); }
+
+    .tiny{
+      margin-top:12px; color:#555; font-size:.92rem;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- White logo header -->
+  <div class="logo-bar">
+    <img src="logo.png" alt="CHARMR logo">
+  </div>
+
+  <main>
+    <section class="card" aria-label="Limited-time new member offer">
+      <h1>Limited-Time Offer</h1>
+      <p class="sub">Because you’re new, you can try CHARMER* for much less — see how easy no-strings hookups are. For this price the average male member gets 2 no-strings attached hookups with our female members. For only £0.16/day, you'll get to meet our female members that want quick hookups, this is a one time only offer!</p>
+
+      <div class="prices">
+        <span class="badge"><span class="strike">£0.66/day</span></span>
+        <span class="badge">Now only <strong>£0.16/day</strong> (75% off)</span>
+      </div>
+
+      <div id="countdown">05:00</div>
+
+      <a id="cta-button" href="https://charmr.xyz/checkout.html">
+        <button class="cta" type="button">Get your discount now</button>
+      </a>
+
+      <p class="tiny">*Casual, consensual, adults-only fun. Cancel any time.</p>
+    </section>
+  </main>
+
+  <script>
+    // Show this page ONLY once per user (client-side guard).
+    (function(){
+      // If they've seen the offer before, skip to profiles
+      if (localStorage.getItem('seenFirstTimeOffer') === 'true') {
+        window.location.href = 'profiles.html';
+        return;
+      }
+      // Mark as seen immediately so back/refresh doesn’t re-show
+      localStorage.setItem('seenFirstTimeOffer', 'true');
+    })();
+
+    // 5:00 countdown
+    (function startCountdown(totalSeconds){
+      const el = document.getElementById('countdown');
+      function tick(){
+        const m = Math.floor(totalSeconds/60);
+        const s = totalSeconds%60;
+        el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        totalSeconds--;
+        if (totalSeconds < 0) {
+          el.textContent = 'OFFER ENDED';
+          // (Optional) disable CTA when timer ends
+          const link = document.getElementById('cta-button');
+          if (link) { link.style.pointerEvents = 'none'; link.style.opacity = '0.6'; }
+          return;
+        }
+        setTimeout(tick, 1000);
+      }
+      tick();
+    })(5*60);
+
+    // Also mark as seen when they click (belt & braces)
+    document.addEventListener('click', (e)=>{
+      const a = e.target.closest('#cta-button');
+      if (a) localStorage.setItem('seenFirstTimeOffer','true');
+    });
+  </script>
+</body>
+</html>
