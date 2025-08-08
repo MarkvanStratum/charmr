@@ -19,8 +19,9 @@
       font-family: Arial, sans-serif;
       background: #fdf2f8;
       display: flex;
-      justify-content: center;
-      align-items: flex-start;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
       padding: 40px 20px;
       min-height: 100vh;
       margin: 0;
@@ -88,6 +89,20 @@
       font-size: 14px;
       color: red;
     }
+
+    /* Style for link under form */
+    .profiles-link {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .profiles-link a {
+      color: #ef476f;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    .profiles-link a:hover {
+      text-decoration: underline;
+    }
   </style>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
@@ -95,11 +110,11 @@
   <form id="payment-form">
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
-      <label for="plan5">💌 10 Messages per month (avg. 2 hookups) – £0.16/day</label>
+      <label for="plan5">💌 10 Messages (avg. 2 hookups) – £0.16/day</label>
     </div>
     <div class="plan">
       <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
-      <label for="plan20">🔥 50 Messages per month (avg. 15 hookups) – £0.66/day</label>
+      <label for="plan20">🔥 50 Messages (avg. 15 hookups) – £0.66/day</label>
     </div>
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
@@ -114,6 +129,11 @@
     <button type="submit" id="submit">Pay</button>
     <div id="message"></div>
   </form>
+
+  <!-- Link under the signup/payment box -->
+  <div class="profiles-link">
+    <a href="https://charmr.xyz/profiles.html">Take me to the girls profiles</a>
+  </div>
 
   <script>
     const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
@@ -158,7 +178,6 @@
           message.textContent = result.error.message;
         } else if (result.paymentIntent.status === "succeeded") {
           window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
-
         }
       } catch (err) {
         console.error(err);
