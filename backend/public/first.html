@@ -1,11 +1,11 @@
-<!doctype html>
+<!doctype html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Limited-Time Offer</title>
 
-  <!-- (Optional) Keep your analytics/affiliate, if you want consistency -->
+  <!-- Analytics / affiliate scripts (unchanged) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -98,8 +98,15 @@
 
   <main>
     <section class="card" aria-label="Limited-time new member offer">
-      <h1>Limited-Time Offer</h1>
-      <p class="sub">Because you’re new, you can try CHARMER* for much less — see how easy no-strings hookups are. For this price the average male member gets 2 no-strings attached hookups with our female members. For only £0.16/day, you'll get to meet our female members that want quick hookups, this is a one time only offer!</p>
+      <h1>Based on your preferences, we found the perfect match for you!</h1>
+
+      <!-- Profile picture -->
+      <img src="pic.png" alt="Profile picture of Sophie" style="max-width:200px;border-radius:12px;margin-bottom:16px;">
+
+      <p class="sub">
+        Sophie from <span class="userCity"></span> has already expressed great interest in meeting you and would love to chat with you!
+        Because you already found a match, we’ll offer you a one-time discount. On the next page you can join for only <strong>£0.16</strong>!
+      </p>
 
       <div class="prices">
         <span class="badge"><span class="strike">£0.66/day</span></span>
@@ -116,39 +123,66 @@
     </section>
   </main>
 
+  <!-- City injection script -->
+  <script>
+    (function(){
+      fetch('https://ipapi.co/json/')
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.city) {
+            var cityText = ' (' + data.city + ')';
+            document.querySelectorAll('.userCity').forEach(function(el){
+              el.textContent = cityText;
+            });
+            window.userCityName = data.city;
+          }
+        })
+        .catch(function(){});
+    })();
+  </script>
+
   <script>
     // Show this page ONLY once per user (client-side guard).
     (function(){
-      // If they've seen the offer before, skip to profiles
       if (localStorage.getItem('seenFirstTimeOffer') === 'true') {
         window.location.href = 'profiles.html';
         return;
       }
-      // Mark as seen immediately so back/refresh doesn’t re-show
       localStorage.setItem('seenFirstTimeOffer', 'true');
     })();
 
-    // 5:00 countdown
-    (function startCountdown(totalSeconds){
-      const el = document.getElementById('countdown');
-      function tick(){
-        const m = Math.floor(totalSeconds/60);
-        const s = totalSeconds%60;
-        el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-        totalSeconds--;
-        if (totalSeconds < 0) {
+    // Countdown timer
+    document.addEventListener('DOMContentLoaded', function () {
+      var el = document.getElementById('countdown');
+      if (!el) return;
+
+      var total = 5 * 60; // 5 minutes in seconds
+
+      function render() {
+        var m = Math.floor(total / 60);
+        var s = total % 60;
+        el.textContent = ('0' + m).slice(-2) + ':' + ('0' + s).slice(-2);
+      }
+
+      render();
+
+      var timer = setInterval(function () {
+        total--;
+        if (total < 0) {
+          clearInterval(timer);
           el.textContent = 'OFFER ENDED';
-          // (Optional) disable CTA when timer ends
-          const link = document.getElementById('cta-button');
-          if (link) { link.style.pointerEvents = 'none'; link.style.opacity = '0.6'; }
+          var link = document.getElementById('cta-button');
+          if (link) {
+            link.style.pointerEvents = 'none';
+            link.style.opacity = '0.6';
+          }
           return;
         }
-        setTimeout(tick, 1000);
-      }
-      tick();
-    })(5*60);
+        render();
+      }, 1000);
+    });
 
-    // Also mark as seen when they click (belt & braces)
+    // Mark as seen on click
     document.addEventListener('click', (e)=>{
       const a = e.target.closest('#cta-button');
       if (a) localStorage.setItem('seenFirstTimeOffer','true');
