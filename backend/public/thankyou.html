@@ -53,32 +53,37 @@
   </style>
 </head>
 <body>
-<!-- Load GoAffPro (same as you have now) -->
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-
-<div class="container">
-  <h1>Thank You for Your Purchase!</h1>
-  <p>Your payment was successful. You're now part of Charmr ✨</p>
-  <a href="profiles.html" class="button">Go to Your Profile</a>
-</div>
-
-<!-- Minimal, safe conversion fire -->
 <script type="text/javascript">
-  // Set your order data
-  window.goaffpro_order = {
-    number: "1001",   // use a fresh order id; no leading '#'
-    total: 1000,      // keep the same units you used before
-    currency: "USD"   // optional but recommended
-  };
+  // ---- helpers ----
+  function uniqueOrderId() {
+    // e.g. ORD-20250810-1691425367890-4f8c
+    const ts = Date.now();
+    const rand = Math.random().toString(16).slice(2, 6);
+    return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
+  }
 
-  // Retry until the loader defines the function (fixes the race condition)
-  (function fire(){
-    if (typeof window.goaffproTrackConversion === "function") {
-      window.goaffproTrackConversion(window.goaffpro_order);
-    } else {
-      setTimeout(fire, 150);
-    }
-  })();
+  // prevent double-fire on reload/back
+  if (!sessionStorage.getItem('gaffpro_converted')) {
+    window.goaffpro_order = {
+      number: uniqueOrderId(),     // <-- always unique
+      total: 1000,                 // use your real amount here (number, not string)
+      currency: "USD"
+      // optionally: add other fields your flow uses
+      // sub_id is captured from the click, no need to put it here
+    };
+
+    (function fire(){
+      if (typeof window.goaffproTrackConversion === "function") {
+        console.log("GoAffPro: firing conversion", window.goaffpro_order);
+        window.goaffproTrackConversion(window.goaffpro_order);
+        sessionStorage.setItem('gaffpro_converted', '1');
+      } else {
+        setTimeout(fire, 150);
+      }
+    })();
+  } else {
+    console.log("GoAffPro: conversion already fired in this session");
+  }
 </script>
 
 </body>
