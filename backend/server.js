@@ -25,6 +25,23 @@ apiKey.apiKey = process.env.BREVO_API_KEY;
 
 const transactionalEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
+const contactsApi = new SibApiV3Sdk.ContactsApi();
+async function upsertBrevoContact({ email, attributes = {}, listId = process.env.BREVO_LIST_ID }) {
+  // create OR update, and add to your list
+  const payload = new SibApiV3Sdk.CreateContact();
+  payload.email = email;
+  payload.attributes = attributes;               // e.g. { SOURCE: 'signup' }
+  payload.listIds = [Number(listId)];
+  payload.updateEnabled = true;
+
+  try {
+    await contactsApi.createContact(payload);
+  } catch (e) {
+    // don’t block the user flow if Brevo hiccups
+    console.warn("Brevo contact upsert failed:", e?.response?.text || e.message);
+  }
+}
+
 const { Pool } = pkg;
 
 const app = express();
@@ -50,6 +67,13 @@ app.post('/send-email', async (req, res) => {
       subject,
       htmlContent,
     });
+
+upsertBrevoContact({
+  email: receivers[0].email,   // ← correct variable
+  attributes: { SOURCE: 'contact' }
+});
+
+res.status(200).json({ message: 'Email sent successfully' });
 
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
@@ -2590,6 +2614,10 @@ const token = jwt.sign(
 
 await sendWelcomeEmail(email);
 
+upsertBrevoContact({
+  email,
+  attributes: { SOURCE: 'signup' } // optional, helps segmenting in Brevo
+});
 
 res.json({ token });
 
