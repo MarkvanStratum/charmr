@@ -53,21 +53,33 @@
   </style>
 </head>
 <body>
+<!-- Load GoAffPro (same as you have now) -->
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-  <div class="container">
-    <h1>Thank You for Your Purchase!</h1>
-    <p>Your payment was successful. You're now part of Charmr ✨</p>
-    <a href="profiles.html" class="button">Go to Your Profile</a>
-  </div>
-  <script type="text/javascript">
-      window.goaffpro_order = {
-        number : "#1001",
-        total: 1000
-      }
-      if(typeof window.goaffproTrackConversion !== "undefined"){
-        window.goaffproTrackConversion(window.goaffpro_order)
-      }
-    </script>
+
+<div class="container">
+  <h1>Thank You for Your Purchase!</h1>
+  <p>Your payment was successful. You're now part of Charmr ✨</p>
+  <a href="profiles.html" class="button">Go to Your Profile</a>
+</div>
+
+<!-- Minimal, safe conversion fire -->
+<script type="text/javascript">
+  // Set your order data
+  window.goaffpro_order = {
+    number: "1001",   // use a fresh order id; no leading '#'
+    total: 1000,      // keep the same units you used before
+    currency: "USD"   // optional but recommended
+  };
+
+  // Retry until the loader defines the function (fixes the race condition)
+  (function fire(){
+    if (typeof window.goaffproTrackConversion === "function") {
+      window.goaffproTrackConversion(window.goaffpro_order);
+    } else {
+      setTimeout(fire, 150);
+    }
+  })();
+</script>
 
 </body>
 </html>
