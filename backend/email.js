@@ -27,7 +27,7 @@ export async function sendWelcomeEmail(toEmail, toName = 'there') {
     const htmlContent = `
       <p>Hi ${sanitizeHtml(toName)},</p>
       <p>Thanks for signing up at Charmr! Let the magic begin ✨</p>
-      <p><a href="https://charmr.xyz/login.html" target="_blank">Click here to log in</a></p>
+      <p><a href="https://charmr.xyz/login.html" target="_blank">Click here to confirm your email and log in:</a></p>
     `;
 
     await transactionalEmailApi.sendTransacEmail({
