@@ -186,5 +186,43 @@
       if (a) localStorage.setItem('seenFirstTimeOffer','true');
     });
   </script>
+
+  <!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->
+  <script>
+    (function () {
+      // ISO country codes for eurozone members (incl. HR)
+      const EUROZONE = new Set([
+        "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
+        "LV","LT","LU","MT","NL","PT","SK","SI","ES"
+      ]);
+
+      function replacePoundSymbols(root, toSymbol) {
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        const texts = [];
+        while (walker.nextNode()) texts.push(walker.currentNode);
+        texts.forEach(node => {
+          if (node.nodeValue && node.nodeValue.includes("£")) {
+            node.nodeValue = node.nodeValue.replace(/£/g, toSymbol);
+          }
+        });
+      }
+
+      try {
+        fetch("https://ipapi.co/country/")
+          .then(r => r.ok ? r.text() : Promise.reject())
+          .then(cc => {
+            cc = (cc || "").trim().toUpperCase();
+            if (cc === "US") {
+              replacePoundSymbols(document.body, "$");
+            } else if (EUROZONE.has(cc)) {
+              replacePoundSymbols(document.body, "€");
+            }
+          })
+          .catch(() => { /* leave GBP on failure */ });
+      } catch (_) {
+        /* leave GBP if anything unexpected happens */
+      }
+    })();
+  </script>
 </body>
 </html>

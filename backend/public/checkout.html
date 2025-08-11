@@ -186,5 +186,39 @@
       }
     });
   </script>
+
+  <!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->
+  <script>
+    (function () {
+      // ISO country codes for eurozone members (including Croatia since 2023)
+      const EUROZONE = new Set([
+        "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
+        "LV","LT","LU","MT","NL","PT","SK","SI","ES"
+      ]);
+
+      function swapSymbol(symbol) {
+        document.querySelectorAll('.plan label').forEach(label => {
+          label.textContent = label.textContent.replace(/£/g, symbol);
+        });
+      }
+
+      // Fetch the visitor's country code via IP and adjust symbols accordingly
+      try {
+        fetch("https://ipapi.co/country/")
+          .then(r => r.ok ? r.text() : Promise.reject())
+          .then(cc => {
+            cc = (cc || "").trim().toUpperCase();
+            if (cc === "US") {
+              swapSymbol("$");
+            } else if (EUROZONE.has(cc)) {
+              swapSymbol("€");
+            }
+          })
+          .catch(() => { /* leave GBP on failure */ });
+      } catch (_) {
+        /* leave GBP if anything unexpected happens */
+      }
+    })();
+  </script>
 </body>
 </html>
