@@ -5068,23 +5068,29 @@ app.get("/api/profiles", (req, res) => {
 app.get("/api/messages", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   try {
-    const result = await pool.query("SELECT * FROM messages WHERE user_id = $1 ORDER BY created_at ASC", [userId]);
+    const result = await pool.query(
+      "SELECT * FROM messages WHERE user_id = $1 ORDER BY created_at ASC",
+      [userId]
+    );
+
     const grouped = {};
 
     for (const msg of result.rows) {
       const key = `${userId}-${msg.girl_id}`;
       if (!grouped[key]) grouped[key] = [];
+
+      // ✅ compute girl BEFORE using it in the object
+      const girl = req.profiles.find(p => p.id === msg.girl_id);
+
       grouped[key].push({
-        const girl = req.profiles.find(p => p.id === msg.girl_id);
-from: msg.from_user ? "user" : (girl?.name || "Unknown"),
-avatar: msg.from_user ? null : (girl?.image || null),
-(profiles.find(p => p.id === msg.girl_id)?.image || null),
+        from: msg.from_user ? "user" : (girl?.name || "Unknown"),
+        avatar: msg.from_user ? null : (girl?.image || null),
         text: msg.text,
         time: msg.created_at
       });
-    } // ✅ Close the for loop
+    }
 
-    res.json(grouped); // ✅ Then respond
+    res.json(grouped);
   } catch (err) {
     console.error("Message fetch error:", err);
     res.status(500).json({ error: "Server error" });
