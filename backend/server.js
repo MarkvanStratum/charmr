@@ -2471,19 +2471,19 @@ const profilesUK = [
     "image": "https://notadatingsite.online/pics/329.png",
     "description": "a bit mental, a bit sweet \ud83e\udd2a\ud83c\udf6d depends how u treat me lol"
   },
-  {
+    {
     "id": 330,
     "name": "Isla White",
     "city": "Cambridge",
     "image": "https://notadatingsite.online/pics/330.png",
-    "description": "bit of a madhead \ud83e\udd2a love a giggle, takeaway n sum company \ud83d\udc40\ud83d\ude06 slide in if u can keep up x"
+    "description": "bit of a madhead 🤪 love a giggle, takeaway n sum company 👀😂 slide in if u can keep up x"
   }
-];
+]; // <-- closes the UK profiles array
 
+// Start of US profiles array
 const profilesUS = [
-  // TODO: fill with your US profiles having the same shape as UK:
-  //  {
-    "id": 1,
+  {
+    "id": 10001,
     "name": "Chloe Moore",
     "city": "Miami",
     "image": "https://notadatingsite.online/pics/1.png",
