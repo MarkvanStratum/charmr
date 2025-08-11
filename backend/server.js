@@ -48,17 +48,6 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 
-// ✅ Parse JSON for ALL routes (except Stripe webhook which needs raw)
-app.use(cors());
-app.use((req, res, next) => {
-  if (req.originalUrl === '/webhook') {
-    return express.raw({ type: 'application/json' })(req, res, next);
-  }
-  return express.json()(req, res, next);
-});
-
-app.use(express.static(path.join(__dirname, 'public')));
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
@@ -90,6 +79,17 @@ res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
     console.error('❌ Error sending email:', error);
     res.status(500).json({ message: 'Failed to send email' });
+  }
+});
+
+
+app.use(cors());
+// Stripe needs raw body for webhooks
+app.use((req, res, next) => {
+  if (req.originalUrl === '/webhook') {
+    express.raw({ type: 'application/json' })(req, res, next);
+  } else {
+    express.json()(req, res, next);
   }
 });
 
