@@ -19,14 +19,9 @@ const __dirname = path.dirname(__filename);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// £5/month plan — trial applies only to this
-const FIVE_GBP_PRICE_ID = "price_1Rsdy1EJXIhiKzYGOtzvwhUH"; // <-- put your real Stripe price id here
-
-
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY; // ✅ leave as-is
-
+apiKey.apiKey = process.env.BREVO_API_KEY;
 
 const transactionalEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
@@ -36,15 +31,13 @@ async function upsertBrevoContact({ email, attributes = {}, listId = process.env
   const payload = new SibApiV3Sdk.CreateContact();
   payload.email = email;
   payload.attributes = attributes;               // e.g. { SOURCE: 'signup' }
-  payload.listIds = [7];
+  payload.listIds = [Number(listId)];
   payload.updateEnabled = true;
 
   try {
     await contactsApi.createContact(payload);
   } catch (e) {
-    // don’t block the user flow if 
-
- hiccups
+    // don’t block the user flow if Brevo hiccups
     console.warn("Brevo contact upsert failed:", e?.response?.text || e.message);
   }
 }
@@ -52,8 +45,6 @@ async function upsertBrevoContact({ email, attributes = {}, listId = process.env
 const { Pool } = pkg;
 
 const app = express();
-app.use(express.json()); 
-app.use(bodyParser.json());
 const PORT = process.env.PORT || 10000;
 const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 
@@ -159,8 +150,6 @@ app.get("/api/get-stripe-session", async (req, res) => {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
-   
- await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`);
 
     console.log("✅ Tables are ready");
   } catch (err) {
@@ -2883,39 +2872,29 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
     const amountMap = {
       "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
       "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
-      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 9900
+      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 10000000
     };
 
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
 
-    const paymentIntent = await stripe.paymentIntents.create(
-  {
-    amount,
-    currency: "gbp",
-    metadata: { userId: req.user.id.toString(), priceId },
-    automatic_payment_methods: { enabled: true },
-    statement_descriptor_suffix: "CHARMR"
-  },
-  { idempotencyKey: `pi_${req.user.id}_${priceId}_${Date.now()}` }
-);
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: "gbp",
+      metadata: { userId: req.user.id.toString(), priceId },
+    });
 
-
-        res.send({ clientSecret: paymentIntent.client_secret });
+    res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
     console.error("PaymentIntent error:", err.message);
     res.status(500).json({ error: "Failed to create payment intent" });
   }
 });
 
-// --- 32p trial setup: step 1 — create a one-off PaymentIntent to pass 3DS and save a reusable payment method
-app.post("/api/trial-intent", authenticateToken, async (req, res) => {
-  // ... FULL BLOCK GOES HERE ...
-});
-
-import bodyParser from "body-parser"; // (or whatever comes next in your file)
 
 
+
+import bodyParser from "body-parser"; // Add this at the top if not present
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -2941,7 +2920,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const amountMap = {
         "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
         "price_1RsdzREJXIhiKzYG45b69nSl": 50,
-        "price_1Rt6NcEJXIhiKzYGMsEZFd8f": "lifetime"
+        "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
       };
 
       const value = amountMap[priceId];

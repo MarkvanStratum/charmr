@@ -103,9 +103,6 @@
     .profiles-link a:hover {
       text-decoration: underline;
     }
-
-    /* ADDED: tiny spacing for wallet button */
-    #wallet-button-container { margin-bottom: 12px; }
   </style>
 
 </head>
@@ -114,7 +111,8 @@
   <form id="payment-form">
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
-      <label for="plan5">💌 10 Messages for £0.32 - 2 day access £0.16 per day</label></div>
+      <label for="plan5">💌 10 Messages (avg. 2 hookups/month) – £0.16/day try Charmr at minumum cost!</label>
+    </div>
     <div class="plan">
       <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
       <label for="plan20">🔥 50 Messages (avg. 15 hookups) – £0.66/day</label>
@@ -123,9 +121,6 @@
       <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
       <label for="plan99">💎 Unlimited (unlimited hookups) – £99</label>
     </div>
-
-    <!-- ADDED: Wallet button mounts here (Apple Pay / Google Pay) -->
-    <div id="wallet-button-container"></div>
 
     <label for="cardholder-name">Name on card</label>
     <input type="text" id="cardholder-name" placeholder="Full name" required />
@@ -150,61 +145,6 @@
     const form = document.getElementById("payment-form");
     const message = document.getElementById("message");
 
-    // ---------- helpers for trial flow (5 GBP plan only) ----------
-    const API_BASE = "https://charmr-jfmc.onrender.com";
-    const FIVE_PLAN_ID = "price_1Rsdy1EJXIhiKzYGOtzvwhUH";
-
-    function authHeaders() {
-      return {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
-      };
-    }
-
-    async function createTrialIntent() {
-      console.log("POST /api/trial-intent …");
-      const r = await fetch(`${API_BASE}/api/trial-intent`, { method: "POST", headers: authHeaders() });
-      const text = await r.text();
-      let d = {};
-      try { d = JSON.parse(text); } catch (_) {}
-      console.log("trial-intent status:", r.status, "body:", d || text);
-      if (!r.ok || !d.clientSecret || !d.paymentIntentId) {
-        const msg = (d && (d.error || d.message)) || `trial-intent failed (${r.status})`;
-        throw new Error(msg);
-      }
-      return d; // { clientSecret, paymentIntentId }
-    }
-
-    async function confirmTrialPIWithCard(clientSecret, name) {
-      console.log("confirming 32p PI with card…");
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: { card, billing_details: { name } }
-      });
-      console.log("confirm result:", { error, status: paymentIntent && paymentIntent.status });
-      if (error) throw new Error(error.message || "trial confirm failed");
-      if (!paymentIntent || paymentIntent.status !== "succeeded") throw new Error("trial not succeeded");
-      return paymentIntent;
-    }
-
-    async function subscribeTrial(paymentIntentId) {
-      console.log("POST /api/subscribe-trial …", paymentIntentId);
-      const r = await fetch(`${API_BASE}/api/subscribe-trial`, {
-        method: "POST",
-        headers: authHeaders(),
-        body: JSON.stringify({ paymentIntentId })
-      });
-      const text = await r.text();
-      let d = {};
-      try { d = JSON.parse(text); } catch (_) {}
-      console.log("subscribe-trial status:", r.status, "body:", d || text);
-      if (!r.ok) {
-        const msg = (d && (d.error || d.message)) || `subscribe-trial failed (${r.status})`;
-        throw new Error(msg);
-      }
-      return d;
-    }
-    // -------------------------------------------------------------
-
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       message.textContent = "";
@@ -213,16 +153,6 @@
       const name = document.getElementById("cardholder-name").value;
 
       try {
-        // If £5 plan, run 2-day £0.32 trial flow
-        if (selectedPlan === FIVE_PLAN_ID) {
-          const t1 = await createTrialIntent();                          // POST /api/trial-intent
-          await confirmTrialPIWithCard(t1.clientSecret, name);           // confirm 32p PI
-          await subscribeTrial(t1.paymentIntentId);                      // POST /api/subscribe-trial
-          window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
-          return;
-        }
-
-        // Otherwise: existing one-off payment flow (unchanged)
         const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
           method: "POST",
           headers: {
@@ -252,189 +182,9 @@
         }
       } catch (err) {
         console.error(err);
-        message.textContent = err.message || "Something went wrong. Try again.";
+        message.textContent = "Something went wrong. Try again.";
       }
     });
-  </script>
-
-  <!-- ADDED: Apple Pay / Google Pay via Payment Request Button -->
-  <script>
-    (async function () {
-      const walletContainer = document.getElementById('wallet-button-container');
-
-      // Match server amounts (display only; server is the source of truth)
-      const PRICE_AMOUNT_MAP = {
-        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,   // £5.00
-        "price_1RsdzREJXIhiKzYG45b69nSl": 2000, // £20.00
-        "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 9900  // £99.00
-      };
-
-      function getSelectedPlan() {
-        return document.querySelector('input[name="plan"]:checked').value;
-      }
-
-      function currentTotal() {
-        const plan = getSelectedPlan();
-        return PRICE_AMOUNT_MAP[plan] || 500;
-      }
-
-      // Create Payment Request object
-      const paymentRequest = stripe.paymentRequest({
-        country: 'GB',
-        currency: 'gbp',
-        total: { label: 'Charmr', amount: currentTotal() },
-        requestPayerName: true,
-        requestPayerEmail: true
-      });
-
-      const prButton = elements.create('paymentRequestButton', {
-        paymentRequest,
-        style: { paymentRequestButton: { theme: 'dark', height: '44px' } }
-      });
-
-      // Only show if the browser/device supports Apple Pay / Google Pay
-      const canPay = await paymentRequest.canMakePayment();
-      if (canPay) {
-        prButton.mount('#wallet-button-container');
-      } else {
-        walletContainer.style.display = 'none';
-      }
-
-      // Update the shown total if user switches plan
-      document.querySelectorAll('input[name="plan"]').forEach(radio => {
-        radio.addEventListener('change', () => {
-          paymentRequest.update({
-            total: { label: 'Charmr', amount: currentTotal() }
-          });
-        });
-      });
-
-      // Helpers reused from above context
-      const API_BASE = "https://charmr-jfmc.onrender.com";
-      const FIVE_PLAN_ID = "price_1Rsdy1EJXIhiKzYGOtzvwhUH";
-
-      function authHeaders() {
-        return {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`
-        };
-      }
-
-      async function createTrialIntent() {
-        const r = await fetch(`${API_BASE}/api/trial-intent`, { method: "POST", headers: authHeaders() });
-        const d = await r.json();
-        if (!r.ok || !d.clientSecret || !d.paymentIntentId) throw new Error("trial-intent failed");
-        return d;
-      }
-
-      async function subscribeTrial(paymentIntentId) {
-        const r = await fetch(`${API_BASE}/api/subscribe-trial`, {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify({ paymentIntentId })
-        });
-        const d = await r.json();
-        if (!r.ok) throw new Error("subscribe-trial failed");
-        return d;
-      }
-
-      // Handle the wallet payment flow
-      paymentRequest.on('paymentmethod', async (ev) => {
-        try {
-          const selectedPlan = getSelectedPlan();
-
-          // If £5 plan, run 2-day £0.32 trial flow with the wallet PM
-          if (selectedPlan === FIVE_PLAN_ID) {
-            const t1 = await createTrialIntent(); // create 32p PI
-
-            // First confirm without handling actions
-            const { error, paymentIntent } = await stripe.confirmCardPayment(
-              t1.clientSecret,
-              { payment_method: ev.paymentMethod.id },
-              { handleActions: false }
-            );
-
-            if (error) {
-              ev.complete('fail');
-              document.getElementById("message").textContent = error.message || "Payment failed.";
-              return;
-            } else {
-              ev.complete('success');
-            }
-
-            // If 3DS required, handle it
-            if (paymentIntent && paymentIntent.status === 'requires_action') {
-              const { error: actionError, paymentIntent: actionPi } =
-                await stripe.confirmCardPayment(t1.clientSecret);
-              if (actionError || !actionPi || actionPi.status !== 'succeeded') {
-                document.getElementById("message").textContent = (actionError && actionError.message) || "Payment authentication failed.";
-                return;
-              }
-            }
-
-            // Start subscription using the 32p PI
-            await subscribeTrial(t1.paymentIntentId);
-            window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
-            return;
-          }
-
-          // Otherwise: existing one-off payment flow (unchanged)
-          const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
-            body: JSON.stringify({ priceId: selectedPlan })
-          });
-
-          const data = await res.json();
-          if (!data.clientSecret) {
-            ev.complete('fail');
-            document.getElementById("message").textContent = "Payment failed to start. Try again.";
-            return;
-          }
-
-          // Confirm with the wallet payment method (no 3DS yet)
-          const { error, paymentIntent } = await stripe.confirmCardPayment(
-            data.clientSecret,
-            { payment_method: ev.paymentMethod.id },
-            { handleActions: false }
-          );
-
-          if (error) {
-            ev.complete('fail');
-            document.getElementById("message").textContent = error.message || "Payment failed.";
-            return;
-          } else {
-            ev.complete('success');
-          }
-
-          // If next_action required (3DS), handle it
-          if (paymentIntent.status === 'requires_action') {
-            const { error: actionError, paymentIntent: actionPi } =
-              await stripe.confirmCardPayment(data.clientSecret);
-            if (actionError) {
-              document.getElementById("message").textContent = actionError.message || "Payment authentication failed.";
-              return;
-            }
-            if (actionPi && actionPi.status === 'succeeded') {
-              window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
-              return;
-            }
-          }
-
-          // Success (no extra auth)
-          if (paymentIntent.status === 'succeeded') {
-            window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
-          }
-        } catch (err) {
-          console.error(err);
-          ev.complete('fail');
-          document.getElementById("message").textContent = "Something went wrong. Try again.";
-        }
-      });
-    })();
   </script>
 
   <!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->
