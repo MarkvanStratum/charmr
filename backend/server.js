@@ -21,7 +21,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
-apiKey.apiKey = process.env.BREVO_API_KEY;
+apiKey.apiKey = process.env.BREVO_API_KEY; // ✅ leave as-is
+
 
 const transactionalEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
@@ -31,13 +32,15 @@ async function upsertBrevoContact({ email, attributes = {}, listId = process.env
   const payload = new SibApiV3Sdk.CreateContact();
   payload.email = email;
   payload.attributes = attributes;               // e.g. { SOURCE: 'signup' }
-  payload.listIds = [Number(listId)];
+  payload.listIds = [7];
   payload.updateEnabled = true;
 
   try {
     await contactsApi.createContact(payload);
   } catch (e) {
-    // don’t block the user flow if Brevo hiccups
+    // don’t block the user flow if 
+
+ hiccups
     console.warn("Brevo contact upsert failed:", e?.response?.text || e.message);
   }
 }
