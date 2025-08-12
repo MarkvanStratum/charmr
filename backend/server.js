@@ -2875,6 +2875,54 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 10000000
     };
 
+// --- 32p trial setup: step 1 — create a one-off PaymentIntent to pass 3DS and save a reusable payment method
+app.post("/api/trial-intent", authenticateToken, async (req, res) => {
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 32, // 32 pence
+      currency: "gbp",
+      payment_method_types: ["card"],
+      capture_method: "automatic",
+      setup_future_usage: "off_session"
+    });
+    res.json({ clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id });
+  } catch (err) {
+    console.error("Error creating trial intent:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- 32p trial setup: step 2 — subscribe user to £5/month after 2-day trial
+app.post("/api/subscribe-trial", authenticateToken, async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    if (!paymentIntentId) {
+      return res.status(400).json({ error: "Missing paymentIntentId" });
+    }
+
+    // Retrieve the payment intent to get the payment method
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    const paymentMethodId = pi.payment_method;
+    if (!paymentMethodId) {
+      return res.status(400).json({ error: "No payment method found" });
+    }
+
+    // Create the subscription with a 2-day trial
+    const subscription = await stripe.subscriptions.create({
+      customer: req.user.stripeCustomerId,
+      items: [{ price: "price_1Rsdy1EJXIhiKzYGOtzvwhUH" }], // <-- replace with your £5/month price ID
+      trial_period_days: 2,
+      default_payment_method: paymentMethodId
+    });
+
+    res.json(subscription);
+  } catch (err) {
+    console.error("Error creating trial subscription:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
 
