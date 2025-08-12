@@ -103,6 +103,9 @@
     .profiles-link a:hover {
       text-decoration: underline;
     }
+
+    /* ADDED: tiny spacing for wallet button */
+    #wallet-button-container { margin-bottom: 12px; }
   </style>
 
 </head>
@@ -121,6 +124,9 @@
       <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
       <label for="plan99">💎 Unlimited (unlimited hookups) – £99</label>
     </div>
+
+    <!-- ADDED: Wallet button mounts here (Apple Pay / Google Pay) -->
+    <div id="wallet-button-container"></div>
 
     <label for="cardholder-name">Name on card</label>
     <input type="text" id="cardholder-name" placeholder="Full name" required />
@@ -185,6 +191,122 @@
         message.textContent = "Something went wrong. Try again.";
       }
     });
+  </script>
+
+  <!-- ADDED: Apple Pay / Google Pay via Payment Request Button -->
+  <script>
+    (async function () {
+      const walletContainer = document.getElementById('wallet-button-container');
+
+      // Match server amounts (display only; server is the source of truth)
+      const PRICE_AMOUNT_MAP = {
+        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,   // £5.00
+        "price_1RsdzREJXIhiKzYG45b69nSl": 2000, // £20.00
+        "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 9900  // £99.00
+      };
+
+      function getSelectedPlan() {
+        return document.querySelector('input[name="plan"]:checked').value;
+      }
+
+      function currentTotal() {
+        const plan = getSelectedPlan();
+        return PRICE_AMOUNT_MAP[plan] || 500;
+      }
+
+      // Create Payment Request object
+      const paymentRequest = stripe.paymentRequest({
+        country: 'GB',
+        currency: 'gbp',
+        total: { label: 'Charmr', amount: currentTotal() },
+        requestPayerName: true,
+        requestPayerEmail: true
+      });
+
+      const prButton = elements.create('paymentRequestButton', {
+        paymentRequest,
+        style: { paymentRequestButton: { theme: 'dark', height: '44px' } }
+      });
+
+      // Only show if the browser/device supports Apple Pay / Google Pay
+      const canPay = await paymentRequest.canMakePayment();
+      if (canPay) {
+        prButton.mount('#wallet-button-container');
+      } else {
+        walletContainer.style.display = 'none';
+      }
+
+      // Update the shown total if user switches plan
+      document.querySelectorAll('input[name="plan"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+          paymentRequest.update({
+            total: { label: 'Charmr', amount: currentTotal() }
+          });
+        });
+      });
+
+      // Handle the wallet payment flow
+      paymentRequest.on('paymentmethod', async (ev) => {
+        try {
+          const selectedPlan = getSelectedPlan();
+
+          // 1) Create PaymentIntent on server (same endpoint you already use)
+          const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${localStorage.getItem("token")}`
+            },
+            body: JSON.stringify({ priceId: selectedPlan })
+          });
+
+          const data = await res.json();
+          if (!data.clientSecret) {
+            ev.complete('fail');
+            message.textContent = "Payment failed to start. Try again.";
+            return;
+          }
+
+          // 2) Confirm with the wallet payment method (no 3DS yet)
+          const { error, paymentIntent } = await stripe.confirmCardPayment(
+            data.clientSecret,
+            { payment_method: ev.paymentMethod.id },
+            { handleActions: false }
+          );
+
+          if (error) {
+            ev.complete('fail');
+            message.textContent = error.message || "Payment failed.";
+            return;
+          } else {
+            ev.complete('success');
+          }
+
+          // 3) If next_action required (3DS), handle it
+          if (paymentIntent.status === 'requires_action') {
+            const { error: actionError, paymentIntent: actionPi } =
+              await stripe.confirmCardPayment(data.clientSecret);
+            if (actionError) {
+              message.textContent = actionError.message || "Payment authentication failed.";
+              return;
+            }
+            if (actionPi && actionPi.status === 'succeeded') {
+              window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
+              return;
+            }
+          }
+
+          // 4) Success (no extra auth)
+          if (paymentIntent.status === 'succeeded') {
+            window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
+          }
+        } catch (err) {
+          console.error(err);
+          ev.complete('fail');
+          message.textContent = "Something went wrong. Try again.";
+        }
+      });
+    })();
   </script>
 
   <!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->

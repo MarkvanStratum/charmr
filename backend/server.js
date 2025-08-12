@@ -2881,11 +2881,17 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
 
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "gbp",
-      metadata: { userId: req.user.id.toString(), priceId },
-    });
+    const paymentIntent = await stripe.paymentIntents.create(
+  {
+    amount,
+    currency: "gbp",
+    metadata: { userId: req.user.id.toString(), priceId },
+    automatic_payment_methods: { enabled: true },
+    statement_descriptor_suffix: "CHARMR"
+  },
+  { idempotencyKey: `pi_${req.user.id}_${priceId}_${Date.now()}` }
+);
+
 
     res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
@@ -2923,7 +2929,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const amountMap = {
         "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
         "price_1RsdzREJXIhiKzYG45b69nSl": 50,
-        "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
+        "price_1Rt6NcEJXIhiKzYGMsEZFd8f": "lifetime"
       };
 
       const value = amountMap[priceId];
