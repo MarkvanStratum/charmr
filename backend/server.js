@@ -2914,8 +2914,6 @@ app.post("/api/trial-intent", authenticateToken, async (req, res) => {
 import bodyParser from "body-parser"; // (or whatever comes next in your file)
 
 
-
-import bodyParser from "body-parser"; // Add this at the top if not present
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
