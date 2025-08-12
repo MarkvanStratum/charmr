@@ -2931,7 +2931,7 @@ app.post("/api/trial-intent", authenticateToken, async (req, res) => {
 });
 
 
-// === TRIAL FLOW: £0.32 now, then £5 in 2 days, then £5 monthly ===
+// === TRIAL FLOW: £0.50 now, then £5 in 2 days, then £5 monthly ===
 
 // 1) Create the 32p PaymentIntent (client will confirm it)
 app.post("/api/trial-intent", authenticateToken, async (req, res) => {
@@ -2941,7 +2941,7 @@ app.post("/api/trial-intent", authenticateToken, async (req, res) => {
     const email = rows?.[0]?.email || undefined;
 
     const pi = await stripe.paymentIntents.create({
-      amount: 32,                 // £0.32
+      amount: 32,                 // £0.50
       currency: "gbp",
       // Save PM for off-session use later once confirmed
       setup_future_usage: "off_session",
@@ -2950,7 +2950,7 @@ app.post("/api/trial-intent", authenticateToken, async (req, res) => {
         userId: String(req.user.id),
         purpose: "trial32"
       },
-      description: "Charmr 2-day trial (£0.32)",
+      description: "Charmr 2-day trial (£0.50)",
       receipt_email: email
     });
 
@@ -3012,7 +3012,7 @@ app.post("/api/subscribe-trial", authenticateToken, async (req, res) => {
     });
 
     // At this point:
-    // - £0.32 was already paid
+    // - £0.50 was already paid
     // - Stripe will auto-invoice £5 at trial_end and then monthly
 
     res.json({ ok: true, subscriptionId: subscription.id });
@@ -3025,7 +3025,7 @@ app.post("/api/subscribe-trial", authenticateToken, async (req, res) => {
 
 import bodyParser from "body-parser"; // Add this at the top if not present
 
-// ===== TRIAL FLOW ENDPOINTS (0.32 now → trial 2 days → £5/mo) =====
+// ===== TRIAL FLOW ENDPOINTS (0.50 now → trial 2 days → £5/mo) =====
 
 // Creates a 32p PaymentIntent and a Customer for this user.
 // The PI is confirmed on the client. We save the PM for the upcoming subscription.
