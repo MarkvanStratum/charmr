@@ -2985,6 +2985,94 @@ app.post("/api/subscribe-trial", authenticateToken, async (req, res) => {
 
 
 import bodyParser from "body-parser"; // Add this at the top if not present
+
+// ===== TRIAL FLOW ENDPOINTS (0.32 now → trial 2 days → £5/mo) =====
+
+// Creates a 32p PaymentIntent and a Customer for this user.
+// The PI is confirmed on the client. We save the PM for the upcoming subscription.
+app.post("/api/trial-intent", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Look up user email
+    const userRes = await pool.query("SELECT email FROM users WHERE id = $1", [userId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: "User not found" });
+    const email = userRes.rows[0].email;
+
+    // Create a Customer in Stripe
+    const customer = await stripe.customers.create({ email });
+
+    // Create a 32p PaymentIntent
+    const pi = await stripe.paymentIntents.create({
+      amount: 32, // 32 pence
+      currency: "gbp",
+      customer: customer.id,
+      automatic_payment_methods: { enabled: true },
+      setup_future_usage: "off_session",
+      metadata: {
+        userId: String(userId),
+        kind: "trial_32p"
+      }
+    });
+
+    res.json({
+      clientSecret: pi.client_secret,
+      paymentIntentId: pi.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error("trial-intent error:", err);
+    res.status(500).json({ error: "trial-intent failed" });
+  }
+});
+
+// Called after 32p PI is confirmed — creates £5/mo subscription with 2-day trial
+app.post("/api/subscribe-trial", authenticateToken, async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    if (!paymentIntentId) return res.status(400).json({ error: "paymentIntentId required" });
+
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!pi || pi.status !== "succeeded") {
+      return res.status(400).json({ error: "32p payment not succeeded" });
+    }
+
+    const customerId = pi.customer;
+    const paymentMethodId = pi.payment_method;
+    if (!customerId || !paymentMethodId) {
+      return res.status(400).json({ error: "Missing customer/payment method" });
+    }
+
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    const priceId = process.env.STRIPE_SUB_PRICE_5;
+    if (!priceId) {
+      return res.status(500).json({ error: "Missing env STRIPE_SUB_PRICE_5" });
+    }
+
+    const twoDaysFromNow = Math.floor(Date.now() / 1000) + (2 * 24 * 60 * 60);
+
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      trial_end: twoDaysFromNow,
+      metadata: {
+        userId: String(req.user.id),
+        kind: "sub_5gbp_after_2d"
+      },
+      expand: ["latest_invoice.payment_intent"]
+    });
+
+    res.json({ ok: true, subscriptionId: subscription.id });
+  } catch (err) {
+    console.error("subscribe-trial error:", err);
+    res.status(500).json({ error: "subscribe-trial failed" });
+  }
+});
+
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
