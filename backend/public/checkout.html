@@ -114,7 +114,7 @@
   <form id="payment-form">
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
-      <label for="plan5">💌 10 Messages for £0.32 - 2 day access £0.16 per day </div>
+      <label for="plan5">💌 10 Messages for £0.32 - 2 day access £0.16 per day</label></div>
     <div class="plan">
       <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
       <label for="plan20">🔥 50 Messages (avg. 15 hookups) – £0.66/day</label>
@@ -162,29 +162,45 @@
     }
 
     async function createTrialIntent() {
+      console.log("POST /api/trial-intent …");
       const r = await fetch(`${API_BASE}/api/trial-intent`, { method: "POST", headers: authHeaders() });
-      const d = await r.json();
-      if (!r.ok || !d.clientSecret || !d.paymentIntentId) throw new Error("trial-intent failed");
+      const text = await r.text();
+      let d = {};
+      try { d = JSON.parse(text); } catch (_) {}
+      console.log("trial-intent status:", r.status, "body:", d || text);
+      if (!r.ok || !d.clientSecret || !d.paymentIntentId) {
+        const msg = (d && (d.error || d.message)) || `trial-intent failed (${r.status})`;
+        throw new Error(msg);
+      }
       return d; // { clientSecret, paymentIntentId }
     }
 
     async function confirmTrialPIWithCard(clientSecret, name) {
+      console.log("confirming 32p PI with card…");
       const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: { card, billing_details: { name } }
       });
+      console.log("confirm result:", { error, status: paymentIntent && paymentIntent.status });
       if (error) throw new Error(error.message || "trial confirm failed");
       if (!paymentIntent || paymentIntent.status !== "succeeded") throw new Error("trial not succeeded");
       return paymentIntent;
     }
 
     async function subscribeTrial(paymentIntentId) {
+      console.log("POST /api/subscribe-trial …", paymentIntentId);
       const r = await fetch(`${API_BASE}/api/subscribe-trial`, {
         method: "POST",
         headers: authHeaders(),
         body: JSON.stringify({ paymentIntentId })
       });
-      const d = await r.json();
-      if (!r.ok) throw new Error("subscribe-trial failed");
+      const text = await r.text();
+      let d = {};
+      try { d = JSON.parse(text); } catch (_) {}
+      console.log("subscribe-trial status:", r.status, "body:", d || text);
+      if (!r.ok) {
+        const msg = (d && (d.error || d.message)) || `subscribe-trial failed (${r.status})`;
+        throw new Error(msg);
+      }
       return d;
     }
     // -------------------------------------------------------------
@@ -236,7 +252,7 @@
         }
       } catch (err) {
         console.error(err);
-        message.textContent = "Something went wrong. Try again.";
+        message.textContent = err.message || "Something went wrong. Try again.";
       }
     });
   </script>
