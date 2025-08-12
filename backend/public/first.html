@@ -85,24 +85,6 @@
     .tiny{
       margin-top:12px; color:#555; font-size:.92rem;
     }
-
-    /* --- minimal chat-style message (added) --- */
-    .chat{ display:flex; justify-content:center; margin:-2px 0 16px; }
-    .chat-msg{
-      display:flex; gap:10px; align-items:flex-start;
-      background:#fff; border:1px solid #f0d6de; border-radius:16px;
-      padding:12px 14px; max-width:520px; text-align:left;
-      box-shadow:0 8px 24px rgba(214,27,90,.08);
-    }
-    .chat-avatar{
-      width:32px; height:32px; border-radius:50%;
-      background:url('pic.png') center/cover no-repeat; flex:0 0 32px;
-      border:1px solid #f0d6de;
-    }
-    .chat-name{ font-weight:800; font-size:.95rem; margin:0 0 4px; display:flex; align-items:center; gap:6px; }
-    .chat-dot{ width:8px; height:8px; border-radius:50%; background:#26c281; display:inline-block; }
-    .chat-text{ font-size:.98rem; line-height:1.35; }
-    .chat-meta{ margin-top:6px; font-size:.8rem; color:#666; }
   </style>
 </head>
 <body>
@@ -118,18 +100,6 @@
 
       <!-- Profile picture -->
       <img src="pic.png" alt="Profile picture of Sophie" style="max-width:200px;border-radius:12px;margin-bottom:16px;">
-
-      <!-- Cute, app-like message from Sophie (added) -->
-      <div class="chat" aria-label="Message from Sophie">
-        <div class="chat-msg" role="note">
-          <div class="chat-avatar" aria-hidden="true"></div>
-          <div>
-            <div class="chat-name">Sophie <span class="chat-dot" title="online"></span></div>
-            <div class="chat-text">“Hey stranger 😊! I'd love to meet you! Please get some credits so we can chat and meet, ok? Would love to see you soon!<span class="userCity"></span> — fancy a quick coffee this week? 😊”</div>
-            <div class="chat-meta">Just now • Delivered</div>
-          </div>
-        </div>
-      </div>
 
       <p class="sub">
         Sophie from <span class="userCity"></span> has already expressed great interest in meeting you and would love to chat with you!
