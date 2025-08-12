@@ -114,8 +114,7 @@
   <form id="payment-form">
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
-      <label for="plan5">💌 10 Messages (avg. 2 hookups/month) – £0.16/day try Charmr at minumum cost!</label>
-    </div>
+      <label for="plan5">💌 10 Messages for £0.32 - 2 day access £0.16 per day </div>
     <div class="plan">
       <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
       <label for="plan20">🔥 50 Messages (avg. 15 hookups) – £0.66/day</label>
@@ -151,6 +150,45 @@
     const form = document.getElementById("payment-form");
     const message = document.getElementById("message");
 
+    // ---------- helpers for trial flow (5 GBP plan only) ----------
+    const API_BASE = "https://charmr-jfmc.onrender.com";
+    const FIVE_PLAN_ID = "price_1Rsdy1EJXIhiKzYGOtzvwhUH";
+
+    function authHeaders() {
+      return {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      };
+    }
+
+    async function createTrialIntent() {
+      const r = await fetch(`${API_BASE}/api/trial-intent`, { method: "POST", headers: authHeaders() });
+      const d = await r.json();
+      if (!r.ok || !d.clientSecret || !d.paymentIntentId) throw new Error("trial-intent failed");
+      return d; // { clientSecret, paymentIntentId }
+    }
+
+    async function confirmTrialPIWithCard(clientSecret, name) {
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card, billing_details: { name } }
+      });
+      if (error) throw new Error(error.message || "trial confirm failed");
+      if (!paymentIntent || paymentIntent.status !== "succeeded") throw new Error("trial not succeeded");
+      return paymentIntent;
+    }
+
+    async function subscribeTrial(paymentIntentId) {
+      const r = await fetch(`${API_BASE}/api/subscribe-trial`, {
+        method: "POST",
+        headers: authHeaders(),
+        body: JSON.stringify({ paymentIntentId })
+      });
+      const d = await r.json();
+      if (!r.ok) throw new Error("subscribe-trial failed");
+      return d;
+    }
+    // -------------------------------------------------------------
+
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       message.textContent = "";
@@ -159,6 +197,16 @@
       const name = document.getElementById("cardholder-name").value;
 
       try {
+        // If £5 plan, run 2-day £0.32 trial flow
+        if (selectedPlan === FIVE_PLAN_ID) {
+          const t1 = await createTrialIntent();                          // POST /api/trial-intent
+          await confirmTrialPIWithCard(t1.clientSecret, name);           // confirm 32p PI
+          await subscribeTrial(t1.paymentIntentId);                      // POST /api/subscribe-trial
+          window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
+          return;
+        }
+
+        // Otherwise: existing one-off payment flow (unchanged)
         const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
           method: "POST",
           headers: {
@@ -245,12 +293,76 @@
         });
       });
 
+      // Helpers reused from above context
+      const API_BASE = "https://charmr-jfmc.onrender.com";
+      const FIVE_PLAN_ID = "price_1Rsdy1EJXIhiKzYGOtzvwhUH";
+
+      function authHeaders() {
+        return {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        };
+      }
+
+      async function createTrialIntent() {
+        const r = await fetch(`${API_BASE}/api/trial-intent`, { method: "POST", headers: authHeaders() });
+        const d = await r.json();
+        if (!r.ok || !d.clientSecret || !d.paymentIntentId) throw new Error("trial-intent failed");
+        return d;
+      }
+
+      async function subscribeTrial(paymentIntentId) {
+        const r = await fetch(`${API_BASE}/api/subscribe-trial`, {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify({ paymentIntentId })
+        });
+        const d = await r.json();
+        if (!r.ok) throw new Error("subscribe-trial failed");
+        return d;
+      }
+
       // Handle the wallet payment flow
       paymentRequest.on('paymentmethod', async (ev) => {
         try {
           const selectedPlan = getSelectedPlan();
 
-          // 1) Create PaymentIntent on server (same endpoint you already use)
+          // If £5 plan, run 2-day £0.32 trial flow with the wallet PM
+          if (selectedPlan === FIVE_PLAN_ID) {
+            const t1 = await createTrialIntent(); // create 32p PI
+
+            // First confirm without handling actions
+            const { error, paymentIntent } = await stripe.confirmCardPayment(
+              t1.clientSecret,
+              { payment_method: ev.paymentMethod.id },
+              { handleActions: false }
+            );
+
+            if (error) {
+              ev.complete('fail');
+              document.getElementById("message").textContent = error.message || "Payment failed.";
+              return;
+            } else {
+              ev.complete('success');
+            }
+
+            // If 3DS required, handle it
+            if (paymentIntent && paymentIntent.status === 'requires_action') {
+              const { error: actionError, paymentIntent: actionPi } =
+                await stripe.confirmCardPayment(t1.clientSecret);
+              if (actionError || !actionPi || actionPi.status !== 'succeeded') {
+                document.getElementById("message").textContent = (actionError && actionError.message) || "Payment authentication failed.";
+                return;
+              }
+            }
+
+            // Start subscription using the 32p PI
+            await subscribeTrial(t1.paymentIntentId);
+            window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
+            return;
+          }
+
+          // Otherwise: existing one-off payment flow (unchanged)
           const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
             method: "POST",
             headers: {
@@ -263,11 +375,11 @@
           const data = await res.json();
           if (!data.clientSecret) {
             ev.complete('fail');
-            message.textContent = "Payment failed to start. Try again.";
+            document.getElementById("message").textContent = "Payment failed to start. Try again.";
             return;
           }
 
-          // 2) Confirm with the wallet payment method (no 3DS yet)
+          // Confirm with the wallet payment method (no 3DS yet)
           const { error, paymentIntent } = await stripe.confirmCardPayment(
             data.clientSecret,
             { payment_method: ev.paymentMethod.id },
@@ -276,18 +388,18 @@
 
           if (error) {
             ev.complete('fail');
-            message.textContent = error.message || "Payment failed.";
+            document.getElementById("message").textContent = error.message || "Payment failed.";
             return;
           } else {
             ev.complete('success');
           }
 
-          // 3) If next_action required (3DS), handle it
+          // If next_action required (3DS), handle it
           if (paymentIntent.status === 'requires_action') {
             const { error: actionError, paymentIntent: actionPi } =
               await stripe.confirmCardPayment(data.clientSecret);
             if (actionError) {
-              message.textContent = actionError.message || "Payment authentication failed.";
+              document.getElementById("message").textContent = actionError.message || "Payment authentication failed.";
               return;
             }
             if (actionPi && actionPi.status === 'succeeded') {
@@ -296,14 +408,14 @@
             }
           }
 
-          // 4) Success (no extra auth)
+          // Success (no extra auth)
           if (paymentIntent.status === 'succeeded') {
             window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
           }
         } catch (err) {
           console.error(err);
           ev.complete('fail');
-          message.textContent = "Something went wrong. Try again.";
+          document.getElementById("message").textContent = "Something went wrong. Try again.";
         }
       });
     })();

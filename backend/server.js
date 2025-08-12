@@ -19,6 +19,10 @@ const __dirname = path.dirname(__filename);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// £5/month plan — trial applies only to this
+const FIVE_GBP_PRICE_ID = "price_1Rsdy1EJXIhiKzYGOtzvwhUH"; // <-- put your real Stripe price id here
+
+
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY; // ✅ leave as-is
@@ -153,6 +157,8 @@ app.get("/api/get-stripe-session", async (req, res) => {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
+   
+ await pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT`);
 
     console.log("✅ Tables are ready");
   } catch (err) {
@@ -2893,13 +2899,19 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 );
 
 
-    res.send({ clientSecret: paymentIntent.client_secret });
+        res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
     console.error("PaymentIntent error:", err.message);
     res.status(500).json({ error: "Failed to create payment intent" });
   }
 });
 
+// --- 32p trial setup: step 1 — create a one-off PaymentIntent to pass 3DS and save a reusable payment method
+app.post("/api/trial-intent", authenticateToken, async (req, res) => {
+  // ... FULL BLOCK GOES HERE ...
+});
+
+import bodyParser from "body-parser"; // (or whatever comes next in your file)
 
 
 
