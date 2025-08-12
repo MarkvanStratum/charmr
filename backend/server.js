@@ -2899,7 +2899,7 @@ app.post("/api/trial-intent", authenticateToken, async (req, res) => {
 
     // Create 32p trial PI — DO NOT pass receipt_email
     const pi = await stripe.paymentIntents.create({
-      amount: 50,
+      amount: 100,
       currency: "gbp",
       customer: customer.id,
       metadata: { userId: String(userId), kind: "trial-32p" },
