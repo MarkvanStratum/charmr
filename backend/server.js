@@ -2875,6 +2875,45 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 10000000
     };
 
+// -----------------------------------------
+// 32p trial: create PaymentIntent (no receipts)
+// -----------------------------------------
+app.post("/api/trial-intent", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's email (might be invalid; that's OK)
+    const r = await pool.query("SELECT email FROM users WHERE id = $1", [userId]);
+    if (r.rows.length === 0) return res.status(404).json({ error: "User not found" });
+    const rawEmail = r.rows[0].email || "";
+
+    // Simple check; we will NOT send invalid emails to Stripe
+    const looksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail);
+
+    // Create a Customer WITHOUT email if it's invalid (prevents Stripe 400)
+    const customer = await stripe.customers.create(
+      looksValid
+        ? { email: rawEmail, metadata: { userId: String(userId) } }
+        : { metadata: { userId: String(userId) } }
+    );
+
+    // Create 32p trial PI — DO NOT pass receipt_email
+    const pi = await stripe.paymentIntents.create({
+      amount: 32,
+      currency: "gbp",
+      customer: customer.id,
+      metadata: { userId: String(userId), kind: "trial-32p" },
+      automatic_payment_methods: { enabled: true }
+    });
+
+    return res.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id });
+  } catch (err) {
+    console.error("trial-intent error:", err);
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
 
