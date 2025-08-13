@@ -2954,9 +2954,9 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
             await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
             console.log(`✅ Added ${value} credits to user ${userId}`);
           }
-        } catch (err) 
-          console.error("❌ Failed to update user payment record:", err.message);
-        }
+        } catch (err) {
+  console.error("❌ Failed to update user payment record:", err.message);
+}
       } else {
         console.error("❌ Missing userId or invalid priceId in metadata");
       }
@@ -3017,14 +3017,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       break;
     }
 
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  return res.status(200).json({ received: true });
-});
-
-app.post('/api/create-checkout-session', async (req, res) => {
+    app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
