@@ -143,14 +143,6 @@ async function getOrCreateStripeCustomer(userId) {
   return customer.id;
 }
 
-
-// --- make sure we have a Stripe Customer for this app user ---
-async function // --- make sure we have a Stripe Customer for this app user ---
-async function getOrCreateStripeCustomer(userId) {
-  const userRes = await pool.query(
-    "SELECT email, stripe_customer_id FROM users WHERE id = $1",
-    [userId]
-  );
   const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
@@ -168,16 +160,6 @@ async function getOrCreateStripeCustomer(userId) {
   return customer.id;
 }
 
-
-  
-  await pool.query(
-    "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
-    [customer.id, userId]
-  );
-
-  return customer.id;
-}
- 
   const customer = await stripe.customers.create({
     email: user.email,
     metadata: { app_user_id: String(userId) }
@@ -245,11 +227,17 @@ app.get("/api/get-stripe-session", async (req, res) => {
     `);
 
 
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS messages (
-        ...
-      );
-    `);
+   await pool.query(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    girl_id INT NOT NULL,
+    from_user BOOLEAN NOT NULL DEFAULT false,
+    text TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`);
+
 
     console.log("✅ Tables are ready");
 
@@ -3008,6 +2996,33 @@ app.post("/api/create-setup-intent", authenticateToken, async (req, res) => {
 });
 
 // Create the subscription without leaving our page
+// Body: { priceId: string, payment_method: string }
+app.post("/api/start-subscription", authenticateToken, async (req, res) => {
+  try {
+    const { priceId, payment_method } = req.body;
+    const userId = req.user.id;
+
+    // Only these three price IDs are valid
+    if (![SUB_PRICE_10, SUB_PRICE_50, SUB_PRICE_9999].includes(priceId)) {
+      return res.status(400).json({ error: "Invalid subscription priceId" });
+    }
+
+    // Trial only for £5/£20 plans
+    const isTrialEligible = (priceId === SUB_PRICE_10 || priceId === SUB_PRICE_50);
+
+    // Ensure we have a Stripe Customer
+    const customerId = await getOrCreateStripeCustomer(userId);
+
+    // Attach PM to customer (idempotent; ignore if already attached)
+    await stripe.paymentMethods
+      .attach(payment_method, { customer: customerId })
+      .catch(() => {});
+
+    // Make it the default payment method
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: payment_method }
+    });
+
     // Create the subscription; add 1-day trial only for 5/20 plans
     const sub = await stripe.subscriptions.create({
       customer: customerId,
@@ -3018,6 +3033,14 @@ app.post("/api/create-setup-intent", authenticateToken, async (req, res) => {
         planMessages: String(SUB_MSG_GRANT[priceId] || 0) // 10 or 50; 0 for unlimited
       }
     });
+
+    // Your webhook 'customer.subscription.created' grants trial credits once
+    res.json({ subscriptionId: sub.id, status: sub.status });
+  } catch (err) {
+    console.error("start-subscription error:", err);
+    res.status(500).json({ error: "Failed to start subscription" });
+  }
+});
 
     // Your webhook 'customer.subscription.created' grants trial credits once
     res.json({ subscriptionId: sub.id, status: sub.status });
