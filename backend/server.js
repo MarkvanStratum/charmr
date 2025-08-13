@@ -2965,16 +2965,6 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       
     
 
-    
-        } catch (err) {
-  console.error("❌ Failed to update user payment record:", err.message);
-}
-      } else {
-        console.error("❌ Missing userId or invalid priceId in metadata");
-      }
-  
-    }
-
     app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
