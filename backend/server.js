@@ -2897,10 +2897,11 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   try {
     // Lookup price based on priceId (you can store the amounts instead if needed)
     const amountMap = {
-      "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
-      "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
-      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 10000000
-    };
+  [SUB_PRICE_10]: 10,
+  [SUB_PRICE_50]: 50,
+  [SUB_PRICE_9999]: "lifetime",
+};
+
 
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
@@ -2987,6 +2988,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
         "price_1RsdzREJXIhiKzYG45b69nSl": 50,
         "price_1Rt6NcEJXIhiKzYGMsEZFd8f": "lifetime"
       };
+
 
       const value = amountMap[priceId];
 
