@@ -19,22 +19,6 @@ const __dirname = path.dirname(__filename);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
-// ---- SUBSCRIPTIONS (recurring Prices) ----
-// Set these in your environment (.env):
-// PRICE_10_SUB = <recurring price id for £5 / 10 messages>
-// PRICE_50_SUB = <recurring price id for £20 / 50 messages>
-// PRICE_UNLIMITED_SUB = <recurring price id for £99 / unlimited>
-// ✅ Stripe Price IDs (hardcoded so validation works)
-const SUB_PRICE_10   = "price_1Rsdy1EJXIhiKzYGOtzvwhUH"; // £5 plan (10 msgs)
-const SUB_PRICE_50   = "price_1RsdzREJXIhiKzYG45b69nSl"; // £20 plan (50 msgs)
-const SUB_PRICE_9999 = "price_1Rt6NcEJXIhiKzYGMsEZFd8f"; // £99 unlimited (no trial)
-
-// ✅ How many credits to grant at trial start (used in webhook)
-const SUB_MSG_GRANT = {
-  [SUB_PRICE_10]: 10,
-  [SUB_PRICE_50]: 50,
-};
-
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY;
@@ -115,34 +99,6 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-// --- make sure we have a Stripe Customer for this app user ---
-async function getOrCreateStripeCustomer(userId) {
-  const userRes = await pool.query(
-    "SELECT email, stripe_customer_id FROM users WHERE id = $1",
-    [userId]
-  );
-  const user = userRes.rows[0];
-  if (!user) throw new Error("User not found");
-
-  // already have a Stripe customer? return it
-  if (user.stripe_customer_id) {
-    return user.stripe_customer_id;
-  }
-
-  // create a new Stripe customer and save its id on our user
-  const customer = await stripe.customers.create({
-    email: user.email,
-    metadata: { app_user_id: String(userId) }
-  });
-
-  await pool.query(
-    "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
-    [customer.id, userId]
-  );
-
-  return customer.id;
-}
-
 app.get("/api/get-stripe-session", async (req, res) => {
   try {
     const sessionId = req.query.session_id;
@@ -194,32 +150,6 @@ app.get("/api/get-stripe-session", async (req, res) => {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
-
-
-   await pool.query(`
-  CREATE TABLE IF NOT EXISTS messages (
-    id SERIAL PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    girl_id INT NOT NULL,
-    from_user BOOLEAN NOT NULL DEFAULT false,
-    text TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-  );
-`);
-
-
-    console.log("✅ Tables are ready");
-
-
-await pool.query(`
-  CREATE TABLE IF NOT EXISTS trial_grants (
-    subscription_id TEXT PRIMARY KEY,
-    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    granted_credits INT NOT NULL,
-    created_at TIMESTAMP DEFAULT NOW()
-  );
-`);
-
 
     console.log("✅ Tables are ready");
   } catch (err) {
@@ -2935,37 +2865,95 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
 });
 
 app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
-  try {
-    const { priceId } = req.body;
+  const { priceId } = req.body;
 
-    // amounts in pence
+  try {
+    // Lookup price based on priceId (you can store the amounts instead if needed)
     const amountMap = {
-      [SUB_PRICE_10]: 500,   // £5.00
-      [SUB_PRICE_50]: 2000   // £20.00
-      // don't include SUB_PRICE_9999 here (that's a subscription)
+      "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
+      "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
+      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 10000000
     };
 
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
 
-    const intent = await stripe.paymentIntents.create({
+    const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: "gbp",
-      automatic_payment_methods: { enabled: true },
-      metadata: { userId: String(req.user.id), priceId }
+      metadata: { userId: req.user.id.toString(), priceId },
     });
 
-    res.json({ clientSecret: intent.client_secret });
+    res.send({ clientSecret: paymentIntent.client_secret });
   } catch (err) {
-    console.error("create-payment-intent error:", err);
-    res.status(500).json({ error: "Server error" });
+    console.error("PaymentIntent error:", err.message);
+    res.status(500).json({ error: "Failed to create payment intent" });
   }
 });
 
-      
-    
 
-    app.post('/api/create-checkout-session', async (req, res) => {
+
+
+import bodyParser from "body-parser"; // Add this at the top if not present
+app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('❌ Webhook signature verification failed.', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  // ✅ THIS is where the switch starts
+  switch (event.type) {
+    case 'payment_intent.succeeded': {
+      const session = event.data.object;
+      const userId = session.metadata?.userId;
+      const priceId = session.metadata?.priceId;
+
+      console.log('✅ Payment received for user ID:', userId, 'with price ID:', priceId);
+
+      const amountMap = {
+        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
+        "price_1RsdzREJXIhiKzYG45b69nSl": 50,
+        "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
+      };
+
+      const value = amountMap[priceId];
+
+      if (userId && value !== undefined) {
+        try {
+            if (value === "lifetime") {
+  await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
+  console.log(`✅ Lifetime access granted to user ${userId}`);
+} else {
+  await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
+  console.log(`✅ Added ${value} credits to user ${userId}`);
+}
+
+     
+        } catch (err) {
+          console.error("❌ Failed to update user payment record:", err.message);
+        }
+      } else {
+        console.error("❌ Missing userId or invalid priceId in metadata");
+      }
+
+      break;
+    }
+
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+
+  res.status(200).send('Received');
+});
+
+app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -2973,7 +2961,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       line_items: [
         {
           price_data: {
-            currency: 'gbp',
+            currency: 'usd',
             product_data: {
               name: 'Premium Chat Credits',
               description: 'Unlock 100 credits',
@@ -2994,5 +2982,6 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Something went wrong.' });
   }
 });
+
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
