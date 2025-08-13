@@ -2963,7 +2963,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 });
 
       
-    };
+    
 
     
         } catch (err) {
