@@ -121,13 +121,6 @@ async function getOrCreateStripeCustomer(userId) {
     "SELECT email, stripe_customer_id FROM users WHERE id = $1",
     [userId]
   );
-  const user = userRes.rows[0];
-  if (!user) throw new Error("User not found");
-
-  if (user.stripe_customer_id) {
-    return user.stripe_customer_id;
-  }
-
  
   const customer = await stripe.customers.create({
     email: user.email,
@@ -3124,19 +3117,6 @@ app.post("/api/start-subscription", authenticateToken, async (req, res) => {
     res.status(500).json({ error: "Failed to start subscription" });
   }
 });
-
-
-// Collect a card on our page using a SetupIntent (no redirect)
-app.post("/api/create-setup-intent", authenticateToken, async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const customerId = await getOrCreateStripeCustomer(userId);
-
-    const setupIntent = await stripe.setupIntents.create({
-      customer: customerId,
-      payment_method_types: ["card"],
-      usage: "off_session"
-    });
 
 
 
