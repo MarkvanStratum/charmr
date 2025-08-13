@@ -2960,7 +2960,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       } else {
         console.error("❌ Missing userId or invalid priceId in metadata");
       }
-      break;
+  
     }
 
     case 'customer.subscription.created': {
