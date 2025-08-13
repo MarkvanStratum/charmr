@@ -2935,15 +2935,33 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
 });
 
 app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
-  const { priceId } = req.body;
-
   try {
-    // Lookup price based on priceId (you can store the amounts instead if needed)
+    const { priceId } = req.body;
+
+    // one-time card payments use amounts in the smallest currency unit (pence)
     const amountMap = {
-  [SUB_PRICE_10]: 500,
-  [SUB_PRICE_50]: 2000,
-  [SUB_PRICE_9999]: "lifetime",
-};
+      [SUB_PRICE_10]: 500,   // £5 -> 500 pence
+      [SUB_PRICE_50]: 2000   // £20 -> 2000 pence
+      // do NOT include SUB_PRICE_9999 here (that plan is a subscription)
+    };
+
+    const amount = amountMap[priceId];
+    if (!amount) {
+      return res.status(400).json({ error: "Invalid priceId" });
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: "gbp",
+      metadata: { userId: String(req.user.id), priceId }
+    });
+
+    res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (err) {
+    console.error("PaymentIntent error:", err);
+    res.status(500).json({ error: "Failed to create payment intent" });
+  }
+});
 
 // Collect a card on our page using a SetupIntent (no redirect)
 app.post("/api/create-setup-intent", authenticateToken, async (req, res) => {
