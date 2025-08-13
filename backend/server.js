@@ -128,6 +128,7 @@ async function getOrCreateStripeCustomer(userId) {
     return user.stripe_customer_id;
   }
 
+ 
   const customer = await stripe.customers.create({
     email: user.email,
     metadata: { app_user_id: String(userId) }
@@ -214,13 +215,6 @@ app.get("/api/get-stripe-session", async (req, res) => {
       );
     `);
 
-(async () => {
-  try {
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        ...
-      );
-    `);
 
     await pool.query(`
       CREATE TABLE IF NOT EXISTS messages (
