@@ -2875,6 +2875,45 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 10000000
     };
 
+// -----------------------------------------
+// 32p trial: create PaymentIntent (no receipts)
+// -----------------------------------------
+app.post("/api/trial-intent", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Get user's email (might be invalid; that's OK)
+    const r = await pool.query("SELECT email FROM users WHERE id = $1", [userId]);
+    if (r.rows.length === 0) return res.status(404).json({ error: "User not found" });
+    const rawEmail = r.rows[0].email || "";
+
+    // Simple check; we will NOT send invalid emails to Stripe
+    const looksValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail);
+
+    // Create a Customer WITHOUT email if it's invalid (prevents Stripe 400)
+    const customer = await stripe.customers.create(
+      looksValid
+        ? { email: rawEmail, metadata: { userId: String(userId) } }
+        : { metadata: { userId: String(userId) } }
+    );
+
+    // Create 32p trial PI — DO NOT pass receipt_email
+    const pi = await stripe.paymentIntents.create({
+      amount: 100,
+      currency: "gbp",
+      customer: customer.id,
+      metadata: { userId: String(userId), kind: "trial-32p" },
+      automatic_payment_methods: { enabled: true }
+    });
+
+    return res.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id });
+  } catch (err) {
+    console.error("trial-intent error:", err);
+    return res.status(400).json({ error: err.message });
+  }
+});
+
+
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
 
@@ -2892,9 +2931,187 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 });
 
 
+// === TRIAL FLOW: £0.50 now, then £5 in 2 days, then £5 monthly ===
+
+// 1) Create the 32p PaymentIntent (client will confirm it)
+app.post("/api/trial-intent", authenticateToken, async (req, res) => {
+  try {
+    // Optional: pull email to use on the Customer later
+    const { rows } = await pool.query("SELECT email FROM users WHERE id = $1", [req.user.id]);
+    const email = rows?.[0]?.email || undefined;
+
+    const pi = await stripe.paymentIntents.create({
+      amount: 32,                 // £0.50
+      currency: "gbp",
+      // Save PM for off-session use later once confirmed
+      setup_future_usage: "off_session",
+      // Not creating a Customer yet; we'll attach PM later
+      metadata: {
+        userId: String(req.user.id),
+        purpose: "trial32"
+      },
+      description: "Charmr 2-day trial (£0.50)",
+      receipt_email: email
+    });
+
+    res.json({ clientSecret: pi.client_secret, paymentIntentId: pi.id });
+  } catch (err) {
+    console.error("trial-intent error:", err);
+    res.status(500).json({ error: "trial-intent failed" });
+  }
+});
+
+// 2) After the 32p PI succeeds on the client, create the subscription
+app.post("/api/subscribe-trial", authenticateToken, async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    if (!paymentIntentId) return res.status(400).json({ error: "Missing paymentIntentId" });
+
+    // Get user (for email)
+    const { rows } = await pool.query("SELECT email FROM users WHERE id = $1", [req.user.id]);
+    const email = rows?.[0]?.email;
+
+    // Look up the PI we just confirmed
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!pi || pi.status !== "succeeded" || pi.amount !== 32) {
+      return res.status(400).json({ error: "Trial payment not found/succeeded" });
+    }
+    const paymentMethodId = pi.payment_method;
+    if (!paymentMethodId) {
+      return res.status(400).json({ error: "No payment method on trial payment" });
+    }
+
+    // Create a Customer and attach the card
+    const customer = await stripe.customers.create({
+      email,
+      metadata: { userId: String(req.user.id) }
+    });
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    // Make it default on the customer
+    await stripe.customers.update(customer.id, { invoice_settings: { default_payment_method: paymentMethodId } });
+
+    // Create the subscription with a 2-day free trial; first £5 happens at trial end,
+    // then monthly thereafter (same £5).
+    const monthlyPrice = process.env.STRIPE_PRICE_5_GBP_MONTHLY;
+    if (!monthlyPrice) {
+      return res.status(500).json({ error: "Missing STRIPE_PRICE_5_GBP_MONTHLY env var" });
+    }
+
+    const twoDaysFromNow = Math.floor(Date.now() / 1000) + 2 * 24 * 60 * 60;
+
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [{ price: monthlyPrice }],
+      trial_end: twoDaysFromNow,                 // charge £5 in 2 days
+      payment_behavior: "default_incomplete",    // safest; invoice will finalize at trial end
+      expand: ["latest_invoice.payment_intent"],
+      metadata: {
+        userId: String(req.user.id),
+        plan: "5gbp-monthly"
+      }
+    });
+
+    // At this point:
+    // - £0.50 was already paid
+    // - Stripe will auto-invoice £5 at trial_end and then monthly
+
+    res.json({ ok: true, subscriptionId: subscription.id });
+  } catch (err) {
+    console.error("subscribe-trial error:", err);
+    res.status(500).json({ error: "subscribe-trial failed" });
+  }
+});
 
 
 import bodyParser from "body-parser"; // Add this at the top if not present
+
+// ===== TRIAL FLOW ENDPOINTS (0.50 now → trial 2 days → £5/mo) =====
+
+// Creates a 32p PaymentIntent and a Customer for this user.
+// The PI is confirmed on the client. We save the PM for the upcoming subscription.
+app.post("/api/trial-intent", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Look up user email
+    const userRes = await pool.query("SELECT email FROM users WHERE id = $1", [userId]);
+    if (userRes.rows.length === 0) return res.status(404).json({ error: "User not found" });
+    const email = userRes.rows[0].email;
+
+    // Create a Customer in Stripe
+    const customer = await stripe.customers.create({ email });
+
+    // Create a 32p PaymentIntent
+    const pi = await stripe.paymentIntents.create({
+      amount: 32, // 32 pence
+      currency: "gbp",
+      customer: customer.id,
+      automatic_payment_methods: { enabled: true },
+      setup_future_usage: "off_session",
+      metadata: {
+        userId: String(userId),
+        kind: "trial_32p"
+      }
+    });
+
+    res.json({
+      clientSecret: pi.client_secret,
+      paymentIntentId: pi.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error("trial-intent error:", err);
+    res.status(500).json({ error: "trial-intent failed" });
+  }
+});
+
+// Called after 32p PI is confirmed — creates £5/mo subscription with 2-day trial
+app.post("/api/subscribe-trial", authenticateToken, async (req, res) => {
+  try {
+    const { paymentIntentId } = req.body;
+    if (!paymentIntentId) return res.status(400).json({ error: "paymentIntentId required" });
+
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+    if (!pi || pi.status !== "succeeded") {
+      return res.status(400).json({ error: "32p payment not succeeded" });
+    }
+
+    const customerId = pi.customer;
+    const paymentMethodId = pi.payment_method;
+    if (!customerId || !paymentMethodId) {
+      return res.status(400).json({ error: "Missing customer/payment method" });
+    }
+
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    const priceId = process.env.STRIPE_SUB_PRICE_5;
+    if (!priceId) {
+      return res.status(500).json({ error: "Missing env STRIPE_SUB_PRICE_5" });
+    }
+
+    const twoDaysFromNow = Math.floor(Date.now() / 1000) + (2 * 24 * 60 * 60);
+
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      trial_end: twoDaysFromNow,
+      metadata: {
+        userId: String(req.user.id),
+        kind: "sub_5gbp_after_2d"
+      },
+      expand: ["latest_invoice.payment_intent"]
+    });
+
+    res.json({ ok: true, subscriptionId: subscription.id });
+  } catch (err) {
+    console.error("subscribe-trial error:", err);
+    res.status(500).json({ error: "subscribe-trial failed" });
+  }
+});
+
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -2945,6 +3162,29 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
       break;
     }
+  case 'invoice.payment_succeeded': {
+    const invoice = event.data.object;
+    const subId = invoice.subscription;
+    const amountPaid = invoice.amount_paid; // in pence
+    const customerId = invoice.customer;
+
+    console.log("✅ invoice.payment_succeeded", {
+      subId,
+      customerId,
+      amountPaidGBP: (amountPaid / 100).toFixed(2)
+    });
+
+    // Example: add credits or trigger other logic on renewal
+    // if (amountPaid === 500) {
+    //   const userId = invoice.metadata?.userId;
+    //   await pool.query(
+    //     `UPDATE users SET credits = credits + $1 WHERE id = $2`,
+    //     [10, userId]
+    //   );
+    // }
+
+    break;
+  }
 
     default:
       console.log(`Unhandled event type ${event.type}`);
