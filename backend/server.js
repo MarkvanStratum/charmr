@@ -114,6 +114,7 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
+
 // --- make sure we have a Stripe Customer for this app user ---
 async function getOrCreateStripeCustomer(userId) {
   const userRes = await pool.query(
@@ -142,6 +143,33 @@ async function getOrCreateStripeCustomer(userId) {
   return customer.id;
 }
 
+
+// --- make sure we have a Stripe Customer for this app user ---
+async function // --- make sure we have a Stripe Customer for this app user ---
+async function getOrCreateStripeCustomer(userId) {
+  const userRes = await pool.query(
+    "SELECT email, stripe_customer_id FROM users WHERE id = $1",
+    [userId]
+  );
+  const user = userRes.rows[0];
+  if (!user) throw new Error("User not found");
+
+    // create a new Stripe customer and save its id on our user
+  const customer = await stripe.customers.create({
+    email: user.email,
+    metadata: { app_user_id: String(userId) }
+  });
+
+  await pool.query(
+    "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
+    [customer.id, userId]
+  );
+
+  return customer.id;
+}
+
+
+  
   await pool.query(
     "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
     [customer.id, userId]
@@ -161,25 +189,6 @@ async function getOrCreateStripeCustomer(userId) {
   );
 
   return customer.id;
-}
-
-  const user = userRes.rows[0];
-  if (!user) throw new Error("User not found");
-
-  if (user.stripe_customer_id) {
-}
-
-const customer = await stripe.customers.create({
-  email: user.email,
-  metadata: { app_user_id: String(userId) }
-});
-
-await pool.query(
-  "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
-  [customer.id, userId]
-);
-
-return customer.id;
 }
 
 
