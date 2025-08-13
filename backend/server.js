@@ -115,6 +115,33 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+async function getOrCreateStripeCustomer(userId) {
+  const userRes = await pool.query(
+    "SELECT email, stripe_customer_id FROM users WHERE id = $1",
+    [userId]
+  );
+
+  const user = userRes.rows[0];
+  if (!user) throw new Error("User not found");
+
+  if (user.stripe_customer_id) {
+  return user.stripe_customer_id;
+}
+
+const customer = await stripe.customers.create({
+  email: user.email,
+  metadata: { app_user_id: String(userId) }
+});
+
+await pool.query(
+  "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
+  [customer.id, userId]
+);
+
+return customer.id;
+}
+
+
 app.get("/api/get-stripe-session", async (req, res) => {
   try {
     const sessionId = req.query.session_id;
@@ -166,6 +193,23 @@ app.get("/api/get-stripe-session", async (req, res) => {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+(async () => {
+  try {
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        ...
+      );
+    `);
+
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS messages (
+        ...
+      );
+    `);
+
+    console.log("✅ Tables are ready");
+
 
 await pool.query(`
   CREATE TABLE IF NOT EXISTS trial_grants (
@@ -2896,8 +2940,8 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   try {
     // Lookup price based on priceId (you can store the amounts instead if needed)
     const amountMap = {
-  [SUB_PRICE_10]: 10,
-  [SUB_PRICE_50]: 50,
+  [SUB_PRICE_10]: 500,
+  [SUB_PRICE_50]: 2000,
   [SUB_PRICE_9999]: "lifetime",
 };
 
@@ -2918,17 +2962,6 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   }
 });
 
-
-// Start a subscription via Stripe Checkout with a 1-day trial for £5/£20 plans.
-// Body: { priceId: string }  -> must be SUB_PRICE_10 or SUB_PRICE_50 (trial), or PRICE_UNLIMITED_SUB (no trial)
-app.post("/api/create-subscription-checkout", authenticateToken, async (req, res) => {
-  try {
-    const { priceId } = req.body;
-    const userId = req.user.id;
-
-    if (![SUB_PRICE_10, SUB_PRICE_50, SUB_PRICE_9999].includes(priceId)) {
-      return res.status(400).json({ error: "Invalid subscription priceId" });
-    }
 
     // Collect a payment method up front (recommended); charge happens after trial.
     // For £5/£20 we set a 1-day trial. For £99 we do no trial.
@@ -2958,8 +2991,112 @@ app.post("/api/create-subscription-checkout", authenticateToken, async (req, res
   }
 });
 
+    res.json({ clientSecret: setupIntent.client_secret });
+  } catch (err) {
+    console.error("create-setup-intent error:", err);
+    res.status(500).json({ error: "Failed to create setup intent" });
+  }
+});
 
-import bodyParser from "body-parser"; // Add this at the top if not present
+// Create the subscription without leaving our page
+// Body: { priceId: string, payment_method: string }
+app.post("/api/start-subscription", authenticateToken, async (req, res) => {
+  try {
+    const { priceId, payment_method } = req.body;
+    const userId = req.user.id;
+
+    // Only these three price IDs are valid
+    if (![SUB_PRICE_10, SUB_PRICE_50, SUB_PRICE_9999].includes(priceId)) {
+      return res.status(400).json({ error: "Invalid subscription priceId" });
+    }
+
+    // Trial only for £5/£20 plans
+    const isTrialEligible = (priceId === SUB_PRICE_10 || priceId === SUB_PRICE_50);
+
+    // Ensure we have a Stripe Customer
+    const customerId = await getOrCreateStripeCustomer(userId);
+
+    // Attach PM to customer (idempotent; ignore if already attached)
+    await stripe.paymentMethods
+      .attach(payment_method, { customer: customerId })
+      .catch(() => {});
+
+    // Make it the default payment method
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: payment_method }
+    });
+
+    // Create the subscription; add 1-day trial only for 5/20 plans
+    const sub = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId, quantity: 1 }],
+      ...(isTrialEligible ? { trial_period_days: 1 } : {}),
+      metadata: {
+        userId: String(userId),
+        planMessages: String(SUB_MSG_GRANT[priceId] || 0) // 10 or 50; 0 for unlimited
+      }
+    });
+
+    // Your webhook 'customer.subscription.created' grants trial credits once
+    res.json({ subscriptionId: sub.id, status: sub.status });
+  } catch (err) {
+    console.error("start-subscription error:", err);
+    res.status(500).json({ error: "Failed to start subscription" });
+  }
+});
+
+
+// Collect a card on our page using a SetupIntent (no redirect)
+app.post("/api/create-setup-intent", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const customerId = await getOrCreateStripeCustomer(userId);
+
+    const setupIntent = await stripe.setupIntents.create({
+      customer: customerId,
+      payment_method_types: ["card"],
+      usage: "off_session"
+    });
+
+
+
+    res.json({ clientSecret: setupIntent.client_secret });
+  } catch (err) {
+    console.error("create-setup-intent error:", err);
+    res.status(500).json({ error: "Failed to create setup intent" });
+  }
+});
+
+
+
+    const isTrialEligible = (priceId === SUB_PRICE_10 || priceId === SUB_PRICE_50);
+    const customerId = await getOrCreateStripeCustomer(userId);
+
+    // Attach PM to customer (idempotent)
+    await stripe.paymentMethods.attach(payment_method, { customer: customerId }).catch(() => {});
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: payment_method }
+    });
+
+    // Create subscription (trial only for £5/£20)
+    const sub = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId, quantity: 1 }],
+      ...(isTrialEligible ? { trial_period_days: 1 } : {}),
+      metadata: {
+        userId: String(userId),
+        planMessages: String(SUB_MSG_GRANT[priceId] || 0)
+      }
+    });
+
+    // Your webhook `customer.subscription.created` will grant the trial credits.
+    res.json({ subscriptionId: sub.id, status: sub.status });
+  } catch (err) {
+    console.error("start-subscription error:", err);
+    res.status(500).json({ error: "Failed to start subscription" });
+  }
+});
+
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -2983,8 +3120,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       console.log('✅ Payment received for user ID:', userId, 'with price ID:', priceId);
 
       const amountMap = {
-        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
-        "price_1RsdzREJXIhiKzYG45b69nSl": 50,
+        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
+        "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
         "price_1Rt6NcEJXIhiKzYGMsEZFd8f": "lifetime"
       };
 
@@ -3015,23 +3152,12 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 case 'customer.subscription.created': {
   const sub = event.data.object;
 
-  // Only grant on trial start for 5/20 plans
+  // Only grant on trial start for the 5/20 plans
   const priceId = sub?.items?.data?.[0]?.price?.id;
   const isTrialing = sub.status === 'trialing';
   const planGrant = SUB_MSG_GRANT[priceId]; // 10 or 50 if eligible
 
-  // metadata set in /api/create-subscription-checkout
-  const metaUserId = sub?.metadata?.userId;
-  const metaPlanMsgs = Number(sub?.metadata?.planMessages || 0);
-
-  if (isTrialing && planGrant && metaUserId) {
-    try {
-      // Idempotency: only grant once per subscription_id
-      const existing = await pool.query(
-        `SELECT 1 FROM trial_grants WHERE subscription_id = $1`,
-        [sub.id]
-      );
-      if (existing.rowCount === 0) {
+        if (existing.rowCount === 0) {
         await pool.query('BEGIN');
         await pool.query(
           `INSERT INTO trial_grants (subscription_id, user_id, granted_credits)

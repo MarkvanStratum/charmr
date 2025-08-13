@@ -143,26 +143,56 @@
       message.textContent = "";
 
       const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
+      const name = document.getElementById("cardholder-name").value;
 
       try {
-        // Always use the subscription Checkout flow; server adds 1-day trial for £5/£20, none for £99.
-        const res = await fetch("/api/create-subscription-checkout", {
+        // 1) Create a SetupIntent so we can save the card on YOUR page
+        const siRes = await fetch("/api/create-setup-intent", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`
+          }
+        });
+        const siData = await siRes.json();
+        if (!siData.clientSecret) {
+          message.textContent = siData.error || "Could not start card setup. Try again.";
+          return;
+        }
+
+        // 2) Confirm the card setup with Stripe.js (no redirect)
+        const confirmResult = await stripe.confirmCardSetup(siData.clientSecret, {
+          payment_method: {
+            card,
+            billing_details: { name }
+          }
+        });
+        if (confirmResult.error) {
+          message.textContent = confirmResult.error.message;
+          return;
+        }
+        const payment_method = confirmResult.setupIntent.payment_method;
+
+        // 3) Tell the server to start the subscription (1-day trial for £5/£20, none for £99)
+        const subRes = await fetch("/api/start-subscription", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${localStorage.getItem("token")}`
           },
-          body: JSON.stringify({ priceId: selectedPlan })
+          body: JSON.stringify({ priceId: selectedPlan, payment_method })
         });
-
-        const data = await res.json();
-        if (!data.url) {
-          message.textContent = data.error || "Could not start subscription. Try again.";
+        const subData = await subRes.json();
+        if (subData.error) {
+          message.textContent = subData.error;
           return;
         }
 
-        // Redirect to Stripe Checkout
-        window.location.href = data.url;
+        if (subData.status === "trialing" || subData.status === "active") {
+          window.location.href = "/thankyou.html?plan=" + encodeURIComponent(selectedPlan);
+        } else {
+          message.textContent = "Subscription created (status: " + subData.status + "). If payment is required, please check your card.";
+        }
       } catch (err) {
         console.error(err);
         message.textContent = "Something went wrong. Try again.";
