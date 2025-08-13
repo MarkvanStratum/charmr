@@ -24,9 +24,9 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // PRICE_10_SUB = <recurring price id for £5 / 10 messages>
 // PRICE_50_SUB = <recurring price id for £20 / 50 messages>
 // PRICE_UNLIMITED_SUB = <recurring price id for £99 / unlimited>
-const SUB_PRICE_10   = process.env.PRICE_10_SUB;
-const SUB_PRICE_50   = process.env.PRICE_50_SUB;
-const SUB_PRICE_9999 = process.env.PRICE_UNLIMITED_SUB;
+const SUB_PRICE_10   = process.env.price_1Rsdy1EJXIhiKzYGOtzvwhUH;
+const SUB_PRICE_50   = process.env.price_1RsdzREJXIhiKzYG45b69nSl;
+const SUB_PRICE_9999 = process.env.price_1Rt6NcEJXIhiKzYGMsEZFd8f;
 
 // message grants for each subscription price
 const SUB_MSG_GRANT = {
