@@ -114,7 +114,6 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
-
 // --- make sure we have a Stripe Customer for this app user ---
 async function getOrCreateStripeCustomer(userId) {
   const userRes = await pool.query(
@@ -168,7 +167,6 @@ async function getOrCreateStripeCustomer(userId) {
   if (!user) throw new Error("User not found");
 
   if (user.stripe_customer_id) {
-  return user.stripe_customer_id;
 }
 
 const customer = await stripe.customers.create({
