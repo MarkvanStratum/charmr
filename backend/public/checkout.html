@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Checkout</title>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -14,97 +14,178 @@
   </script>
   <script src="https://js.stripe.com/v3/"></script>
   <style>
-    body {
+    :root{
+      --brand:#ef476f;
+      --brand-dark:#d43d61;
+      --ink:#0f172a;
+      --sub:#475569;
+      --bg:#fdf2f8;
+      --card:#ffffff;
+      --line:#e5e7eb;
+      --ring:#ffd1e0;
+      --ok:#10b981;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
       font-family: Arial, sans-serif;
-      background: #fdf2f8;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
-      align-items: center;
-      padding: 40px 20px;
-      min-height: 100vh;
-      margin: 0;
-    }
-    #payment-form {
-      background: white;
-      padding: 25px 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 420px;
-    }
-    .plan {
-      display: flex;
-      align-items: center;
-      margin-bottom: 15px;
-    }
-    .plan input[type="radio"] {
-      margin-right: 10px;
-    }
-    label {
-      display: block;
-      margin-bottom: 6px;
-      font-weight: bold;
-    }
-    input[type="text"] {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 15px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      font-size: 16px;
-    }
-    #card-element {
+      background: var(--bg);
+      color: var(--ink);
+      margin:0;
       padding: 12px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      margin-bottom: 20px;
-      background: #f9f9f9;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      -webkit-text-size-adjust:100%;
+      overflow-x:hidden; /* prevent any sideways scroll */
     }
-    #submit {
-      width: 100%;
-      background-color: #ef476f;
-      color: white;
-      border: none;
-      padding: 12px;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
+
+    /* CARD (mobile-first, compact) */
+    #payment-form{
+      width:100%;
+      max-width: 520px;            /* narrower for small screens */
+      background:var(--card);
+      border-radius:14px;
+      border:1px solid #f8c4d3;
+      box-shadow: 0 10px 28px rgba(239,71,111,.14);
+      padding:14px;                /* tight padding */
     }
-    #submit[disabled] { opacity: 0.7; cursor: not-allowed; }
-    #submit:hover { background-color: #d43d61; }
-    #message {
-      margin-top: 15px;
-      font-size: 14px;
-      color: red;
+
+    /* HERO */
+    .hero{display:block; margin-bottom:12px}
+    .hero h1{
+      margin:0 0 8px 0;
+      font-size: clamp(18px, 5vw, 22px);
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      color:var(--brand);
+      text-align:center;
     }
-    .profiles-link {
-      margin-top: 20px;
-      text-align: center;
+    .hero-copy{
+      background:#fff6fa;
+      border:1px solid var(--ring);
+      border-radius:10px;
+      padding:10px;
+      font-size:14px;
+      line-height:1.5;
+      color:var(--ink);
     }
-    .profiles-link a {
-      color: #ef476f;
-      font-weight: bold;
-      text-decoration: none;
+    .hero-copy strong{font-weight:800}
+
+    .steps{
+      display:flex; gap:6px; flex-wrap:wrap;
+      margin-top:8px; color:var(--sub); font-size:12px; justify-content:center;
     }
-    .profiles-link a:hover { text-decoration: underline; }
+    .step{
+      background:#fff; border:1px solid var(--line); border-radius:999px;
+      padding:6px 10px;
+    }
+
+    /* PLANS (simple vertical stack) */
+    .plans{display:grid; gap:8px; margin:14px 0 10px}
+    .plan{
+      display:grid; grid-template-columns:auto 1fr; gap:10px;
+      padding:10px; border:1px solid var(--line); border-radius:12px; background:#fff;
+      transition:box-shadow .18s ease, border-color .18s ease;
+    }
+    .plan:hover{box-shadow:0 8px 18px rgba(15,23,42,.06)}
+    .plan input[type="radio"]{margin-top:6px; accent-color:var(--brand)}
+    .plan label{display:block; cursor:pointer}
+    .plan-title{
+      display:block;
+      font-size: clamp(20px, 5.2vw, 26px);
+      font-weight:900; line-height:1.1; color:#0b0b0b;
+    }
+    .plan-fine{display:block; font-size:12px; color:var(--sub); margin-top:4px}
+
+    /* Selected highlight */
+    .plan input[type="radio"]:checked + label{
+      border-radius:10px; outline:3px solid #ffe5ee; background:#fff8fb;
+      padding:4px 6px;
+    }
+
+    /* FORM */
+    label[for="cardholder-name"]{
+      display:block; margin:10px 0 6px; font-weight:700; font-size:14px
+    }
+    input[type="text"]{
+      width:100%; padding:12px; border:1px solid #d1d5db; border-radius:10px; font-size:16px; margin-bottom:10px;
+    }
+    #card-element{
+      padding:12px; border:1px solid #d1d5db; border-radius:10px; margin-bottom:10px; background:#fafafa;
+    }
+
+    /* TRUST + CTA */
+    .trust{
+      display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 10px; color:var(--sub); font-size:12px; justify-content:center;
+    }
+    .tag{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px}
+    .ok{color:var(--ok); font-weight:800}
+
+    #submit{
+      width:100%;
+      background:var(--brand); color:#fff; border:none; padding:14px 16px;
+      border-radius:12px; font-size:16px; font-weight:800; letter-spacing:.3px;
+      cursor:pointer;
+    }
+    #submit:hover{background:var(--brand-dark)}
+    #submit[disabled]{opacity:.7; cursor:not-allowed}
+
+    #message{margin-top:10px; font-size:14px; color:#b91c1c}
+
+    /* Safe spacing on larger screens */
+    @media (min-width: 640px){
+      #payment-form{padding:16px}
+    }
   </style>
 </head>
 <body>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-<form id="payment-form">
-  <div class="plan">
-    <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
-    <label for="plan5">💌 10 Messages (avg. 2 hookups/month) – £0.16/day try Charmr at minumum cost!</label>
+<form id="payment-form" aria-labelledby="age-title">
+  <!-- HERO -->
+  <div class="hero" role="region" aria-label="Age gate">
+    <h1 id="age-title">AGE VERIFICATION</h1>
+    <div class="hero-copy">
+      This website contains adult content and is for <strong>consenting adults only</strong>. Access by anyone under 18 is strictly prohibited.
+      To verify your age, confirm a <strong><span class="curr-symbol">£</span>0 card check</strong> below. No charge is made for verification.
+      Once verified, you can chat and meet members.
+    </div>
+    <div class="steps" aria-label="How it works">
+      <div class="step">① Choose a plan</div>
+      <div class="step">② Verify card</div>
+      <div class="step">③ Start chatting</div>
+    </div>
   </div>
-  <div class="plan">
-    <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
-    <label for="plan20">🔥 50 Messages (avg. 15 hookups) – £0.66/day</label>
-  </div>
-  <div class="plan">
-    <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
-    <label for="plan99">💎 Unlimited (unlimited hookups) – £99</label>
+
+  <!-- PLANS -->
+  <div class="plans" role="group" aria-label="Subscription plans">
+    <!-- 0.16/day -->
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
+      <label for="plan5">
+        <span class="plan-title">1 FREE HOOKUP!</span>
+        <span class="plan-fine">then <span class="curr-symbol">£</span>0.16/day</span>
+      </label>
+    </div>
+
+    <!-- 0.66/day -->
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
+      <label for="plan20">
+        <span class="plan-title">10 FREE HOOKUPS!</span>
+        <span class="plan-fine">then <span class="curr-symbol">£</span>0.66/day</span>
+      </label>
+    </div>
+
+    <!-- £99 one-time -->
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
+      <label for="plan99">
+        <span class="plan-title">UNLIMITED HOOKUPS!</span>
+        <span class="plan-fine"><span class="curr-symbol">£</span>99 one-time</span>
+      </label>
+    </div>
   </div>
 
   <label for="cardholder-name">Name on card</label>
@@ -112,12 +193,19 @@
 
   <div id="card-element"><!-- Stripe injects card input here --></div>
 
-  <button type="submit" id="submit">Pay</button>
+  <!-- Trust row -->
+  <div class="trust">
+    <div class="tag">🔒 Secure payment</div>
+    <div class="tag">🕵 Discreet billing</div>
+    <div class="tag ok">✔ Age 18+ only</div>
+  </div>
+
+  <button type="submit" id="submit">Pay &amp; Verify</button>
   <div id="message"></div>
 </form>
 
 <script>
-  // Use your live publishable key
+  // Stripe integration (unchanged backend behavior)
   const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
   const elements = stripe.elements();
   const card = elements.create("card");
@@ -128,7 +216,7 @@
   const submitBtn = document.getElementById("submit");
 
   async function startSubscription(priceId, cardholderName) {
-    // 1) Create SetupIntent (server returns client_secret)
+    // 1) Create SetupIntent
     const siRes = await fetch("/api/stripe/setup-intent", {
       method: "POST",
       headers: {
@@ -141,7 +229,7 @@
       throw new Error("Failed to start payment setup.");
     }
 
-    // 2) Confirm card setup (Elements, stays on your page)
+    // 2) Confirm card setup
     const { setupIntent, error } = await stripe.confirmCardSetup(siData.clientSecret, {
       payment_method: {
         card,
@@ -150,7 +238,7 @@
     });
     if (error) throw new Error(error.message);
 
-    // 3) Create subscription (server applies 1-day trial for £5/£20)
+    // 3) Create subscription
     const subRes = await fetch("/api/stripe/subscribe", {
       method: "POST",
       headers: {
@@ -167,9 +255,6 @@
       throw new Error(subData?.error || "Subscription failed");
     }
 
-    // For £5/£20: status should be "trialing" immediately.
-    // For £99: server may require payment on the first invoice later;
-    // you can keep this redirect behavior as-is.
     window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
   }
 
@@ -199,10 +284,8 @@
       "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
       "LV","LT","LU","MT","NL","PT","SK","SI","ES"
     ]);
-    function swapSymbol(symbol) {
-      document.querySelectorAll('.plan label').forEach(label => {
-        label.textContent = label.textContent.replace(/£/g, symbol);
-      });
+    function setSymbol(symbol) {
+      document.querySelectorAll('.curr-symbol').forEach(el => { el.textContent = symbol; });
     }
     try {
       fetch("https://ipapi.co/country/")
@@ -210,13 +293,13 @@
         .then(cc => {
           cc = (cc || "").trim().toUpperCase();
           if (cc === "US") {
-            swapSymbol("$");
+            setSymbol("$");
           } else if (EUROZONE.has(cc)) {
-            swapSymbol("€");
-          }
+            setSymbol("€");
+          } // else keep £
         })
-        .catch(() => { /* leave GBP on failure */ });
-    } catch (_) { /* leave GBP */ }
+        .catch(() => { /* leave £ on failure */ });
+    } catch (_) { /* leave £ */ }
   })();
 </script>
 </body>

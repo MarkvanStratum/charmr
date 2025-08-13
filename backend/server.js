@@ -522,18 +522,33 @@ app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
 
 // 2) Create the Subscription with 1-day trial for £5/£20 (none for £99/6mo), stay on your page
 app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
-  const { priceId, paymentMethodId } = req.body;
+  // ⬇️ accept cardholderName (optional) from the client
+  const { priceId, paymentMethodId, cardholderName } = req.body;
   try {
     const customerId = await getOrCreateStripeCustomer(req.user.id);
 
-    // attach PM and set default
+    // Attach PM & set default
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
     await stripe.customers.update(customerId, {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
+    // NEW: set Customer.name from the explicit cardholderName if provided,
+    // otherwise fall back to the PM's billing_details.name
+    try {
+      let nameToSet = (cardholderName || "").trim();
+      if (!nameToSet) {
+        const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+        nameToSet = pm?.billing_details?.name?.trim() || "";
+      }
+      if (nameToSet) {
+        await stripe.customers.update(customerId, { name: nameToSet }); // name only, no email
+      }
+    } catch (e) {
+      console.warn("Couldn't set customer name:", e?.message || e);
+    }
+
     // Decide trial: 1 day for the £5 and £20 price IDs; none for the £99/6mo
-    // (uses your existing price IDs exactly as-is)
     const TRIAL_ONE_DAY_PRICE_IDS = new Set([
       "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 (from your code)
       "price_1RsdzREJXIhiKzYG45b69nSl" // £20 (from your code)
@@ -549,7 +564,6 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
       expand: ['latest_invoice.payment_intent'],
     });
 
-    // We return basic info; your UI can treat this as "trialing" for the 5/20 plans
     res.json({ subscriptionId: subscription.id, status: subscription.status });
   } catch (e) {
     console.error('Subscription create error:', e);
