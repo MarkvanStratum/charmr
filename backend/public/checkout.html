@@ -131,6 +131,7 @@
     <div id="message"></div>
   </form>
 
+
   <script>
     const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
     const elements = stripe.elements();
@@ -148,59 +149,6 @@
       const name = document.getElementById("cardholder-name").value;
 
       try {
-        // --- special flow for the £5 plan (32p auth -> 2-day trial -> £5 subscription)
-        if (selectedPlan === "price_1Rsdy1EJXIhiKzYGOtzvwhUH") {
-          // 1) Create 32p PaymentIntent
-          const r1 = await fetch("https://charmr-jfmc.onrender.com/api/trial-intent", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            }
-          });
-          const d1 = await r1.json();
-          if (!r1.ok || !d1.clientSecret || !d1.paymentIntentId) {
-            message.textContent = (d1 && (d1.error || d1.message)) || "Could not start trial. Try again.";
-            return;
-          }
-
-          // 2) Confirm the 32p PI (handles 3DS if needed)
-          const { error, paymentIntent } = await stripe.confirmCardPayment(d1.clientSecret, {
-            payment_method: {
-              card: card,
-              billing_details: { name }
-            }
-          });
-          if (error) {
-            message.textContent = error.message || "Card authentication failed.";
-            return;
-          }
-          if (!paymentIntent || paymentIntent.status !== "succeeded") {
-            message.textContent = "Card authentication did not complete.";
-            return;
-          }
-
-          // 3) Start the £5 subscription with a 2-day trial
-          const r2 = await fetch("https://charmr-jfmc.onrender.com/api/subscribe-trial", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
-            body: JSON.stringify({ paymentIntentId: d1.paymentIntentId })
-          });
-          const d2 = await r2.json();
-          if (!r2.ok) {
-            message.textContent = (d2 && (d2.error || d2.message)) || "Could not start subscription.";
-            return;
-          }
-
-          // 4) Done
-          window.location.href = `/thankyou.html?priceId=${selectedPlan}`;
-          return;
-        }
-
-        // --- original flow for £20 and £99 (unchanged)
         const res = await fetch("https://charmr-jfmc.onrender.com/api/create-payment-intent", {
           method: "POST",
           headers: {
@@ -230,7 +178,7 @@
         }
       } catch (err) {
         console.error(err);
-        message.textContent = err.message || "Something went wrong. Try again.";
+        message.textContent = "Something went wrong. Try again.";
       }
     });
   </script>
