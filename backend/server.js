@@ -141,13 +141,6 @@ async function getOrCreateStripeCustomer(userId) {
   return customer.id;
 }
 
-
-async function getOrCreateStripeCustomer(userId) {
-  const userRes = await pool.query(
-    "SELECT email, stripe_customer_id FROM users WHERE id = $1",
-    [userId]
-  );
-
   const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
