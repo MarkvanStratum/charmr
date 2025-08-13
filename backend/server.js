@@ -121,6 +121,7 @@ async function getOrCreateStripeCustomer(userId) {
     "SELECT email, stripe_customer_id FROM users WHERE id = $1",
     [userId]
   );
+
   const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
