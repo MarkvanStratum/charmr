@@ -19,6 +19,23 @@ const __dirname = path.dirname(__filename);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+// ---- SUBSCRIPTIONS (recurring Prices) ----
+// Set these in your environment (.env):
+// PRICE_10_SUB = <recurring price id for £5 / 10 messages>
+// PRICE_50_SUB = <recurring price id for £20 / 50 messages>
+// PRICE_UNLIMITED_SUB = <recurring price id for £99 / unlimited>
+const SUB_PRICE_10   = process.env.PRICE_10_SUB;
+const SUB_PRICE_50   = process.env.PRICE_50_SUB;
+const SUB_PRICE_9999 = process.env.PRICE_UNLIMITED_SUB;
+
+// message grants for each subscription price
+const SUB_MSG_GRANT = {
+  [SUB_PRICE_10]: 10,
+  [SUB_PRICE_50]: 50,
+  // no free trial + no upfront grant for unlimited
+};
+
+
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY;
@@ -150,6 +167,16 @@ app.get("/api/get-stripe-session", async (req, res) => {
         created_at TIMESTAMP DEFAULT NOW()
       );
     `);
+
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS trial_grants (
+    subscription_id TEXT PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    granted_credits INT NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+`);
+
 
     console.log("✅ Tables are ready");
   } catch (err) {
@@ -2892,6 +2919,44 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 });
 
 
+// Start a subscription via Stripe Checkout with a 1-day trial for £5/£20 plans.
+// Body: { priceId: string }  -> must be SUB_PRICE_10 or SUB_PRICE_50 (trial), or PRICE_UNLIMITED_SUB (no trial)
+app.post("/api/create-subscription-checkout", authenticateToken, async (req, res) => {
+  try {
+    const { priceId } = req.body;
+    const userId = req.user.id;
+
+    if (![SUB_PRICE_10, SUB_PRICE_50, SUB_PRICE_9999].includes(priceId)) {
+      return res.status(400).json({ error: "Invalid subscription priceId" });
+    }
+
+    // Collect a payment method up front (recommended); charge happens after trial.
+    // For £5/£20 we set a 1-day trial. For £99 we do no trial.
+    const isTrialEligible = (priceId === SUB_PRICE_10 || priceId === SUB_PRICE_50);
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      payment_method_collection: 'always',
+      line_items: [{ price: priceId, quantity: 1 }],
+      subscription_data: {
+        // Add 1-day free trial only for the 5/20 plans
+        ...(isTrialEligible ? { trial_period_days: 1 } : {}),
+        // Put our app data on the Subscription so we can read it in webhooks
+        metadata: {
+          userId: String(userId),
+          planMessages: String(SUB_MSG_GRANT[priceId] || 0) // 10 or 50; 0 for unlimited
+        }
+      },
+      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/cancel.html`,
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("create-subscription-checkout error:", err);
+    res.status(500).json({ error: "Failed to create subscription checkout session" });
+  }
+});
 
 
 import bodyParser from "body-parser"; // Add this at the top if not present
@@ -2945,6 +3010,63 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
       break;
     }
+
+case 'customer.subscription.created': {
+  const sub = event.data.object;
+
+  // Only grant on trial start for 5/20 plans
+  const priceId = sub?.items?.data?.[0]?.price?.id;
+  const isTrialing = sub.status === 'trialing';
+  const planGrant = SUB_MSG_GRANT[priceId]; // 10 or 50 if eligible
+
+  // metadata set in /api/create-subscription-checkout
+  const metaUserId = sub?.metadata?.userId;
+  const metaPlanMsgs = Number(sub?.metadata?.planMessages || 0);
+
+  if (isTrialing && planGrant && metaUserId) {
+    try {
+      // Idempotency: only grant once per subscription_id
+      const existing = await pool.query(
+        `SELECT 1 FROM trial_grants WHERE subscription_id = $1`,
+        [sub.id]
+      );
+      if (existing.rowCount === 0) {
+        await pool.query('BEGIN');
+        await pool.query(
+          `INSERT INTO trial_grants (subscription_id, user_id, granted_credits)
+           VALUES ($1, $2, $3)`,
+          [sub.id, metaUserId, planGrant]
+        );
+        await pool.query(
+          `UPDATE users SET credits = credits + $1 WHERE id = $2`,
+          [planGrant, metaUserId]
+        );
+        await pool.query('COMMIT');
+        console.log(`✅ Granted ${planGrant} trial credits to user ${metaUserId} (sub ${sub.id})`);
+      } else {
+        console.log(`ℹ️ Trial credits already granted for sub ${sub.id}`);
+      }
+    } catch (e) {
+      await pool.query('ROLLBACK').catch(()=>{});
+      console.error('❌ Error granting trial credits:', e);
+    }
+  }
+  break;
+}
+
+case 'invoice.payment_succeeded': {
+  // Normal post-trial billing success. We keep your credit system as-is for now.
+  // (Monthly re-grants/top-ups can be added later—today we only care about the free trial.)
+  break;
+}
+
+case 'customer.subscription.deleted':
+case 'customer.subscription.paused': {
+  // No change to credits here. Your chat route already enforces credits/lifetime.
+  // If you later want to "lock" accounts on cancel/pause, do it here.
+  break;
+}
+
 
     default:
       console.log(`Unhandled event type ${event.type}`);
