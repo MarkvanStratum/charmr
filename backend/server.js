@@ -115,7 +115,12 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
-
+// --- make sure we have a Stripe Customer for this app user ---
+async function getOrCreateStripeCustomer(userId) {
+  const userRes = await pool.query(
+    "SELECT email, stripe_customer_id FROM users WHERE id = $1",
+    [userId]
+  );
   const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
@@ -129,6 +134,14 @@ const pool = new Pool({
     email: user.email,
     metadata: { app_user_id: String(userId) }
   });
+
+  await pool.query(
+    "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
+    [customer.id, userId]
+  );
+
+  return customer.id;
+}
 
   await pool.query(
     "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
