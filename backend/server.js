@@ -24,9 +24,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 // PRICE_10_SUB = <recurring price id for £5 / 10 messages>
 // PRICE_50_SUB = <recurring price id for £20 / 50 messages>
 // PRICE_UNLIMITED_SUB = <recurring price id for £99 / unlimited>
-const SUB_PRICE_10   = process.env.price_1Rsdy1EJXIhiKzYGOtzvwhUH;
-const SUB_PRICE_50   = process.env.price_1RsdzREJXIhiKzYG45b69nSl;
-const SUB_PRICE_9999 = process.env.price_1Rt6NcEJXIhiKzYGMsEZFd8f;
+// ✅ Stripe Price IDs (hardcoded so validation works)
+const SUB_PRICE_10   = "price_1Rsdy1EJXIhiKzYGOtzvwhUH"; // £5 plan (10 msgs)
+const SUB_PRICE_50   = "price_1RsdzREJXIhiKzYG45b69nSl"; // £20 plan (50 msgs)
+const SUB_PRICE_9999 = "price_1Rt6NcEJXIhiKzYGMsEZFd8f"; // £99 unlimited (no trial)
+
+// ✅ How many credits to grant at trial start (used in webhook)
+const SUB_MSG_GRANT = {
+  [SUB_PRICE_10]: 10,
+  [SUB_PRICE_50]: 50,
+};
 
 // message grants for each subscription price
 const SUB_MSG_GRANT = {
