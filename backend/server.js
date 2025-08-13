@@ -483,26 +483,23 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
 // SUBSCRIPTIONS: NEW LOGIC
 // -------------------------
 
-// Helper: find-or-create Stripe Customer for the logged-in user (no schema change needed)
-async function getOrCreateStripeCustomerByEmail(email, userId) {
-  // Try to find by email (Stripe search may require the Search API; fallback: list + filter)
+// Helper: find-or-create Stripe Customer by userId ONLY (no email ever sent to Stripe)
+async function getOrCreateStripeCustomer(userId) {
   let customer = null;
   try {
-    const search = await stripe.customers.search({ query: `email:'${email}'` });
-    if (search.data.length > 0) customer = search.data[0];
+    // Prefer Customers Search API by metadata
+    const search = await stripe.customers.search({
+      query: `metadata['userId']:'${userId}'`
+    });
+    if (search.data.length > 0) {
+      customer = search.data[0];
+    }
   } catch (e) {
-    // If search is not enabled, best-effort list (small limit) and match email
-    const list = await stripe.customers.list({ limit: 10 });
-    customer = list.data.find(c => c.email === email) || null;
+    // If search not available, silently fall through and create
   }
   if (!customer) {
     customer = await stripe.customers.create({
-      email,
-      metadata: { userId: String(userId) }
-    });
-  } else if (!customer.metadata?.userId && userId) {
-    await stripe.customers.update(customer.id, {
-      metadata: { ...(customer.metadata || {}), userId: String(userId) }
+      metadata: { userId: String(userId) } // <-- no email field sent
     });
   }
   return customer.id;
@@ -511,7 +508,7 @@ async function getOrCreateStripeCustomerByEmail(email, userId) {
 // 1) Create a SetupIntent so you can collect card on your own checkout.html (Elements)
 app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
   try {
-    const customerId = await getOrCreateStripeCustomerByEmail(req.user.email, req.user.id);
+    const customerId = await getOrCreateStripeCustomer(req.user.id);
     const si = await stripe.setupIntents.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -527,7 +524,7 @@ app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
 app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
   const { priceId, paymentMethodId } = req.body;
   try {
-    const customerId = await getOrCreateStripeCustomerByEmail(req.user.email, req.user.id);
+    const customerId = await getOrCreateStripeCustomer(req.user.id);
 
     // attach PM and set default
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
@@ -676,9 +673,17 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     // Fired when an invoice is successfully paid (e.g., after trial ends for 5/20)
     case 'invoice.payment_succeeded': {
       const inv = event.data.object;
-      const userId = inv.customer_email
-        ? (await pool.query('SELECT id FROM users WHERE email = $1', [inv.customer_email])).rows?.[0]?.id
-        : null;
+
+      // Resolve userId via subscription metadata (do not rely on invoice.customer_email)
+      let userId = null;
+      try {
+        if (inv.subscription) {
+          const sub = await stripe.subscriptions.retrieve(inv.subscription);
+          userId = sub.metadata?.userId || null;
+        }
+      } catch (e) {
+        console.error('Failed to retrieve subscription for invoice:', e);
+      }
 
       // Price ID from the line item
       const priceId = inv.lines?.data?.[0]?.price?.id;
