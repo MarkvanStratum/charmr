@@ -35,14 +35,6 @@ const SUB_MSG_GRANT = {
   [SUB_PRICE_50]: 50,
 };
 
-// message grants for each subscription price
-const SUB_MSG_GRANT = {
-  [SUB_PRICE_10]: 10,
-  [SUB_PRICE_50]: 50,
-  // no free trial + no upfront grant for unlimited
-};
-
-
 const defaultClient = SibApiV3Sdk.ApiClient.instance;
 const apiKey = defaultClient.authentications['api-key'];
 apiKey.apiKey = process.env.BREVO_API_KEY;
