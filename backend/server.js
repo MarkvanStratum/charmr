@@ -2985,7 +2985,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const amountMap = {
         "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
         "price_1RsdzREJXIhiKzYG45b69nSl": 50,
-        "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
+        "price_1Rt6NcEJXIhiKzYGMsEZFd8f": "lifetime"
       };
 
       const value = amountMap[priceId];
