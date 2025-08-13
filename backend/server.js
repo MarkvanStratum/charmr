@@ -2945,15 +2945,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       // do NOT include SUB_PRICE_9999 here (that plan is a subscription)
     };
 
-      if (userId && value !== undefined) {
-        try {
-          if (value === "lifetime") {
-            await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
-            console.log(`✅ Lifetime access granted to user ${userId}`);
-          } else {
-            await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
-            console.log(`✅ Added ${value} credits to user ${userId}`);
-          }
+    
         } catch (err) {
   console.error("❌ Failed to update user payment record:", err.message);
 }
@@ -2961,60 +2953,6 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
         console.error("❌ Missing userId or invalid priceId in metadata");
       }
   
-    }
-
-    case 'customer.subscription.created': {
-      const sub = event.data.object;
-
-      // Only grant on trial start for the £5/£20 plans
-      const priceId = sub?.items?.data?.[0]?.price?.id;
-      const isTrialing = sub.status === 'trialing';
-      const planGrant = SUB_MSG_GRANT[priceId]; // 10 or 50 if eligible
-
-      // metadata was set when we created the sub in /api/start-subscription
-      const metaUserId = sub?.metadata?.userId;
-      const metaPlanMsgs = Number(sub?.metadata?.planMessages || 0);
-
-      if (isTrialing && planGrant && metaUserId) {
-        try {
-          // Idempotency: only grant once per subscription_id
-          const existing = await pool.query(
-            `SELECT 1 FROM trial_grants WHERE subscription_id = $1`,
-            [sub.id]
-          );
-          if (existing.rowCount === 0) {
-            await pool.query('BEGIN');
-            await pool.query(
-              `INSERT INTO trial_grants (subscription_id, user_id, granted_credits)
-               VALUES ($1, $2, $3)`,
-              [sub.id, metaUserId, planGrant]
-            );
-            await pool.query(
-              `UPDATE users SET credits = credits + $1 WHERE id = $2`,
-              [planGrant, metaUserId]
-            );
-            await pool.query('COMMIT');
-            console.log(`✅ Granted ${planGrant} trial credits to user ${metaUserId} (sub ${sub.id})`);
-          } else {
-            console.log(`ℹ️ Trial credits already granted for sub ${sub.id}`);
-          }
-        } catch (e) {
-          await pool.query('ROLLBACK').catch(()=>{});
-          console.error('❌ Error granting trial credits:', e);
-        }
-      }
-      break;
-    }
-
-    case 'invoice.payment_succeeded': {
-      // Normal post-trial billing success. We keep your credit system as-is for now.
-      break;
-    }
-
-    case 'customer.subscription.deleted':
-    case 'customer.subscription.paused': {
-      // No change to credits here.
-      break;
     }
 
     app.post('/api/create-checkout-session', async (req, res) => {
@@ -3025,7 +2963,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
       line_items: [
         {
           price_data: {
-            currency: 'usd',
+            currency: 'gbp',
             product_data: {
               name: 'Premium Chat Credits',
               description: 'Unlock 100 credits',
