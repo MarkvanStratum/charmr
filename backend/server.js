@@ -121,7 +121,6 @@ async function getOrCreateStripeCustomer(userId) {
     "SELECT email, stripe_customer_id FROM users WHERE id = $1",
     [userId]
   );
-
   const user = userRes.rows[0];
   if (!user) throw new Error("User not found");
 
@@ -143,37 +142,6 @@ async function getOrCreateStripeCustomer(userId) {
 
   return customer.id;
 }
-
-  const user = userRes.rows[0];
-  if (!user) throw new Error("User not found");
-
-    // create a new Stripe customer and save its id on our user
-  const customer = await stripe.customers.create({
-    email: user.email,
-    metadata: { app_user_id: String(userId) }
-  });
-
-  await pool.query(
-    "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
-    [customer.id, userId]
-  );
-
-  return customer.id;
-}
-
-  const customer = await stripe.customers.create({
-    email: user.email,
-    metadata: { app_user_id: String(userId) }
-  });
-
-  await pool.query(
-    "UPDATE users SET stripe_customer_id = $1 WHERE id = $2",
-    [customer.id, userId]
-  );
-
-  return customer.id;
-}
-
 
 app.get("/api/get-stripe-session", async (req, res) => {
   try {
@@ -3377,6 +3345,5 @@ app.post('/api/create-checkout-session', async (req, res) => {
     res.status(500).json({ error: 'Something went wrong.' });
   }
 });
-
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
