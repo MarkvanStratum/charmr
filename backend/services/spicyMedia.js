@@ -10,33 +10,69 @@ const __dirname = path.dirname(__filename);
 const SPICY_BASE = path.join(__dirname, "..", "public", "spicyimages");
 const ALLOWED_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
+/* ===========================
+   TRIGGER KEYWORDS (EDIT ME)
+   =========================== */
+
+// Strong/explicit triggers
+const sexualKeywords = [
+  "fuck",
+  "fucking",
+  "horny",
+  "hornier",
+  "horniest",
+  "naked",
+  "nude",
+  "boob",
+  "boobs",
+  "tit",
+  "tits",
+  "cock",
+  "dick",
+  "cum",
+  "pussy",
+  "anal",
+  "blowjob",
+  "blow job",
+  "handjob",
+  "hand job",
+  "i wanna have sex",
+  "i want to have sex",
+  "i wantta have sex"
+];
+
+// Softer/suggestive triggers
+const suggestiveKeywords = [
+  "pic",
+  "photo",
+  "image",
+  "selfie",
+  "outfit",
+  "spicy",
+  "send me something",
+  "send something",
+  "send one"
+];
+
+/* ===========================
+   PUBLIC APIS
+   =========================== */
+
 /** Detects sexual/explicit phrases (server-side trigger). */
 export function isSexualExplicit(text = "") {
-  const rx = [
-    /\bfuck(ing)?\b/i,
-    /\bhorn(y|ier|iest)\b/i,
-    /\b(naked|nude)\b/i,
-    /\b(boob|boobs|tits?)\b/i,
-    /\b(cock|dick|cum|pussy)\b/i,
-    /\b(anal|blow ?job|hand ?job)\b/i,
-    /\bi (wanna|want to|wantta)\s+(have )?sex\b/i
-  ];
-  return rx.some(r => r.test(text));
+  const lower = String(text || "").toLowerCase();
+  return sexualKeywords.some(k => lower.includes(k));
 }
 
 /** Looser hints for suggestive requests (optional, used alongside explicit). */
 export function shouldSendSuggestiveImage(text = "") {
-  const rx = [
-    /\b(pic|photo|image|selfie|outfit)\b/i,
-    /\bspicy\b/i,
-    /\bsend (me )?(something|one)\b/i
-  ];
-  return rx.some(r => r.test(text));
+  const lower = String(text || "").toLowerCase();
+  return suggestiveKeywords.some(k => lower.includes(k));
 }
 
 /** Picks a random image URL from /public/spicyimages (single common pool). */
-export function pickRandomImageUrl(/* girlId optional later */) {
-  const files = _listImagesInDir(SPICY_BASE);
+export function pickRandomImageUrl() {
+  const files = listImagesInDir(SPICY_BASE);
   if (!files.length) return null;
   const pick = files[Math.floor(Math.random() * files.length)];
   // Public URL (served by express.static("public"))
@@ -87,34 +123,28 @@ export async function insertAssistantTextMessage({ pool, userId, girlId, text })
   return rows[0];
 }
 
-/** Rotate a few playful, non-explicit lines. */
+/** Hard-coded, PG-13 one-liners you control. (Edit freely.) */
 export function pickSafeFlirtyLine() {
-  const choices = [
-    "I wanna meet you in real life so you can touch it!",
-    "Oh babe you make me so horny I just had to send you this!",
-    "You make my pussy so wet! 💕",
-    "Babe, I'm going crazy. Here look at this, it's all for you! 😇",
-    "Babe I'm so horny now. Here you like what you see? ✨"
-    "What will you do with your tounge to this? 💕",
-    "Babe, I really wanna feel your hands here! 😇",
-    "Does this turn you on? ✨"
-	"I wanna suck your dick so bad 😉",
-    "Damn babe, I just couldn't help myself. I wanna feel your dick inside me!",
-    "Babe my tits are so sensitive now, my nipples are hard and my pussy is wet 💕",
-    "Babe, I love sucking dick and swallowing cum. I'm a bad girl for you! 😇",
-    "Babe I wanna see you so bad and feel your hands all over my body! ✨"
-	"Is your dick hard right now? 😉",
-    "I love anal too. Would love to feel your hard dick in my ass",
-    "You know, I love tasting my own ass on your dick after you fuck me. It turns me on so much!💕",
-    "Babe, I really wanna see you. I cant wait to suck your dick and balls...😇",
-    "Do you like it babe?✨"
+  const messages = [
+    "Here babe, just for you.",
+    "You made me think of this.",
+    "Could not resist sending you this one.",
+    "This is just for your eyes.",
+    "Thought you might like this.",
+    "This one makes me think of you.",
+    "Here is something to make your day better.",
+    "You are too tempting, so here is this.",
+    "I hope this gets your heart racing.",
+    "This one is my favorite to send to you."
   ];
-  return choices[Math.floor(Math.random() * choices.length)];
+  return messages[Math.floor(Math.random() * messages.length)];
 }
 
-/* ---------------- internal helpers ---------------- */
+/* ===========================
+   INTERNAL HELPERS
+   =========================== */
 
-function _listImagesInDir(absDir) {
+function listImagesInDir(absDir) {
   if (!fs.existsSync(absDir)) return [];
   const files = fs.readdirSync(absDir).filter(f => {
     const dot = f.lastIndexOf(".");
