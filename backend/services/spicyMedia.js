@@ -90,12 +90,11 @@ export async function insertAssistantTextMessage({ pool, userId, girlId, text })
 /** Rotate a few playful, non-explicit lines. */
 export function pickSafeFlirtyLine() {
   const choices = [
-    "I wanna meet you in real life so you can touch it 😉",
+    "I wanna meet you in real life so you can touch it!",
     "Oh babe you make me so horny I just had to send you this!",
     "You make my pussy so wet! 💕",
     "Babe, I'm going crazy. Here look at this, it's all for you! 😇",
     "Babe I'm so horny now. Here you like what you see? ✨"
-    "I just can't wait, I wanna feel you inside me!",
     "What will you do with your tounge to this? 💕",
     "Babe, I really wanna feel your hands here! 😇",
     "Does this turn you on? ✨"
@@ -109,7 +108,6 @@ export function pickSafeFlirtyLine() {
     "You know, I love tasting my own ass on your dick after you fuck me. It turns me on so much!💕",
     "Babe, I really wanna see you. I cant wait to suck your dick and balls...😇",
     "Do you like it babe?✨"
-
   ];
   return choices[Math.floor(Math.random() * choices.length)];
 }
