@@ -1,4 +1,4 @@
-// services/spicyMedia.js
+// backend/services/spicyMedia.js
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -6,24 +6,25 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const SPICY_BASE = path.join(__dirname, "..", "public", "spicy");
+// Images live in backend/public/spicyimages
+const SPICY_BASE = path.join(__dirname, "..", "public", "spicyimages");
 const ALLOWED_EXTS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
 
-/** Detects explicit/sexual requests (PG-13 guard: we won’t go explicit) */
+/** Detects sexual/explicit phrases (server-side trigger). */
 export function isSexualExplicit(text = "") {
-  // keep this list broad; we don't produce explicit content in response
   const rx = [
     /\bfuck(ing)?\b/i,
     /\bhorn(y|ier|iest)\b/i,
     /\b(naked|nude)\b/i,
-    /\b(boobs?|tits?)\b/i,
+    /\b(boob|boobs|tits?)\b/i,
     /\b(cock|dick|cum|pussy)\b/i,
-    /\b(anal|blow ?job|hand ?job)\b/i
+    /\b(anal|blow ?job|hand ?job)\b/i,
+    /\bi (wanna|want to|wantta)\s+(have )?sex\b/i
   ];
   return rx.some(r => r.test(text));
 }
 
-/** Triggers for “suggestive but safe” image (not explicit) */
+/** Looser hints for suggestive requests (optional, used alongside explicit). */
 export function shouldSendSuggestiveImage(text = "") {
   const rx = [
     /\b(pic|photo|image|selfie|outfit)\b/i,
@@ -33,27 +34,16 @@ export function shouldSendSuggestiveImage(text = "") {
   return rx.some(r => r.test(text));
 }
 
-/** Pick a random public URL like /spicy/7/file.jpg (served by express.static) */
-export function pickRandomImageUrl(girlId) {
-  const first = _pickIn(`/spicy/${girlId}`);
-  if (first) return first;
-  const fallback = _pickIn(`/spicy/common`);
-  return fallback || null;
-}
-
-function _pickIn(relWebPath) {
-  const abs = path.join(SPICY_BASE, relWebPath.replace("/spicy", ""));
-  if (!fs.existsSync(abs)) return null;
-  const files = fs.readdirSync(abs).filter(f => {
-    const ext = f.slice(f.lastIndexOf(".")).toLowerCase();
-    return ALLOWED_EXTS.includes(ext);
-  });
+/** Picks a random image URL from /public/spicyimages (single common pool). */
+export function pickRandomImageUrl(/* girlId optional later */) {
+  const files = _listImagesInDir(SPICY_BASE);
   if (!files.length) return null;
-  const f = files[Math.floor(Math.random() * files.length)];
-  return `${relWebPath}/${f}`;
+  const pick = files[Math.floor(Math.random() * files.length)];
+  // Public URL (served by express.static("public"))
+  return `/spicyimages/${pick}`;
 }
 
-/** DB helpers */
+/** Ensure DB columns type and image_url exist (safe to call every boot). */
 export async function ensureImageColumns(pool) {
   await pool.query(`
     DO $$
@@ -75,6 +65,7 @@ export async function ensureImageColumns(pool) {
   `);
 }
 
+/** Insert an image message from assistant. */
 export async function insertImageMessage({ pool, userId, girlId, imageUrl }) {
   const q = `
     INSERT INTO messages (user_id, girl_id, from_user, type, image_url)
@@ -85,6 +76,7 @@ export async function insertImageMessage({ pool, userId, girlId, imageUrl }) {
   return rows[0];
 }
 
+/** Insert a short assistant text line (PG-13). */
 export async function insertAssistantTextMessage({ pool, userId, girlId, text }) {
   const q = `
     INSERT INTO messages (user_id, girl_id, from_user, type, text)
@@ -95,7 +87,7 @@ export async function insertAssistantTextMessage({ pool, userId, girlId, text })
   return rows[0];
 }
 
-/** Non-explicit, playful responses to keep it flirty but safe */
+/** Rotate a few playful, non-explicit lines. */
 export function pickSafeFlirtyLine() {
   const choices = [
     "I wanna meet you in real life so you can touch it 😉",
@@ -118,6 +110,20 @@ export function pickSafeFlirtyLine() {
     "You know, I love tasting my own ass on your dick after you fuck me. It turns me on so much!💕",
     "Babe, I really wanna see you. I cant wait to suck your dick and balls...😇",
     "Do you like it babe?✨"
+
   ];
   return choices[Math.floor(Math.random() * choices.length)];
+}
+
+/* ---------------- internal helpers ---------------- */
+
+function _listImagesInDir(absDir) {
+  if (!fs.existsSync(absDir)) return [];
+  const files = fs.readdirSync(absDir).filter(f => {
+    const dot = f.lastIndexOf(".");
+    if (dot < 0) return false;
+    const ext = f.slice(dot).toLowerCase();
+    return ALLOWED_EXTS.includes(ext);
+  });
+  return files;
 }
