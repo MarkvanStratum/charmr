@@ -95,7 +95,6 @@ export function pickSafeFlirtyLine() {
     "You make my pussy so wet! 💕",
     "Babe, I'm going crazy. Here look at this, it's all for you! 😇",
     "Babe I'm so horny now. Here you like what you see? ✨"
-	"Here babe for you! 😉",
     "I just can't wait, I wanna feel you inside me!",
     "What will you do with your tounge to this? 💕",
     "Babe, I really wanna feel your hands here! 😇",
