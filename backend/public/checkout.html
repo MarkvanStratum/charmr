@@ -260,25 +260,42 @@
   const message = document.getElementById("message");
   const submitBtn = document.getElementById("submit");
 
-  /* ---------- Loading overlay helpers ---------- */
+  /* ---------- Loading overlay helpers (updated) ---------- */
   const overlay = document.getElementById('loading-overlay');
   function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
   function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
 
-  // Best-effort: if Stripe injects a 3DS iframe/modal, hide overlay so the challenge is visible.
-  const mo = new MutationObserver(() => {
-    const iframes = document.querySelectorAll('iframe');
-    for (const f of iframes) {
-      const t = (f.getAttribute('title') || '').toLowerCase();
-      const s = (f.getAttribute('src') || '').toLowerCase();
-      if (t.includes('authentication') || t.includes('challenge') || s.includes('3d') || s.includes('stripe')) {
-        hideLoading();
-        break;
+  // Track iframes present BEFORE submit so we only react to NEW ones
+  let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+
+  function startThreeDSWatcher(){
+    // Refresh baseline right when we begin (in case Elements mounted later)
+    baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+
+    const isThreeDSLike = (iframe) => {
+      const t = (iframe.getAttribute('title') || '').toLowerCase();
+      return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
+    };
+
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.tagName === 'IFRAME' && !baselineIframes.has(node)) {
+            if (isThreeDSLike(node)) {
+              // Hide overlay only when the 3DS iframe is actually ready
+              const hideWhenReady = () => { hideLoading(); observer.disconnect(); };
+              if (node.complete) hideWhenReady();
+              else node.addEventListener('load', hideWhenReady, { once:true });
+              return;
+            }
+          }
+        }
       }
-    }
-  });
-  mo.observe(document.documentElement, { childList:true, subtree:true });
-  /* ---------- /Loading overlay helpers ---------- */
+    });
+
+    observer.observe(document.documentElement, { childList:true, subtree:true });
+  }
+  /* ---------- /Loading overlay helpers (updated) ---------- */
 
   async function startSubscription(priceId, cardholderName) {
     // 1) Create SetupIntent
@@ -328,17 +345,18 @@
     e.preventDefault();
     message.textContent = "";
     submitBtn.disabled = true;
-    showLoading(); // show immediately on click
+    showLoading();           // show immediately on click
+    startThreeDSWatcher();   // watch for the real 3DS iframe
 
     const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
     const name = document.getElementById("cardholder-name").value;
 
     try {
       await startSubscription(selectedPlan, name);
-      // No need to hide overlay here; we redirect on success.
+      // On success we navigate; overlay can stay until navigation completes.
     } catch (err) {
       console.error(err);
-      hideLoading(); // reveal the page so the error is visible
+      hideLoading();         // reveal the page so the error is visible
       message.textContent = err.message || "Something went wrong. Try again.";
     } finally {
       submitBtn.disabled = false;

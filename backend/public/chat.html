@@ -4,14 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat</title>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-FDQ6REQWS8');
-  </script>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
   <link rel="stylesheet" href="style.css" />
   <style>
     body {
@@ -105,16 +106,8 @@
     .chat-input button:hover {
       background-color: #d43d61;
     }
-
-    /* Image bubble tweaks */
-    .message img.chat-photo {
-      display: block;
-      max-width: 220px;
-      height: auto;
-      border-radius: 12px;
-    }
   </style>
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
   <div class="chat-container">
@@ -146,45 +139,14 @@
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
-    function appendTextMessage(text, sender, isTyping = false) {
+    function appendMessage(text, sender, isTyping = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
-      if (isTyping) {
-        msgDiv.classList.add('typing');
-        msgDiv.textContent = "...";
-      } else {
-        msgDiv.textContent = text;
-      }
+      msgDiv.textContent = text;
+      if (isTyping) msgDiv.classList.add('typing');
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
       return msgDiv;
-    }
-
-    function appendImageMessage(url, sender) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = "photo";
-      img.loading = "lazy";
-      img.className = "chat-photo";
-      msgDiv.appendChild(img);
-      chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-      return msgDiv;
-    }
-
-    function renderMessageRow(msg) {
-      // /api/messages/:girlId returns raw rows with: from_user, text, type, image_url, created_at
-      const sender = msg.from_user ? "user" : "girl";
-      const type = msg.type || "text";
-
-      if (type === "image" && msg.image_url) {
-        return appendImageMessage(msg.image_url, sender);
-      } else {
-        // fallback to text
-        return appendTextMessage(msg.text || "", sender);
-      }
     }
 
     function randomDelay(min = 700, max = 2000) {
@@ -198,7 +160,7 @@
         });
         const data = await res.json();
         chatBox.innerHTML = "";
-        data.forEach(msg => renderMessageRow(msg));
+        data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
       } catch (err) {
         console.error("Error loading messages:", err);
       }
@@ -209,12 +171,9 @@
       const messageText = input.value.trim();
       if (!messageText) return;
 
-      // Optimistic UI: show your own message immediately
-      appendTextMessage(messageText, 'user');
+      appendMessage(messageText, 'user');
       input.value = '';
-
-      // Show typing bubble from "girl"
-      const typingBubble = appendTextMessage("", 'girl', true);
+      const typingBubble = appendMessage("...", 'girl', true);
 
       try {
         const res = await fetch(`${backendUrl}/api/chat`, {
@@ -230,7 +189,7 @@
           const data = await res.json();
           typingBubble.remove();
 
-          appendTextMessage(data.error || "You're out of credits!", 'girl');
+          appendMessage(data.error || "You're out of credits!", 'girl');
 
           const btn = document.createElement("button");
           btn.textContent = "🔁 Buy More Credits";
@@ -241,28 +200,26 @@
           btn.style.padding = "8px 12px";
           btn.style.borderRadius = "6px";
           btn.style.cursor = "pointer";
-          btn.onclick = () => { window.location.href = "/checkout.html"; };
+          btn.onclick = () => {
+  window.location.href = "/checkout.html";
+};
 
           chatBox.appendChild(btn);
           chatBox.scrollTop = chatBox.scrollHeight;
           return;
         }
 
-        // Wait a bit for realism, then reload full thread so:
-        // - server-triggered image + playful line show in correct order
-        // - the model's reply shows too
+        const data = await res.json();
         await new Promise(resolve => setTimeout(resolve, randomDelay()));
         typingBubble.remove();
 
-        // Instead of only appending data.reply, reload thread:
-        await loadMessages();
+        appendMessage(data.reply || "(No reply received)", 'girl');
       } catch (err) {
         console.error("Chat error:", err);
         typingBubble.remove();
       }
     }
 
-    // Initial thread load
     loadMessages();
   </script>
 </body>
