@@ -1,20 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Live Chat Feed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; --pink:#ef476f; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:20px; background:var(--bg); color:var(--ink); }
+    h1 { margin: 0 0 12px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px; max-width:1200px; }
+    .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    button, input { padding:8px 10px; font-size:14px; border-radius:10px; border:1px solid var(--line); }
+    button { background:var(--pink); color:#fff; border:none; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    label { font-size:12px; color:#555; display:flex; align-items:center; gap:6px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; font-size:14px; }
+    th { background:#f6f6f6; position:sticky; top:0; z-index:1; }
+    .img-thumb { max-width:120px; max-height:120px; border-radius:8px; display:block; object-fit:cover; }
+    .dir-user { color: var(--pink); font-weight:700; }
+    .dir-girl { color:#555; font-weight:700; }
+    #status { font-size:12px; color:#666; }
+    #error { display:none; margin-bottom:10px; padding:10px; border-radius:8px; background:#ffe9e9; color:#8a1f1f; border:1px solid #f3c6c6; }
+  </style>
+</head>
+<body>
+  <h1>Live Chat Feed</h1>
+
+  <div id="error"></div>
+
+  <div class="card">
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <label><input type="checkbox" id="autoScroll" checked> Auto-scroll to newest</label>
+      <label>Limit <input id="limit" type="number" min="1" max="500" value="100" style="width:90px"></label>
+      <span id="status">Not started</span>
+    </div>
+  </div>
+
+  <div class="card" style="padding:0; overflow:auto; max-height:75vh;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:170px;">Time</th>
+          <th style="width:90px;">User ID</th>
+          <th style="width:90px;">Girl ID</th>
+          <th style="width:180px;">Girl Name</th>
+          <th style="width:70px;">From</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody id="feedBody"></tbody>
+    </table>
+  </div>
+
 <script>
-  // Same-origin backend (public /api/operator/feed)
+  // --- Config: same-origin, public endpoint ---
   const BACKEND_URL = window.location.origin;
 
+  // --- State ---
   let timer = null;
   let lastNow = null;            // server "now" from last poll
-  const seenIds = new Set();     // dedupe & keep everything
-  const rowsById = new Map();    // (optional) if you ever want updates
+  const seenIds = new Set();     // to keep all rows and avoid duplicates
 
+  // --- Elements ---
   const els = {
     startBtn: document.getElementById('startBtn'),
     stopBtn: document.getElementById('stopBtn'),
     status: document.getElementById('status'),
     autoScroll: document.getElementById('autoScroll'),
     limit: document.getElementById('limit'),
-    body: document.getElementById('feedBody')
+    body: document.getElementById('feedBody'),
+    error: document.getElementById('error')
   };
+
+  // Helpful error display
+  function showError(msg) {
+    els.error.textContent = msg || 'Error';
+    els.error.style.display = 'block';
+  }
+  function clearError() {
+    els.error.style.display = 'none';
+    els.error.textContent = '';
+  }
 
   // Build one <tr> for a row
   function buildRow(r) {
@@ -56,38 +126,30 @@
     return tr;
   }
 
-  // Initial render: draw a full list (DESC by created_at from server) without clearing later
+  // First load: draw the slice we get (DESC from server), keep them forever
   function initialRender(rows) {
-    // Newest first already; just add, skipping ids we've seen
     for (const r of rows) {
       if (seenIds.has(r.id)) continue;
       const tr = buildRow(r);
-      els.body.appendChild(tr);       // appending preserves DESC order returned
+      els.body.appendChild(tr); // server returns DESC; append keeps that order
       seenIds.add(r.id);
-      rowsById.set(r.id, r);
     }
-    // Ensure newest stays visible
     if (els.autoScroll.checked) {
       const container = els.body.parentElement.parentElement.parentElement;
       container.scrollTop = 0;
     }
   }
 
-  // Incremental: prepend only new rows (keep everything else)
+  // Subsequent polls: prepend only *new* rows (newest on top), keep old rows
   function prependNew(rows) {
-    // rows are DESC (newest first). Iterate from last to first so the final DOM order is correct when inserting at top.
+    // rows are DESC (newest first); we insert from bottom to top at DOM head
     for (let i = rows.length - 1; i >= 0; i--) {
       const r = rows[i];
       if (seenIds.has(r.id)) continue;
       const tr = buildRow(r);
-      // Insert at top
-      if (els.body.firstChild) {
-        els.body.insertBefore(tr, els.body.firstChild);
-      } else {
-        els.body.appendChild(tr);
-      }
+      if (els.body.firstChild) els.body.insertBefore(tr, els.body.firstChild);
+      else els.body.appendChild(tr);
       seenIds.add(r.id);
-      rowsById.set(r.id, r);
     }
     if (rows.length && els.autoScroll.checked) {
       const container = els.body.parentElement.parentElement.parentElement;
@@ -97,6 +159,7 @@
 
   async function tick(isFirst = false) {
     try {
+      clearError();
       const limit = Math.min(Math.max(parseInt(els.limit.value || '100', 10), 1), 500);
       const params = new URLSearchParams();
       params.set('limit', String(limit));
@@ -112,17 +175,13 @@
       const payload = await res.json();
       const rows = payload.rows || [];
 
-      if (isFirst) {
-        // First load: draw a big slice (e.g., 100/500). They will STAY.
-        initialRender(rows);
-      } else {
-        // Subsequent polls: only new items since last poll; prepend them.
-        prependNew(rows);
-      }
+      if (isFirst) initialRender(rows);
+      else prependNew(rows);
 
       lastNow = payload.now;
-      els.status.textContent = `Last update: ${new Date(lastNow).toLocaleTimeString()} (total rows shown: ${seenIds.size})`;
+      els.status.textContent = `Last update: ${new Date(lastNow).toLocaleTimeString()} (total shown: ${seenIds.size})`;
     } catch (e) {
+      showError(e.message);
       els.status.textContent = `Error: ${e.message}`;
       console.error('Feed error:', e);
     }
@@ -130,9 +189,8 @@
 
   function start() {
     if (timer) return;
-    // Reset only the polling cursor; DO NOT clear the table
-    lastNow = null;
-    tick(true);                      // initial bulk load (kept)
+    lastNow = null;          // full refresh on start; do not clear table
+    tick(true);              // initial load (kept)
     timer = setInterval(() => tick(false), 2000);
     els.startBtn.disabled = true;
     els.stopBtn.disabled = false;
@@ -146,18 +204,24 @@
     els.stopBtn.disabled = true;
   }
 
-  els.startBtn.addEventListener('click', start);
-  els.stopBtn.addEventListener('click', stop);
-
-  // If you change the limit while running, reload initial slice once
-  els.limit.addEventListener('change', () => {
-    if (!timer) return;
-    // Don’t clear existing rows; just fetch more next cycle as initial again
-    clearInterval(timer);
-    timer = null;
-    lastNow = null;
-    tick(true).then(() => {
-      timer = setInterval(() => tick(false), 2000);
+  // Wire up controls and auto-start on load
+  document.addEventListener('DOMContentLoaded', () => {
+    els.startBtn.addEventListener('click', start);
+    els.stopBtn.addEventListener('click', stop);
+    els.limit.addEventListener('change', () => {
+      if (!timer) return;
+      clearInterval(timer);
+      timer = null;
+      lastNow = null;        // grab a larger initial slice
+      tick(true).then(() => { timer = setInterval(() => tick(false), 2000); });
     });
+
+    // Auto-start so it never looks blank
+    start();
   });
+
+  // Surface any silent JS errors on the page
+  window.addEventListener('error', (e) => showError(`JS error: ${e.message}`));
 </script>
+</body>
+</html>
