@@ -116,6 +116,24 @@
     .chat-input button:hover {
       background-color: #d43d61;
     }
+    /* 🔹 NEW: sticky CTA bar shown when out of credits */
+    .cta-bar {
+      display: none;            /* toggled via JS */
+      border-top: 1px solid #ffd1dc;
+      background: #fff5f7;
+      padding: 10px;
+      text-align: center;
+      flex-shrink: 0;           /* always visible at bottom of container */
+    }
+    .cta-link {
+      display: inline-block;
+      background: #ef476f;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+    }
   </style>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
@@ -129,6 +147,12 @@
     <div id="liveBanner" style="display:none"></div>
 
     <div class="chat-box" id="chatBox"></div>
+
+    <!-- 🔹 NEW: persistent CTA bar -->
+    <div id="ctaBar" class="cta-bar">
+      <a class="cta-link" href="/checkout.html">JOIN NOW for only 0.16/day</a>
+    </div>
+
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message...">
       <button onclick="sendMessage()">Send</button>
@@ -149,12 +173,26 @@
     const girl = girls.find(g => g.id === girlId);
 
     const chatBox = document.getElementById('chatBox');
+    const ctaBar = document.getElementById('ctaBar'); // 🔹 NEW
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
     // 🔹 NEW: takeover state & polling handle
     let TAKEOVER = false;
     let pollTimer = null;
+
+    // 🔹 NEW: out-of-credits sticky flag
+    let OUT_OF_CREDITS = false;
+
+    // 🔹 NEW: helpers to show/hide CTA
+    function showCTA() {
+      OUT_OF_CREDITS = true;
+      ctaBar.style.display = 'block';
+    }
+    function hideCTA() {
+      OUT_OF_CREDITS = false;
+      ctaBar.style.display = 'none';
+    }
 
     // 🔹 UPDATED: render text OR IMAGE:<url>
     function appendMessage(text, sender, isTyping = false) {
@@ -198,6 +236,9 @@
         const data = await res.json();
         chatBox.innerHTML = "";
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
+
+        // 🔹 keep CTA visible if we're out of credits
+        if (OUT_OF_CREDITS) showCTA();
       } catch (err) {
         console.error("Error loading messages:", err);
       }
@@ -229,6 +270,22 @@
       }
     }
 
+    // 🔹 NEW: poll credits so CTA hides when they top up
+    async function refreshCredits() {
+      try {
+        const r = await fetch(`${backendUrl}/api/credits`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!r.ok) return;
+        const c = await r.json(); // { credits, lifetime }
+        if (c?.lifetime || (typeof c?.credits === 'number' && c.credits > 0)) {
+          hideCTA();
+        } else {
+          showCTA();
+        }
+      } catch {}
+    }
+
     async function sendMessage() {
       const input = document.getElementById('messageInput');
       const messageText = input.value.trim();
@@ -254,20 +311,8 @@
 
           appendMessage(data.error || "You're out of credits!", 'girl');
 
-          const btn = document.createElement("button");
-          btn.textContent = "🔁 Fuck any girl for only £0.16/day!";
-          btn.style.marginTop = "10px";
-          btn.style.background = "#ef476f";
-          btn.style.color = "white";
-          btn.style.border = "none";
-          btn.style.padding = "8px 12px";
-          btn.style.borderRadius = "6px";
-          btn.style.cursor = "pointer";
-          btn.onclick = () => {
-            window.location.href = "/checkout.html";
-          };
-
-          chatBox.appendChild(btn);
+          // 🔹 NEW: show persistent CTA instead of injecting a one-off button
+          showCTA();
           chatBox.scrollTop = chatBox.scrollHeight;
           return;
         }
@@ -276,18 +321,19 @@
         await new Promise(resolve => setTimeout(resolve, randomDelay()));
         typingBubble.remove();
 
-        // 🔹 NEW: if server indicates live takeover, don't expect AI reply
+        // 🔹 if takeover is on, don't expect AI reply
         if (data.takeover) {
-          // ensure banner/polling is on
           TAKEOVER = true;
           checkTakeover();
-          // optional: tiny typing dot to hint a live reply may arrive
           appendMessage("…", "girl", true);
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
           return;
         }
 
         appendMessage(data.reply || "(No reply received)", 'girl');
+
+        // 🔹 after each successful exchange, re-check credits (in case they topped up in another tab)
+        refreshCredits();
       } catch (err) {
         console.error("Chat error:", err);
         typingBubble.remove();
@@ -297,8 +343,9 @@
     // Initial boot
     loadMessages();
     checkTakeover();
-    // Optional: refresh takeover status periodically
+    refreshCredits();                 // 🔹 check on load
     setInterval(checkTakeover, 10000);
+    setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
   </script>
 </body>
 </html>
