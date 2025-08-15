@@ -12,9 +12,6 @@ import { sendWelcomeEmail } from './email.js';
 import crypto from 'crypto';
 import { sendPasswordResetEmail } from './email.js';
 
-// 🔹 NEW: file ops + uploads
-import fs from "fs";
-import multer from "multer";
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -51,15 +48,6 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 
-// 🔹 NEW: operator auth key
-const OPERATOR_KEY = process.env.OPERATOR_KEY || "";
-
-// 🔹 NEW: uploads setup (serve at /uploads)
-const UPLOAD_DIR = path.join(__dirname, "uploads");
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-app.use("/uploads", express.static(UPLOAD_DIR));
-
-// Static site
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
@@ -149,6 +137,7 @@ app.get("/api/get-stripe-session", async (req, res) => {
   reset_token TEXT,  -- token generated for password reset
   reset_token_expires TIMESTAMP  -- expiration time for the reset token
 );
+
     `);
 
     await pool.query(`
@@ -160,23 +149,6 @@ app.get("/api/get-stripe-session", async (req, res) => {
         text TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
-    `);
-
-    // 🔹 NEW: track live-agent takeovers (simple flag per user+girl)
-    await pool.query(`
-      CREATE TABLE IF NOT EXISTS operator_overrides (
-        id SERIAL PRIMARY KEY,
-        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        girl_id INT NOT NULL,
-        is_active BOOLEAN NOT NULL DEFAULT true,
-        operator_name TEXT,
-        started_at TIMESTAMP DEFAULT NOW(),
-        ended_at TIMESTAMP
-      );
-    `);
-    await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_operator_override_active
-      ON operator_overrides(user_id, girl_id) WHERE is_active = true;
     `);
 
     console.log("✅ Tables are ready");
@@ -208,7 +180,7 @@ const profiles = [
     "city": "Aberdeen",
     "image": "https://notadatingsite.online/pics/3.png",
     "description": "wat u see is wat u get \ud83d\ude09 cheeky smile n even cheekier mind lol \ud83d\ude08"
-  }  ,{
+  },  {
     "id": 4,
     "name": "Skye Bennett",
     "city": "Liverpool",
@@ -2601,6 +2573,7 @@ const firstMessages = {
 98: "are u bored... or about to be bad? 😏",
 99: "do u like control... or losing it? 😉",
 100: "how far is your imagination going rn? 😈"
+
 };
 
 function authenticateToken(req, res, next) {
@@ -2612,13 +2585,6 @@ function authenticateToken(req, res, next) {
     req.user = user;
     next();
   });
-}
-
-// 🔹 NEW: simple operator key auth
-function authenticateOperator(req, res, next) {
-  const key = req.header("X-Operator-Key");
-  if (!OPERATOR_KEY || key !== OPERATOR_KEY) return res.status(401).json({ error: "Unauthorized" });
-  next();
 }
 
 app.post("/api/register", async (req, res) => {
@@ -2785,221 +2751,6 @@ app.get("/api/messages/:girlId", authenticateToken, async (req, res) => {
   }
 });
 
-// 🔹 NEW: takeover status for this user+girl (front-end can poll)
-app.get("/api/takeover/status/:girlId", authenticateToken, async (req, res) => {
-  const userId = req.user.id;
-  const girlId = Number(req.params.girlId);
-  try {
-    const r = await pool.query(
-      `SELECT is_active, operator_name FROM operator_overrides
-       WHERE user_id=$1 AND girl_id=$2 AND is_active=true
-       LIMIT 1`,
-      [userId, girlId]
-    );
-    res.json({ takeover: r.rows.length > 0, operatorName: r.rows[0]?.operator_name || null });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to get takeover status" });
-  }
-});
-
-// 🔹 NEW: start takeover (operator)
-app.post("/api/takeover/start", authenticateOperator, async (req, res) => {
-  const { userId, girlId, operatorName } = req.body || {};
-  try {
-    await pool.query(
-      `UPDATE operator_overrides SET is_active=false, ended_at=NOW()
-       WHERE user_id=$1 AND girl_id=$2 AND is_active=true`,
-      [userId, girlId]
-    );
-    await pool.query(
-      `INSERT INTO operator_overrides (user_id, girl_id, is_active, operator_name)
-       VALUES ($1,$2,true,$3)`,
-      [userId, girlId, operatorName || null]
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to start takeover" });
-  }
-});
-
-// 🔹 NEW: stop takeover (operator)
-app.post("/api/takeover/stop", authenticateOperator, async (req, res) => {
-  const { userId, girlId } = req.body || {};
-  try {
-    await pool.query(
-      `UPDATE operator_overrides SET is_active=false, ended_at=NOW()
-       WHERE user_id=$1 AND girl_id=$2 AND is_active=true`,
-      [userId, girlId]
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to stop takeover" });
-  }
-});
-
-// 🔹 NEW: operator send (text as the girl)
-app.post("/api/operator/send", authenticateOperator, async (req, res) => {
-  const { userId, girlId, text } = req.body || {};
-  try {
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,false,$3)`,
-      [Number(userId), Number(girlId), text]
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to send operator message" });
-  }
-});
-
-// 🔹 NEW: image upload config + operator send image
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname || "");
-    const base = path.basename(file.originalname || "image", ext).replace(/\W+/g,"-").toLowerCase();
-    cb(null, `${base}-${Date.now()}${ext || ".bin"}`);
-  }
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (req, file, cb) => {
-    const ok = /image\/(png|jpe?g|gif|webp|bmp|svg\+xml)/i.test(file.mimetype);
-    cb(ok ? null : new Error("Only image files are allowed"), ok);
-  }
-});
-
-// 🔹 NEW: operator send-image (multipart or URL)
-app.post("/api/operator/send-image", authenticateOperator, upload.single("image"), async (req, res) => {
-  try {
-    const { userId, girlId, imageUrl } = req.body || {};
-
-    let finalUrl = imageUrl;
-    if (req.file) {
-      finalUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
-    }
-    if (!finalUrl) return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
-
-    const text = `IMAGE:${finalUrl}`;
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,false,$3)`,
-      [Number(userId), Number(girlId), text]
-    );
-
-    res.json({ ok: true, url: finalUrl });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to send operator image" });
-  }
-});
-
-// 🔹 NEW: READ-ONLY: fetch messages as operator (no user JWT needed)
-app.get("/api/operator/messages", authenticateOperator, async (req, res) => {
-  const userId = Number(req.query.userId);
-  const girlId = Number(req.query.girlId);
-  if (!userId || !girlId) return res.status(400).json({ error: "userId and girlId are required" });
-
-  try {
-    const result = await pool.query(
-      "SELECT id, user_id, girl_id, from_user, text, created_at FROM messages WHERE user_id=$1 AND girl_id=$2 ORDER BY created_at ASC",
-      [userId, girlId]
-    );
-    res.json(result.rows);
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to fetch messages" });
-  }
-});
-
-// 🔹 NEW: operator live feed (recent messages across all users/girls)
-// Query params:
-//   - limit: max number of rows (default 100, max 500)
-//   - since: ISO datetime string; only messages after this time are returned (optional)
-app.get("/api/operator/feed", async (req, res) => {
-  try {
-    const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
-    const since = req.query.since ? new Date(req.query.since) : null;
-
-    let sql = `
-      SELECT id, user_id, girl_id, from_user, text, created_at
-      FROM messages
-    `;
-    const params = [];
-    if (since && !isNaN(since.getTime())) {
-      params.push(since.toISOString());
-      sql += ` WHERE created_at > $1 `;
-    }
-    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
-
-    const result = await pool.query(sql, params);
-
-    // map girlId → girlName from your in-memory profiles
-    const girlNameById = Object.fromEntries(profiles.map(p => [p.id, p.name]));
-    const rows = result.rows.map(r => ({
-      id: r.id,
-      userId: r.user_id,
-      girlId: r.girl_id,
-      girlName: girlNameById[r.girl_id] || "Unknown",
-      from: r.from_user ? "user" : "girl",
-      text: r.text,
-      createdAt: r.created_at
-    }));
-
-    res.json({ rows, now: new Date().toISOString() });
-  } catch (e) {
-    console.error("Feed error:", e);
-    res.status(500).json({ error: "Failed to fetch feed" });
-  }
-});
-
-// 🔹 NEW: operator live feed (recent messages across all users/girls)
-// Query params:
-//   - limit: max number of rows (default 100, max 500)
-//   - since: ISO datetime string; only messages after this time are returned (optional)
-app.get("/api/operator/feed", authenticateOperator, async (req, res) => {
-  try {
-    const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
-    const since = req.query.since ? new Date(req.query.since) : null;
-
-    let sql = `
-      SELECT id, user_id, girl_id, from_user, text, created_at
-      FROM messages
-    `;
-    const params = [];
-    if (since && !isNaN(since.getTime())) {
-      params.push(since.toISOString());
-      sql += ` WHERE created_at > $1 `;
-    }
-    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
-
-    const result = await pool.query(sql, params);
-
-    // map girlId → girlName from your in-memory profiles
-    const girlNameById = Object.fromEntries(profiles.map(p => [p.id, p.name]));
-    const rows = result.rows.map(r => ({
-      id: r.id,
-      userId: r.user_id,
-      girlId: r.girl_id,
-      girlName: girlNameById[r.girl_id] || "Unknown",
-      from: r.from_user ? "user" : "girl",
-      text: r.text,
-      createdAt: r.created_at
-    }));
-
-    res.json({ rows, now: new Date().toISOString() });
-  } catch (e) {
-    console.error("Feed error:", e);
-    res.status(500).json({ error: "Failed to fetch feed" });
-  }
-});
-
-
 app.post("/api/chat", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const { girlId, message } = req.body;
@@ -3007,21 +2758,6 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
   if (!girl) return res.status(404).json({ error: "Girl not found" });
 
   try { // ✅ THIS is the part you were missing
-
-    // 🔹 NEW: If takeover active, save user message and skip AI/credits
-    const tk = await pool.query(
-      `SELECT 1 FROM operator_overrides
-       WHERE user_id=$1 AND girl_id=$2 AND is_active=true LIMIT 1`,
-      [userId, girlId]
-    );
-    if (tk.rows.length) {
-      await pool.query(
-        `INSERT INTO messages (user_id, girl_id, from_user, text)
-         VALUES ($1, $2, true, $3)`,
-        [userId, girlId, message]
-      );
-      return res.json({ takeover: true });
-    }
 
     const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
     const user = userRes.rows[0];
