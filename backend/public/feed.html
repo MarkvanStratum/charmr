@@ -1,125 +1,168 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Live Chat Feed</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
-    th { background-color: #f0f0f0; }
-    img.img-thumb { max-width: 120px; max-height: 120px; }
-    #status { margin-bottom: 10px; font-size: 0.9em; color: #555; }
+    :root { --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; --pink:#ef476f; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; margin:20px; background:var(--bg); color:var(--ink); }
+    h1 { margin: 0 0 12px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px; max-width:1200px; }
+    .controls { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    button, input { padding:8px 10px; font-size:14px; border-radius:10px; border:1px solid var(--line); }
+    button { background:var(--pink); color:#fff; border:none; cursor:pointer; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    label { font-size:12px; color:#555; display:flex; align-items:center; gap:6px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:8px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; font-size:14px; }
+    th { background:#f6f6f6; position:sticky; top:0; z-index:1; }
+    .img-thumb { max-width:120px; max-height:120px; border-radius:8px; display:block; object-fit:cover; }
+    .dir-user { color: var(--pink); font-weight:700; }
+    .dir-girl { color:#555; font-weight:700; }
+    #status { font-size:12px; color:#666; }
   </style>
 </head>
 <body>
-  <h2>Live Chat Feed</h2>
-  <div id="status">Not started</div>
-  <button id="startBtn">Start</button>
-  <button id="stopBtn" disabled>Stop</button>
+  <h1>Live Chat Feed</h1>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Time</th>
-        <th>User ID</th>
-        <th>Girl ID</th>
-        <th>Girl Name</th>
-        <th>From</th>
-        <th>Message</th>
-      </tr>
-    </thead>
-    <tbody id="feedBody"></tbody>
-  </table>
+  <div class="card">
+    <div class="controls">
+      <button id="startBtn">Start</button>
+      <button id="stopBtn" disabled>Stop</button>
+      <label><input type="checkbox" id="autoScroll" checked> Auto-scroll to newest</label>
+      <label>Limit <input id="limit" type="number" min="1" max="500" value="100" style="width:90px"></label>
+      <span id="status">Not started</span>
+    </div>
+  </div>
 
-  <script>
-    let timer = null;
-    let lastNow = null;
+  <div class="card" style="padding:0; overflow:auto; max-height:75vh;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:170px;">Time</th>
+          <th style="width:90px;">User ID</th>
+          <th style="width:90px;">Girl ID</th>
+          <th style="width:180px;">Girl Name</th>
+          <th style="width:70px;">From</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody id="feedBody"></tbody>
+    </table>
+  </div>
 
-    const BACKEND_URL = window.location.origin; // auto-detect same server
-    const OPERATOR_KEY = "YOUR_OPERATOR_KEY_HERE"; // hardcode your key here
+<script>
+  // Poll the same origin the page is served from
+  const BACKEND_URL = window.location.origin;
 
-    function headersOp() {
-      return { 'X-Operator-Key': OPERATOR_KEY };
-    }
+  let timer = null;
+  let lastNow = null;
 
-    function render(rows) {
-      const tbody = document.getElementById('feedBody');
-      tbody.innerHTML = '';
-      for (const r of rows) {
-        const tr = document.createElement('tr');
+  const els = {
+    startBtn: document.getElementById('startBtn'),
+    stopBtn: document.getElementById('stopBtn'),
+    status: document.getElementById('status'),
+    autoScroll: document.getElementById('autoScroll'),
+    limit: document.getElementById('limit'),
+    body: document.getElementById('feedBody')
+  };
 
-        const tdTime = document.createElement('td');
-        tdTime.textContent = new Date(r.createdAt).toLocaleString();
-        tr.appendChild(tdTime);
+  function render(rows) {
+    els.body.innerHTML = '';
+    for (const r of rows) {
+      const tr = document.createElement('tr');
 
-        const tdUser = document.createElement('td');
-        tdUser.textContent = r.userId;
-        tr.appendChild(tdUser);
+      const tdTime = document.createElement('td');
+      tdTime.textContent = new Date(r.createdAt).toLocaleString();
+      tr.appendChild(tdTime);
 
-        const tdGirlId = document.createElement('td');
-        tdGirlId.textContent = r.girlId;
-        tr.appendChild(tdGirlId);
+      const tdUser = document.createElement('td');
+      tdUser.textContent = r.userId;
+      tr.appendChild(tdUser);
 
-        const tdGirlName = document.createElement('td');
-        tdGirlName.textContent = r.girlName || 'Unknown';
-        tr.appendChild(tdGirlName);
+      const tdGirlId = document.createElement('td');
+      tdGirlId.textContent = r.girlId;
+      tr.appendChild(tdGirlId);
 
-        const tdFrom = document.createElement('td');
-        tdFrom.textContent = r.from;
-        tr.appendChild(tdFrom);
+      const tdGirlName = document.createElement('td');
+      tdGirlName.textContent = r.girlName || 'Unknown';
+      tr.appendChild(tdGirlName);
 
-        const tdMsg = document.createElement('td');
-        const m = /^IMAGE:\s*(.+)$/i.exec(r.text || "");
-        if (m) {
-          const img = document.createElement('img');
-          img.src = m[1];
-          img.className = 'img-thumb';
-          tdMsg.appendChild(img);
-        } else {
-          tdMsg.textContent = r.text;
-        }
-        tr.appendChild(tdMsg);
+      const tdFrom = document.createElement('td');
+      tdFrom.innerHTML = r.from === 'user'
+        ? '<span class="dir-user">user</span>'
+        : '<span class="dir-girl">girl</span>';
+      tr.appendChild(tdFrom);
 
-        tbody.appendChild(tr);
+      const tdMsg = document.createElement('td');
+      const m = /^IMAGE:\s*(.+)$/i.exec(r.text || "");
+      if (m) {
+        const url = m[1].trim();
+        const a = document.createElement('a');
+        a.href = url; a.target = "_blank"; a.rel = "noopener";
+        const img = document.createElement('img');
+        img.src = url; img.alt = 'image'; img.className = 'img-thumb';
+        a.appendChild(img);
+        tdMsg.appendChild(a);
+      } else {
+        tdMsg.textContent = r.text;
       }
+      tr.appendChild(tdMsg);
+
+      els.body.appendChild(tr);
     }
 
-    async function tick() {
-      try {
-        const url = `${BACKEND_URL}/api/operator/feed?limit=100${lastNow ? `&since=${lastNow}` : ''}`;
-        const res = await fetch(url, { headers: headersOp() });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const payload = await res.json();
-        render(payload.rows);
-        lastNow = payload.now;
-        document.getElementById('status').textContent = `Last update: ${new Date(lastNow).toLocaleTimeString()}`;
-      } catch (e) {
-        document.getElementById('status').textContent = `Error: ${e.message}`;
+    if (els.autoScroll.checked) {
+      const container = els.body.parentElement.parentElement.parentElement; // .card wrapper
+      container.scrollTop = 0; // newest first (DESC)
+    }
+  }
+
+  async function tick() {
+    try {
+      const limit = Math.min(Math.max(parseInt(els.limit.value || '100', 10), 1), 500);
+      const params = new URLSearchParams();
+      params.set('limit', String(limit));
+      if (lastNow) params.set('since', lastNow);
+
+      const url = `${BACKEND_URL}/api/operator/feed?${params.toString()}`;
+      const res = await fetch(url); // public endpoint (no headers)
+      if (!res.ok) {
+        const txt = await res.text().catch(()=> '');
+        throw new Error(`HTTP ${res.status} ${txt ? '— ' + txt.slice(0,150) : ''}`);
       }
+      const payload = await res.json();
+      render(payload.rows || []);
+      lastNow = payload.now;
+      els.status.textContent = `Last update: ${new Date(lastNow).toLocaleTimeString()} (rows: ${payload.rows?.length || 0})`;
+    } catch (e) {
+      els.status.textContent = `Error: ${e.message}`;
+      console.error('Feed error:', e);
     }
+  }
 
-    function start() {
-      if (timer) return;
-      lastNow = null;
-      tick();
-      timer = setInterval(tick, 2000);
-      document.getElementById('startBtn').disabled = true;
-      document.getElementById('stopBtn').disabled = false;
-    }
+  function start() {
+    if (timer) return;
+    lastNow = null; // full refresh on (re)start
+    tick();
+    timer = setInterval(tick, 2000);
+    els.startBtn.disabled = true;
+    els.stopBtn.disabled = false;
+  }
 
-    function stop() {
-      if (!timer) return;
-      clearInterval(timer);
-      timer = null;
-      document.getElementById('startBtn').disabled = false;
-      document.getElementById('stopBtn').disabled = true;
-    }
+  function stop() {
+    if (!timer) return;
+    clearInterval(timer);
+    timer = null;
+    els.startBtn.disabled = false;
+    els.stopBtn.disabled = true;
+  }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('startBtn').onclick = start;
-      document.getElementById('stopBtn').onclick = stop;
-    });
-  </script>
+  els.startBtn.addEventListener('click', start);
+  els.stopBtn.addEventListener('click', stop);
+  els.limit.addEventListener('input', () => { if (timer) { lastNow = null; tick(); } });
+</script>
 </body>
 </html>

@@ -2917,6 +2917,88 @@ app.get("/api/operator/messages", authenticateOperator, async (req, res) => {
   }
 });
 
+// 🔹 NEW: operator live feed (recent messages across all users/girls)
+// Query params:
+//   - limit: max number of rows (default 100, max 500)
+//   - since: ISO datetime string; only messages after this time are returned (optional)
+app.get("/api/operator/feed", async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
+    const since = req.query.since ? new Date(req.query.since) : null;
+
+    let sql = `
+      SELECT id, user_id, girl_id, from_user, text, created_at
+      FROM messages
+    `;
+    const params = [];
+    if (since && !isNaN(since.getTime())) {
+      params.push(since.toISOString());
+      sql += ` WHERE created_at > $1 `;
+    }
+    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
+
+    const result = await pool.query(sql, params);
+
+    // map girlId → girlName from your in-memory profiles
+    const girlNameById = Object.fromEntries(profiles.map(p => [p.id, p.name]));
+    const rows = result.rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      girlId: r.girl_id,
+      girlName: girlNameById[r.girl_id] || "Unknown",
+      from: r.from_user ? "user" : "girl",
+      text: r.text,
+      createdAt: r.created_at
+    }));
+
+    res.json({ rows, now: new Date().toISOString() });
+  } catch (e) {
+    console.error("Feed error:", e);
+    res.status(500).json({ error: "Failed to fetch feed" });
+  }
+});
+
+// 🔹 NEW: operator live feed (recent messages across all users/girls)
+// Query params:
+//   - limit: max number of rows (default 100, max 500)
+//   - since: ISO datetime string; only messages after this time are returned (optional)
+app.get("/api/operator/feed", authenticateOperator, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
+    const since = req.query.since ? new Date(req.query.since) : null;
+
+    let sql = `
+      SELECT id, user_id, girl_id, from_user, text, created_at
+      FROM messages
+    `;
+    const params = [];
+    if (since && !isNaN(since.getTime())) {
+      params.push(since.toISOString());
+      sql += ` WHERE created_at > $1 `;
+    }
+    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
+
+    const result = await pool.query(sql, params);
+
+    // map girlId → girlName from your in-memory profiles
+    const girlNameById = Object.fromEntries(profiles.map(p => [p.id, p.name]));
+    const rows = result.rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      girlId: r.girl_id,
+      girlName: girlNameById[r.girl_id] || "Unknown",
+      from: r.from_user ? "user" : "girl",
+      text: r.text,
+      createdAt: r.created_at
+    }));
+
+    res.json({ rows, now: new Date().toISOString() });
+  } catch (e) {
+    console.error("Feed error:", e);
+    res.status(500).json({ error: "Failed to fetch feed" });
+  }
+});
+
 
 app.post("/api/chat", authenticateToken, async (req, res) => {
   const userId = req.user.id;
