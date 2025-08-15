@@ -12,6 +12,9 @@ import { sendWelcomeEmail } from './email.js';
 import crypto from 'crypto';
 import { sendPasswordResetEmail } from './email.js';
 
+// 🔹 NEW: file ops + uploads
+import fs from "fs";
+import multer from "multer";
 
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
@@ -48,6 +51,15 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 
+// 🔹 NEW: operator auth key
+const OPERATOR_KEY = process.env.OPERATOR_KEY || "";
+
+// 🔹 NEW: uploads setup (serve at /uploads)
+const UPLOAD_DIR = path.join(__dirname, "uploads");
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+app.use("/uploads", express.static(UPLOAD_DIR));
+
+// Static site
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
@@ -137,7 +149,6 @@ app.get("/api/get-stripe-session", async (req, res) => {
   reset_token TEXT,  -- token generated for password reset
   reset_token_expires TIMESTAMP  -- expiration time for the reset token
 );
-
     `);
 
     await pool.query(`
@@ -149,6 +160,23 @@ app.get("/api/get-stripe-session", async (req, res) => {
         text TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
+    `);
+
+    // 🔹 NEW: track live-agent takeovers (simple flag per user+girl)
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS operator_overrides (
+        id SERIAL PRIMARY KEY,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        girl_id INT NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        operator_name TEXT,
+        started_at TIMESTAMP DEFAULT NOW(),
+        ended_at TIMESTAMP
+      );
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_operator_override_active
+      ON operator_overrides(user_id, girl_id) WHERE is_active = true;
     `);
 
     console.log("✅ Tables are ready");
@@ -180,7 +208,7 @@ const profiles = [
     "city": "Aberdeen",
     "image": "https://notadatingsite.online/pics/3.png",
     "description": "wat u see is wat u get \ud83d\ude09 cheeky smile n even cheekier mind lol \ud83d\ude08"
-  },  {
+  }  ,{
     "id": 4,
     "name": "Skye Bennett",
     "city": "Liverpool",
@@ -2473,107 +2501,106 @@ const profiles = [
 ];
 
 const firstMessages = {
-  1: "what are you doing… or who? 😈",
-2: "you home... or somewhere u shouldn’t be? 😏",
-3: "is your phone in your hand or should i wait? 👀",
-4: "u busy... or just bored like me? 😘",
-5: "are u always this quiet, or just playing? 😉",
-6: "you alone... or pretending? 😈",
-7: "u always keep strangers up this late? 😏",
-8: "scrolling... or looking for trouble? 😇",
-9: "mind if i interrupt whatever you’re not doing? 😜",
-10: "are u texting anyone naughtier? 😘",
-11: "you up for something... unplanned? 😏",
-12: "are u free or tied up? 😉",
-13: "texting anyone else you shouldn’t be? 😈",
-14: "do you always answer strangers this fast? 😇",
-15: "are you in bed... or on the edge of it? 👀",
-16: "is this how u start bad ideas too? 😏",
-17: "lying down... or ready for more? 😜",
-18: "do u text back or tease first? 😘",
-19: "are your hands busy or just waiting? 😈",
-20: "you usually this easy to distract? 😉",
-21: "u hiding somewhere quiet... or just bored? 😏",
-22: "u ever reply to flirty strangers? 😇",
-23: "waiting for a sign… or something better? 😜",
-24: "what’s in your head... or should i guess? 😈",
-25: "are u here to chat... or not really? 😏",
-26: "do you usually behave... or lie about it? 😉",
-27: "thinking clean... or pretending? 😘",
-28: "are u alone or should i lower my tone? 👀",
-29: "is it bad i texted first... or just bold? 😇",
-30: "you always answer mystery girls? 😈",
-31: "u in the mood for something unfiltered? 😏",
-32: "are u half-dressed or just half-awake? 😉",
-33: "typing slow... or being careful? 😘",
-34: "u look like someone who likes risk... just sayin 😈",
-35: "are u waiting on someone... or hoping it's me? 😏",
-36: "you the flirty type or the shy one? 😇",
-37: "what would u do if i didn’t stop? 😉",
-38: "anyone else got your attention right now? 😈",
-39: "do u like slow replies... or fast moves? 😘",
-40: "you more ‘let’s chat’ or ‘let’s see’ type? 😏",
-41: "do you usually play along or lead? 😇",
-42: "should i stop here... or keep pushing? 😈",
-43: "are you home alone or not for long? 😘",
-44: "u want fun or just the idea of it? 😜",
-45: "how curious are you right now? 😉",
-46: "what’s keeping you up... or who? 😏",
-47: "are u the type to say no... or pretend first? 😈",
-48: "u better at talking or doing? 😇",
-49: "would you answer if i called? 😘",
-50: "do you always flirt back... or just with me? 😉",
-51: "who do you think’s gonna behave first? 😈",
-52: "u ever let convos go too far? 😏",
-53: "would u rather talk or tease? 😘",
-54: "are you where you’re supposed to be? 👀",
-55: "how easy are you to tempt, really? 😇",
-56: "are you all words or action too? 😈",
-57: "text me something you shouldn’t 👀",
-58: "you usually fall for strangers or just me? 😏",
-59: "who’s stopping us... besides us? 😉",
-60: "are u home or should i keep it PG? 😘",
-61: "you gonna lead or follow this time? 😈",
-62: "do u prefer rules or breaking them? 😇",
-63: "how many messages til we cross a line? 😏",
-64: "are you trying to behave or just pretending? 😉",
-65: "how far is too far for you? 😈",
-66: "do u start convos or just end them? 😘",
-67: "would u be saying yes... or just not saying no? 😏",
-68: "u ready to say something bad yet? 😉",
-69: "are u alone because u want to be? 😇",
-70: "do u flirt for fun... or results? 😈",
-71: "are you done being good for today? 😘",
-72: "what’s on your mind... or who? 😏",
-73: "should i be the first or the worst? 😉",
-74: "do u ever start something u can’t stop? 😈",
-75: "you like a little trouble, right? 😇",
-76: "would u rather talk here... or somewhere private? 😘",
-77: "what are u hoping happens next? 😏",
-78: "do u play innocent or not at all? 😈",
-79: "do u always text back... or am i lucky? 😉",
-80: "how bored are you really? 😘",
-81: "how much can i get away with tonight? 😇",
-82: "do u say what u think... or just what’s safe? 😏",
-83: "are u ready to make this interesting? 😈",
-84: "who said strangers can’t have fun? 😉",
-85: "do u always flirt back or just sometimes? 😘",
-86: "would it be worse if i stopped texting... or didn’t? 😈",
-87: "do u prefer slow burns or fast fires? 😏",
-88: "are u being good or just lying about it? 😇",
-89: "how bad would it be if i kept going? 😉",
-90: "you gonna stop me or help me? 😘",
-91: "are u always this curious with strangers? 😏",
-92: "should we stop... or just get better at it? 😈",
-93: "do u want tame or wild tonight? 😉",
-94: "what would u do if i was there right now? 👀",
-95: "is this how bad ideas start... or end? 😇",
-96: "do u enjoy mystery... or unwrapping it? 😈",
-97: "how long should i keep teasing? 😘",
-98: "are u bored... or about to be bad? 😏",
-99: "do u like control... or losing it? 😉",
-100: "how far is your imagination going rn? 😈"
-
+  1: "Hey",
+2: "How are you?",
+3: "Hi",
+4: "Hey you",
+5: "Hello",
+6: "What’s up?",
+7: "Hi there",
+8: "Hey stranger",
+9: "Morning",
+10: "Good morning",
+11: "Good evening",
+12: "Hi hi",
+13: "Hey cutie",
+14: "Hey",
+15: "Evening",
+16: "Hola",
+17: "Hey you",
+18: "Hi",
+19: "Hello",
+20: "Hey",
+21: "Hey there",
+22: "Hi",
+23: "Hey you",
+24: "Hi",
+25: "Hello",
+26: "Hey",
+27: "Hi",
+28: "Hey you",
+29: "Hello",
+30: "Hey",
+31: "Hi",
+32: "Hello",
+33: "Hey",
+34: "Hi",
+35: "Hey you",
+36: "Hey",
+37: "Hi",
+38: "Hello",
+39: "Hey",
+40: "Hi",
+41: "Hello",
+42: "Hey",
+43: "Hi",
+44: "Hey you",
+45: "Hi",
+46: "Hey",
+47: "Hello",
+48: "Hey",
+49: "Hi",
+50: "Hey",
+51: "Hello",
+52: "Hey",
+53: "Hi",
+54: "Hello",
+55: "Hey",
+56: "Hi",
+57: "Hey you",
+58: "Hi",
+59: "Hello",
+60: "Hey",
+61: "Hi",
+62: "Hello",
+63: "Hey",
+64: "Hi",
+65: "Hey",
+66: "Hello",
+67: "Hi",
+68: "Hey you",
+69: "Hi",
+70: "Hello",
+71: "Hey",
+72: "Hi",
+73: "Hey",
+74: "Hello",
+75: "Hey",
+76: "Hi",
+77: "Hey you",
+78: "Hi",
+79: "Hello",
+80: "Hey",
+81: "Hi",
+82: "Hey",
+83: "Hello",
+84: "Hey you",
+85: "Hi",
+86: "Hello",
+87: "Hey",
+88: "Hi",
+89: "Hey",
+90: "Hello",
+91: "Hey",
+92: "Hi",
+93: "Hey you",
+94: "Hi",
+95: "Hello",
+96: "Hey",
+97: "Hi",
+98: "Hey",
+99: "Hello",
+100: "Hey you"
 };
 
 function authenticateToken(req, res, next) {
@@ -2585,6 +2612,13 @@ function authenticateToken(req, res, next) {
     req.user = user;
     next();
   });
+}
+
+// 🔹 NEW: simple operator key auth
+function authenticateOperator(req, res, next) {
+  const key = req.header("X-Operator-Key");
+  if (!OPERATOR_KEY || key !== OPERATOR_KEY) return res.status(401).json({ error: "Unauthorized" });
+  next();
 }
 
 app.post("/api/register", async (req, res) => {
@@ -2751,6 +2785,221 @@ app.get("/api/messages/:girlId", authenticateToken, async (req, res) => {
   }
 });
 
+// 🔹 NEW: takeover status for this user+girl (front-end can poll)
+app.get("/api/takeover/status/:girlId", authenticateToken, async (req, res) => {
+  const userId = req.user.id;
+  const girlId = Number(req.params.girlId);
+  try {
+    const r = await pool.query(
+      `SELECT is_active, operator_name FROM operator_overrides
+       WHERE user_id=$1 AND girl_id=$2 AND is_active=true
+       LIMIT 1`,
+      [userId, girlId]
+    );
+    res.json({ takeover: r.rows.length > 0, operatorName: r.rows[0]?.operator_name || null });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to get takeover status" });
+  }
+});
+
+// 🔹 NEW: start takeover (operator)
+app.post("/api/takeover/start", authenticateOperator, async (req, res) => {
+  const { userId, girlId, operatorName } = req.body || {};
+  try {
+    await pool.query(
+      `UPDATE operator_overrides SET is_active=false, ended_at=NOW()
+       WHERE user_id=$1 AND girl_id=$2 AND is_active=true`,
+      [userId, girlId]
+    );
+    await pool.query(
+      `INSERT INTO operator_overrides (user_id, girl_id, is_active, operator_name)
+       VALUES ($1,$2,true,$3)`,
+      [userId, girlId, operatorName || null]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to start takeover" });
+  }
+});
+
+// 🔹 NEW: stop takeover (operator)
+app.post("/api/takeover/stop", authenticateOperator, async (req, res) => {
+  const { userId, girlId } = req.body || {};
+  try {
+    await pool.query(
+      `UPDATE operator_overrides SET is_active=false, ended_at=NOW()
+       WHERE user_id=$1 AND girl_id=$2 AND is_active=true`,
+      [userId, girlId]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to stop takeover" });
+  }
+});
+
+// 🔹 NEW: operator send (text as the girl)
+app.post("/api/operator/send", authenticateOperator, async (req, res) => {
+  const { userId, girlId, text } = req.body || {};
+  try {
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3)`,
+      [Number(userId), Number(girlId), text]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to send operator message" });
+  }
+});
+
+// 🔹 NEW: image upload config + operator send image
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, UPLOAD_DIR),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname || "");
+    const base = path.basename(file.originalname || "image", ext).replace(/\W+/g,"-").toLowerCase();
+    cb(null, `${base}-${Date.now()}${ext || ".bin"}`);
+  }
+});
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  fileFilter: (req, file, cb) => {
+    const ok = /image\/(png|jpe?g|gif|webp|bmp|svg\+xml)/i.test(file.mimetype);
+    cb(ok ? null : new Error("Only image files are allowed"), ok);
+  }
+});
+
+// 🔹 NEW: operator send-image (multipart or URL)
+app.post("/api/operator/send-image", authenticateOperator, upload.single("image"), async (req, res) => {
+  try {
+    const { userId, girlId, imageUrl } = req.body || {};
+
+    let finalUrl = imageUrl;
+    if (req.file) {
+      finalUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    }
+    if (!finalUrl) return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
+
+    const text = `IMAGE:${finalUrl}`;
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3)`,
+      [Number(userId), Number(girlId), text]
+    );
+
+    res.json({ ok: true, url: finalUrl });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to send operator image" });
+  }
+});
+
+// 🔹 NEW: READ-ONLY: fetch messages as operator (no user JWT needed)
+app.get("/api/operator/messages", authenticateOperator, async (req, res) => {
+  const userId = Number(req.query.userId);
+  const girlId = Number(req.query.girlId);
+  if (!userId || !girlId) return res.status(400).json({ error: "userId and girlId are required" });
+
+  try {
+    const result = await pool.query(
+      "SELECT id, user_id, girl_id, from_user, text, created_at FROM messages WHERE user_id=$1 AND girl_id=$2 ORDER BY created_at ASC",
+      [userId, girlId]
+    );
+    res.json(result.rows);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Failed to fetch messages" });
+  }
+});
+
+// 🔹 NEW: operator live feed (recent messages across all users/girls)
+// Query params:
+//   - limit: max number of rows (default 100, max 500)
+//   - since: ISO datetime string; only messages after this time are returned (optional)
+app.get("/api/operator/feed", async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
+    const since = req.query.since ? new Date(req.query.since) : null;
+
+    let sql = `
+      SELECT id, user_id, girl_id, from_user, text, created_at
+      FROM messages
+    `;
+    const params = [];
+    if (since && !isNaN(since.getTime())) {
+      params.push(since.toISOString());
+      sql += ` WHERE created_at > $1 `;
+    }
+    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
+
+    const result = await pool.query(sql, params);
+
+    // map girlId → girlName from your in-memory profiles
+    const girlNameById = Object.fromEntries(profiles.map(p => [p.id, p.name]));
+    const rows = result.rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      girlId: r.girl_id,
+      girlName: girlNameById[r.girl_id] || "Unknown",
+      from: r.from_user ? "user" : "girl",
+      text: r.text,
+      createdAt: r.created_at
+    }));
+
+    res.json({ rows, now: new Date().toISOString() });
+  } catch (e) {
+    console.error("Feed error:", e);
+    res.status(500).json({ error: "Failed to fetch feed" });
+  }
+});
+
+// 🔹 NEW: operator live feed (recent messages across all users/girls)
+// Query params:
+//   - limit: max number of rows (default 100, max 500)
+//   - since: ISO datetime string; only messages after this time are returned (optional)
+app.get("/api/operator/feed", authenticateOperator, async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
+    const since = req.query.since ? new Date(req.query.since) : null;
+
+    let sql = `
+      SELECT id, user_id, girl_id, from_user, text, created_at
+      FROM messages
+    `;
+    const params = [];
+    if (since && !isNaN(since.getTime())) {
+      params.push(since.toISOString());
+      sql += ` WHERE created_at > $1 `;
+    }
+    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
+
+    const result = await pool.query(sql, params);
+
+    // map girlId → girlName from your in-memory profiles
+    const girlNameById = Object.fromEntries(profiles.map(p => [p.id, p.name]));
+    const rows = result.rows.map(r => ({
+      id: r.id,
+      userId: r.user_id,
+      girlId: r.girl_id,
+      girlName: girlNameById[r.girl_id] || "Unknown",
+      from: r.from_user ? "user" : "girl",
+      text: r.text,
+      createdAt: r.created_at
+    }));
+
+    res.json({ rows, now: new Date().toISOString() });
+  } catch (e) {
+    console.error("Feed error:", e);
+    res.status(500).json({ error: "Failed to fetch feed" });
+  }
+});
+
+
 app.post("/api/chat", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const { girlId, message } = req.body;
@@ -2758,6 +3007,21 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
   if (!girl) return res.status(404).json({ error: "Girl not found" });
 
   try { // ✅ THIS is the part you were missing
+
+    // 🔹 NEW: If takeover active, save user message and skip AI/credits
+    const tk = await pool.query(
+      `SELECT 1 FROM operator_overrides
+       WHERE user_id=$1 AND girl_id=$2 AND is_active=true LIMIT 1`,
+      [userId, girlId]
+    );
+    if (tk.rows.length) {
+      await pool.query(
+        `INSERT INTO messages (user_id, girl_id, from_user, text)
+         VALUES ($1, $2, true, $3)`,
+        [userId, girlId, message]
+      );
+      return res.json({ takeover: true });
+    }
 
     const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
     const user = userRes.rows[0];

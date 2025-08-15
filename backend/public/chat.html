@@ -39,6 +39,8 @@
       background-color: #ef476f;
       color: white;
       padding: 10px;
+      position: relative;
+      flex-shrink: 0;
     }
     .chat-header img {
       width: 50px;
@@ -46,6 +48,14 @@
       border-radius: 50%;
       margin-right: 10px;
       border: 2px solid white;
+    }
+    /* 🔹 NEW: live agent banner */
+    #liveBanner {
+      background:#ffe082;
+      color:#4a3b00;
+      padding:6px 10px;
+      font-size:12px;
+      text-align:center;
     }
     .chat-box {
       flex: 1;
@@ -115,6 +125,9 @@
       <img id="chatPhoto" src="" alt="Girl Photo">
       <h2 id="chatName"></h2>
     </div>
+    <!-- 🔹 NEW: Live banner placeholder (inserted dynamically) -->
+    <div id="liveBanner" style="display:none"></div>
+
     <div class="chat-box" id="chatBox"></div>
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message...">
@@ -139,11 +152,35 @@
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
+    // 🔹 NEW: takeover state & polling handle
+    let TAKEOVER = false;
+    let pollTimer = null;
+
+    // 🔹 UPDATED: render text OR IMAGE:<url>
     function appendMessage(text, sender, isTyping = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
-      msgDiv.textContent = text;
-      if (isTyping) msgDiv.classList.add('typing');
+
+      if (isTyping) {
+        msgDiv.classList.add('typing');
+        msgDiv.textContent = '...';
+      } else {
+        const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
+        if (m) {
+          const img = document.createElement('img');
+          img.src = m[1];
+          img.alt = 'image';
+          img.style.maxWidth = '220px';
+          img.style.maxHeight = '260px';
+          img.style.borderRadius = '10px';
+          img.style.display = 'block';
+          img.style.objectFit = 'cover';
+          msgDiv.appendChild(img);
+        } else {
+          msgDiv.textContent = text;
+        }
+      }
+
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
       return msgDiv;
@@ -163,6 +200,32 @@
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
       } catch (err) {
         console.error("Error loading messages:", err);
+      }
+    }
+
+    // 🔹 NEW: check takeover and toggle banner + polling
+    async function checkTakeover() {
+      try {
+        const res = await fetch(`${backendUrl}/api/takeover/status/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        TAKEOVER = !!data.takeover;
+
+        const banner = document.getElementById('liveBanner');
+        if (TAKEOVER) {
+          banner.style.display = '';
+          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
+          if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
+        } else {
+          banner.style.display = 'none';
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
+        }
+      } catch (e) {
+        // fail closed (no banner)
       }
     }
 
@@ -201,8 +264,8 @@
           btn.style.borderRadius = "6px";
           btn.style.cursor = "pointer";
           btn.onclick = () => {
-  window.location.href = "/checkout.html";
-};
+            window.location.href = "/checkout.html";
+          };
 
           chatBox.appendChild(btn);
           chatBox.scrollTop = chatBox.scrollHeight;
@@ -213,6 +276,17 @@
         await new Promise(resolve => setTimeout(resolve, randomDelay()));
         typingBubble.remove();
 
+        // 🔹 NEW: if server indicates live takeover, don't expect AI reply
+        if (data.takeover) {
+          // ensure banner/polling is on
+          TAKEOVER = true;
+          checkTakeover();
+          // optional: tiny typing dot to hint a live reply may arrive
+          appendMessage("…", "girl", true);
+          if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
+          return;
+        }
+
         appendMessage(data.reply || "(No reply received)", 'girl');
       } catch (err) {
         console.error("Chat error:", err);
@@ -220,7 +294,11 @@
       }
     }
 
+    // Initial boot
     loadMessages();
+    checkTakeover();
+    // Optional: refresh takeover status periodically
+    setInterval(checkTakeover, 10000);
   </script>
 </body>
 </html>
