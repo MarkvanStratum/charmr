@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Operator Console</title>
+  <style>
+    :root { --pink:#ef476f; --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--ink); }
+    h1 { margin: 0 0 16px; }
+    .row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
+    .card { background: var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; max-width: 920px; }
+    label { font-weight:600; font-size:12px; color:#444; display:block; margin-bottom:4px; }
+    input, button { padding:10px 12px; font-size:14px; border-radius:10px; border:1px solid var(--line); }
+    input:focus { outline:2px solid #c8e3ff; border-color:#9ccaff; }
+    button { background: var(--pink); color:#fff; border:none; cursor:pointer; }
+    button.secondary { background:#555; }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+    input[type="number"] { width:120px; }
+    #backendUrl { width:360px; }
+    #opKey { width:260px; }
+    #opName { width:200px; }
+    .chat { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; max-width: 920px; height:540px; overflow:auto; }
+    .msg { display:inline-block; margin:6px 0; max-width:76%; padding:10px 14px; border-radius:16px; line-height:1.3; word-wrap:break-word; white-space:pre-wrap; }
+    .user { background: var(--pink); color:#fff; margin-left:auto; border-bottom-right-radius:6px; }
+    .girl { background:#f1f1f1; color:#000; margin-right:auto; border-bottom-left-radius:6px; }
+    .meta { font-size:11px; opacity:.6; margin-top:2px; }
+    .banner { background:#ffe082; color:#4a3b00; padding:6px 10px; border-radius:10px; display:inline-block; margin:10px 0; }
+    .bubble img { max-width:280px; max-height:300px; border-radius:10px; display:block; object-fit:cover; }
+    .inputs-row input[type="text"] { flex:1; min-width:260px; }
+  </style>
+</head>
+<body>
+  <h1>Operator Console</h1>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Backend URL</label>
+        <input id="backendUrl" value="https://charmr-jfmc.onrender.com" />
+      </div>
+      <div>
+        <label>Operator Key</label>
+        <input id="opKey" placeholder="OPERATOR_KEY" />
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>User ID</label>
+        <input id="userId" type="number" placeholder="123" />
+      </div>
+      <div>
+        <label>Girl ID</label>
+        <input id="girlId" type="number" placeholder="1" />
+      </div>
+      <div>
+        <label>Operator Name (shown to user)</label>
+        <input id="opName" placeholder="Bella (Ops)" />
+      </div>
+    </div>
+    <div class="row">
+      <button id="btnStart">Start Takeover</button>
+      <button id="btnStop" class="secondary">Stop Takeover</button>
+      <span id="status" class="banner" style="display:none">🔴 Takeover active</span>
+    </div>
+  </div>
+
+  <h3 style="margin:16px 0 8px">Conversation</h3>
+  <div id="chat" class="chat"></div>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="row inputs-row">
+      <input id="textMsg" type="text" placeholder="Type a message as the girl..." />
+      <button id="btnSendText">Send Text</button>
+    </div>
+    <div class="row inputs-row">
+      <input id="imageUrl" type="text" placeholder="Or paste an image URL (https://...)" />
+      <input id="imageFile" type="file" accept="image/*" />
+      <button id="btnSendImage">Send Image</button>
+    </div>
+  </div>
+
+  <script>
+    // Elements
+    const els = {
+      backendUrl: document.getElementById('backendUrl'),
+      opKey: document.getElementById('opKey'),
+      userId: document.getElementById('userId'),
+      girlId: document.getElementById('girlId'),
+      opName: document.getElementById('opName'),
+      chat: document.getElementById('chat'),
+      status: document.getElementById('status'),
+      textMsg: document.getElementById('textMsg'),
+      imageUrl: document.getElementById('imageUrl'),
+      imageFile: document.getElementById('imageFile'),
+      btnStart: document.getElementById('btnStart'),
+      btnStop: document.getElementById('btnStop'),
+      btnSendText: document.getElementById('btnSendText'),
+      btnSendImage: document.getElementById('btnSendImage')
+    };
+
+    let pollTimer = null;
+
+    function idsOK() {
+      return Number(els.userId.value) > 0 && Number(els.girlId.value) > 0;
+    }
+    function authOK() {
+      return (els.opKey.value || '').trim().length > 0;
+    }
+    function base() {
+      return (els.backendUrl.value || '').trim().replace(/\/+$/,'');
+    }
+    function headersJSON() {
+      return { 'Content-Type':'application/json', 'X-Operator-Key': (els.opKey.value || '').trim() };
+    }
+
+    function renderMessages(list) {
+      els.chat.innerHTML = '';
+      for (const m of list) {
+        const wrap = document.createElement('div');
+        wrap.style.display = 'flex';
+        const bubble = document.createElement('div');
+        bubble.className = 'msg ' + (m.from_user ? 'user' : 'girl');
+
+        const match = /^IMAGE:\s*(\S+)/i.exec(m.text || "");
+        const content = document.createElement('div');
+        content.className = 'bubble';
+
+        if (match) {
+          const img = document.createElement('img');
+          img.src = match[1];
+          img.alt = 'image';
+          content.appendChild(img);
+        } else {
+          content.textContent = m.text;
+        }
+
+        const meta = document.createElement('div');
+        meta.className = 'meta';
+        const ts = new Date(m.created_at);
+        meta.textContent = ts.toLocaleString();
+
+        bubble.appendChild(content);
+        bubble.appendChild(meta);
+        wrap.appendChild(bubble);
+        els.chat.appendChild(wrap);
+      }
+      els.chat.scrollTop = els.chat.scrollHeight;
+    }
+
+    async function refresh() {
+      if (!idsOK() || !authOK()) return;
+      try {
+        const r = await fetch(`${base()}/api/operator/messages?userId=${Number(els.userId.value)}&girlId=${Number(els.girlId.value)}`, {
+          headers: { 'X-Operator-Key': (els.opKey.value || '').trim() }
+        });
+        if (!r.ok) throw new Error('fetch failed');
+        const data = await r.json();
+        if (Array.isArray(data)) renderMessages(data);
+      } catch (e) {
+        // silent
+      }
+    }
+
+    function startPoll() {
+      if (pollTimer) return;
+      pollTimer = setInterval(refresh, 2000);
+      refresh();
+    }
+    function stopPoll() {
+      if (!pollTimer) return;
+      clearInterval(pollTimer);
+      pollTimer = null;
+    }
+
+    // Start takeover
+    els.btnStart.onclick = async () => {
+      if (!idsOK() || !authOK()) return alert('Fill Backend URL, Operator Key, User ID and Girl ID');
+      const body = {
+        userId: Number(els.userId.value),
+        girlId: Number(els.girlId.value),
+        operatorName: (els.opName.value || '').trim() || null
+      };
+      const r = await fetch(`${base()}/api/takeover/start`, {
+        method: 'POST',
+        headers: headersJSON(),
+        body: JSON.stringify(body)
+      });
+      if (!r.ok) return alert('Failed to start takeover');
+      els.status.style.display = '';
+      startPoll();
+    };
+
+    // Stop takeover
+    els.btnStop.onclick = async () => {
+      if (!idsOK() || !authOK()) return;
+      const r = await fetch(`${base()}/api/takeover/stop`, {
+        method: 'POST',
+        headers: headersJSON(),
+        body: JSON.stringify({ userId: Number(els.userId.value), girlId: Number(els.girlId.value) })
+      });
+      if (!r.ok) return alert('Failed to stop takeover');
+      els.status.style.display = 'none';
+      // keep polling so you still see AI/user messages if you want
+    };
+
+    // Send text
+    els.btnSendText.onclick = async () => {
+      if (!idsOK() || !authOK()) return;
+      const text = (els.textMsg.value || '').trim();
+      if (!text) return;
+      const r = await fetch(`${base()}/api/operator/send`, {
+        method: 'POST',
+        headers: headersJSON(),
+        body: JSON.stringify({ userId: Number(els.userId.value), girlId: Number(els.girlId.value), text })
+      });
+      if (!r.ok) return alert('Failed to send text');
+      els.textMsg.value = '';
+      refresh();
+    };
+
+    // Send image (URL or file)
+    els.btnSendImage.onclick = async () => {
+      if (!idsOK() || !authOK()) return;
+      const url = (els.imageUrl.value || '').trim();
+      const file = els.imageFile.files[0];
+
+      if (!url && !file) {
+        alert('Paste an image URL or choose a file first');
+        return;
+      }
+
+      try {
+        if (file) {
+          const form = new FormData();
+          form.append('userId', Number(els.userId.value));
+          form.append('girlId', Number(els.girlId.value));
+          form.append('image', file);
+          const rf = await fetch(`${base()}/api/operator/send-image`, {
+            method: 'POST',
+            headers: { 'X-Operator-Key': (els.opKey.value || '').trim() },
+            body: form
+          });
+          if (!rf.ok) throw new Error('upload failed');
+        } else {
+          const rj = await fetch(`${base()}/api/operator/send-image`, {
+            method: 'POST',
+            headers: headersJSON(),
+            body: JSON.stringify({ userId: Number(els.userId.value), girlId: Number(els.girlId.value), imageUrl: url })
+          });
+          if (!rj.ok) throw new Error('send failed');
+        }
+        els.imageUrl.value = '';
+        els.imageFile.value = '';
+        refresh();
+      } catch (e) {
+        alert('Failed to send image');
+      }
+    };
+
+    // Auto-start polling once required fields are present
+    ['backendUrl','opKey','userId','girlId'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        if (idsOK() && authOK()) startPoll();
+      });
+    });
+  </script>
+</body>
+</html>
