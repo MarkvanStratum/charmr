@@ -2917,6 +2917,7 @@ app.get("/api/operator/messages", authenticateOperator, async (req, res) => {
   }
 });
 
+
 app.post("/api/chat", authenticateToken, async (req, res) => {
   const userId = req.user.id;
   const { girlId, message } = req.body;

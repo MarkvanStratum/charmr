@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Live Message Feed</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    input, button { padding: 6px; margin: 4px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 6px; font-size: 14px; }
+    th { background: #f0f0f0; }
+    .img-thumb { max-width: 100px; max-height: 100px; }
+    .user { color: #ef476f; font-weight: bold; }
+    .girl { color: #555; font-weight: bold; }
+    #status { margin-left: 10px; font-size: 12px; color: #666; }
+  </style>
+</head>
+<body>
+  <h2>Operator Live Feed</h2>
+
+  <label>Backend URL: <input id="backendUrl" placeholder="https://your-backend.com"></label>
+  <label>Operator Key: <input id="opKey" type="password"></label>
+  <button id="startBtn">Start</button>
+  <button id="stopBtn" disabled>Stop</button>
+  <span id="status"></span>
+
+  <br>
+  <label>Limit: <input id="limit" type="number" value="100" min="1" max="500"></label>
+  <label><input type="checkbox" id="autoScroll" checked> Auto-scroll to newest</label>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Time</th>
+        <th>User ID</th>
+        <th>Girl ID</th>
+        <th>Girl Name</th>
+        <th>From</th>
+        <th>Message</th>
+      </tr>
+    </thead>
+    <tbody id="feedBody"></tbody>
+  </table>
+
+<script>
+let timer = null;
+let lastNow = null;
+
+function headersOp() {
+  return { "X-Operator-Key": document.getElementById('opKey').value };
+}
+
+function base() {
+  return document.getElementById('backendUrl').value.replace(/\/+$/, '');
+}
+
+function render(rows) {
+  const tbody = document.getElementById('feedBody');
+  tbody.innerHTML = '';
+  for (const r of rows) {
+    const tr = document.createElement('tr');
+
+    const tdTime = document.createElement('td');
+    tdTime.textContent = new Date(r.createdAt).toLocaleString();
+    tr.appendChild(tdTime);
+
+    const tdUser = document.createElement('td');
+    tdUser.textContent = r.userId;
+    tr.appendChild(tdUser);
+
+    const tdGirlId = document.createElement('td');
+    tdGirlId.textContent = r.girlId;
+    tr.appendChild(tdGirlId);
+
+    const tdGirlName = document.createElement('td');
+    tdGirlName.textContent = r.girlName;
+    tr.appendChild(tdGirlName);
+
+    const tdFrom = document.createElement('td');
+    tdFrom.innerHTML = r.from === 'user'
+      ? '<span class="user">user</span>'
+      : '<span class="girl">girl</span>';
+    tr.appendChild(tdFrom);
+
+    const tdMsg = document.createElement('td');
+    const m = /^IMAGE:\s*(\S+)/i.exec(r.text || "");
+    if (m) {
+      const img = document.createElement('img');
+      img.src = m[1];
+      img.alt = 'image';
+      img.className = 'img-thumb';
+      tdMsg.appendChild(img);
+    } else {
+      tdMsg.textContent = r.text;
+    }
+    tr.appendChild(tdMsg);
+
+    tbody.appendChild(tr);
+  }
+  if (document.getElementById('autoScroll').checked) {
+    window.scrollTo(0, 0);
+  }
+}
+
+async function tick() {
+  try {
+    const limit = Math.min(Math.max(parseInt(document.getElementById('limit').value || '100', 10), 1), 500);
+    const params = new URLSearchParams();
+    params.set('limit', limit);
+    if (lastNow) params.set('since', lastNow);
+
+    const res = await fetch(`${base()}/api/operator/feed?${params}`, { headers: headersOp() });
+    if (!res.ok) throw new Error('Failed to fetch');
+    const payload = await res.json();
+
+    render(payload.rows);
+    lastNow = payload.now;
+    document.getElementById('status').textContent = `Last update: ${new Date(lastNow).toLocaleTimeString()}`;
+  } catch (e) {
+    document.getElementById('status').textContent = 'Error fetching feed';
+  }
+}
+
+document.getElementById('startBtn').onclick = () => {
+  if (timer) return;
+  lastNow = null;
+  tick();
+  timer = setInterval(tick, 2000);
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('stopBtn').disabled = false;
+};
+
+document.getElementById('stopBtn').onclick = () => {
+  if (!timer) return;
+  clearInterval(timer);
+  timer = null;
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('stopBtn').disabled = true;
+};
+</script>
+</body>
+</html>
