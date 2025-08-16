@@ -298,6 +298,8 @@
           body: JSON.stringify({ girlId, message: messageText })
         });
 
+        refreshCredits();                    // ⬅️ update credits now (after POST hits backend)
+
         if (res.status === 402 || res.status === 403) {
           const data = await res.json();
           typingBubble.remove();
@@ -318,6 +320,7 @@
           chatBox.appendChild(ai);
           scrollBottomIfWanted(true);   // ensure the upsell is visible
           showCTA();
+          refreshCredits();              // ⬅️ reflect the zero/low credits state immediately
           return;
         }
 
@@ -330,14 +333,16 @@
           checkTakeover();
           appendMessage("…", "girl", true);
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
+          refreshCredits();              // ⬅️ update even when takeover engages
           return;
         }
 
         appendMessage(data.reply || "(No reply received)", 'girl');
-        refreshCredits();
+        refreshCredits();                // ⬅️ keep credits fresh after successful reply
       } catch (err) {
         console.error("Chat error:", err);
         typingBubble.remove();
+        refreshCredits();                // ⬅️ also refresh on error, in case backend already deducted
       }
     }
 
