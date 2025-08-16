@@ -378,8 +378,10 @@
         return s.split("").map(ch=>map[ch]||ch).join("");
       }
       function collapseSeparators(s){
-        return s.replace(/([a-z0-9])[\s._\-–—~|/\\:,;'"`^*+=)(\[\]{}<>]+(?=[a-z0-9])/gi,"$1");
-      }
+  // Collapse any run of separators BETWEEN alphanumerics, keeping both sides
+  return s.replace(/([a-z0-9])[\s._\-–—~|/\\:,;'"`^*+=)(\[\]{}<>]+([a-z0-9])/gi, "$1$2");
+}
+
       function wordsToDigits(s){
         const num={zero:"0",one:"1",two:"2",three:"3",four:"4",five:"5",six:"6",seven:"7",eight:"8",nine:"9"};
         return s.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi,m=>num[m.toLowerCase()]);
@@ -397,7 +399,7 @@
       }
 
       /* ---------- Detection rules ---------- */
-      const SOCIAL_KEYWORDS=["whatsapp","wa","telegram","tg","t.me","discord","discordapp","discord.gg","instagram","insta","ig",
+      const SOCIAL_KEYWORDS=["whatsapp","whatsap","wa","telegram","tg","t.me","discord","discordapp","discord.gg","instagram","insta","ig",
         "facebook","fb","messenger","snapchat","snap","tiktok","tt","wechat","weixin","line","viber","skype","signal",
         "kik","twitter","x.com","x","threads","clubhouse","tumblr","pinterest","onlyfans"];
       const SOCIAL_DOMAINS=["t.me","wa.me","web.whatsapp","whatsapp.com","discord.gg","discord.com","instagram.com","ig.me",
