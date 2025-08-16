@@ -2952,9 +2952,30 @@ app.get("/api/operator/feed", async (req, res) => {
     }));
 
     res.json({ rows, now: new Date().toISOString() });
+     } catch (e) {
+     console.error("Feed error:", e);
+     res.status(500).json({ error: "Failed to fetch feed" });
+   }
+});
+
+// ⬇️ ADD THIS RIGHT HERE
+// READ-ONLY presence: last time each user sent a message
+app.get("/api/operator/presence", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT user_id, MAX(created_at) AS last_seen
+      FROM messages
+      WHERE from_user = true
+      GROUP BY user_id
+    `);
+    const presence = {};
+    for (const row of result.rows) {
+      presence[row.user_id] = row.last_seen;
+    }
+    res.json({ presence, now: new Date().toISOString() });
   } catch (e) {
-    console.error("Feed error:", e);
-    res.status(500).json({ error: "Failed to fetch feed" });
+    console.error("Presence error:", e);
+    res.status(500).json({ error: "Failed to fetch presence" });
   }
 });
 
