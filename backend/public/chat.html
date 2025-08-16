@@ -316,13 +316,19 @@
 
           // Show AI-style bubble with your message + GO PREMIUM button
           const ai = document.createElement('div');
-          ai.className = 'message girl';
+          ai.className = 'message girl credits-upsell';  /* make sticky-able */
+          const logo = document.createElement('img');
+          logo.src = 'logo.png';
+          logo.alt = 'Logo';
+          logo.style.cssText = 'max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
+          ai.appendChild(logo);
+
           const text = document.createElement('div');
           text.textContent = (data && (data.message || data.error)) 
-            || "I really wanna meet you, but you're out of credits. Buy more credits so we can meet!";
+            || "Hey, I’d love to meet you but you’re out of credits. Please upgrade to Premium so we can keep chatting and we can meet.";
           const btn = document.createElement('a');
-          btn.href = '/checkout.html';
-          btn.textContent = 'GO PREMIUM!';
+          btn.href = 'https://charmr.xyz/checkout.html';
+          btn.textContent = 'Upgrade to Premium';
           btn.style.cssText = 'display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
           ai.appendChild(text);
           ai.appendChild(btn);
@@ -365,7 +371,7 @@
     setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
   </script>
 
-  <!-- 🔒 Contact-sharing blocker & Premium upsell (applies ONLY to user messages; sticky across refresh) -->
+  <!-- 🔒 Contact-sharing blocker & Premium upsell (user-only; sticky across refresh; also shows out-of-credits upsell) -->
   <script>
     (function(){
       /* ---------- Helpers ---------- */
@@ -448,7 +454,7 @@
         return {blocked:false};
       }
 
-      /* ---------- Upsell bubble (sticky) ---------- */
+      /* ---------- Upsell bubbles (sticky) ---------- */
       function showBlockedMessage(){
         const ai=document.createElement('div');
         ai.className='message girl policy-upsell';
@@ -471,28 +477,61 @@
 
         const box=document.getElementById('chatBox');
         const existing=box.querySelector('.policy-upsell');
-        if(!existing){ box.appendChild(ai); }
-        else { box.replaceChild(ai, existing); }
+        if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
         box.scrollTop=box.scrollHeight;
 
         if(typeof showCTA==="function") showCTA();
         return ai;
       }
 
-      /* ---------- Preserve sticky upsell across loadMessages clears ---------- */
+      function showCreditsMessage(){
+        const ai=document.createElement('div');
+        ai.className='message girl credits-upsell';
+
+        const logo=document.createElement('img');
+        logo.src='logo.png';
+        logo.alt='Logo';
+        logo.style.cssText='max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
+        ai.appendChild(logo);
+
+        const txt=document.createElement('div');
+        txt.textContent="Hey, I’d love to meet you but you’re out of credits. Please upgrade to Premium so we can keep chatting and we can meet.";
+        ai.appendChild(txt);
+
+        const btn=document.createElement('a');
+        btn.href='https://charmr.xyz/checkout.html';
+        btn.textContent='Upgrade to Premium';
+        btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
+        ai.appendChild(btn);
+
+        const box=document.getElementById('chatBox');
+        const existing=box.querySelector('.credits-upsell');
+        if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
+        box.scrollTop=box.scrollHeight;
+
+        if(typeof showCTA==="function") showCTA();
+        return ai;
+      }
+
+      /* ---------- Preserve stickies across loadMessages clears ---------- */
       const _loadMessages = window.loadMessages;
       if (typeof _loadMessages === "function") {
         window.loadMessages = async function(){
           const box = document.getElementById('chatBox');
-          const sticky = box.querySelector('.policy-upsell');
-          const clone = sticky ? sticky.cloneNode(true) : null;
+          const keep = ['.policy-upsell', '.credits-upsell']
+            .map(sel => box.querySelector(sel))
+            .filter(Boolean)
+            .map(node => node.cloneNode(true));
 
           await _loadMessages.apply(this, arguments);
 
-          if (clone && !box.querySelector('.policy-upsell')) {
-            box.appendChild(clone);
-            box.scrollTop = box.scrollHeight;
-          }
+          // restore in original order, avoid duplicates
+          keep.forEach(clone => {
+            if (!box.querySelector('.' + Array.from(clone.classList).find(c => /-upsell$/.test(c)))) {
+              box.appendChild(clone);
+            }
+          });
+          if (keep.length) box.scrollTop = box.scrollHeight;
         };
       }
 
@@ -502,12 +541,22 @@
         const input=document.getElementById('messageInput');
         const raw=(input?.value||"").trim();
         if(!raw){ return _sendMessage.apply(this, arguments); }
+
+        // If already out of credits (from poll), show credits upsell immediately
+        if (window.OUT_OF_CREDITS) {
+          input.value='';
+          showCreditsMessage();
+          return;
+        }
+
+        // Then apply contact-sharing block
         const verdict=detectContactSharing(raw);
         if(verdict.blocked){
           input.value='';
           showBlockedMessage();
           return; // don't call original
         }
+
         return _sendMessage.apply(this, arguments);
       };
 
@@ -517,17 +566,20 @@
         if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
         if(/^IMAGE:\s*\S+/i.test(text||"")) return _appendMessage.call(this, text, sender, isTyping);
 
-        // 🚫 Apply blocking only to USER messages
+        // 🚫 Apply enforcement only to USER messages
         if(sender==='user'){
+          // Credits first
+          if (window.OUT_OF_CREDITS) {
+            const now=Date.now();
+            if(now-_lastUpsellAt>8000){ _lastUpsellAt=now; showCreditsMessage(); }
+            return; // drop user bubble
+          }
+          // Then contact-sharing
           const verdict=detectContactSharing(text||"");
           if(verdict.blocked){
             const now=Date.now();
-            if(now-_lastUpsellAt>8000){
-              _lastUpsellAt=now;
-              return showBlockedMessage();
-            } else {
-              return; // quietly drop duplicates within throttle window
-            }
+            if(now-_lastUpsellAt>8000){ _lastUpsellAt=now; showBlockedMessage(); }
+            return; // drop user bubble
           }
         }
 
