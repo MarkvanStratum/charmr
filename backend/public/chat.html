@@ -94,13 +94,16 @@
     .chat-input button:hover { background:#d43d61; }
 
     .cta-bar {
-      display: none;
-      border-top: 1px solid #ffd1dc;
-      background: #fff5f7;
-      padding: 10px;
-      text-align: center;
-      flex-shrink: 0;
-    }
+  display: block !important;      /* force it visible even if JS sets display:none */
+  border-top: 1px solid #ffd1dc;
+  background: #fff5f7;
+  padding: 10px;
+  text-align: center;
+  flex-shrink: 0;
+  position: sticky;               /* keep it pinned at the bottom of the messages area */
+  bottom: 0;
+}
+
     .cta-link {
       display: inline-block;
       background: #ef476f;
@@ -110,6 +113,7 @@
       text-decoration: none;
       font-weight: bold;           /* fix stray period */
     }
+
   </style>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
