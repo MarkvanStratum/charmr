@@ -397,7 +397,7 @@
         let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=collapseSeparators(s); s=wordsToDigits(s); s=s.toLowerCase(); return s;
       }
 
-      /* ---------- Fuzzy platform-word matchers (NEW) ---------- */
+      /* ---------- Fuzzy platform-word matcher (fixed) ---------- */
       function editDistance(a,b){
         const al=a.length, bl=b.length;
         const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
@@ -413,13 +413,14 @@
       }
       function containsPlatformWord(raw){
         const norm=normalizeTokens(raw);
-        const tokens=norm.match(/[a-z0-9]{3,}/g)||[];
+        const tokens=norm.match(/[a-z0-9]{3,}/g)||[]; // ignore very short tokens
         for(const t of tokens){
           for(const k of SOCIAL_KEYWORDS){
-            if (t.includes(k) || k.includes(t)) return true;
+            if (k.length < 3) continue;                // ignore very short keywords like "wa","tg","tt","x"
+            if (t.includes(k)) return true;            // direct containment
             const L=Math.max(t.length,k.length);
             const d=editDistance(t,k);
-            if ((L<=6 && d<=1) || (L>=7 && d<=2) || (d/L)<=0.25) return true;
+            if ((L>=5 && (d/L)<=0.25) || (L<=6 && d<=1)) return true; // mild misspellings only
           }
         }
         return false;
@@ -466,7 +467,7 @@
       function detectContactSharing(rawText){
         const text=(rawText||"");
 
-        // NEW: block on platform word (incl. mild misspelling)
+        // Fixed fuzzy platform word detection
         if (containsPlatformWord(text)) return {blocked:true,reason:"platform-word"};
 
         if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
@@ -598,13 +599,17 @@
         if(sender==='user'){
           if (window.OUT_OF_CREDITS) {
             const now=Date.now();
-            if(now-_lastUpsellAt>8000){ _lastUpsellAt=now; showCreditsMessage(); }
+            if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.credits-upsell')) {
+              _lastUpsellAt=now; showCreditsMessage();
+            }
             return; // drop user bubble while out of credits
           }
           const verdict=detectContactSharing(text||"");
           if(verdict.blocked){
             const now=Date.now();
-            if(now-_lastUpsellAt>8000){ _lastUpsellAt=now; showBlockedMessage(); }
+            if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.policy-upsell')) {
+              _lastUpsellAt=now; showBlockedMessage();
+            }
             return; // drop user bubble
           }
         }
