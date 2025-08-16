@@ -365,7 +365,7 @@
     setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
   </script>
 
-  <!-- 🔒 Contact-sharing blocker & Premium upsell (appended; no other changes) -->
+  <!-- 🔒 Contact-sharing blocker & Premium upsell (applies ONLY to user messages) -->
   <script>
     (function(){
       /* ---------- Helpers ---------- */
@@ -436,16 +436,6 @@
       function looksLikePhone(raw){ const digits=raw.replace(/[^\d]/g,""); return digits.length>=6; }
       function numberWordRun(raw){ return ((raw.match(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi)||[]).length)>=6; }
       function hasPhone(text){ return looksLikePhone(text)||numberWordRun(text); }
-      function hitsPlatformFuzzy(text){
-        const tokens=normalizeTokens(text).split(/\s+/).filter(Boolean);
-        for(const t of tokens){
-          for(const kw of SOCIAL_KEYWORDS){
-            if(t===kw) return true;
-            if(t.length>=4 && similar(t,kw)) return true;
-          }
-        }
-        return false;
-      }
       function looksLikeHandleWithCue(text){
         const norm=normalizeTokens(text);
         const hasCue=CONTACT_CUES.some(c=>norm.includes(c));
@@ -461,23 +451,18 @@
         return nearPlatform && tokens.length>0;
       }
 
-      // STRICTER: don't block on platform word alone
+      // stricter & user-focused detection
       function detectContactSharing(rawText){
         const text=(rawText||"");
         if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
         if(hasEmail(text))     return {blocked:true,reason:"email"};
         if(hasPhone(text))     return {blocked:true,reason:"phone"};
         if(hasAtHandle(text))  return {blocked:true,reason:"@handle"};
-
         if(looksLikeHandleWithCue(text)) return {blocked:true,reason:"handle-with-cue"};
         if(hasBareHandleToken(text))     return {blocked:true,reason:"platform+handle"};
-
         const norm=normalizeForDetection(text);
         if(EMAIL_DOMAINS_COMMON.some(d=>norm.includes(d))) return {blocked:true,reason:"email-domain"};
-
         if(/\b(at|dot)\b/i.test(text) && /[a-z0-9._-]{3,}/i.test(text)) return {blocked:true,reason:"obfuscated-contact"};
-
-        // NOTE: hitsPlatformFuzzy alone is no longer a blocker
         return {blocked:false};
       }
 
@@ -510,7 +495,7 @@
         return ai;
       }
 
-      /* ---------- Monkey patches (no other changes) ---------- */
+      /* ---------- Monkey patches (user-only enforcement) ---------- */
       const _sendMessage=window.sendMessage;
       window.sendMessage=async function(){
         const input=document.getElementById('messageInput');
@@ -520,7 +505,7 @@
         if(verdict.blocked){
           input.value='';
           showBlockedMessage();
-          return; // do not call original
+          return; // don't call original
         }
         return _sendMessage.apply(this, arguments);
       };
@@ -529,30 +514,24 @@
       let _lastUpsellAt=0;
       window.appendMessage=function(text, sender, isTyping=false){
         if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
+        // Let images pass
+        if(/^IMAGE:\s*\S+/i.test(text||"")) return _appendMessage.call(this, text, sender, isTyping);
 
-        // Let images pass through unchanged
-        if(/^IMAGE:\s*\S+/i.test(text||"")){
-          return _appendMessage.call(this, text, sender, isTyping);
-        }
-
-        const verdict=detectContactSharing(text||"");
-
-        if(verdict.blocked){
-          if(sender==='user'){
-            // throttle upsell repeats
+        // 🚫 Apply blocking only to USER messages
+        if(sender==='user'){
+          const verdict=detectContactSharing(text||"");
+          if(verdict.blocked){
             const now=Date.now();
             if(now-_lastUpsellAt>8000){
               _lastUpsellAt=now;
               return showBlockedMessage();
             } else {
-              return; // quietly drop duplicate within 8s window
+              return; // quietly drop duplicates within throttle window
             }
-          } else {
-            // incoming messages: mask, no upsell
-            return _appendMessage.call(this, "[blocked]", sender, false);
           }
         }
 
+        // ✅ AI/agent messages never blocked
         return _appendMessage.call(this, text, sender, isTyping);
       };
     })();
