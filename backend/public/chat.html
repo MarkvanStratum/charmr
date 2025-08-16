@@ -132,7 +132,7 @@
       padding: 8px 12px;
       border-radius: 8px;
       text-decoration: none;
-      font-weight: bold;
+      font-weight: bold.
     }
   </style>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
@@ -378,10 +378,9 @@
         return s.split("").map(ch=>map[ch]||ch).join("");
       }
       function collapseSeparators(s){
-  // Collapse any run of separators BETWEEN alphanumerics, keeping both sides
-  return s.replace(/([a-z0-9])[\s._\-–—~|/\\:,;'"`^*+=)(\[\]{}<>]+([a-z0-9])/gi, "$1$2");
-}
-
+        // Collapse any run of separators BETWEEN alphanumerics, keeping both sides
+        return s.replace(/([a-z0-9])[\s._\-–—~|/\\:,;'"`^*+=)(\[\]{}<>]+([a-z0-9])/gi, "$1$2");
+      }
       function wordsToDigits(s){
         const num={zero:"0",one:"1",two:"2",three:"3",four:"4",five:"5",six:"6",seven:"7",eight:"8",nine:"9"};
         return s.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi,m=>num[m.toLowerCase()]);
@@ -396,6 +395,34 @@
       }
       function normalizeTokens(input){
         let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=collapseSeparators(s); s=wordsToDigits(s); s=s.toLowerCase(); return s;
+      }
+
+      /* ---------- Fuzzy platform-word matchers (NEW) ---------- */
+      function editDistance(a,b){
+        const al=a.length, bl=b.length;
+        const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
+        for(let i=0;i<=al;i++) dp[i][0]=i;
+        for(let j=0;j<=bl;j++) dp[0][j]=j;
+        for(let i=1;i<=al;i++){
+          for(let j=1;j<=bl;j++){
+            const cost=a[i-1]===b[j-1]?0:1;
+            dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+          }
+        }
+        return dp[al][bl];
+      }
+      function containsPlatformWord(raw){
+        const norm=normalizeTokens(raw);
+        const tokens=norm.match(/[a-z0-9]{3,}/g)||[];
+        for(const t of tokens){
+          for(const k of SOCIAL_KEYWORDS){
+            if (t.includes(k) || k.includes(t)) return true;
+            const L=Math.max(t.length,k.length);
+            const d=editDistance(t,k);
+            if ((L<=6 && d<=1) || (L>=7 && d<=2) || (d/L)<=0.25) return true;
+          }
+        }
+        return false;
       }
 
       /* ---------- Detection rules ---------- */
@@ -438,6 +465,10 @@
 
       function detectContactSharing(rawText){
         const text=(rawText||"");
+
+        // NEW: block on platform word (incl. mild misspelling)
+        if (containsPlatformWord(text)) return {blocked:true,reason:"platform-word"};
+
         if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
         if(hasEmail(text))     return {blocked:true,reason:"email"};
         if(hasPhone(text))     return {blocked:true,reason:"phone"};
