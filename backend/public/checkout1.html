@@ -33,41 +33,22 @@
       color: var(--ink);
       margin:0;
       padding: 12px;
-      padding-top: calc(12px + env(safe-area-inset-top)); /* ensure logo isn’t cut off */
       display:flex;
-      flex-direction:column;          /* logo on top, form below */
-      align-items:center;
-      justify-content:flex-start;
-      -webkit-text-size-adjust:100%;
-      overflow-x:hidden;
-    }
-
-    /* LOGO BAR */
-    .logo-bar{
-      width:100%;
-      max-width: 920px;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:12px;
-      display:flex;
-      align-items:center;
+      align-items:flex-start;
       justify-content:center;
-      padding:14px 0;
-      margin:0 12px 12px;
-      box-shadow: 0 4px 14px rgba(15,23,42,.06);
+      -webkit-text-size-adjust:100%;
+      overflow-x:hidden; /* prevent any sideways scroll */
     }
-    .logo-bar img{max-height:48px; width:auto}
 
     /* CARD (mobile-first, compact) */
     #payment-form{
       width:100%;
-      max-width: 560px;
+      max-width: 520px;            /* narrower for small screens */
       background:var(--card);
       border-radius:14px;
       border:1px solid #f8c4d3;
       box-shadow: 0 10px 28px rgba(239,71,111,.14);
-      padding:16px;
-      margin:0 12px 24px;
+      padding:14px;                /* tight padding */
     }
 
     /* HERO */
@@ -89,6 +70,8 @@
       line-height:1.5;
       color:var(--ink);
     }
+    .hero-copy strong{font-weight:800}
+
     .steps{
       display:flex; gap:6px; flex-wrap:wrap;
       margin-top:8px; color:var(--sub); font-size:12px; justify-content:center;
@@ -98,18 +81,8 @@
       padding:6px 10px;
     }
 
-    /* small badges row */
-    .badges{
-      display:flex; gap:10px; justify-content:center; align-items:center;
-      margin:4px 0 10px; opacity:.95;
-    }
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px; font-size:12px; color:var(--sub);
-    }
-
-    /* PLANS */
-    .plans{display:grid; gap:10px; margin:14px 0 10px}
+    /* PLANS (simple vertical stack) */
+    .plans{display:grid; gap:8px; margin:14px 0 10px}
     .plan{
       display:grid; grid-template-columns:auto 1fr; gap:10px;
       padding:10px; border:1px solid var(--line); border-radius:12px; background:#fff;
@@ -120,14 +93,12 @@
     .plan label{display:block; cursor:pointer}
     .plan-title{
       display:block;
-      font-size: clamp(20px, 5.2vw, 24px);
+      font-size: clamp(20px, 5.2vw, 26px);
       font-weight:900; line-height:1.1; color:#0b0b0b;
     }
     .plan-fine{display:block; font-size:12px; color:var(--sub); margin-top:4px}
-    .plan-popular{
-      display:inline-block; font-size:11px; font-weight:800; letter-spacing:.3px;
-      background:#fff0f4; color:#b91c1c; border:1px solid #ffd1e0; padding:2px 8px; border-radius:999px; margin-left:8px;
-    }
+
+    /* Selected highlight */
     .plan input[type="radio"]:checked + label{
       border-radius:10px; outline:3px solid #ffe5ee; background:#fff8fb;
       padding:4px 6px;
@@ -143,7 +114,7 @@
     #card-element{
       padding:12px; border:1px solid #d1d5db; border-radius:10px; margin-bottom:10px; background:#fafafa;
     }
-
+l
     /* TRUST + CTA */
     .trust{
       display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 10px; color:var(--sub); font-size:12px; justify-content:center;
@@ -162,11 +133,16 @@
 
     #message{margin-top:10px; font-size:14px; color:#b91c1c}
 
-    /* Loading overlay */
+    /* Safe spacing on larger screens */
+    @media (min-width: 640px){
+      #payment-form{padding:16px}
+    }
+
+    /* ---------- Loading overlay ---------- */
     .loading-overlay{
       position:fixed; inset:0;
       background:rgba(255,255,255,.92);
-      display:none;
+      display:none; /* hidden by default */
       align-items:center; justify-content:center; flex-direction:column;
       z-index:9999;
       backdrop-filter:saturate(1.1) blur(2px);
@@ -195,20 +171,11 @@
       100%{width:100%}
     }
     .loading-sub{font-size:12px; color:var(--sub); margin-top:8px}
+    /* ---------- /Loading overlay ---------- */
   </style>
 </head>
 <body>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-
-<div class="logo-bar" style="display:flex; flex-direction:column; align-items:center;">
-  <img src="logo.png" alt="Site logo" style="max-width:140px; height:auto;">
-  <p style="margin:4px 0 12px; font-size:8px; color:#475569; text-align:center; font-weight:500;">
-    It's Tinder without the bullshit, just sex, the way you like it!
-  </p>
-</div>
-
-
-</div>
 
 <!-- Loading overlay -->
 <div id="loading-overlay" class="loading-overlay" aria-hidden="true" aria-live="polite" aria-label="Processing payment">
@@ -217,25 +184,31 @@
     <div class="progress-wrap" aria-hidden="true">
       <div class="progress-bar"></div>
     </div>
-    <div class="loading-sub">You may be asked to complete a quick 3-D Secure check with your bank. Please don’t close this window.</div>
+    <div class="loading-sub">Complete the 3d secure age-verification through your bank to fuck the girls on our site.</div>
   </div>
 </div>
 <!-- /Loading overlay -->
 
 <form id="payment-form" aria-labelledby="age-title">
   <!-- HERO -->
-  <div class="hero" role="region" aria-label="Checkout intro">
-    <h1 id="age-title">Unlock Private Chats</h1>
+  <div class="hero" role="region" aria-label="Age gate">
+ 
+<!-- CHANGED TITLE -->
+<h1 id="age-title">TOP UP YOUR CREDITS</h1>
 
-    <div class="badges" aria-label="Security and privacy badges">
-      <div class="badge">🔒 SSL Secure</div>
-      <div class="badge">🕵️ Discreet Billing</div>
-      <div class="badge">✅ Cancel Anytime</div>
-    </div>
+<!-- ADDED SUBLINE + IMAGE LOGOS -->
+<div style="text-align:center; font-size:13px; color:var(--sub); margin:-2px 0 8px;">
+  Secure payments verified by:
+  <div style="display:flex; gap:10px; justify-content:center; align-items:center; margin-top:6px;">
+    <img src="https://notadatingsite.online/logos/visa.png" alt="Visa" style="height:20px; width:auto;">
+    <img src="https://notadatingsite.online/logos/mastercard.png" alt="Mastercard" style="height:20px; width:auto;">
+  </div>
+</div>
 
     <div class="hero-copy">
-      Start your free trial today. Keep the conversation flowing with flirty fun, 24/7. After your trial you’ll be billed monthly, and you can cancel anytime.
-    </div>
+  Ready to turn up the heat? 🔥 Get the credits you need to keep your chats going, unlock more flirty fun, and connect with the hottest members without limits. 
+  
+</div>
 
     <div class="steps" aria-label="How it works">
       <div class="step">① Choose a plan</div>
@@ -244,29 +217,32 @@
     </div>
   </div>
 
-  <!-- PLANS (price IDs unchanged) -->
+  <!-- PLANS -->
   <div class="plans" role="group" aria-label="Subscription plans">
+    <!-- 0.16/day -->
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
       <label for="plan5">
-        <span class="plan-title">Starter — Personal Chats</span>
-        <span class="plan-fine">Free today, then <span class="curr-symbol">£</span>5/month. Cancel anytime.</span>
+        <span class="plan-title">2 HOOKUPS PER MONTH</span>
+        <span class="plan-fine">FREE the first day, then <span class="curr-symbol">£</span>0.16/day</span>
       </label>
     </div>
 
+    <!-- 0.66/day -->
     <div class="plan">
       <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
       <label for="plan20">
-        <span class="plan-title">Plus — Extended Messages <span class="plan-popular">Most Popular</span></span>
-        <span class="plan-fine">Free today, then <span class="curr-symbol">£</span>20/month. Cancel anytime.</span>
+        <span class="plan-title">10 HOOKUPS PER MONTH!</span>
+        <span class="plan-fine">FREE the first day, then <span class="curr-symbol">£</span>0.66/day</span>
       </label>
     </div>
 
+    <!-- £99 one-time -->
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
       <label for="plan99">
-        <span class="plan-title">Lifetime — Unlimited Chats</span>
-        <span class="plan-fine"><span class="curr-symbol">£</span>99 one-time. Priority support included.</span>
+        <span class="plan-title">UNLIMITED HOOKUPS!</span>
+        <span class="plan-fine"><span class="curr-symbol">£</span>99 one-time</span>
       </label>
     </div>
   </div>
@@ -278,12 +254,12 @@
 
   <!-- Trust row -->
   <div class="trust">
-    <div class="tag">🔒 Secure payment via Stripe</div>
+    <div class="tag">🔒 Secure payment</div>
     <div class="tag">🕵 Discreet billing</div>
     <div class="tag ok">✔ Age 18+ only</div>
   </div>
 
-  <button type="submit" id="submit">Start Free Trial</button>
+  <button type="submit" id="submit">VERIFY</button>
   <div id="message"></div>
 </form>
 
@@ -298,6 +274,7 @@
   const message = document.getElementById("message");
   const submitBtn = document.getElementById("submit");
 
+  /* ---------- Loading overlay helpers (updated) ---------- */
   const overlay = document.getElementById('loading-overlay');
   function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
   function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
@@ -306,16 +283,20 @@
   let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
 
   function startThreeDSWatcher(){
+    // Refresh baseline right when we begin (in case Elements mounted later)
     baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+
     const isThreeDSLike = (iframe) => {
       const t = (iframe.getAttribute('title') || '').toLowerCase();
       return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
     };
+
     const observer = new MutationObserver((mutations) => {
       for (const m of mutations) {
         for (const node of m.addedNodes) {
           if (node.tagName === 'IFRAME' && !baselineIframes.has(node)) {
             if (isThreeDSLike(node)) {
+              // Hide overlay only when the 3DS iframe is actually ready
               const hideWhenReady = () => { hideLoading(); observer.disconnect(); };
               if (node.complete) hideWhenReady();
               else node.addEventListener('load', hideWhenReady, { once:true });
@@ -325,8 +306,10 @@
         }
       }
     });
+
     observer.observe(document.documentElement, { childList:true, subtree:true });
   }
+  /* ---------- /Loading overlay helpers (updated) ---------- */
 
   async function startSubscription(priceId, cardholderName) {
     // 1) Create SetupIntent
@@ -376,17 +359,18 @@
     e.preventDefault();
     message.textContent = "";
     submitBtn.disabled = true;
-    showLoading();
-    startThreeDSWatcher();
+    showLoading();           // show immediately on click
+    startThreeDSWatcher();   // watch for the real 3DS iframe
 
     const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
     const name = document.getElementById("cardholder-name").value;
 
     try {
       await startSubscription(selectedPlan, name);
+      // On success we navigate; overlay can stay until navigation completes.
     } catch (err) {
       console.error(err);
-      hideLoading();
+      hideLoading();         // reveal the page so the error is visible
       message.textContent = err.message || "Something went wrong. Try again.";
     } finally {
       submitBtn.disabled = false;
