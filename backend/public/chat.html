@@ -363,6 +363,7 @@
     refreshCredits();                 // 🔹 check on load
     setInterval(checkTakeover, 10000);
     setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
+    setInterval(loadMessages, 2000);     // 🔁 ALWAYS poll for new messages
   </script>
 
   <!-- 🔒 Contact-sharing blocker & Premium upsell (applies ONLY to user messages; sticky across refresh) -->
@@ -411,31 +412,26 @@
         }
         return dp[al][bl];
       }
-
-      // escape for regex building
       function escapeRegExp(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
-
-      // Strict "near platform" detector (word-boundary match on original text, ignore very short keys)
       function nearPlatformWord(raw){
         const text=(raw||"").toLowerCase();
         for(const k of SOCIAL_KEYWORDS){
-          if(k.length<3) continue; // ignore wa/tg/tt/x for this specific rule
+          if(k.length<3) continue;
           const re=new RegExp(`(^|[^a-z0-9])${escapeRegExp(k)}([^a-z0-9]|$)`,"i");
           if(re.test(text)) return true;
         }
         return false;
       }
-
       function containsPlatformWord(raw){
         const norm=normalizeTokens(raw);
-        const tokens=norm.match(/[a-z0-9]{3,}/g)||[]; // ignore very short tokens
+        const tokens=norm.match(/[a-z0-9]{3,}/g)||[];
         for(const t of tokens){
           for(const k of SOCIAL_KEYWORDS){
-            if (k.length < 3) continue;                // ignore very short keywords like "wa","tg","tt","x"
-            if (t.includes(k)) return true;            // direct containment
+            if (k.length < 3) continue;
+            if (t.includes(k)) return true;
             const L=Math.max(t.length,k.length);
             const d=editDistance(t,k);
-            if ((L>=5 && (d/L)<=0.25) || (L<=6 && d<=1)) return true; // mild misspellings only
+            if ((L>=5 && (d/L)<=0.25) || (L<=6 && d<=1)) return true;
           }
         }
         return false;
@@ -472,8 +468,6 @@
         return !!cand;
       }
       function hasAtHandle(text){ return /@[a-z0-9._-]{3,}/i.test(text); }
-
-      // ✅ FIXED: use original text + word boundaries for the "near platform + handle-like token" rule
       function hasBareHandleToken(text){
         const raw=(text||"").toLowerCase();
         const tokens=raw.match(/\b[a-z0-9][a-z0-9._-]{5,}\b/g)||[];
@@ -483,10 +477,7 @@
 
       function detectContactSharing(rawText){
         const text=(rawText||"");
-
-        // Fuzzy platform word detection (misspellings like "whartsapp")
         if (containsPlatformWord(text)) return {blocked:true,reason:"platform-word"};
-
         if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
         if(hasEmail(text))     return {blocked:true,reason:"email"};
         if(hasPhone(text))     return {blocked:true,reason:"phone"};
@@ -503,29 +494,23 @@
       function showBlockedMessage(){
         const ai=document.createElement('div');
         ai.className='message girl policy-upsell';
-
         const logo=document.createElement('img');
         logo.src='logo.png';
         logo.alt='Logo';
         logo.style.cssText='max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
         ai.appendChild(logo);
-
         const text=document.createElement('div');
         text.textContent="⛔ You can’t share contact details here. If you want to share contact details, please upgrade to Premium.";
         ai.appendChild(text);
-
         const btn=document.createElement('a');
         btn.href='https://charmr.xyz/checkout.html';
         btn.textContent='Upgrade to Premium';
         btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
         ai.appendChild(btn);
-
         const box=document.getElementById('chatBox');
         const existing=box.querySelector('.policy-upsell');
-        if(!existing){ box.appendChild(ai); }
-        else { box.replaceChild(ai, existing); }
+        if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
         box.scrollTop=box.scrollHeight;
-
         if(typeof showCTA==="function") showCTA();
         return ai;
       }
@@ -534,29 +519,23 @@
       function showCreditsMessage(){
         const ai=document.createElement('div');
         ai.className='message girl credits-upsell';
-
         const logo=document.createElement('img');
         logo.src='logo.png';
         logo.alt='Logo';
         logo.style.cssText='max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
         ai.appendChild(logo);
-
         const text=document.createElement('div');
         text.textContent="⛔ You’re out of credits. Upgrade to Premium to continue the chat.";
         ai.appendChild(text);
-
         const btn=document.createElement('a');
         btn.href='https://charmr.xyz/checkout.html';
         btn.textContent='Upgrade to Premium';
         btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
         ai.appendChild(btn);
-
         const box=document.getElementById('chatBox');
         const existing=box.querySelector('.credits-upsell');
-        if(!existing){ box.appendChild(ai); }
-        else { box.replaceChild(ai, existing); }
+        if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
         box.scrollTop=box.scrollHeight;
-
         if(typeof showCTA==="function") showCTA();
         return ai;
       }
@@ -570,10 +549,7 @@
             .map(sel => box.querySelector(sel))
             .filter(Boolean)
             .map(node => node.cloneNode(true));
-
           await _loadMessages.apply(this, arguments);
-
-          // restore in original order, avoid duplicates
           keep.forEach(clone => {
             const className = Array.from(clone.classList).find(c => /-upsell$/.test(c));
             if (className && !box.querySelector('.' + className)) box.appendChild(clone);
@@ -588,20 +564,16 @@
         const input=document.getElementById('messageInput');
         const raw=(input?.value||"").trim();
         if(!raw){ return _sendMessage.apply(this, arguments); }
-
-        // If out of credits, show credits upsell instead of sending
         if (window.OUT_OF_CREDITS) {
           input.value='';
           showCreditsMessage();
           return;
         }
-
-        // Then apply contact-sharing block
         const verdict=detectContactSharing(raw);
         if(verdict.blocked){
           input.value='';
           showBlockedMessage();
-          return; // don't call original
+          return;
         }
         return _sendMessage.apply(this, arguments);
       };
@@ -611,15 +583,13 @@
       window.appendMessage=function(text, sender, isTyping=false){
         if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
         if(/^IMAGE:\s*\S+/i.test(text||"")) return _appendMessage.call(this, text, sender, isTyping);
-
-        // 🚫 Apply blocking/credits only to USER messages
         if(sender==='user'){
           if (window.OUT_OF_CREDITS) {
             const now=Date.now();
             if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.credits-upsell')) {
               _lastUpsellAt=now; showCreditsMessage();
             }
-            return; // drop user bubble while out of credits
+            return;
           }
           const verdict=detectContactSharing(text||"");
           if(verdict.blocked){
@@ -627,11 +597,9 @@
             if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.policy-upsell')) {
               _lastUpsellAt=now; showBlockedMessage();
             }
-            return; // drop user bubble
+            return;
           }
         }
-
-        // ✅ AI/agent messages never blocked
         return _appendMessage.call(this, text, sender, isTyping);
       };
     })();
