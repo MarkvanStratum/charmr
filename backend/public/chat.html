@@ -116,9 +116,9 @@
     .chat-input button:hover {
       background-color: #d43d61;
     }
-    /* 🔹 NEW: sticky CTA bar shown permanently at bottom */
+    /* 🔹 NEW: sticky CTA bar shown when out of credits */
     .cta-bar {
-      display: block;           /* always visible */
+      display: none;            /* toggled via JS */
       border-top: 1px solid #ffd1dc;
       background: #fff5f7;
       padding: 10px;
@@ -150,7 +150,7 @@
 
     <!-- 🔹 NEW: persistent CTA bar -->
     <div id="ctaBar" class="cta-bar">
-      <a class="cta-link" href="https://charmr.xyz/checkout.html">Upgrade to Premium</a>
+      <a class="cta-link" href="/checkout.html">GET PREMIUM NOW!</a>
     </div>
 
     <div class="chat-input">
@@ -177,6 +177,18 @@
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
 
+    // 🔹 Smart autoscroll: only stick to bottom if user is near bottom
+    let _autoScroll = true;
+    function nearBottom(el, threshold=80){
+      return (el.scrollHeight - el.scrollTop - el.clientHeight) <= threshold;
+    }
+    function scrollBottomIfWanted(force=false){
+      if (force || _autoScroll) chatBox.scrollTop = chatBox.scrollHeight;
+    }
+    chatBox.addEventListener('scroll', () => {
+      _autoScroll = nearBottom(chatBox);
+    });
+
     // 🔹 NEW: takeover state & polling handle
     let TAKEOVER = false;
     let pollTimer = null;
@@ -184,14 +196,14 @@
     // 🔹 NEW: out-of-credits sticky flag
     let OUT_OF_CREDITS = false;
 
-    // 🔹 NEW: helpers to show/hide CTA (now always show)
+    // 🔹 NEW: helpers to show/hide CTA
     function showCTA() {
       OUT_OF_CREDITS = true;
-      ctaBar.style.display = 'block';   // keep visible
+      ctaBar.style.display = 'block';
     }
     function hideCTA() {
       OUT_OF_CREDITS = false;
-      ctaBar.style.display = 'block';   // keep visible
+      ctaBar.style.display = 'none';
     }
 
     // 🔹 UPDATED: render text OR IMAGE:<url>
@@ -220,7 +232,7 @@
       }
 
       chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
+      scrollBottomIfWanted();   // ⬅️ only scroll if user is near bottom
       return msgDiv;
     }
 
@@ -230,12 +242,19 @@
 
     async function loadMessages() {
       try {
+        // remember whether to stick
+        const shouldStick = nearBottom(chatBox);
+
         const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
         chatBox.innerHTML = "";
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
+
+        // restore scroll position preference
+        _autoScroll = shouldStick;
+        scrollBottomIfWanted();
 
         // 🔹 keep CTA visible if we're out of credits
         if (OUT_OF_CREDITS) showCTA();
@@ -327,7 +346,7 @@
           ai.appendChild(text);
           ai.appendChild(btn);
           chatBox.appendChild(ai);
-          chatBox.scrollTop = chatBox.scrollHeight;
+          scrollBottomIfWanted(true);   // ⬅️ ensure you see the upsell
 
           // keep your persistent CTA bar too
           showCTA();
@@ -363,7 +382,6 @@
     refreshCredits();                 // 🔹 check on load
     setInterval(checkTakeover, 10000);
     setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
-    setInterval(loadMessages, 2000);     // 🔁 ALWAYS poll for new messages
   </script>
 
   <!-- 🔒 Contact-sharing blocker & Premium upsell (applies ONLY to user messages; sticky across refresh) -->
@@ -510,10 +528,8 @@
         const box=document.getElementById('chatBox');
         const existing=box.querySelector('.policy-upsell');
         if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
-        box.scrollTop=box.scrollHeight;
+        scrollBottomIfWanted(true); // make sure user sees it
         if(typeof showCTA==="function") showCTA();
-
-        // 🔒 remember for persistence
         window._policyUpsellSticky = ai;
         return ai;
       }
@@ -538,10 +554,8 @@
         const box=document.getElementById('chatBox');
         const existing=box.querySelector('.credits-upsell');
         if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
-        box.scrollTop=box.scrollHeight;
+        scrollBottomIfWanted(true); // make sure user sees it
         if(typeof showCTA==="function") showCTA();
-
-        // 🔒 remember for persistence
         window._creditsUpsellSticky = ai;
         return ai;
       }
@@ -551,13 +565,14 @@
         const box = document.getElementById('chatBox');
         if (!box) return;
         const obs = new MutationObserver(() => {
-          // Re-attach if missing
+          // Re-attach if missing (no jump unless user is at bottom)
           if (window._policyUpsellSticky && !box.querySelector('.policy-upsell')) {
             box.appendChild(window._policyUpsellSticky.cloneNode(true));
-            box.scrollTop = box.scrollHeight;
+            scrollBottomIfWanted();
           }
           if (window._creditsUpsellSticky && !box.querySelector('.credits-upsell')) {
             box.appendChild(window._creditsUpsellSticky.cloneNode(true));
+            scrollBottomIfWanted();
           }
         });
         obs.observe(box, { childList: true });
@@ -580,7 +595,7 @@
             const className = Array.from(clone.classList).find(c => /-upsell$/.test(c));
             if (className && !box.querySelector('.' + className)) box.appendChild(clone);
           });
-          if (keep.length) box.scrollTop = box.scrollHeight;
+          if (keep.length) scrollBottomIfWanted();
         };
       }
 
@@ -634,7 +649,10 @@
         }
 
         // ✅ AI/agent messages never blocked
-        return _appendMessage.call(this, text, sender, isTyping);
+        const node = _appendMessage.call(this, text, sender, isTyping);
+        // respect smart autoscroll for any messages appended outside our helpers
+        scrollBottomIfWanted();
+        return node;
       };
     })();
   </script>
