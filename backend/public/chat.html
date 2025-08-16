@@ -147,7 +147,7 @@
 
     /* -------- Smart autoscroll (stick to bottom unless user scrolls up) -------- */
     let _autoScroll = true;
-    function nearBottom(el, threshold=160){          /* ↑ slightly looser */
+    function nearBottom(el, threshold=160){
       return (el.scrollHeight - el.scrollTop - el.clientHeight) <= threshold;
     }
     function scrollBottomIfWanted(force=false){
@@ -182,22 +182,38 @@
       if (isTyping) {
         msgDiv.classList.add('typing');
         msgDiv.textContent = '...';
+        chatBox.appendChild(msgDiv);
+        scrollBottomIfWanted();
+        return msgDiv;
+      }
+
+      const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
+      if (m) {
+        const url = m[1];
+
+        // Build <img> and attach handlers BEFORE setting src
+        const img = document.createElement('img');
+        img.alt = 'image';
+        img.style.display = 'block';
+        img.style.maxWidth = '220px';
+        img.style.maxHeight = '260px';
+        img.style.width = '220px';          // reserve space
+        img.style.aspectRatio = '3 / 4';    // prevent layout jump
+        img.style.minHeight = '160px';
+        img.style.borderRadius = '10px';
+        img.style.objectFit = 'cover';
+
+        const settle = () => {
+          requestAnimationFrame(() => scrollBottomIfWanted(true));
+        };
+        img.addEventListener('load', settle, { once: true });
+        img.addEventListener('error', settle, { once: true });
+
+        img.src = url; // set after listeners so cached images don't skip
+
+        msgDiv.appendChild(img);
       } else {
-        const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
-        if (m) {
-          const img = document.createElement('img');
-          img.src = m[1];
-          img.alt = 'image';
-          img.style.maxWidth = '220px';
-          img.style.maxHeight = '260px';
-          img.style.borderRadius = '10px';
-          img.style.display = 'block';
-          img.style.objectFit = 'cover';
-          img.addEventListener('load', () => scrollBottomIfWanted()); // 🖼 keep pinned when image finishes loading
-          msgDiv.appendChild(img);
-        } else {
-          msgDiv.textContent = text;
-        }
+        msgDiv.textContent = text;
       }
 
       chatBox.appendChild(msgDiv);
