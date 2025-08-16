@@ -256,7 +256,7 @@
         const banner = document.getElementById('liveBanner');
         if (TAKEOVER) {
           banner.style.display = '';
-          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
+          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '';
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
         } else {
           banner.style.display = 'none';
@@ -365,7 +365,7 @@
     setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
   </script>
 
-  <!-- 🔒 Contact-sharing blocker & Premium upsell (applies ONLY to user messages) -->
+  <!-- 🔒 Contact-sharing blocker & Premium upsell (applies ONLY to user messages; sticky across refresh) -->
   <script>
     (function(){
       /* ---------- Helpers ---------- */
@@ -394,23 +394,6 @@
       }
       function normalizeTokens(input){
         let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=collapseSeparators(s); s=wordsToDigits(s); s=s.toLowerCase(); return s;
-      }
-      function editDistance(a,b){
-        const al=a.length, bl=b.length;
-        const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
-        for(let i=0;i<=al;i++) dp[i][0]=i;
-        for(let j=0;j<=bl;j++) dp[0][j]=j;
-        for(let i=1;i<=al;i++){
-          for(let j=1;j<=bl;j++){
-            const cost=a[i-1]===b[j-1]?0:1;
-            dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
-            if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) dp[i][j]=Math.min(dp[i][j], dp[i-2][j-2]+cost);
-          }
-        }
-        return dp[al][bl];
-      }
-      function similar(a,b,maxRatio=0.25){
-        const d=editDistance(a,b); const L=Math.max(1,Math.max(a.length,b.length)); return (d/L)<=maxRatio;
       }
 
       /* ---------- Detection rules ---------- */
@@ -451,7 +434,6 @@
         return nearPlatform && tokens.length>0;
       }
 
-      // stricter & user-focused detection
       function detectContactSharing(rawText){
         const text=(rawText||"");
         if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
@@ -466,10 +448,10 @@
         return {blocked:false};
       }
 
-      /* ---------- Upsell bubble ---------- */
+      /* ---------- Upsell bubble (sticky) ---------- */
       function showBlockedMessage(){
         const ai=document.createElement('div');
-        ai.className='message girl';
+        ai.className='message girl policy-upsell';
 
         const logo=document.createElement('img');
         logo.src='logo.png';
@@ -487,15 +469,34 @@
         btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
         ai.appendChild(btn);
 
-        const chatBox=document.getElementById('chatBox');
-        chatBox.appendChild(ai);
-        chatBox.scrollTop=chatBox.scrollHeight;
+        const box=document.getElementById('chatBox');
+        const existing=box.querySelector('.policy-upsell');
+        if(!existing){ box.appendChild(ai); }
+        else { box.replaceChild(ai, existing); }
+        box.scrollTop=box.scrollHeight;
 
         if(typeof showCTA==="function") showCTA();
         return ai;
       }
 
-      /* ---------- Monkey patches (user-only enforcement) ---------- */
+      /* ---------- Preserve sticky upsell across loadMessages clears ---------- */
+      const _loadMessages = window.loadMessages;
+      if (typeof _loadMessages === "function") {
+        window.loadMessages = async function(){
+          const box = document.getElementById('chatBox');
+          const sticky = box.querySelector('.policy-upsell');
+          const clone = sticky ? sticky.cloneNode(true) : null;
+
+          await _loadMessages.apply(this, arguments);
+
+          if (clone && !box.querySelector('.policy-upsell')) {
+            box.appendChild(clone);
+            box.scrollTop = box.scrollHeight;
+          }
+        };
+      }
+
+      /* ---------- User-only enforcement ---------- */
       const _sendMessage=window.sendMessage;
       window.sendMessage=async function(){
         const input=document.getElementById('messageInput');
@@ -514,7 +515,6 @@
       let _lastUpsellAt=0;
       window.appendMessage=function(text, sender, isTyping=false){
         if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
-        // Let images pass
         if(/^IMAGE:\s*\S+/i.test(text||"")) return _appendMessage.call(this, text, sender, isTyping);
 
         // 🚫 Apply blocking only to USER messages
