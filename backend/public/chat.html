@@ -305,15 +305,32 @@
           body: JSON.stringify({ girlId, message: messageText })
         });
 
-        if (res.status === 403) {
+        // 🔹 UPDATED: out-of-credits handling (supports 402 or 403)
+        if (res.status === 402 || res.status === 403) {
           const data = await res.json();
           typingBubble.remove();
 
-          appendMessage(data.error || "You're out of credits!", 'girl');
+          // Remove the last user bubble we just appended (so it doesn't “stick”)
+          const msgs = chatBox.querySelectorAll('.message.user');
+          if (msgs.length) msgs[msgs.length - 1].remove();
 
-          // 🔹 NEW: show persistent CTA instead of injecting a one-off button
-          showCTA();
+          // Show AI-style bubble with your message + GO PREMIUM button
+          const ai = document.createElement('div');
+          ai.className = 'message girl';
+          const text = document.createElement('div');
+          text.textContent = (data && (data.message || data.error)) 
+            || "I really wanna meet you, but you're out of credits. Buy more credits so we can meet!";
+          const btn = document.createElement('a');
+          btn.href = '/checkout.html';
+          btn.textContent = 'GO PREMIUM!';
+          btn.style.cssText = 'display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
+          ai.appendChild(text);
+          ai.appendChild(btn);
+          chatBox.appendChild(ai);
           chatBox.scrollTop = chatBox.scrollHeight;
+
+          // keep your persistent CTA bar too
+          showCTA();
           return;
         }
 
