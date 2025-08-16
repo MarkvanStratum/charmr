@@ -238,6 +238,8 @@
         scrollBottomIfWanted();                      // respect that state
 
         if (OUT_OF_CREDITS) showCTA();
+
+        if (TAKEOVER) refreshCredits();             // ★ ADDED: keep credits fresh during live operator chats
       } catch (err) {
         console.error("Error loading messages:", err);
       }
@@ -289,16 +291,19 @@
       const typingBubble = appendMessage("...", 'girl', true);
 
       try {
+        // ★ ADDED: tell backend to charge even if takeover is active
+        const forceCharge = !!TAKEOVER;  // hint for backend to deduct in live mode
+
         const res = await fetch(`${backendUrl}/api/chat`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
           },
-          body: JSON.stringify({ girlId, message: messageText })
+          body: JSON.stringify({ girlId, message: messageText, forceCharge }) // ★ ADDED
         });
 
-        refreshCredits();                    // ⬅️ update credits now (after POST hits backend)
+        refreshCredits();                    // update credits now (after POST hits backend)
 
         if (res.status === 402 || res.status === 403) {
           const data = await res.json();
@@ -320,7 +325,7 @@
           chatBox.appendChild(ai);
           scrollBottomIfWanted(true);   // ensure the upsell is visible
           showCTA();
-          refreshCredits();              // ⬅️ reflect the zero/low credits state immediately
+          refreshCredits();              // reflect the zero/low credits state immediately
           return;
         }
 
@@ -333,16 +338,16 @@
           checkTakeover();
           appendMessage("…", "girl", true);
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
-          refreshCredits();              // ⬅️ update even when takeover engages
+          refreshCredits();              // update even when takeover engages
           return;
         }
 
         appendMessage(data.reply || "(No reply received)", 'girl');
-        refreshCredits();                // ⬅️ keep credits fresh after successful reply
+        refreshCredits();                // keep credits fresh after successful reply
       } catch (err) {
         console.error("Chat error:", err);
         typingBubble.remove();
-        refreshCredits();                // ⬅️ also refresh on error, in case backend already deducted
+        refreshCredits();                // also refresh on error
       }
     }
 
