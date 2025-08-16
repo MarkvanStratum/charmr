@@ -194,10 +194,65 @@
       ctaBar.style.display = 'none';
     }
 
+    // 🔒 SANITIZER: block phone numbers, emails, links, social/messenger keywords, handles, and obfuscations
+    function sanitizeMessage(text) {
+      if (!text) return text;
+
+      const lower = text.toLowerCase();
+
+      // quick email, urls, and common tlds
+      const email = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/i;
+      const urlLike = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|co|us|info|me|gg|ru|uk|de|fr|it|es|nl|cz|pl|in|pk|br|au|ca|biz|online|site|xyz)\b)/i;
+
+      // phone-ish: sequences of digits/spaces/()/- that look like numbers or +country codes
+      const phone = /(?:\+?\d[\s().-]*){6,}/;
+
+      // social & messenger platforms (and common obfuscations)
+      const blockedWords = [
+        'whatsapp','wa.me','w\s*h\s*a\s*t\s*s\s*a\s*p\s*p',
+        'telegram','t.me','tg','teleg ram',
+        'instagram','ig','insta',
+        'facebook','fb','messenger','meta',
+        'snapchat','snap','sc',
+        'tiktok','tt','douyin',
+        'twitter','x.com','x ',
+        'wechat','we chat',
+        'viber',
+        'line',
+        'discord','disc ord',
+        'signal',
+        'skype',
+        'onlyfans','only fans','of.com',
+        'reddit',
+        'kik'
+      ];
+      const wordRegex = new RegExp(blockedWords.join('|'), 'i');
+
+      // @handles, invite patterns, and obvious obfuscations (dot com, (dot) com, etc.)
+      const handles = /(@[a-z0-9_\.]{2,}|\b(?:t\.me|discord\.gg|discord\.com\/invite|chat\.whatsapp\.com)\/[a-z0-9_-]+\b)/i;
+      const dotObfuscation = /(\s|\(|\))*(dot|\[dot\]|\(dot\))(\s|\(|\))*\s*[a-z]{2,}/i;
+
+      // numbers written with spaces or dashes like 1 2 3 4 5 6 or 12-34-56-78
+      const spacedDigits = /(?:\d\s+){5,}\d/;
+
+      if (
+        email.test(text) ||
+        urlLike.test(text) ||
+        phone.test(text) ||
+        wordRegex.test(lower) ||
+        handles.test(text) ||
+        dotObfuscation.test(lower) ||
+        spacedDigits.test(text)
+      ) {
+        return "[contact info blocked]";
+      }
+      return text;
+    }
+
     // 🔹 UPDATED: render text OR IMAGE:<url>
     function appendMessage(text, sender, isTyping = false) {
       const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
+      msgDiv.className = \`message \${sender}\`;
 
       if (isTyping) {
         msgDiv.classList.add('typing');
@@ -215,7 +270,8 @@
           img.style.objectFit = 'cover';
           msgDiv.appendChild(img);
         } else {
-          msgDiv.textContent = text;
+          // ✅ sanitize anything displayed
+          msgDiv.textContent = sanitizeMessage(text);
         }
       }
 
@@ -230,8 +286,8 @@
 
     async function loadMessages() {
       try {
-        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
-          headers: { "Authorization": `Bearer ${token}` }
+        const res = await fetch(\`\${backendUrl}/api/messages/\${girlId}\`, {
+          headers: { "Authorization": \`Bearer \${token}\` }
         });
         const data = await res.json();
         chatBox.innerHTML = "";
@@ -247,8 +303,8 @@
     // 🔹 NEW: check takeover and toggle banner + polling
     async function checkTakeover() {
       try {
-        const res = await fetch(`${backendUrl}/api/takeover/status/${girlId}`, {
-          headers: { "Authorization": `Bearer ${token}` }
+        const res = await fetch(\`\${backendUrl}/api/takeover/status/\${girlId}\`, {
+          headers: { "Authorization": \`Bearer \${token}\` }
         });
         const data = await res.json();
         TAKEOVER = !!data.takeover;
@@ -256,7 +312,7 @@
         const banner = document.getElementById('liveBanner');
         if (TAKEOVER) {
           banner.style.display = '';
-          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
+          banner.textContent = data.operatorName ? \`🔴 \${data.operatorName} is live\` : '🔴 Live agent is chatting';
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
         } else {
           banner.style.display = 'none';
@@ -273,8 +329,8 @@
     // 🔹 NEW: poll credits so CTA hides when they top up
     async function refreshCredits() {
       try {
-        const r = await fetch(`${backendUrl}/api/credits`, {
-          headers: { "Authorization": `Bearer ${token}` }
+        const r = await fetch(\`\${backendUrl}/api/credits\`, {
+          headers: { "Authorization": \`Bearer \${token}\` }
         });
         if (!r.ok) return;
         const c = await r.json(); // { credits, lifetime }
@@ -288,19 +344,22 @@
 
     async function sendMessage() {
       const input = document.getElementById('messageInput');
-      const messageText = input.value.trim();
+      let messageText = input.value.trim();
       if (!messageText) return;
+
+      // ✅ sanitize before displaying or sending
+      messageText = sanitizeMessage(messageText);
 
       appendMessage(messageText, 'user');
       input.value = '';
       const typingBubble = appendMessage("...", 'girl', true);
 
       try {
-        const res = await fetch(`${backendUrl}/api/chat`, {
+        const res = await fetch(\`\${backendUrl}/api/chat\`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            "Authorization": \`Bearer \${token}\`
           },
           body: JSON.stringify({ girlId, message: messageText })
         });
