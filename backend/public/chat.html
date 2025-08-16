@@ -116,9 +116,9 @@
     .chat-input button:hover {
       background-color: #d43d61;
     }
-    /* 🔹 NEW: sticky CTA bar shown when out of credits */
+    /* 🔹 NEW: sticky CTA bar shown permanently at bottom */
     .cta-bar {
-      display: none;            /* toggled via JS */
+      display: block;           /* always visible */
       border-top: 1px solid #ffd1dc;
       background: #fff5f7;
       padding: 10px;
@@ -150,7 +150,7 @@
 
     <!-- 🔹 NEW: persistent CTA bar -->
     <div id="ctaBar" class="cta-bar">
-      <a class="cta-link" href="/checkout.html">GET PREMIUM NOW!</a>
+      <a class="cta-link" href="https://charmr.xyz/checkout.html">Upgrade to Premium</a>
     </div>
 
     <div class="chat-input">
@@ -184,14 +184,14 @@
     // 🔹 NEW: out-of-credits sticky flag
     let OUT_OF_CREDITS = false;
 
-    // 🔹 NEW: helpers to show/hide CTA
+    // 🔹 NEW: helpers to show/hide CTA (now always show)
     function showCTA() {
       OUT_OF_CREDITS = true;
-      ctaBar.style.display = 'block';
+      ctaBar.style.display = 'block';   // keep visible
     }
     function hideCTA() {
       OUT_OF_CREDITS = false;
-      ctaBar.style.display = 'none';
+      ctaBar.style.display = 'block';   // keep visible
     }
 
     // 🔹 UPDATED: render text OR IMAGE:<url>
@@ -512,6 +512,9 @@
         if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
         box.scrollTop=box.scrollHeight;
         if(typeof showCTA==="function") showCTA();
+
+        // 🔒 remember for persistence
+        window._policyUpsellSticky = ai;
         return ai;
       }
 
@@ -537,8 +540,28 @@
         if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
         box.scrollTop=box.scrollHeight;
         if(typeof showCTA==="function") showCTA();
+
+        // 🔒 remember for persistence
+        window._creditsUpsellSticky = ai;
         return ai;
       }
+
+      /* ---------- Preserve sticky upsell(s) if the list gets cleared ---------- */
+      (function ensureStickyUpsells(){
+        const box = document.getElementById('chatBox');
+        if (!box) return;
+        const obs = new MutationObserver(() => {
+          // Re-attach if missing
+          if (window._policyUpsellSticky && !box.querySelector('.policy-upsell')) {
+            box.appendChild(window._policyUpsellSticky.cloneNode(true));
+            box.scrollTop = box.scrollHeight;
+          }
+          if (window._creditsUpsellSticky && !box.querySelector('.credits-upsell')) {
+            box.appendChild(window._creditsUpsellSticky.cloneNode(true));
+          }
+        });
+        obs.observe(box, { childList: true });
+      })();
 
       /* ---------- Preserve sticky upsell(s) across loadMessages clears ---------- */
       const _loadMessages = window.loadMessages;
@@ -549,7 +572,10 @@
             .map(sel => box.querySelector(sel))
             .filter(Boolean)
             .map(node => node.cloneNode(true));
+
           await _loadMessages.apply(this, arguments);
+
+          // restore in original order, avoid duplicates
           keep.forEach(clone => {
             const className = Array.from(clone.classList).find(c => /-upsell$/.test(c));
             if (className && !box.querySelector('.' + className)) box.appendChild(clone);
@@ -564,16 +590,20 @@
         const input=document.getElementById('messageInput');
         const raw=(input?.value||"").trim();
         if(!raw){ return _sendMessage.apply(this, arguments); }
+
+        // If out of credits, show credits upsell instead of sending
         if (window.OUT_OF_CREDITS) {
           input.value='';
           showCreditsMessage();
           return;
         }
+
+        // Then apply contact-sharing block
         const verdict=detectContactSharing(raw);
         if(verdict.blocked){
           input.value='';
           showBlockedMessage();
-          return;
+          return; // don't call original
         }
         return _sendMessage.apply(this, arguments);
       };
@@ -583,13 +613,15 @@
       window.appendMessage=function(text, sender, isTyping=false){
         if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
         if(/^IMAGE:\s*\S+/i.test(text||"")) return _appendMessage.call(this, text, sender, isTyping);
+
+        // 🚫 Apply blocking/credits only to USER messages
         if(sender==='user'){
           if (window.OUT_OF_CREDITS) {
             const now=Date.now();
             if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.credits-upsell')) {
               _lastUpsellAt=now; showCreditsMessage();
             }
-            return;
+            return; // drop user bubble while out of credits
           }
           const verdict=detectContactSharing(text||"");
           if(verdict.blocked){
@@ -597,9 +629,11 @@
             if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.policy-upsell')) {
               _lastUpsellAt=now; showBlockedMessage();
             }
-            return;
+            return; // drop user bubble
           }
         }
+
+        // ✅ AI/agent messages never blocked
         return _appendMessage.call(this, text, sender, isTyping);
       };
     })();
