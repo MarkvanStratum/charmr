@@ -411,6 +411,21 @@
         }
         return dp[al][bl];
       }
+
+      // escape for regex building
+      function escapeRegExp(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
+
+      // Strict "near platform" detector (word-boundary match on original text, ignore very short keys)
+      function nearPlatformWord(raw){
+        const text=(raw||"").toLowerCase();
+        for(const k of SOCIAL_KEYWORDS){
+          if(k.length<3) continue; // ignore wa/tg/tt/x for this specific rule
+          const re=new RegExp(`(^|[^a-z0-9])${escapeRegExp(k)}([^a-z0-9]|$)`,"i");
+          if(re.test(text)) return true;
+        }
+        return false;
+      }
+
       function containsPlatformWord(raw){
         const norm=normalizeTokens(raw);
         const tokens=norm.match(/[a-z0-9]{3,}/g)||[]; // ignore very short tokens
@@ -457,17 +472,19 @@
         return !!cand;
       }
       function hasAtHandle(text){ return /@[a-z0-9._-]{3,}/i.test(text); }
+
+      // ✅ FIXED: use original text + word boundaries for the "near platform + handle-like token" rule
       function hasBareHandleToken(text){
-        const norm=normalizeTokens(text);
-        const tokens=norm.match(/\b[a-z0-9][a-z0-9._-]{5,}\b/g)||[];
-        const nearPlatform=SOCIAL_KEYWORDS.some(k=>norm.includes(k));
-        return nearPlatform && tokens.length>0;
+        const raw=(text||"").toLowerCase();
+        const tokens=raw.match(/\b[a-z0-9][a-z0-9._-]{5,}\b/g)||[];
+        const near=nearPlatformWord(raw);
+        return near && tokens.length>0;
       }
 
       function detectContactSharing(rawText){
         const text=(rawText||"");
 
-        // Fixed fuzzy platform word detection
+        // Fuzzy platform word detection (misspellings like "whartsapp")
         if (containsPlatformWord(text)) return {blocked:true,reason:"platform-word"};
 
         if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
