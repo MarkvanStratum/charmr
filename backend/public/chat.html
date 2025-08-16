@@ -364,5 +364,175 @@
     setInterval(checkTakeover, 10000);
     setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
   </script>
+
+  <!-- 🔒 Contact-sharing blocker & Premium upsell (appended; no other changes) -->
+  <script>
+    (function(){
+      /* ---------- Helpers ---------- */
+      function stripZeroWidth(s){return (s||"").replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g,"");}
+      function mapHomoglyphs(s){
+        const map={"А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O","Р":"P","С":"C","Т":"T","Х":"X","а":"a","е":"e","о":"o","р":"p","с":"c","х":"x",
+                   "Α":"A","Β":"B","Ε":"E","Η":"H","Ι":"I","Κ":"K","Μ":"M","Ν":"N","Ο":"O","Ρ":"P","Τ":"T","Χ":"X","Υ":"Y",
+                   "α":"a","β":"b","ε":"e","ι":"i","κ":"k","ο":"o","ρ":"p","τ":"t","χ":"x","υ":"y",
+                   "＠":"@","！":"!","＃":"#","０":"0","１":"1","２":"2","３":"3","４":"4","５":"5","６":"6","７":"7","８":"8","９":"9"};
+        return s.split("").map(ch=>map[ch]||ch).join("");
+      }
+      function collapseSeparators(s){
+        return s.replace(/([a-z0-9])[\s._\-–—~|/\\:,;'"`^*+=)(\[\]{}<>]+(?=[a-z0-9])/gi,"$1");
+      }
+      function wordsToDigits(s){
+        const num={zero:"0",one:"1",two:"2",three:"3",four:"4",five:"5",six:"6",seven:"7",eight:"8",nine:"9"};
+        return s.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi,m=>num[m.toLowerCase()]);
+      }
+      function normalizeAtDot(s){
+        let out=s.replace(/\s*(?:\(at\)|\[at\]|\{at\}|a\s*[\]\)\}]*\s*t|\ba\s*t\b)/gi,"@");
+        out=out.replace(/\s*(?:\(dot\)|\[dot\]|\{dot\}|d\s*o\s*t|\bd0t\b)/gi,".");
+        return out;
+      }
+      function normalizeForDetection(input){
+        let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=wordsToDigits(s); s=normalizeAtDot(s); s=s.toLowerCase(); return s;
+      }
+      function normalizeTokens(input){
+        let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=collapseSeparators(s); s=wordsToDigits(s); s=s.toLowerCase(); return s;
+      }
+      function editDistance(a,b){
+        const al=a.length, bl=b.length;
+        const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
+        for(let i=0;i<=al;i++) dp[i][0]=i;
+        for(let j=0;j<=bl;j++) dp[0][j]=j;
+        for(let i=1;i<=al;i++){
+          for(let j=1;j<=bl;j++){
+            const cost=a[i-1]===b[j-1]?0:1;
+            dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
+            if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) dp[i][j]=Math.min(dp[i][j], dp[i-2][j-2]+cost);
+          }
+        }
+        return dp[al][bl];
+      }
+      function similar(a,b,maxRatio=0.25){
+        const d=editDistance(a,b); const L=Math.max(1,Math.max(a.length,b.length)); return (d/L)<=maxRatio;
+      }
+
+      /* ---------- Detection rules ---------- */
+      const SOCIAL_KEYWORDS=["whatsapp","wa","telegram","tg","t.me","discord","discordapp","discord.gg","instagram","insta","ig",
+        "facebook","fb","messenger","snapchat","snap","tiktok","tt","wechat","weixin","line","viber","skype","signal",
+        "kik","twitter","x.com","x","threads","clubhouse","tumblr","pinterest","onlyfans"];
+      const SOCIAL_DOMAINS=["t.me","wa.me","web.whatsapp","whatsapp.com","discord.gg","discord.com","instagram.com","ig.me",
+        "facebook.com","fb.com","m.me","snapchat.com","tiktok.com","vm.tiktok.com","twitter.com","x.com","line.me",
+        "wechat.com","skype.com","signal.org","viber.com","onlyfans.com","threads.net","pinterest.com"];
+      const EMAIL_DOMAINS_COMMON=["gmail.com","googlemail.com","outlook.com","hotmail.com","live.com","yahoo.com","icloud.com",
+        "me.com","proton.me","protonmail.com","pm.me","aol.com","zoho.com","mail.com","gmx.com","yandex.com"];
+      const CONTACT_CUES=["dm me","pm me","text me","message me on","reach me at","add me on","my handle","my user","my username",
+        "on insta","on ig","on telegram","on tg","on whatsapp","on wa","snap me","my discord","my skype","my wechat","my line","my viber","my signal"];
+
+      const URL_RE=/\b((https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}\/?[^\s]*)\b/gi;
+      const EMAIL_RE=/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
+
+      function hasSocialUrl(text){
+        const urls=(text.match(URL_RE)||[]).map(u=>u.toLowerCase());
+        return urls.some(u=>SOCIAL_DOMAINS.some(d=>u.includes(d)));
+      }
+      function hasEmail(text){ return EMAIL_RE.test(normalizeForDetection(text)); }
+      function looksLikePhone(raw){ const digits=raw.replace(/[^\d]/g,""); return digits.length>=6; }
+      function numberWordRun(raw){ return ((raw.match(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi)||[]).length)>=6; }
+      function hasPhone(text){ return looksLikePhone(text)||numberWordRun(text); }
+      function hitsPlatformFuzzy(text){
+        const tokens=normalizeTokens(text).split(/\s+/).filter(Boolean);
+        for(const t of tokens){
+          for(const kw of SOCIAL_KEYWORDS){
+            if(t===kw) return true;
+            if(t.length>=4 && similar(t,kw)) return true;
+          }
+        }
+        return false;
+      }
+      function looksLikeHandleWithCue(text){
+        const norm=normalizeTokens(text);
+        const hasCue=CONTACT_CUES.some(c=>norm.includes(c));
+        if(!hasCue) return false;
+        const cand=norm.match(/\b[a-z0-9][a-z0-9._-]{4,}\b/g);
+        return !!cand;
+      }
+      function hasAtHandle(text){ return /@[a-z0-9._-]{3,}/i.test(text); }
+      function hasBareHandleToken(text){
+        const norm=normalizeTokens(text);
+        const tokens=norm.match(/\b[a-z0-9][a-z0-9._-]{5,}\b/g)||[];
+        const nearPlatform=SOCIAL_KEYWORDS.some(k=>norm.includes(k));
+        return nearPlatform && tokens.length>0;
+      }
+
+      function detectContactSharing(rawText){
+        const text=stripZeroWidth(rawText||"");
+        if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
+        if(hasEmail(text))     return {blocked:true,reason:"email"};
+        if(hasPhone(text))     return {blocked:true,reason:"phone"};
+        if(hitsPlatformFuzzy(text)) return {blocked:true,reason:"platform"};
+        if(looksLikeHandleWithCue(text)) return {blocked:true,reason:"handle-with-cue"};
+        if(hasAtHandle(text)) return {blocked:true,reason:"at-handle"};
+        if(hasBareHandleToken(text)) return {blocked:true,reason:"bare-handle-with-platform"};
+        const norm=normalizeForDetection(text);
+        if(EMAIL_DOMAINS_COMMON.some(d=>norm.includes(d))) return {blocked:true,reason:"email-domain"};
+        if(/\b(at|dot)\b/i.test(text) && /[a-z0-9._-]{3,}/i.test(text)) return {blocked:true,reason:"obfuscated-contact"};
+        return {blocked:false};
+      }
+
+      /* ---------- Upsell bubble ---------- */
+      function showBlockedMessage(){
+        const ai=document.createElement('div');
+        ai.className='message girl';
+
+        const logo=document.createElement('img');
+        logo.src='logo.png';
+        logo.alt='Logo';
+        logo.style.cssText='max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
+        ai.appendChild(logo);
+
+        const text=document.createElement('div');
+        text.textContent="⛔ You can’t share contact details here. If you want to share contact details, please upgrade to Premium.";
+        ai.appendChild(text);
+
+        const btn=document.createElement('a');
+        btn.href='https://charmr.xyz/checkout.html';
+        btn.textContent='Upgrade to Premium';
+        btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
+        ai.appendChild(btn);
+
+        const chatBox=document.getElementById('chatBox');
+        chatBox.appendChild(ai);
+        chatBox.scrollTop=chatBox.scrollHeight;
+
+        if(typeof showCTA==="function") showCTA();
+        return ai;
+      }
+
+      /* ---------- Monkey patches (no other changes) ---------- */
+      const _sendMessage=window.sendMessage;
+      window.sendMessage=async function(){
+        const input=document.getElementById('messageInput');
+        const raw=(input?.value||"").trim();
+        if(!raw){ return _sendMessage.apply(this, arguments); }
+        const verdict=detectContactSharing(raw);
+        if(verdict.blocked){
+          input.value='';
+          showBlockedMessage();
+          return; // do not call original
+        }
+        return _sendMessage.apply(this, arguments);
+      };
+
+      const _appendMessage=window.appendMessage;
+      window.appendMessage=function(text, sender, isTyping=false){
+        if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
+        const m=/^IMAGE:\s*(\S+)/i.exec(text||"");
+        if(m) return _appendMessage.call(this, text, sender, isTyping);
+
+        const verdict=detectContactSharing(text||"");
+        if(verdict.blocked){
+          return showBlockedMessage();
+        }
+        return _appendMessage.call(this, text, sender, isTyping);
+      };
+    })();
+  </script>
 </body>
 </html>
