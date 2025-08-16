@@ -2,537 +2,422 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Chat</title>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-FDQ6REQWS8');
-</script>
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Checkout</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+  <script src="https://js.stripe.com/v3/"></script>
   <style>
-    body {
-      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+    :root{
+      --brand:#ef476f;
+      --brand-dark:#d43d61;
+      --ink:#0f172a;
+      --sub:#475569;
+      --bg:#fdf2f8;
+      --card:#ffffff;
+      --line:#e5e7eb;
+      --ring:#ffd1e0;
+      --ok:#10b981;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
       font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      margin:0;
+      padding: 12px;
+      padding-top: calc(12px + env(safe-area-inset-top)); /* ensure logo isn’t cut off */
+      display:flex;
+      flex-direction:column;          /* logo on top, form below */
+      align-items:center;
+      justify-content:flex-start;
+      -webkit-text-size-adjust:100%;
+      overflow-x:hidden;
     }
-    .chat-container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.2);
-      width: 400px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+
+    /* LOGO BAR */
+    .logo-bar{
+      width:100%;
+      max-width: 920px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:14px 0;
+      margin:0 12px 12px;
+      box-shadow: 0 4px 14px rgba(15,23,42,.06);
     }
-    .chat-header {
-      display: flex;
-      align-items: center;
-      background-color: #ef476f;
-      color: white;
-      padding: 10px;
-      position: relative;
-      flex-shrink: 0;
+    .logo-bar img{max-height:48px; width:auto}
+
+    /* CARD (mobile-first, compact) */
+    #payment-form{
+      width:100%;
+      max-width: 560px;
+      background:var(--card);
+      border-radius:14px;
+      border:1px solid #f8c4d3;
+      box-shadow: 0 10px 28px rgba(239,71,111,.14);
+      padding:16px;
+      margin:0 12px 24px;
     }
-    .chat-header img {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      margin-right: 10px;
-      border: 2px solid white;
-    }
-    /* 🔹 NEW: live agent banner */
-    #liveBanner {
-      background:#ffe082;
-      color:#4a3b00;
-      padding:6px 10px;
-      font-size:12px;
+
+    /* HERO */
+    .hero{display:block; margin-bottom:12px}
+    .hero h1{
+      margin:0 0 8px 0;
+      font-size: clamp(18px, 5vw, 22px);
+      letter-spacing:.4px;
+      text-transform:uppercase;
+      color:var(--brand);
       text-align:center;
     }
-    .chat-box {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      background-color: #fff0f3;
-      display: flex;
-      flex-direction: column;
+    .hero-copy{
+      background:#fff6fa;
+      border:1px solid var(--ring);
+      border-radius:10px;
+      padding:10px;
+      font-size:14px;
+      line-height:1.5;
+      color:var(--ink);
     }
-    .message {
-      margin: 8px 0;
-      padding: 8px 12px;
-      border-radius: 15px;
-      max-width: 70%;
-      word-wrap: break-word;
+    .steps{
+      display:flex; gap:6px; flex-wrap:wrap;
+      margin-top:8px; color:var(--sub); font-size:12px; justify-content:center;
     }
-    .message.user {
-      background-color: #ef476f;
-      color: white;
-      align-self: flex-end;
+    .step{
+      background:#fff; border:1px solid var(--line); border-radius:999px;
+      padding:6px 10px;
     }
-    .message.girl {
-      background-color: #f1f1f1;
-      color: black;
-      align-self: flex-start;
+
+    /* small badges row */
+    .badges{
+      display:flex; gap:10px; justify-content:center; align-items:center;
+      margin:4px 0 10px; opacity:.95;
     }
-    .message.typing {
-      font-style: italic;
-      color: #888;
-      animation: blink 1s infinite;
-      max-width: 40px;
-      padding: 8px;
-      text-align: center;
-      border-radius: 50%;
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px; font-size:12px; color:var(--sub);
     }
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
+
+    /* PLANS */
+    .plans{display:grid; gap:10px; margin:14px 0 10px}
+    .plan{
+      display:grid; grid-template-columns:auto 1fr; gap:10px;
+      padding:10px; border:1px solid var(--line); border-radius:12px; background:#fff;
+      transition:box-shadow .18s ease, border-color .18s ease;
     }
-    .chat-input {
-      display: flex;
-      border-top: 1px solid #ccc;
+    .plan:hover{box-shadow:0 8px 18px rgba(15,23,42,.06)}
+    .plan input[type="radio"]{margin-top:6px; accent-color:var(--brand)}
+    .plan label{display:block; cursor:pointer}
+    .plan-title{
+      display:block;
+      font-size: clamp(20px, 5.2vw, 24px);
+      font-weight:900; line-height:1.1; color:#0b0b0b;
     }
-    .chat-input input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      font-size: 14px;
+    .plan-fine{display:block; font-size:12px; color:var(--sub); margin-top:4px}
+    .plan-popular{
+      display:inline-block; font-size:11px; font-weight:800; letter-spacing:.3px;
+      background:#fff0f4; color:#b91c1c; border:1px solid #ffd1e0; padding:2px 8px; border-radius:999px; margin-left:8px;
     }
-    .chat-input button {
-      background-color: #ef476f;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      cursor: pointer;
+    .plan input[type="radio"]:checked + label{
+      border-radius:10px; outline:3px solid #ffe5ee; background:#fff8fb;
+      padding:4px 6px;
     }
-    .chat-input button:hover {
-      background-color: #d43d61;
+
+    /* FORM */
+    label[for="cardholder-name"]{
+      display:block; margin:10px 0 6px; font-weight:700; font-size:14px
     }
-    /* 🔹 NEW: sticky CTA bar shown when out of credits */
-    .cta-bar {
-      display: none;            /* toggled via JS */
-      border-top: 1px solid #ffd1dc;
-      background: #fff5f7;
-      padding: 10px;
-      text-align: center;
-      flex-shrink: 0;           /* always visible at bottom of container */
+    input[type="text"]{
+      width:100%; padding:12px; border:1px solid #d1d5db; border-radius:10px; font-size:16px; margin-bottom:10px;
     }
-    .cta-link {
-      display: inline-block;
-      background: #ef476f;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
+    #card-element{
+      padding:12px; border:1px solid #d1d5db; border-radius:10px; margin-bottom:10px; background:#fafafa;
     }
+
+    /* TRUST + CTA */
+    .trust{
+      display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 10px; color:var(--sub); font-size:12px; justify-content:center;
+    }
+    .tag{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px}
+    .ok{color:var(--ok); font-weight:800}
+
+    #submit{
+      width:100%;
+      background:var(--brand); color:#fff; border:none; padding:14px 16px;
+      border-radius:12px; font-size:16px; font-weight:800; letter-spacing:.3px;
+      cursor:pointer;
+    }
+    #submit:hover{background:var(--brand-dark)}
+    #submit[disabled]{opacity:.7; cursor:not-allowed}
+
+    #message{margin-top:10px; font-size:14px; color:#b91c1c}
+
+    /* Loading overlay */
+    .loading-overlay{
+      position:fixed; inset:0;
+      background:rgba(255,255,255,.92);
+      display:none;
+      align-items:center; justify-content:center; flex-direction:column;
+      z-index:9999;
+      backdrop-filter:saturate(1.1) blur(2px);
+    }
+    .loading-overlay[aria-hidden="false"]{display:flex}
+    .loading-box{
+      width:min(92vw,420px);
+      background:#fff; border:1px solid var(--line); border-radius:14px;
+      box-shadow:0 10px 28px rgba(15,23,42,.12);
+      padding:18px;
+      text-align:center;
+    }
+    .loading-title{
+      font-weight:900; letter-spacing:.3px; margin:2px 0 10px; color:var(--ink)
+    }
+    .progress-wrap{
+      width:100%; height:10px; background:#f3f4f6; border-radius:999px; overflow:hidden; border:1px solid #e5e7eb;
+    }
+    .progress-bar{
+      width:0%; height:100%; background:linear-gradient(90deg, var(--brand), var(--brand-dark));
+      animation: loadingBar 2.2s ease-in-out infinite;
+    }
+    @keyframes loadingBar{
+      0%{width:0%}
+      60%{width:80%}
+      100%{width:100%}
+    }
+    .loading-sub{font-size:12px; color:var(--sub); margin-top:8px}
   </style>
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
-  <div class="chat-container">
-    <div class="chat-header">
-      <img id="chatPhoto" src="" alt="Girl Photo">
-      <h2 id="chatName"></h2>
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+<div class="logo-bar" style="display:flex; flex-direction:column; align-items:center;">
+  <img src="logo.png" alt="Site logo" style="max-width:140px; height:auto;">
+  <p style="margin:4px 0 12px; font-size:8px; color:#475569; text-align:center; font-weight:500;">
+    It's Tinder without the bullshit, just sex, the way you like it!
+  </p>
+</div>
+
+
+</div>
+
+<!-- Loading overlay -->
+<div id="loading-overlay" class="loading-overlay" aria-hidden="true" aria-live="polite" aria-label="Processing payment">
+  <div class="loading-box" role="status">
+    <div class="loading-title">Processing your payment…</div>
+    <div class="progress-wrap" aria-hidden="true">
+      <div class="progress-bar"></div>
     </div>
-    <!-- 🔹 NEW: Live banner placeholder (inserted dynamically) -->
-    <div id="liveBanner" style="display:none"></div>
+    <div class="loading-sub">You may be asked to complete a quick 3-D Secure check with your bank. Please don’t close this window.</div>
+  </div>
+</div>
+<!-- /Loading overlay -->
 
-    <div class="chat-box" id="chatBox"></div>
+<form id="payment-form" aria-labelledby="age-title">
+  <!-- HERO -->
+  <div class="hero" role="region" aria-label="Checkout intro">
+    <h1 id="age-title">Unlock Special Features</h1>
 
-    <!-- 🔹 NEW: persistent CTA bar -->
-    <div id="ctaBar" class="cta-bar">
-      <a class="cta-link" href="/checkout.html">GET PREMIUM NOW!</a>
+    <div class="badges" aria-label="Security and privacy badges">
+      <div class="badge">🔒 SSL Secure</div>
+      <div class="badge">🕵️ Discreet Billing</div>
+      <div class="badge">✅ Cancel Anytime</div>
     </div>
 
-    <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="Type a message...">
-      <button onclick="sendMessage()">Send</button>
+    <div class="hero-copy">
+      Start your free trial today. Keep the conversation flowing with flirty fun, 24/7. After your trial you’ll be billed monthly, and you can cancel anytime.
+    </div>
+
+    <div class="steps" aria-label="How it works">
+      <div class="step">① Choose a plan</div>
+      <div class="step">② Verify card</div>
+      <div class="step">③ Start chatting</div>
     </div>
   </div>
 
-  <script src="girls.js"></script>
-  <script>
-    const backendUrl = "https://charmr-jfmc.onrender.com"; 
-    const token = localStorage.getItem("token");
+  <!-- PLANS (price IDs unchanged) -->
+  <div class="plans" role="group" aria-label="Subscription plans">
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
+      <label for="plan5">
+        <span class="plan-title">Starter — Personal Chats</span>
+        <span class="plan-fine">Send pictures, limited chat. Free today, then <span class="curr-symbol">£</span>0.16/day. Cancel anytime.</span>
+      </label>
+    </div>
 
-    if (!token) {
-      window.location.href = "login.html";
-    }
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
+      <label for="plan20">
+        <span class="plan-title">Plus — Extended Messages <span class="plan-popular">Most Popular</span></span>
+        <span class="plan-fine">Send pictures, share contacts and social media, extended chat. Free today, then <span class="curr-symbol">£</span>20/month. Cancel anytime.</span>
+      </label>
+    </div>
 
-    const params = new URLSearchParams(window.location.search);
-    const girlId = parseInt(params.get('id'));
-    const girl = girls.find(g => g.id === girlId);
+    <div class="plan">
+      <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
+      <label for="plan99">
+        <span class="plan-title">Lifetime — Unlimited Chats</span>
+        <span class="plan-fine">All features unlimited. <span class="curr-symbol">£</span>99 one-time. Priority support included.</span>
+      </label>
+    </div>
+  </div>
 
-    const chatBox = document.getElementById('chatBox');
-    const ctaBar = document.getElementById('ctaBar'); // 🔹 NEW
-    document.getElementById('chatName').textContent = girl.name;
-    document.getElementById('chatPhoto').src = girl.image;
+  <label for="cardholder-name">Name on card</label>
+  <input type="text" id="cardholder-name" placeholder="Full name" required />
 
-    // 🔹 NEW: takeover state & polling handle
-    let TAKEOVER = false;
-    let pollTimer = null;
+  <div id="card-element"><!-- Stripe injects card input here --></div>
 
-    // 🔹 NEW: out-of-credits sticky flag
-    let OUT_OF_CREDITS = false;
+  <!-- Trust row -->
+  <div class="trust">
+    <div class="tag">🔒 Secure payment via Stripe</div>
+    <div class="tag">🕵 Discreet billing</div>
+    <div class="tag ok">✔ Age 18+ only</div>
+  </div>
 
-    // 🔹 NEW: helpers to show/hide CTA
-    function showCTA() {
-      OUT_OF_CREDITS = true;
-      ctaBar.style.display = 'block';
-    }
-    function hideCTA() {
-      OUT_OF_CREDITS = false;
-      ctaBar.style.display = 'none';
-    }
+  <button type="submit" id="submit">Start Free Trial</button>
+  <div id="message"></div>
+</form>
 
-    // 🔹 UPDATED: render text OR IMAGE:<url>
-    function appendMessage(text, sender, isTyping = false) {
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
+<script>
+  // Stripe integration (unchanged backend behavior)
+  const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
+  const elements = stripe.elements();
+  const card = elements.create("card");
+  card.mount("#card-element");
 
-      if (isTyping) {
-        msgDiv.classList.add('typing');
-        msgDiv.textContent = '...';
-      } else {
-        const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
-        if (m) {
-          const img = document.createElement('img');
-          img.src = m[1];
-          img.alt = 'image';
-          img.style.maxWidth = '220px';
-          img.style.maxHeight = '260px';
-          img.style.borderRadius = '10px';
-          img.style.display = 'block';
-          img.style.objectFit = 'cover';
-          msgDiv.appendChild(img);
-        } else {
-          msgDiv.textContent = text;
-        }
-      }
+  const form = document.getElementById("payment-form");
+  const message = document.getElementById("message");
+  const submitBtn = document.getElementById("submit");
 
-      chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-      return msgDiv;
-    }
+  const overlay = document.getElementById('loading-overlay');
+  function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
+  function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
 
-    function randomDelay(min = 700, max = 2000) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+  // Track iframes present BEFORE submit so we only react to NEW ones
+  let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
 
-    async function loadMessages() {
-      try {
-        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        const data = await res.json();
-        chatBox.innerHTML = "";
-        data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
-
-        // 🔹 keep CTA visible if we're out of credits
-        if (OUT_OF_CREDITS) showCTA();
-      } catch (err) {
-        console.error("Error loading messages:", err);
-      }
-    }
-
-    // 🔹 NEW: check takeover and toggle banner + polling
-    async function checkTakeover() {
-      try {
-        const res = await fetch(`${backendUrl}/api/takeover/status/${girlId}`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        const data = await res.json();
-        TAKEOVER = !!data.takeover;
-
-        const banner = document.getElementById('liveBanner');
-        if (TAKEOVER) {
-          banner.style.display = '';
-          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
-          if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
-        } else {
-          banner.style.display = 'none';
-          if (pollTimer) {
-            clearInterval(pollTimer);
-            pollTimer = null;
+  function startThreeDSWatcher(){
+    baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+    const isThreeDSLike = (iframe) => {
+      const t = (iframe.getAttribute('title') || '').toLowerCase();
+      return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
+    };
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.tagName === 'IFRAME' && !baselineIframes.has(node)) {
+            if (isThreeDSLike(node)) {
+              const hideWhenReady = () => { hideLoading(); observer.disconnect(); };
+              if (node.complete) hideWhenReady();
+              else node.addEventListener('load', hideWhenReady, { once:true });
+              return;
+            }
           }
         }
-      } catch (e) {
-        // fail closed (no banner)
       }
+    });
+    observer.observe(document.documentElement, { childList:true, subtree:true });
+  }
+
+  async function startSubscription(priceId, cardholderName) {
+    // 1) Create SetupIntent
+    const siRes = await fetch("/api/stripe/setup-intent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      }
+    });
+    const siData = await siRes.json();
+    if (!siRes.ok || !siData.clientSecret) {
+      throw new Error("Failed to start payment setup.");
     }
 
-    // 🔹 NEW: poll credits so CTA hides when they top up
-    async function refreshCredits() {
-      try {
-        const r = await fetch(`${backendUrl}/api/credits`, {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
-        if (!r.ok) return;
-        const c = await r.json(); // { credits, lifetime }
-        if (c?.lifetime || (typeof c?.credits === 'number' && c.credits > 0)) {
-          hideCTA();
-        } else {
-          showCTA();
-        }
-      } catch {}
+    // 2) Confirm card setup (may open 3DS challenge)
+    const { setupIntent, error } = await stripe.confirmCardSetup(siData.clientSecret, {
+      payment_method: {
+        card,
+        billing_details: { name: cardholderName || "" }
+      }
+    });
+    if (error) throw new Error(error.message);
+
+    // 3) Create subscription
+    const subRes = await fetch("/api/stripe/subscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      },
+      body: JSON.stringify({
+        priceId,
+        paymentMethodId: setupIntent.payment_method
+      })
+    });
+    const subData = await subRes.json();
+    if (!subRes.ok) {
+      throw new Error(subData?.error || "Subscription failed");
     }
 
-    async function sendMessage() {
-      const input = document.getElementById('messageInput');
-      const messageText = input.value.trim();
-      if (!messageText) return;
+    // Success -> go to thank you page
+    window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
+  }
 
-      appendMessage(messageText, 'user');
-      input.value = '';
-      const typingBubble = appendMessage("...", 'girl', true);
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    message.textContent = "";
+    submitBtn.disabled = true;
+    showLoading();
+    startThreeDSWatcher();
 
-      try {
-        const res = await fetch(`${backendUrl}/api/chat`, {
-          method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
-          body: JSON.stringify({ girlId, message: messageText })
-        });
+    const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
+    const name = document.getElementById("cardholder-name").value;
 
-        // 🔹 UPDATED: out-of-credits handling (supports 402 or 403)
-        if (res.status === 402 || res.status === 403) {
-          const data = await res.json();
-          typingBubble.remove();
-
-          // Remove the last user bubble we just appended (so it doesn't “stick”)
-          const msgs = chatBox.querySelectorAll('.message.user');
-          if (msgs.length) msgs[msgs.length - 1].remove();
-
-          // Show AI-style bubble with your message + GO PREMIUM button
-          const ai = document.createElement('div');
-          ai.className = 'message girl';
-          const text = document.createElement('div');
-          text.textContent = (data && (data.message || data.error)) 
-            || "I really wanna meet you, but you're out of credits. Buy more credits so we can meet!";
-          const btn = document.createElement('a');
-          btn.href = '/checkout.html';
-          btn.textContent = 'GO PREMIUM!';
-          btn.style.cssText = 'display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
-          ai.appendChild(text);
-          ai.appendChild(btn);
-          chatBox.appendChild(ai);
-          chatBox.scrollTop = chatBox.scrollHeight;
-
-          // keep your persistent CTA bar too
-          showCTA();
-          return;
-        }
-
-        const data = await res.json();
-        await new Promise(resolve => setTimeout(resolve, randomDelay()));
-        typingBubble.remove();
-
-        // 🔹 if takeover is on, don't expect AI reply
-        if (data.takeover) {
-          TAKEOVER = true;
-          checkTakeover();
-          appendMessage("…", "girl", true);
-          if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
-          return;
-        }
-
-        appendMessage(data.reply || "(No reply received)", 'girl');
-
-        // 🔹 after each successful exchange, re-check credits (in case they topped up in another tab)
-        refreshCredits();
-      } catch (err) {
-        console.error("Chat error:", err);
-        typingBubble.remove();
-      }
+    try {
+      await startSubscription(selectedPlan, name);
+    } catch (err) {
+      console.error(err);
+      hideLoading();
+      message.textContent = err.message || "Something went wrong. Try again.";
+    } finally {
+      submitBtn.disabled = false;
     }
+  });
+</script>
 
-    // Initial boot
-    loadMessages();
-    checkTakeover();
-    refreshCredits();                 // 🔹 check on load
-    setInterval(checkTakeover, 10000);
-    setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
-  </script>
-
-  <!-- 🔒 Contact-sharing blocker & Premium upsell (appended; no other changes) -->
-  <script>
-    (function(){
-      /* ---------- Helpers ---------- */
-      function stripZeroWidth(s){return (s||"").replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g,"");}
-      function mapHomoglyphs(s){
-        const map={"А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O","Р":"P","С":"C","Т":"T","Х":"X","а":"a","е":"e","о":"o","р":"p","с":"c","х":"x",
-                   "Α":"A","Β":"B","Ε":"E","Η":"H","Ι":"I","Κ":"K","Μ":"M","Ν":"N","Ο":"O","Ρ":"P","Τ":"T","Χ":"X","Υ":"Y",
-                   "α":"a","β":"b","ε":"e","ι":"i","κ":"k","ο":"o","ρ":"p","τ":"t","χ":"x","υ":"y",
-                   "＠":"@","！":"!","＃":"#","０":"0","１":"1","２":"2","３":"3","４":"4","５":"5","６":"6","７":"7","８":"8","９":"9"};
-        return s.split("").map(ch=>map[ch]||ch).join("");
-      }
-      function collapseSeparators(s){
-        return s.replace(/([a-z0-9])[\s._\-–—~|/\\:,;'"`^*+=)(\[\]{}<>]+(?=[a-z0-9])/gi,"$1");
-      }
-      function wordsToDigits(s){
-        const num={zero:"0",one:"1",two:"2",three:"3",four:"4",five:"5",six:"6",seven:"7",eight:"8",nine:"9"};
-        return s.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi,m=>num[m.toLowerCase()]);
-      }
-      function normalizeAtDot(s){
-        let out=s.replace(/\s*(?:\(at\)|\[at\]|\{at\}|a\s*[\]\)\}]*\s*t|\ba\s*t\b)/gi,"@");
-        out=out.replace(/\s*(?:\(dot\)|\[dot\]|\{dot\}|d\s*o\s*t|\bd0t\b)/gi,".");
-        return out;
-      }
-      function normalizeForDetection(input){
-        let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=wordsToDigits(s); s=normalizeAtDot(s); s=s.toLowerCase(); return s;
-      }
-      function normalizeTokens(input){
-        let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=collapseSeparators(s); s=wordsToDigits(s); s=s.toLowerCase(); return s;
-      }
-      function editDistance(a,b){
-        const al=a.length, bl=b.length;
-        const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
-        for(let i=0;i<=al;i++) dp[i][0]=i;
-        for(let j=0;j<=bl;j++) dp[0][j]=j;
-        for(let i=1;i<=al;i++){
-          for(let j=1;j<=bl;j++){
-            const cost=a[i-1]===b[j-1]?0:1;
-            dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
-            if(i>1&&j>1&&a[i-1]===b[j-2]&&a[i-2]===b[j-1]) dp[i][j]=Math.min(dp[i][j], dp[i-2][j-2]+cost);
-          }
-        }
-        return dp[al][bl];
-      }
-      function similar(a,b,maxRatio=0.25){
-        const d=editDistance(a,b); const L=Math.max(1,Math.max(a.length,b.length)); return (d/L)<=maxRatio;
-      }
-
-      /* ---------- Detection rules ---------- */
-      const SOCIAL_KEYWORDS=["whatsapp","wa","telegram","tg","t.me","discord","discordapp","discord.gg","instagram","insta","ig",
-        "facebook","fb","messenger","snapchat","snap","tiktok","tt","wechat","weixin","line","viber","skype","signal",
-        "kik","twitter","x.com","x","threads","clubhouse","tumblr","pinterest","onlyfans"];
-      const SOCIAL_DOMAINS=["t.me","wa.me","web.whatsapp","whatsapp.com","discord.gg","discord.com","instagram.com","ig.me",
-        "facebook.com","fb.com","m.me","snapchat.com","tiktok.com","vm.tiktok.com","twitter.com","x.com","line.me",
-        "wechat.com","skype.com","signal.org","viber.com","onlyfans.com","threads.net","pinterest.com"];
-      const EMAIL_DOMAINS_COMMON=["gmail.com","googlemail.com","outlook.com","hotmail.com","live.com","yahoo.com","icloud.com",
-        "me.com","proton.me","protonmail.com","pm.me","aol.com","zoho.com","mail.com","gmx.com","yandex.com"];
-      const CONTACT_CUES=["dm me","pm me","text me","message me on","reach me at","add me on","my handle","my user","my username",
-        "on insta","on ig","on telegram","on tg","on whatsapp","on wa","snap me","my discord","my skype","my wechat","my line","my viber","my signal"];
-
-      const URL_RE=/\b((https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}\/?[^\s]*)\b/gi;
-      const EMAIL_RE=/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
-
-      function hasSocialUrl(text){
-        const urls=(text.match(URL_RE)||[]).map(u=>u.toLowerCase());
-        return urls.some(u=>SOCIAL_DOMAINS.some(d=>u.includes(d)));
-      }
-      function hasEmail(text){ return EMAIL_RE.test(normalizeForDetection(text)); }
-      function looksLikePhone(raw){ const digits=raw.replace(/[^\d]/g,""); return digits.length>=6; }
-      function numberWordRun(raw){ return ((raw.match(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi)||[]).length)>=6; }
-      function hasPhone(text){ return looksLikePhone(text)||numberWordRun(text); }
-      function hitsPlatformFuzzy(text){
-        const tokens=normalizeTokens(text).split(/\s+/).filter(Boolean);
-        for(const t of tokens){
-          for(const kw of SOCIAL_KEYWORDS){
-            if(t===kw) return true;
-            if(t.length>=4 && similar(t,kw)) return true;
-          }
-        }
-        return false;
-      }
-      function looksLikeHandleWithCue(text){
-        const norm=normalizeTokens(text);
-        const hasCue=CONTACT_CUES.some(c=>norm.includes(c));
-        if(!hasCue) return false;
-        const cand=norm.match(/\b[a-z0-9][a-z0-9._-]{4,}\b/g);
-        return !!cand;
-      }
-      function hasAtHandle(text){ return /@[a-z0-9._-]{3,}/i.test(text); }
-      function hasBareHandleToken(text){
-        const norm=normalizeTokens(text);
-        const tokens=norm.match(/\b[a-z0-9][a-z0-9._-]{5,}\b/g)||[];
-        const nearPlatform=SOCIAL_KEYWORDS.some(k=>norm.includes(k));
-        return nearPlatform && tokens.length>0;
-      }
-
-      function detectContactSharing(rawText){
-        const text=stripZeroWidth(rawText||"");
-        if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
-        if(hasEmail(text))     return {blocked:true,reason:"email"};
-        if(hasPhone(text))     return {blocked:true,reason:"phone"};
-        if(hitsPlatformFuzzy(text)) return {blocked:true,reason:"platform"};
-        if(looksLikeHandleWithCue(text)) return {blocked:true,reason:"handle-with-cue"};
-        if(hasAtHandle(text)) return {blocked:true,reason:"at-handle"};
-        if(hasBareHandleToken(text)) return {blocked:true,reason:"bare-handle-with-platform"};
-        const norm=normalizeForDetection(text);
-        if(EMAIL_DOMAINS_COMMON.some(d=>norm.includes(d))) return {blocked:true,reason:"email-domain"};
-        if(/\b(at|dot)\b/i.test(text) && /[a-z0-9._-]{3,}/i.test(text)) return {blocked:true,reason:"obfuscated-contact"};
-        return {blocked:false};
-      }
-
-      /* ---------- Upsell bubble ---------- */
-      function showBlockedMessage(){
-        const ai=document.createElement('div');
-        ai.className='message girl';
-
-        const logo=document.createElement('img');
-        logo.src='logo.png';
-        logo.alt='Logo';
-        logo.style.cssText='max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
-        ai.appendChild(logo);
-
-        const text=document.createElement('div');
-        text.textContent="⛔ You can’t share contact details here. If you want to share contact details, please upgrade to Premium.";
-        ai.appendChild(text);
-
-        const btn=document.createElement('a');
-        btn.href='https://charmr.xyz/checkout.html';
-        btn.textContent='Upgrade to Premium';
-        btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
-        ai.appendChild(btn);
-
-        const chatBox=document.getElementById('chatBox');
-        chatBox.appendChild(ai);
-        chatBox.scrollTop=chatBox.scrollHeight;
-
-        if(typeof showCTA==="function") showCTA();
-        return ai;
-      }
-
-      /* ---------- Monkey patches (no other changes) ---------- */
-      const _sendMessage=window.sendMessage;
-      window.sendMessage=async function(){
-        const input=document.getElementById('messageInput');
-        const raw=(input?.value||"").trim();
-        if(!raw){ return _sendMessage.apply(this, arguments); }
-        const verdict=detectContactSharing(raw);
-        if(verdict.blocked){
-          input.value='';
-          showBlockedMessage();
-          return; // do not call original
-        }
-        return _sendMessage.apply(this, arguments);
-      };
-
-      const _appendMessage=window.appendMessage;
-      window.appendMessage=function(text, sender, isTyping=false){
-        if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
-        const m=/^IMAGE:\s*(\S+)/i.exec(text||"");
-        if(m) return _appendMessage.call(this, text, sender, isTyping);
-
-        const verdict=detectContactSharing(text||"");
-        if(verdict.blocked){
-          return showBlockedMessage();
-        }
-        return _appendMessage.call(this, text, sender, isTyping);
-      };
-    })();
-  </script>
+<!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->
+<script>
+  (function () {
+    const EUROZONE = new Set([
+      "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
+      "LV","LT","LU","MT","NL","PT","SK","SI","ES"
+    ]);
+    function setSymbol(symbol) {
+      document.querySelectorAll('.curr-symbol').forEach(el => { el.textContent = symbol; });
+    }
+    try {
+      fetch("https://ipapi.co/country/")
+        .then(r => r.ok ? r.text() : Promise.reject())
+        .then(cc => {
+          cc = (cc || "").trim().toUpperCase();
+          if (cc === "US") {
+            setSymbol("$");
+          } else if (EUROZONE.has(cc)) {
+            setSymbol("€");
+          } // else keep £
+        })
+        .catch(() => { /* leave £ on failure */ });
+    } catch (_) { /* leave £ */ }
+  })();
+</script>
 </body>
 </html>
