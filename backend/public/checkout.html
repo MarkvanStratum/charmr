@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Checkout</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat</title>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
@@ -12,412 +12,406 @@
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8');
   </script>
-  <script src="https://js.stripe.com/v3/"></script>
+  <link rel="stylesheet" href="style.css" />
   <style>
-    :root{
-      --brand:#ef476f;
-      --brand-dark:#d43d61;
-      --ink:#0f172a;
-      --sub:#475569;
-      --bg:#fdf2f8;
-      --card:#ffffff;
-      --line:#e5e7eb;
-      --ring:#ffd1e0;
-      --ok:#10b981;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
+    body {
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
       font-family: Arial, sans-serif;
-      background: var(--bg);
-      color: var(--ink);
-      margin:0;
+    }
+    .chat-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+      width: 400px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      background-color: #ef476f;
+      color: white;
+      padding: 10px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .chat-header img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 10px;
+      border: 2px solid white;
+    }
+    .chat-box {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background-color: #fff0f3;
+      display: flex;
+      flex-direction: column;
+    }
+    .message {
+      margin: 8px 0;
+      padding: 8px 12px;
+      border-radius: 15px;
+      max-width: 70%;
+      word-wrap: break-word;
+    }
+    .message.user {
+      background-color: #ef476f;
+      color: white;
+      align-self: flex-end;
+    }
+    .message.girl {
+      background-color: #f1f1f1;
+      color: black;
+      align-self: flex-start;
+    }
+    .message.typing {
+      font-style: italic;
+      color: #888;
+      animation: blink 1s infinite;
+      max-width: 40px;
+      padding: 8px;
+      text-align: center;
+      border-radius: 50%;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
+    .chat-input {
+      display: flex;
+      border-top: 1px solid #ccc;
+    }
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      font-size: 14px;
+    }
+    .chat-input button {
+      background-color: #ef476f;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    .chat-input button:hover {
+      background-color: #d43d61;
+    }
+    /* sticky CTA bar shown when out of credits */
+    .cta-bar {
+      display: none;            /* toggled via JS */
+      border-top: 1px solid #ffd1dc;
+      background: #fff5f7;
+      padding: 10px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+    .cta-link {
+      display: inline-block;
+      background: #ef476f;
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    /* simple card style for "blocked" message */
+    .blocked-card {
+      background: #eaf6ff;
+      border-radius: 12px;
       padding: 12px;
-      padding-top: calc(12px + env(safe-area-inset-top)); /* ensure logo isn’t cut off */
-      display:flex;
-      flex-direction:column;          /* logo on top, form below */
-      align-items:center;
-      justify-content:flex-start;
-      -webkit-text-size-adjust:100%;
-      overflow-x:hidden;
+      border: 1px solid #b3e0ff;
     }
-
-    /* LOGO BAR */
-    .logo-bar{
-      width:100%;
-      max-width: 920px;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:14px 0;
-      margin:0 12px 12px;
-      box-shadow: 0 4px 14px rgba(15,23,42,.06);
+    .blocked-card .title {
+      font-weight: 700;
+      margin-bottom: 6px;
     }
-    .logo-bar img{max-height:48px; width:auto}
-
-    /* CARD (mobile-first, compact) */
-    #payment-form{
-      width:100%;
-      max-width: 560px;
-      background:var(--card);
-      border-radius:14px;
-      border:1px solid #f8c4d3;
-      box-shadow: 0 10px 28px rgba(239,71,111,.14);
-      padding:16px;
-      margin:0 12px 24px;
+    .btn-upgrade {
+      display:inline-block;
+      margin-top:8px;
+      padding:8px 12px;
+      background:#ef476f;
+      color:#fff;
+      border-radius:8px;
+      text-decoration:none;
+      font-weight:700;
     }
-
-    /* HERO */
-    .hero{display:block; margin-bottom:12px}
-    .hero h1{
-      margin:0 0 8px 0;
-      font-size: clamp(18px, 5vw, 22px);
-      letter-spacing:.4px;
-      text-transform:uppercase;
-      color:var(--brand);
-      text-align:center;
-    }
-    .hero-copy{
-      background:#fff6fa;
-      border:1px solid var(--ring);
-      border-radius:10px;
-      padding:10px;
-      font-size:14px;
-      line-height:1.5;
-      color:var(--ink);
-    }
-    .steps{
-      display:flex; gap:6px; flex-wrap:wrap;
-      margin-top:8px; color:var(--sub); font-size:12px; justify-content:center;
-    }
-    .step{
-      background:#fff; border:1px solid var(--line); border-radius:999px;
-      padding:6px 10px;
-    }
-
-    /* small badges row */
-    .badges{
-      display:flex; gap:10px; justify-content:center; align-items:center;
-      margin:4px 0 10px; opacity:.95;
-    }
-    .badge{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px; font-size:12px; color:var(--sub);
-    }
-
-    /* PLANS */
-    .plans{display:grid; gap:10px; margin:14px 0 10px}
-    .plan{
-      display:grid; grid-template-columns:auto 1fr; gap:10px;
-      padding:10px; border:1px solid var(--line); border-radius:12px; background:#fff;
-      transition:box-shadow .18s ease, border-color .18s ease;
-    }
-    .plan:hover{box-shadow:0 8px 18px rgba(15,23,42,.06)}
-    .plan input[type="radio"]{margin-top:6px; accent-color:var(--brand)}
-    .plan label{display:block; cursor:pointer}
-    .plan-title{
-      display:block;
-      font-size: clamp(20px, 5.2vw, 24px);
-      font-weight:900; line-height:1.1; color:#0b0b0b;
-    }
-    .plan-fine{display:block; font-size:12px; color:var(--sub); margin-top:4px}
-    .plan-popular{
-      display:inline-block; font-size:11px; font-weight:800; letter-spacing:.3px;
-      background:#fff0f4; color:#b91c1c; border:1px solid #ffd1e0; padding:2px 8px; border-radius:999px; margin-left:8px;
-    }
-    .plan input[type="radio"]:checked + label{
-      border-radius:10px; outline:3px solid #ffe5ee; background:#fff8fb;
-      padding:4px 6px;
-    }
-
-    /* FORM */
-    label[for="cardholder-name"]{
-      display:block; margin:10px 0 6px; font-weight:700; font-size:14px
-    }
-    input[type="text"]{
-      width:100%; padding:12px; border:1px solid #d1d5db; border-radius:10px; font-size:16px; margin-bottom:10px;
-    }
-    #card-element{
-      padding:12px; border:1px solid #d1d5db; border-radius:10px; margin-bottom:10px; background:#fafafa;
-    }
-
-    /* TRUST + CTA */
-    .trust{
-      display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 10px; color:var(--sub); font-size:12px; justify-content:center;
-    }
-    .tag{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px}
-    .ok{color:var(--ok); font-weight:800}
-
-    #submit{
-      width:100%;
-      background:var(--brand); color:#fff; border:none; padding:14px 16px;
-      border-radius:12px; font-size:16px; font-weight:800; letter-spacing:.3px;
-      cursor:pointer;
-    }
-    #submit:hover{background:var(--brand-dark)}
-    #submit[disabled]{opacity:.7; cursor:not-allowed}
-
-    #message{margin-top:10px; font-size:14px; color:#b91c1c}
-
-    /* Loading overlay */
-    .loading-overlay{
-      position:fixed; inset:0;
-      background:rgba(255,255,255,.92);
-      display:none;
-      align-items:center; justify-content:center; flex-direction:column;
-      z-index:9999;
-      backdrop-filter:saturate(1.1) blur(2px);
-    }
-    .loading-overlay[aria-hidden="false"]{display:flex}
-    .loading-box{
-      width:min(92vw,420px);
-      background:#fff; border:1px solid var(--line); border-radius:14px;
-      box-shadow:0 10px 28px rgba(15,23,42,.12);
-      padding:18px;
-      text-align:center;
-    }
-    .loading-title{
-      font-weight:900; letter-spacing:.3px; margin:2px 0 10px; color:var(--ink)
-    }
-    .progress-wrap{
-      width:100%; height:10px; background:#f3f4f6; border-radius:999px; overflow:hidden; border:1px solid #e5e7eb;
-    }
-    .progress-bar{
-      width:0%; height:100%; background:linear-gradient(90deg, var(--brand), var(--brand-dark));
-      animation: loadingBar 2.2s ease-in-out infinite;
-    }
-    @keyframes loadingBar{
-      0%{width:0%}
-      60%{width:80%}
-      100%{width:100%}
-    }
-    .loading-sub{font-size:12px; color:var(--sub); margin-top:8px}
   </style>
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-
-<div class="logo-bar" style="display:flex; flex-direction:column; align-items:center;">
-  <img src="logo.png" alt="Site logo" style="max-width:140px; height:auto;">
-  <p style="margin:4px 0 12px; font-size:8px; color:#475569; text-align:center; font-weight:500;">
-    It's Tinder without the bullshit, just sex, the way you like it!
-  </p>
-</div>
-
-
-</div>
-
-<!-- Loading overlay -->
-<div id="loading-overlay" class="loading-overlay" aria-hidden="true" aria-live="polite" aria-label="Processing payment">
-  <div class="loading-box" role="status">
-    <div class="loading-title">Processing your payment…</div>
-    <div class="progress-wrap" aria-hidden="true">
-      <div class="progress-bar"></div>
-    </div>
-    <div class="loading-sub">You may be asked to complete a quick 3-D Secure check with your bank. Please don’t close this window.</div>
-  </div>
-</div>
-<!-- /Loading overlay -->
-
-<form id="payment-form" aria-labelledby="age-title">
-  <!-- HERO -->
-  <div class="hero" role="region" aria-label="Checkout intro">
-    <h1 id="age-title">Unlock Private Chats</h1>
-
-    <div class="badges" aria-label="Security and privacy badges">
-      <div class="badge">🔒 SSL Secure</div>
-      <div class="badge">🕵️ Discreet Billing</div>
-      <div class="badge">✅ Cancel Anytime</div>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img id="chatPhoto" src="" alt="Girl Photo">
+      <h2 id="chatName"></h2>
     </div>
 
-    <div class="hero-copy">
-      Start your free trial today. Keep the conversation flowing with flirty fun, 24/7. After your trial you’ll be billed monthly, and you can cancel anytime.
+    <div class="chat-box" id="chatBox"></div>
+
+    <div id="ctaBar" class="cta-bar">
+      <a class="cta-link" href="/checkout.html">GET PREMIUM NOW!</a>
     </div>
 
-    <div class="steps" aria-label="How it works">
-      <div class="step">① Choose a plan</div>
-      <div class="step">② Verify card</div>
-      <div class="step">③ Start chatting</div>
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type a message...">
+      <button onclick="sendMessage()">Send</button>
     </div>
   </div>
 
-  <!-- PLANS (price IDs unchanged) -->
-  <div class="plans" role="group" aria-label="Subscription plans">
-    <div class="plan">
-      <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
-      <label for="plan5">
-        <span class="plan-title">Starter — Personal Chats</span>
-        <span class="plan-fine">Send pictures, limited chat. Free today, then <span class="curr-symbol">£</span>0.16/day. Cancel anytime.</span>
-      </label>
-    </div>
+  <script src="girls.js"></script>
+  <script>
+    const backendUrl = "https://charmr-jfmc.onrender.com"; 
+    const token = localStorage.getItem("token");
 
-    <div class="plan">
-      <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
-      <label for="plan20">
-        <span class="plan-title">Plus — Extended Messages <span class="plan-popular">Most Popular</span></span>
-        <span class="plan-fine">Send pictures, share contacts and social media, extended chat. Free today, then <span class="curr-symbol">£</span>20/month. Cancel anytime.</span>
-      </label>
-    </div>
+    if (!token) {
+      window.location.href = "login.html";
+    }
 
-    <div class="plan">
-      <input type="radio" name="plan" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f" id="plan99">
-      <label for="plan99">
-        <span class="plan-title">Lifetime — Unlimited Chats</span>
-        <span class="plan-fine">All features unlimited. <span class="curr-symbol">£</span>99 one-time. Priority support included.</span>
-      </label>
-    </div>
-  </div>
+    const params = new URLSearchParams(window.location.search);
+    const girlId = parseInt(params.get('id'));
+    const girl = girls.find(g => g.id === girlId);
 
-  <label for="cardholder-name">Name on card</label>
-  <input type="text" id="cardholder-name" placeholder="Full name" required />
+    const chatBox = document.getElementById('chatBox');
+    const ctaBar = document.getElementById('ctaBar');
+    document.getElementById('chatName').textContent = girl.name;
+    document.getElementById('chatPhoto').src = girl.image;
 
-  <div id="card-element"><!-- Stripe injects card input here --></div>
+    // out-of-credits sticky flag
+    let OUT_OF_CREDITS = false;
 
-  <!-- Trust row -->
-  <div class="trust">
-    <div class="tag">🔒 Secure payment via Stripe</div>
-    <div class="tag">🕵 Discreet billing</div>
-    <div class="tag ok">✔ Age 18+ only</div>
-  </div>
+    function showCTA() {
+      OUT_OF_CREDITS = true;
+      ctaBar.style.display = 'block';
+    }
+    function hideCTA() {
+      OUT_OF_CREDITS = false;
+      ctaBar.style.display = 'none';
+    }
 
-  <button type="submit" id="submit">Start Free Trial</button>
-  <div id="message"></div>
-</form>
+    // SANITIZER: block phone numbers, emails, links, social/messenger keywords, handles, and obfuscations
+    function sanitizeMessage(text) {
+      if (!text) return text;
 
-<script>
-  // Stripe integration (unchanged backend behavior)
-  const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
-  const elements = stripe.elements();
-  const card = elements.create("card");
-  card.mount("#card-element");
+      const lower = text.toLowerCase();
 
-  const form = document.getElementById("payment-form");
-  const message = document.getElementById("message");
-  const submitBtn = document.getElementById("submit");
+      // email, urls, and common tlds
+      const email = /\b[\w.+-]+@[\w-]+\.[\w.-]+\b/i;
+      const urlLike = /(https?:\/\/|www\.|\b[a-z0-9-]+\.(com|net|org|io|co|us|info|me|gg|ru|uk|de|fr|it|es|nl|cz|pl|in|pk|br|au|ca|biz|online|site|xyz)\b)/i;
 
-  const overlay = document.getElementById('loading-overlay');
-  function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
-  function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
+      // phone-ish
+      const phone = /(?:\+?\d[\s().-]*){6,}/;
 
-  // Track iframes present BEFORE submit so we only react to NEW ones
-  let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+      // social & messenger platforms
+      const blockedWords = [
+        'whatsapp','wa.me','w\\s*h\\s*a\\s*t\\s*s\\s*a\\s*p\\s*p',
+        'telegram','t.me','tg','teleg ram',
+        'instagram','ig','insta',
+        'facebook','fb','messenger','meta',
+        'snapchat','snap','sc',
+        'tiktok','tt','douyin',
+        'twitter','x.com','x ',
+        'wechat','we chat',
+        'viber',
+        'line',
+        'discord','disc ord',
+        'signal',
+        'skype',
+        'onlyfans','only fans','of.com',
+        'reddit',
+        'kik'
+      ];
+      const wordRegex = new RegExp(blockedWords.join('|'), 'i');
 
-  function startThreeDSWatcher(){
-    baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
-    const isThreeDSLike = (iframe) => {
-      const t = (iframe.getAttribute('title') || '').toLowerCase();
-      return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
-    };
-    const observer = new MutationObserver((mutations) => {
-      for (const m of mutations) {
-        for (const node of m.addedNodes) {
-          if (node.tagName === 'IFRAME' && !baselineIframes.has(node)) {
-            if (isThreeDSLike(node)) {
-              const hideWhenReady = () => { hideLoading(); observer.disconnect(); };
-              if (node.complete) hideWhenReady();
-              else node.addEventListener('load', hideWhenReady, { once:true });
-              return;
-            }
-          }
+      // @handles, invite patterns, obfuscations
+      const handles = /(@[a-z0-9_.]{2,}|\b(?:t\.me|discord\.gg|discord\.com\/invite|chat\.whatsapp\.com)\/[a-z0-9_-]+\b)/i;
+      const dotObfuscation = /(\s|\(|\))*(dot|\[dot\]|\(dot\))(\s|\(|\))*\s*[a-z]{2,}/i;
+      const spacedDigits = /(?:\d\s+){5,}\d/;
+
+      if (
+        email.test(text) ||
+        urlLike.test(text) ||
+        phone.test(text) ||
+        wordRegex.test(lower) ||
+        handles.test(text) ||
+        dotObfuscation.test(lower) ||
+        spacedDigits.test(text)
+      ) {
+        return "[contact info blocked]";
+      }
+      return text;
+    }
+
+    // helper to render the "blocked/upgrade" card
+    function appendBlockedCard() {
+      const wrap = document.createElement('div');
+      wrap.className = 'message girl';
+      const card = document.createElement('div');
+      card.className = 'blocked-card';
+      const title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = "You can’t share contact details here.";
+      const body = document.createElement('div');
+      body.textContent = "If you want to share contact details, please upgrade to Premium.";
+      const btn = document.createElement('a');
+      btn.href = '/checkout.html';
+      btn.className = 'btn-upgrade';
+      btn.textContent = 'Upgrade to Premium';
+      card.appendChild(title);
+      card.appendChild(body);
+      card.appendChild(btn);
+      wrap.appendChild(card);
+      chatBox.appendChild(wrap);
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendMessage(text, sender, isTyping = false) {
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+
+      if (isTyping) {
+        msgDiv.classList.add('typing');
+        msgDiv.textContent = '...';
+      } else {
+        const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
+        if (m) {
+          const img = document.createElement('img');
+          img.src = m[1];
+          img.alt = 'image';
+          img.style.maxWidth = '220px';
+          img.style.maxHeight = '260px';
+          img.style.borderRadius = '10px';
+          img.style.display = 'block';
+          img.style.objectFit = 'cover';
+          msgDiv.appendChild(img);
+        } else {
+          // sanitize anything displayed (incoming/outgoing)
+          msgDiv.textContent = sanitizeMessage(text);
         }
       }
-    });
-    observer.observe(document.documentElement, { childList:true, subtree:true });
-  }
 
-  async function startSubscription(priceId, cardholderName) {
-    // 1) Create SetupIntent
-    const siRes = await fetch("/api/stripe/setup-intent", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
+      chatBox.appendChild(msgDiv);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return msgDiv;
+    }
+
+    function randomDelay(min = 700, max = 2000) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    async function loadMessages() {
+      try {
+        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        chatBox.innerHTML = "";
+        data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
+
+        if (OUT_OF_CREDITS) showCTA();
+      } catch (err) {
+        console.error("Error loading messages:", err);
       }
-    });
-    const siData = await siRes.json();
-    if (!siRes.ok || !siData.clientSecret) {
-      throw new Error("Failed to start payment setup.");
     }
 
-    // 2) Confirm card setup (may open 3DS challenge)
-    const { setupIntent, error } = await stripe.confirmCardSetup(siData.clientSecret, {
-      payment_method: {
-        card,
-        billing_details: { name: cardholderName || "" }
+    async function refreshCredits() {
+      try {
+        const r = await fetch(`${backendUrl}/api/credits`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!r.ok) return;
+        const c = await r.json(); // { credits, lifetime }
+        if (c?.lifetime || (typeof c?.credits === 'number' && c.credits > 0)) {
+          hideCTA();
+        } else {
+          showCTA();
+        }
+      } catch {}
+    }
+
+    async function sendMessage() {
+      const input = document.getElementById('messageInput');
+      const originalText = input.value.trim();
+      if (!originalText) return;
+
+      const sanitized = sanitizeMessage(originalText);
+
+      // If sanitized indicates blocking, show user's blocked bubble + upgrade card and DO NOT send to backend
+      if (sanitized === "[contact info blocked]") {
+        appendMessage(sanitized, 'user');
+        appendBlockedCard();
+        input.value = '';
+        return;
       }
-    });
-    if (error) throw new Error(error.message);
 
-    // 3) Create subscription
-    const subRes = await fetch("/api/stripe/subscribe", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify({
-        priceId,
-        paymentMethodId: setupIntent.payment_method
-      })
-    });
-    const subData = await subRes.json();
-    if (!subRes.ok) {
-      throw new Error(subData?.error || "Subscription failed");
+      // Normal flow
+      appendMessage(sanitized, 'user');
+      input.value = '';
+      const typingBubble = appendMessage("...", 'girl', true);
+
+      try {
+        const res = await fetch(`${backendUrl}/api/chat`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          },
+          body: JSON.stringify({ girlId, message: sanitized })
+        });
+
+        // out-of-credits handling
+        if (res.status === 402 || res.status === 403) {
+          const data = await res.json();
+          typingBubble.remove();
+
+          // Remove the last user bubble we just appended (so it doesn't “stick”)
+          const msgs = chatBox.querySelectorAll('.message.user');
+          if (msgs.length) msgs[msgs.length - 1].remove();
+
+          const ai = document.createElement('div');
+          ai.className = 'message girl';
+          const text = document.createElement('div');
+          text.textContent = (data && (data.message || data.error)) 
+            || "You're out of credits. Buy more credits to keep chatting!";
+          const btn = document.createElement('a');
+          btn.href = '/checkout.html';
+          btn.textContent = 'GO PREMIUM!';
+          btn.style.cssText = 'display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
+          ai.appendChild(text);
+          ai.appendChild(btn);
+          chatBox.appendChild(ai);
+          chatBox.scrollTop = chatBox.scrollHeight;
+
+          showCTA();
+          return;
+        }
+
+        const data = await res.json();
+        await new Promise(resolve => setTimeout(resolve, randomDelay()));
+        typingBubble.remove();
+
+        appendMessage(data.reply || "(No reply received)", 'girl');
+
+        refreshCredits();
+      } catch (err) {
+        console.error("Chat error:", err);
+        try { typingBubble.remove(); } catch {}
+      }
     }
 
-    // Success -> go to thank you page
-    window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
-  }
-
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    message.textContent = "";
-    submitBtn.disabled = true;
-    showLoading();
-    startThreeDSWatcher();
-
-    const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
-    const name = document.getElementById("cardholder-name").value;
-
-    try {
-      await startSubscription(selectedPlan, name);
-    } catch (err) {
-      console.error(err);
-      hideLoading();
-      message.textContent = err.message || "Something went wrong. Try again.";
-    } finally {
-      submitBtn.disabled = false;
-    }
-  });
-</script>
-
-<!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->
-<script>
-  (function () {
-    const EUROZONE = new Set([
-      "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
-      "LV","LT","LU","MT","NL","PT","SK","SI","ES"
-    ]);
-    function setSymbol(symbol) {
-      document.querySelectorAll('.curr-symbol').forEach(el => { el.textContent = symbol; });
-    }
-    try {
-      fetch("https://ipapi.co/country/")
-        .then(r => r.ok ? r.text() : Promise.reject())
-        .then(cc => {
-          cc = (cc || "").trim().toUpperCase();
-          if (cc === "US") {
-            setSymbol("$");
-          } else if (EUROZONE.has(cc)) {
-            setSymbol("€");
-          } // else keep £
-        })
-        .catch(() => { /* leave £ on failure */ });
-    } catch (_) { /* leave £ */ }
-  })();
-</script>
+    // Initial boot
+    loadMessages();
+    refreshCredits();
+    setInterval(refreshCredits, 15000);
+  </script>
 </body>
 </html>
