@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Operator Console</title>
   <style>
-    :root { --pink:#ef476f; --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; --sub:#6b7280; }
+    :root { --pink:#ef476f; --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; --sub:#6b7280; --ok:#10b981; }
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
     header { padding:12px 14px; border-bottom:1px solid var(--line); background:#fff; position:sticky; top:0; z-index:3; }
@@ -30,21 +30,25 @@
     .conv.active { border-color:#ffd1e0; background:#fff5f7; }
     .conv .meta { font-size:12px; color:var(--sub); }
     .badge { margin-left:auto; min-width:18px; height:18px; padding:0 6px; border-radius:999px; background:var(--pink); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
+    .dot { width:8px; height:8px; border-radius:999px; background:#cbd5e1; margin-left:6px; }
+    .dot.online { background: var(--ok); box-shadow:0 0 0 3px #e7f9f1 inset; }
 
     .side-foot { padding:8px 10px; border-top:1px solid var(--line); font-size:12px; color:var(--sub); background:#fff; }
     .side-foot code { background:#f3f4f6; padding:2px 6px; border-radius:6px; }
 
-    .main { display:flex; flex-direction:column; }
+    .main { display:flex; flex-direction:column; min-height:0; }
     .chat-head { padding:10px 12px; border-bottom:1px solid var(--line); background:#fff; display:flex; align-items:center; gap:10px; }
     .chat-title { font-weight:800; }
     .banner { background:#ffe082; color:#4a3b00; padding:6px 10px; border-radius:10px; display:inline-block; }
-    .chat-box { flex:1; padding:12px; overflow:auto; background:#fff0f3; }
+    .chat-box { flex:1; padding:12px; overflow:auto; background:#fff0f3; scroll-behavior:smooth; }
     .msg { display:inline-block; margin:6px 0; max-width:76%; padding:10px 14px; border-radius:16px; line-height:1.3; word-wrap:break-word; white-space:pre-wrap; }
     .user { background: var(--pink); color:#fff; margin-left:auto; border-bottom-right-radius:6px; }
     .girl { background:#f1f1f1; color:#000; margin-right:auto; border-bottom-left-radius:6px; }
     .meta { font-size:11px; opacity:.6; margin-top:2px; }
     .bubble img { max-width:280px; max-height:300px; border-radius:10px; display:block; object-fit:cover; }
-    .composer { padding:10px; border-top:1px solid var(--line); background:#fff; display:flex; gap:8px; flex-wrap:wrap; }
+
+    /* Keep the composer always visible under the chat */
+    .composer { position:sticky; bottom:0; padding:10px; border-top:1px solid var(--line); background:#fff; display:flex; gap:8px; flex-wrap:wrap; }
     .composer .row { display:flex; gap:8px; width:100%; }
     .composer input[type="text"] { flex:1; min-width:260px; }
     .helper { font-size:12px; color:var(--sub); }
@@ -122,7 +126,7 @@
           <input id="imageFile" type="file" accept="image/*" />
           <button id="btnSendImage">Send Image</button>
         </div>
-        <div class="helper">Chats are auto-created from the feed. Unread badges show when the user replies.</div>
+        <div class="helper">Only chats with a user reply appear here. Newest replies stay on top.</div>
       </div>
     </main>
   </div>
@@ -135,6 +139,7 @@
     // ---------- Config ----------
     const FEED_PATH = '/api/operator/feed';   // same as feed.html
     const FEED_LIMIT = 100;                   // initial slice
+    const ONLINE_MS = 2 * 60 * 1000;          // user considered online if last user msg < 2 min
     // ----------------------------
 
     // Elements
@@ -172,7 +177,7 @@
     const store = {
       byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
-      lastNow: null,    // server "now" from last feed poll
+      lastNow: null,
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
@@ -186,11 +191,12 @@
           title: `${girlName ? girlName : 'Girl '+girlId} · User ${userId}`,
           messages: [],
           unread: 0,
-          lastTs: 0,
+          lastTs: 0,        // last message ts (any sender)
+          lastUserTs: 0,    // last USER msg ts (for sorting/online)
+          hasUserReply: false,
           takeover: false
         });
       } else if (girlName) {
-        // keep the prettier title when we learn it
         const cv = store.byKey.get(k);
         if (cv && cv.title.startsWith('Girl ')) {
           cv.title = `${girlName} · User ${userId}`;
@@ -202,13 +208,30 @@
     // ----- Sidebar -----
     function renderSidebar(autoSelectIfNone=true){
       els.convList.innerHTML = '';
-      const list = [...store.byKey.values()].sort((a,b)=> (b.lastTs||0)-(a.lastTs||0));
+
+      // Only show conversations where the user has replied at least once
+      const listAll = [...store.byKey.values()];
+      const list = listAll
+        .filter(c => c.hasUserReply)
+        .sort((a,b)=>{
+          // newest user replies on top; fallback to lastTs
+          const au = a.lastUserTs || 0, bu = b.lastUserTs || 0;
+          if (bu !== au) return bu - au;
+          return (b.lastTs||0) - (a.lastTs||0);
+        });
+
       for (const c of list){
         const item = document.createElement('div');
         item.className = 'conv' + (store.activeKey===c.key ? ' active':'');
-        const title = document.createElement('div');
-        title.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
-        item.appendChild(title);
+
+        const left = document.createElement('div');
+        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
+        item.appendChild(left);
+
+        // online dot (based on lastUserTs recency)
+        const dot = document.createElement('div');
+        dot.className = 'dot' + ((Date.now() - (c.lastUserTs||0) < ONLINE_MS) ? ' online' : '');
+        item.appendChild(dot);
 
         if (c.unread>0){
           const badge = document.createElement('div');
@@ -219,16 +242,23 @@
         item.onclick = () => selectConversation(c.key);
         els.convList.appendChild(item);
       }
-      if (store.byKey.size===0){
-        els.convList.innerHTML = '<div class="helper">No chats yet. Check feed endpoint/CORS.</div>';
+
+      if (list.length===0){
+        els.convList.innerHTML = '<div class="helper">No chats with user replies yet.</div>';
       } else if (!store.activeKey && autoSelectIfNone){
-        selectConversation(list[0].key); // open newest
+        selectConversation(list[0].key); // open the newest user-reply thread
       }
+
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
       document.title = totalUnread ? `(${totalUnread}) Operator Console` : 'Operator Console';
     }
 
     // ----- Chat -----
+    function forceScrollToBottom(){
+      // always keep viewport pinned to newest message
+      els.chatBox.scrollTop = els.chatBox.scrollHeight;
+    }
+
     function renderChat(conv){
       els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
       els.liveBanner.style.display = conv?.takeover ? '' : 'none';
@@ -251,7 +281,7 @@
         wrap.appendChild(bubble);
         els.chatBox.appendChild(wrap);
       }
-      els.chatBox.scrollTop = els.chatBox.scrollHeight;
+      forceScrollToBottom();
     }
 
     function selectConversation(key){
@@ -271,7 +301,7 @@
         const url = `${base()}${FEED_PATH}?${params.toString()}`;
         els.feedUrl.textContent = FEED_PATH;
 
-        const res = await fetch(url);  // feed.html hits this public endpoint directly
+        const res = await fetch(url);
         if (!res.ok){ els.feedStatus.textContent = `HTTP ${res.status}`; return; }
 
         const payload = await res.json();
@@ -281,7 +311,7 @@
 
         let pingNeeded = false;
 
-        // The feed rows have: id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text
+        // rows: { id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text }
         for (const r of rows){
           const userId = Number(r.userId);
           const girlId = Number(r.girlId);
@@ -289,12 +319,18 @@
 
           const cv = ensureConv(userId, girlId, r.girlName);
           const ts = new Date(r.createdAt).getTime() || Date.now();
+
+          // track latest any-message timestamp
           if (ts > cv.lastTs) cv.lastTs = ts;
 
-          // only count unread when from user & convo not active
-          if (r.from === 'user' && store.activeKey !== cv.key){
-            cv.unread = Math.min(99, (cv.unread||0) + 1);
-            pingNeeded = true;
+          // if message is from user, mark flags, lastUserTs, unread
+          if (r.from === 'user'){
+            cv.hasUserReply = true;
+            if (ts > cv.lastUserTs) cv.lastUserTs = ts;
+            if (store.activeKey !== cv.key){
+              cv.unread = Math.min(99, (cv.unread||0) + 1);
+              pingNeeded = true;
+            }
           }
         }
 
@@ -309,7 +345,7 @@
 
     // ----- Conversation fetch -----
     async function fetchMessages(conv){
-      if (!conv || !haveOpKey()) return; // operator endpoints need key
+      if (!conv || !haveOpKey()) return;
       try{
         const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
           headers: opHeader()
@@ -415,17 +451,15 @@
     };
 
     // ----- Manual add -----
-    els.btnAddChat.onclick = ()=>{
-      els.manualForm.style.display = els.manualForm.style.display ? '' : 'block';
-    };
+    els.btnAddChat.onclick = ()=>{ els.manualForm.style.display = els.manualForm.style.display ? '' : 'block'; };
     els.btnManualAdd.onclick = ()=>{
       const uid = Number(els.manualUserId.value);
       const gid = Number(els.manualGirlId.value);
       if (!uid || !gid) return;
       const c = ensureConv(uid, gid);
+      c.hasUserReply = true; // force show if you add manually
       renderSidebar(); selectConversation(c.key);
-      els.manualUserId.value=''; els.manualGirlId.value='';
-      els.manualForm.style.display = 'none';
+      els.manualUserId.value=''; els.manualGirlId.value=''; els.manualForm.style.display = 'none';
     };
 
     // ----- Composer wiring -----
@@ -433,11 +467,12 @@
     els.btnSendImage.onclick = sendImage;
     els.textMsg.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
 
+    // Keep chat pinned to bottom even on resize
+    window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
+
     // ----- Poll -----
-    // discover chats (like feed.html): first full slice, then deltas
-    setInterval(()=>fetchFeed(false), 5000);
-    // active chat message refresh
-    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000);
+    setInterval(()=>fetchFeed(false), 5000);           // discover & update list
+    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000); // active chat refresh
 
     // Boot
     (async function init(){
