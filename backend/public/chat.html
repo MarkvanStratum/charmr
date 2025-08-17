@@ -10,6 +10,7 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
+
   gtag('config', 'G-FDQ6REQWS8');
 </script>
   <link rel="stylesheet" href="style.css" />
@@ -19,10 +20,9 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100dvh;              /* keep full viewport height, keyboard-safe */
+      height: 100vh;
       margin: 0;
       font-family: Arial, sans-serif;
-      overflow: hidden;            /* no page scroll */
     }
     .chat-container {
       background: white;
@@ -32,8 +32,6 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      height: 100dvh;
-      max-height: 100dvh;
     }
     .chat-header {
       display: flex;
@@ -51,24 +49,42 @@
       margin-right: 10px;
       border: 2px solid white;
     }
+    /* 🔹 NEW: live agent banner */
     #liveBanner {
       background:#ffe082;
       color:#4a3b00;
       padding:6px 10px;
       font-size:12px;
       text-align:center;
-      flex-shrink: 0;              /* don't steal space from chat box */
     }
+
+    /* 🔹 NEW: Gift bar under header */
+    .gift-bar{
+      border-bottom:1px solid #f1f1f1;
+      background:#fff8fb;
+      padding:8px 10px;
+      text-align:center;
+      font-size:14px;
+      flex-shrink:0;
+    }
+    .gift-bar .row{
+      display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;
+    }
+    .gift-chip{
+      display:inline-flex; align-items:center; justify-content:center;
+      width:36px; height:36px; border-radius:999px; background:#ffffff;
+      border:1px solid #ffd1dc; cursor:pointer; font-size:18px;
+      transition: transform .08s ease;
+    }
+    .gift-chip:hover{ transform: translateY(-1px); }
+
     .chat-box {
-      flex: 1 1 auto;
+      flex: 1;
       padding: 10px;
       overflow-y: auto;
       background-color: #fff0f3;
       display: flex;
       flex-direction: column;
-      min-height: 0;               /* critical for flex scrolling */
-      overflow-anchor: none;       /* 🧷 stop browser from jumping to “middle” */
-      scrollbar-gutter: stable;    /* keep scrollbar width stable */
     }
     .message {
       margin: 8px 0;
@@ -77,33 +93,59 @@
       max-width: 70%;
       word-wrap: break-word;
     }
-    .message.user { background-color: #ef476f; color: white; align-self: flex-end; }
-    .message.girl { background-color: #f1f1f1; color: black; align-self: flex-start; }
-    .message.typing {
-      font-style: italic; color: #888; animation: blink 1s infinite;
-      max-width: 40px; padding: 8px; text-align: center; border-radius: 50%;
+    .message.user {
+      background-color: #ef476f;
+      color: white;
+      align-self: flex-end;
     }
-    @keyframes blink { 0%{opacity:1} 50%{opacity:.4} 100%{opacity:1} }
+    .message.girl {
+      background-color: #f1f1f1;
+      color: black;
+      align-self: flex-start;
+    }
+    .message.typing {
+      font-style: italic;
+      color: #888;
+      animation: blink 1s infinite;
+      max-width: 40px;
+      padding: 8px;
+      text-align: center;
+      border-radius: 50%;
+    }
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.4; }
+      100% { opacity: 1; }
+    }
     .chat-input {
       display: flex;
       border-top: 1px solid #ccc;
-      flex-shrink: 0;              /* keep input visible */
     }
-    .chat-input input { flex: 1; padding: 10px; border: none; font-size: 14px; }
-    .chat-input button { background:#ef476f; color:#fff; border:none; padding:10px 15px; cursor:pointer; }
-    .chat-input button:hover { background:#d43d61; }
-
+    .chat-input input {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      font-size: 14px;
+    }
+    .chat-input button {
+      background-color: #ef476f;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      cursor: pointer;
+    }
+    .chat-input button:hover {
+      background-color: #d43d61;
+    }
+    /* 🔹 NEW: sticky CTA bar shown when out of credits */
     .cta-bar {
-  display: block !important;      /* force it visible even if JS sets display:none */
-  border-top: 1px solid #ffd1dc;
-  background: #fff5f7;
-  padding: 10px;
-  text-align: center;
-  flex-shrink: 0;
-  position: sticky;               /* keep it pinned at the bottom of the messages area */
-  bottom: 0;
-}
-
+      display: none;            /* toggled via JS */
+      border-top: 1px solid #ffd1dc;
+      background: #fff5f7;
+      padding: 10px;
+      text-align: center;
+      flex-shrink: 0;           /* always visible at bottom of container */
+    }
     .cta-link {
       display: inline-block;
       background: #ef476f;
@@ -111,9 +153,8 @@
       padding: 8px 12px;
       border-radius: 8px;
       text-decoration: none;
-      font-weight: bold;           /* fix stray period */
+      font-weight: bold;
     }
-
   </style>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
@@ -123,11 +164,28 @@
       <img id="chatPhoto" src="" alt="Girl Photo">
       <h2 id="chatName"></h2>
     </div>
+
+    <!-- 🔹 NEW: Gift bar -->
+    <div id="giftBar" class="gift-bar">
+      <div style="margin-bottom:6px;">Send <strong id="giftGirlName">her</strong> a gift:</div>
+      <div class="row">
+        <div class="gift-chip" data-gift="flowers" title="Flowers">💐</div>
+        <div class="gift-chip" data-gift="ring" title="Ring">💍</div>
+        <div class="gift-chip" data-gift="candy" title="Chocolate">🍫</div>
+        <div class="gift-chip" data-gift="puppy" title="Puppy">🐶</div>
+      </div>
+    </div>
+
+    <!-- 🔹 NEW: Live banner placeholder (inserted dynamically) -->
     <div id="liveBanner" style="display:none"></div>
+
     <div class="chat-box" id="chatBox"></div>
+
+    <!-- 🔹 NEW: persistent CTA bar -->
     <div id="ctaBar" class="cta-bar">
       <a class="cta-link" href="/checkout.html">GET PREMIUM NOW!</a>
     </div>
+
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message...">
       <button onclick="sendMessage()">Send</button>
@@ -138,47 +196,40 @@
   <script>
     const backendUrl = "https://charmr-jfmc.onrender.com"; 
     const token = localStorage.getItem("token");
-    if (!token) { window.location.href = "login.html"; }
+
+    if (!token) {
+      window.location.href = "login.html";
+    }
 
     const params = new URLSearchParams(window.location.search);
     const girlId = parseInt(params.get('id'));
     const girl = girls.find(g => g.id === girlId);
 
     const chatBox = document.getElementById('chatBox');
-    const ctaBar = document.getElementById('ctaBar');
+    const ctaBar = document.getElementById('ctaBar'); // 🔹 NEW
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
+    // 🔹 NEW: name in gift bar
+    document.getElementById('giftGirlName').textContent = (girl.name || 'her').split(' ')[0];
 
-    /* -------- Smart autoscroll (stick to bottom unless user scrolls up) -------- */
-    let _autoScroll = true;
-    function nearBottom(el, threshold=160){
-      return (el.scrollHeight - el.scrollTop - el.clientHeight) <= threshold;
-    }
-    function scrollBottomIfWanted(force=false){
-      if (force || _autoScroll) chatBox.scrollTop = chatBox.scrollHeight;
-    }
-    chatBox.addEventListener('scroll', () => { _autoScroll = nearBottom(chatBox); });
-    window.addEventListener('resize', () => scrollBottomIfWanted());  // keep bottom on viewport changes
-
-    /* -------- Takeover state -------- */
+    // 🔹 NEW: takeover state & polling handle
     let TAKEOVER = false;
     let pollTimer = null;
 
-    /* -------- Credits flag -------- */
+    // 🔹 NEW: out-of-credits sticky flag
     let OUT_OF_CREDITS = false;
 
+    // 🔹 NEW: helpers to show/hide CTA
     function showCTA() {
       OUT_OF_CREDITS = true;
       ctaBar.style.display = 'block';
-      scrollBottomIfWanted();      // keep view pinned when bar appears
     }
     function hideCTA() {
       OUT_OF_CREDITS = false;
       ctaBar.style.display = 'none';
-      scrollBottomIfWanted();      // keep view pinned when bar hides
     }
 
-    /* -------- Append message (text or IMAGE:URL) -------- */
+    // 🔹 UPDATED: render text OR IMAGE:<url>
     function appendMessage(text, sender, isTyping = false) {
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
@@ -186,42 +237,25 @@
       if (isTyping) {
         msgDiv.classList.add('typing');
         msgDiv.textContent = '...';
-        chatBox.appendChild(msgDiv);
-        scrollBottomIfWanted();
-        return msgDiv;
-      }
-
-      const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
-      if (m) {
-        const url = m[1];
-
-        // Build <img> and attach handlers BEFORE setting src
-        const img = document.createElement('img');
-        img.alt = 'image';
-        img.style.display = 'block';
-        img.style.maxWidth = '220px';
-        img.style.maxHeight = '260px';
-        img.style.width = '220px';          // reserve space
-        img.style.aspectRatio = '3 / 4';    // prevent layout jump
-        img.style.minHeight = '160px';
-        img.style.borderRadius = '10px';
-        img.style.objectFit = 'cover';
-
-        const settle = () => {
-          requestAnimationFrame(() => scrollBottomIfWanted(true));
-        };
-        img.addEventListener('load', settle, { once: true });
-        img.addEventListener('error', settle, { once: true });
-
-        img.src = url; // set after listeners so cached images don't skip
-
-        msgDiv.appendChild(img);
       } else {
-        msgDiv.textContent = text;
+        const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
+        if (m) {
+          const img = document.createElement('img');
+          img.src = m[1];
+          img.alt = 'image';
+          img.style.maxWidth = '220px';
+          img.style.maxHeight = '260px';
+          img.style.borderRadius = '10px';
+          img.style.display = 'block';
+          img.style.objectFit = 'cover';
+          msgDiv.appendChild(img);
+        } else {
+          msgDiv.textContent = text;
+        }
       }
 
       chatBox.appendChild(msgDiv);
-      scrollBottomIfWanted();   // only if user hasn’t scrolled up
+      chatBox.scrollTop = chatBox.scrollHeight;
       return msgDiv;
     }
 
@@ -231,24 +265,21 @@
 
     async function loadMessages() {
       try {
-        const shouldStick = nearBottom(chatBox);     // remember user intent
         const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
         chatBox.innerHTML = "";
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
-        _autoScroll = shouldStick;                   // restore “pinned” state
-        scrollBottomIfWanted();                      // respect that state
 
+        // 🔹 keep CTA visible if we're out of credits
         if (OUT_OF_CREDITS) showCTA();
-
-        if (TAKEOVER) refreshCredits();             // ★ ADDED: keep credits fresh during live operator chats
       } catch (err) {
         console.error("Error loading messages:", err);
       }
     }
 
+    // 🔹 NEW: check takeover and toggle banner + polling
     async function checkTakeover() {
       try {
         const res = await fetch(`${backendUrl}/api/takeover/status/${girlId}`, {
@@ -260,16 +291,21 @@
         const banner = document.getElementById('liveBanner');
         if (TAKEOVER) {
           banner.style.display = '';
-          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '';
+          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
         } else {
           banner.style.display = 'none';
-          if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+          if (pollTimer) {
+            clearInterval(pollTimer);
+            pollTimer = null;
+          }
         }
-        scrollBottomIfWanted();                      // keep pinned when banner height toggles
-      } catch (e) { /* noop */ }
+      } catch (e) {
+        // fail closed (no banner)
+      }
     }
 
+    // 🔹 NEW: poll credits so CTA hides when they top up
     async function refreshCredits() {
       try {
         const r = await fetch(`${backendUrl}/api/credits`, {
@@ -295,41 +331,24 @@
       const typingBubble = appendMessage("...", 'girl', true);
 
       try {
-        // ★ ADDED: tell backend to charge even if takeover is active
-        const forceCharge = !!TAKEOVER;  // hint for backend to deduct in live mode
-
         const res = await fetch(`${backendUrl}/api/chat`, {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
           },
-          body: JSON.stringify({ girlId, message: messageText, forceCharge }) // ★ ADDED
+          body: JSON.stringify({ girlId, message: messageText })
         });
 
-        refreshCredits();                    // update credits now (after POST hits backend)
-
-        if (res.status === 402 || res.status === 403) {
+        if (res.status === 403) {
           const data = await res.json();
           typingBubble.remove();
-          const msgs = chatBox.querySelectorAll('.message.user');
-          if (msgs.length) msgs[msgs.length - 1].remove();
 
-          const ai = document.createElement('div');
-          ai.className = 'message girl';
-          const text = document.createElement('div');
-          text.textContent = (data && (data.message || data.error)) 
-            || "You're out of credits. Upgrade to premium to chat more, send pictures and contact details!";
-          const btn = document.createElement('a');
-          btn.href = '/checkout.html';
-          btn.textContent = 'GO PREMIUM!';
-          btn.style.cssText = 'display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
-          ai.appendChild(text);
-          ai.appendChild(btn);
-          chatBox.appendChild(ai);
-          scrollBottomIfWanted(true);   // ensure the upsell is visible
+          appendMessage(data.error || "You're out of credits!", 'girl');
+
+          // 🔹 NEW: show persistent CTA instead of injecting a one-off button
           showCTA();
-          refreshCredits();              // reflect the zero/low credits state immediately
+          chatBox.scrollTop = chatBox.scrollHeight;
           return;
         }
 
@@ -337,265 +356,40 @@
         await new Promise(resolve => setTimeout(resolve, randomDelay()));
         typingBubble.remove();
 
+        // 🔹 if takeover is on, don't expect AI reply
         if (data.takeover) {
           TAKEOVER = true;
           checkTakeover();
           appendMessage("…", "girl", true);
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
-          refreshCredits();              // update even when takeover engages
           return;
         }
 
         appendMessage(data.reply || "(No reply received)", 'girl');
-        refreshCredits();                // keep credits fresh after successful reply
+
+        // 🔹 after each successful exchange, re-check credits (in case they topped up in another tab)
+        refreshCredits();
       } catch (err) {
         console.error("Chat error:", err);
         typingBubble.remove();
-        refreshCredits();                // also refresh on error
       }
     }
+
+    // 🔹 NEW: Gift bar click -> upsell to premium
+    document.querySelectorAll('.gift-chip').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        const label = el.getAttribute('title') || 'gift';
+        appendMessage(`Aww, you're sweet! 🎁 Sending ${label.toLowerCase()} is for Premium members only. Tap the pink button below to upgrade and unlock gifts & pics ❤️`, 'girl');
+        showCTA();
+      });
+    });
 
     // Initial boot
     loadMessages();
     checkTakeover();
-    refreshCredits();
+    refreshCredits();                 // 🔹 check on load
     setInterval(checkTakeover, 10000);
-    setInterval(refreshCredits, 15000);
-  </script>
-
-  <!-- 🔒 Contact-sharing blocker & Premium upsell (user messages only) -->
-  <script>
-    (function(){
-      function stripZeroWidth(s){return (s||"").replace(/[\u200B-\u200D\uFEFF\u2060\u00AD]/g,"");}
-      function mapHomoglyphs(s){
-        const map={"А":"A","В":"B","Е":"E","К":"K","М":"M","Н":"H","О":"O","Р":"P","С":"C","Т":"T","Х":"X","а":"a","е":"e","о":"o","р":"p","с":"c","х":"x",
-                   "Α":"A","Β":"B","Ε":"E","Η":"H","Ι":"I","Κ":"K","Μ":"M","Ν":"N","Ο":"O","Ρ":"P","Τ":"T","Χ":"X","Υ":"Y",
-                   "α":"a","β":"b","ε":"e","ι":"i","κ":"k","ο":"o","ρ":"p","τ":"t","χ":"x","υ":"y",
-                   "＠":"@","！":"!","＃":"#","０":"0","１":"1","２":"2","３":"3","４":"4","５":"5","６":"6","７":"7","８":"8","９":"9"};
-        return s.split("").map(ch=>map[ch]||ch).join("");
-      }
-      function collapseSeparators(s){ return s.replace(/([a-z0-9])[\s._\-–—~|/\\:,;'"`^*+=)(\[\]{}<>]+([a-z0-9])/gi, "$1$2"); }
-      function wordsToDigits(s){ const n={zero:"0",one:"1",two:"2",three:"3",four:"4",five:"5",six:"6",seven:"7",eight:"8",nine:"9"}; return s.replace(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi,m=>n[m.toLowerCase()]); }
-      function normalizeAtDot(s){ let out=s.replace(/\s*(?:\(at\)|\[at\]|\{at\}|a\s*[\]\)\}]*\s*t|\ba\s*t\b)/gi,"@"); out=out.replace(/\s*(?:\(dot\)|\[dot\]|\{dot\}|d\s*o\s*t|\bd0t\b)/gi,"."); return out; }
-      function normalizeForDetection(input){ let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=wordsToDigits(s); s=normalizeAtDot(s); s=s.toLowerCase(); return s; }
-      function normalizeTokens(input){ let s=stripZeroWidth(input); s=mapHomoglyphs(s); s=collapseSeparators(s); s=wordsToDigits(s); s=s.toLowerCase(); return s; }
-
-      function editDistance(a,b){
-        const al=a.length, bl=b.length;
-        const dp=Array.from({length:al+1},()=>Array(bl+1).fill(0));
-        for(let i=0;i<=al;i++) dp[i][0]=i;
-        for(let j=0;j<=bl;j++) dp[0][j]=j;
-        for(let i=1;i<=al;i++){
-          for(let j=1;j<=bl;j++){
-            const cost=a[i-1]===b[j-1]?0:1;
-            dp[i][j]=Math.min(dp[i-1][j]+1, dp[i][j-1]+1, dp[i-1][j-1]+cost);
-          }
-        }
-        return dp[al][bl];
-      }
-      function escapeRegExp(s){return s.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");}
-      function nearPlatformWord(raw){
-        const text=(raw||"").toLowerCase();
-        for(const k of SOCIAL_KEYWORDS){
-          if(k.length<3) continue;
-          const re=new RegExp(`(^|[^a-z0-9])${escapeRegExp(k)}([^a-z0-9]|$)`,"i");
-          if(re.test(text)) return true;
-        }
-        return false;
-      }
-      function containsPlatformWord(raw){
-        const norm=normalizeTokens(raw);
-        const tokens=norm.match(/[a-z0-9]{3,}/g)||[];
-        for(const t of tokens){
-          for(const k of SOCIAL_KEYWORDS){
-            if (k.length < 3) continue;
-            if (t.includes(k)) return true;
-            const L=Math.max(t.length,k.length);
-            const d=editDistance(t,k);
-            if ((L>=5 && (d/L)<=0.25) || (L<=6 && d<=1)) return true;
-          }
-        }
-        return false;
-      }
-
-      const SOCIAL_KEYWORDS=["whatsapp","whatsap","wa","telegram","tg","t.me","discord","discordapp","discord.gg","instagram","insta","ig",
-        "facebook","fb","messenger","snapchat","snap","tiktok","tt","wechat","weixin","line","viber","skype","signal",
-        "kik","twitter","x.com","x","threads","clubhouse","tumblr","pinterest","onlyfans"];
-      const SOCIAL_DOMAINS=["t.me","wa.me","web.whatsapp","whatsapp.com","discord.gg","discord.com","instagram.com","ig.me",
-        "facebook.com","fb.com","m.me","snapchat.com","tiktok.com","vm.tiktok.com","twitter.com","x.com","line.me",
-        "wechat.com","skype.com","signal.org","viber.com","onlyfans.com","threads.net","pinterest.com"];
-      const EMAIL_DOMAINS_COMMON=["gmail.com","googlemail.com","outlook.com","hotmail.com","live.com","yahoo.com","icloud.com",
-        "me.com","proton.me","protonmail.com","pm.me","aol.com","zoho.com","mail.com","gmx.com","yandex.com"];
-      const CONTACT_CUES=["dm me","pm me","text me","message me on","reach me at","add me on","my handle","my user","my username",
-        "on insta","on ig","on telegram","on tg","on whatsapp","on wa","snap me","my discord","my skype","my wechat","my line","my viber","my signal"];
-
-      const URL_RE=/\b((https?:\/\/)?([a-z0-9-]+\.)+[a-z]{2,}\/?[^\s]*)\b/gi;
-      const EMAIL_RE=/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i;
-
-      function hasSocialUrl(text){
-        const urls=(text.match(URL_RE)||[]).map(u=>u.toLowerCase());
-        return urls.some(u=>SOCIAL_DOMAINS.some(d=>u.includes(d)));
-      }
-      function hasEmail(text){ return EMAIL_RE.test(normalizeForDetection(text)); }
-      function looksLikePhone(raw){ const digits=raw.replace(/[^\d]/g,""); return digits.length>=6; }
-      function numberWordRun(raw){ return ((raw.match(/\b(zero|one|two|three|four|five|six|seven|eight|nine)\b/gi)||[]).length)>=6; }
-      function hasPhone(text){ return looksLikePhone(text)||numberWordRun(text); }
-      function looksLikeHandleWithCue(text){
-        const norm=normalizeTokens(text);
-        const hasCue=CONTACT_CUES.some(c=>norm.includes(c));
-        if(!hasCue) return false;
-        const cand=norm.match(/\b[a-z0-9][a-z0-9._-]{4,}\b/g);
-        return !!cand;
-      }
-      function hasAtHandle(text){ return /@[a-z0-9._-]{3,}/i.test(text); }
-      function hasBareHandleToken(text){
-        const raw=(text||"").toLowerCase();
-        const tokens=raw.match(/\b[a-z0-9][a-z0-9._-]{5,}\b/g)||[];
-        const near=nearPlatformWord(raw);
-        return near && tokens.length>0;
-      }
-
-      function detectContactSharing(rawText){
-        const text=(rawText||"");
-        if (containsPlatformWord(text)) return {blocked:true,reason:"platform-word"};
-        if(hasSocialUrl(text)) return {blocked:true,reason:"social-link"};
-        if(hasEmail(text))     return {blocked:true,reason:"email"};
-        if(hasPhone(text))     return {blocked:true,reason:"phone"};
-        if(hasAtHandle(text))  return {blocked:true,reason:"@handle"};
-        if(looksLikeHandleWithCue(text)) return {blocked:true,reason:"handle-with-cue"};
-        if(hasBareHandleToken(text))     return {blocked:true,reason:"platform+handle"};
-        const norm=normalizeForDetection(text);
-        if(EMAIL_DOMAINS_COMMON.some(d=>norm.includes(d))) return {blocked:true,reason:"email-domain"};
-        if(/\b(at|dot)\b/i.test(text) && /[a-z0-9._-]{3,}/i.test(text)) return {blocked:true,reason:"obfuscated-contact"};
-        return {blocked:false};
-      }
-
-      function showBlockedMessage(){
-        const ai=document.createElement('div');
-        ai.className='message girl policy-upsell';
-        const logo=document.createElement('img');
-        logo.src='logo.png'; logo.alt='Logo';
-        logo.style.cssText='max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
-        ai.appendChild(logo);
-        const text=document.createElement('div');
-        text.textContent="⛔ You can’t share contact details here. If you want to share contact details, please upgrade to Premium.";
-        ai.appendChild(text);
-        const btn=document.createElement('a');
-        btn.href='https://charmr.xyz/checkout.html';
-        btn.textContent='Upgrade to Premium';
-        btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
-        ai.appendChild(btn);
-        const box=document.getElementById('chatBox');
-        const existing=box.querySelector('.policy-upsell');
-        if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
-        scrollBottomIfWanted(true);
-        if(typeof showCTA==="function") showCTA();
-        window._policyUpsellSticky = ai;
-        return ai;
-      }
-
-      function showCreditsMessage(){
-        const ai=document.createElement('div');
-        ai.className='message girl credits-upsell';
-        const logo=document.createElement('img');
-        logo.src='logo.png'; logo.alt='Logo';
-        logo.style.cssText='max-width:120px;display:block;margin-bottom:8px;border-radius:8px;';
-        ai.appendChild(logo);
-        const text=document.createElement('div');
-        text.textContent="⛔ You’re out of credits. Upgrade to Premium to continue the chat.";
-        ai.appendChild(text);
-        const btn=document.createElement('a');
-        btn.href='https://charmr.xyz/checkout.html';
-        btn.textContent='Upgrade to Premium';
-        btn.style.cssText='display:inline-block;margin-top:8px;padding:8px 12px;background:#ef476f;color:#fff;border-radius:8px;text-decoration:none;font-weight:700;';
-        ai.appendChild(btn);
-        const box=document.getElementById('chatBox');
-        const existing=box.querySelector('.credits-upsell');
-        if(!existing){ box.appendChild(ai); } else { box.replaceChild(ai, existing); }
-        scrollBottomIfWanted(true);
-        if(typeof showCTA==="function") showCTA();
-        window._creditsUpsellSticky = ai;
-        return ai;
-      }
-
-      (function ensureStickyUpsells(){
-        const box = document.getElementById('chatBox');
-        if (!box) return;
-        const obs = new MutationObserver(() => {
-          if (window._policyUpsellSticky && !box.querySelector('.policy-upsell')) {
-            box.appendChild(window._policyUpsellSticky.cloneNode(true));
-            scrollBottomIfWanted();
-          }
-          if (window._creditsUpsellSticky && !box.querySelector('.credits-upsell')) {
-            box.appendChild(window._creditsUpsellSticky.cloneNode(true));
-            scrollBottomIfWanted();
-          }
-        });
-        obs.observe(box, { childList: true });
-      })();
-
-      const _loadMessages = window.loadMessages;
-      if (typeof _loadMessages === "function") {
-        window.loadMessages = async function(){
-          const box = document.getElementById('chatBox');
-          const keep = ['.policy-upsell', '.credits-upsell']
-            .map(sel => box.querySelector(sel))
-            .filter(Boolean)
-            .map(node => node.cloneNode(true));
-
-          await _loadMessages.apply(this, arguments);
-
-          keep.forEach(clone => {
-            const className = Array.from(clone.classList).find(c => /-upsell$/.test(c));
-            if (className && !box.querySelector('.' + className)) box.appendChild(clone);
-          });
-          if (keep.length) scrollBottomIfWanted();
-        };
-      }
-
-      const _sendMessage=window.sendMessage;
-      window.sendMessage=async function(){
-        const input=document.getElementById('messageInput');
-        const raw=(input?.value||"").trim();
-        if(!raw){ return _sendMessage.apply(this, arguments); }
-
-        if (window.OUT_OF_CREDITS) { input.value=''; showCreditsMessage(); return; }
-
-        const verdict=detectContactSharing(raw);
-        if(verdict.blocked){ input.value=''; showBlockedMessage(); return; }
-
-        return _sendMessage.apply(this, arguments);
-      };
-
-      const _appendMessage=window.appendMessage;
-      let _lastUpsellAt=0;
-      window.appendMessage=function(text, sender, isTyping=false){
-        if(isTyping) return _appendMessage.call(this, text, sender, isTyping);
-        if(/^IMAGE:\s*\S+/i.test(text||"")) return _appendMessage.call(this, text, sender, isTyping);
-
-        if(sender==='user'){
-          if (window.OUT_OF_CREDITS) {
-            const now=Date.now();
-            if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.credits-upsell')) {
-              _lastUpsellAt=now; showCreditsMessage();
-            }
-            return;
-          }
-          const verdict=detectContactSharing(text||"");
-          if(verdict.blocked){
-            const now=Date.now();
-            if (now-_lastUpsellAt>8000 || !document.getElementById('chatBox').querySelector('.policy-upsell')) {
-              _lastUpsellAt=now; showBlockedMessage();
-            }
-            return;
-          }
-        }
-
-        const node = _appendMessage.call(this, text, sender, isTyping);
-        scrollBottomIfWanted();
-        return node;
-      };
-    })();
+    setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
   </script>
 </body>
 </html>
