@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat</title>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-FDQ6REQWS8');
-</script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
   <link rel="stylesheet" href="style.css" />
   <style>
     body {
@@ -155,7 +155,7 @@
       font-weight: bold;
     }
   </style>
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
   <div class="chat-container">
@@ -204,7 +204,7 @@
     const chatBox = document.getElementById('chatBox');
     const ctaBar  = document.getElementById('ctaBar');
 
-    // set header + photo (unchanged)
+    // set header + photo
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
     // set first-name in gift bar
@@ -214,12 +214,15 @@
     let TAKEOVER = false;
     let pollTimer = null;
 
+    // premium flag (treated as lifetime for now)
+    let IS_PREMIUM = false;
+
     // cta state
     let OUT_OF_CREDITS = false;
     function showCTA(){ OUT_OF_CREDITS = true; ctaBar.style.display = 'block'; }
     function hideCTA(){ OUT_OF_CREDITS = false; ctaBar.style.display = 'none'; }
 
-    // append message helper (unchanged)
+    // append message helper
     function appendMessage(text, sender, isTyping=false){
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
@@ -248,6 +251,21 @@
     }
 
     function randomDelay(min=700, max=2000){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+    // Detect phone/email/links/handles/WhatsApp etc.
+    function isContactAttempt(text) {
+      if (!text) return false;
+      const patterns = [
+        /@/i, // emails or handles
+        /\b(whats?app|telegram|snap(chat)?|instagram|insta|tg|wechat|signal|viber)\b/i,
+        /\b(phone|number|call|text|dm|pm)\b/i,
+        /https?:\/\/|www\./i,
+        // Common phone formats
+        /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+        /\b\+?\d{1,3}[-.\s]?\d{6,14}\b/
+      ];
+      return patterns.some(re => re.test(text));
+    }
 
     async function loadMessages(){
       try{
@@ -287,6 +305,7 @@
         });
         if (!r.ok) return;
         const c = await r.json(); // { credits, lifetime }
+        IS_PREMIUM = !!c?.lifetime; // reflect premium state
         if (c?.lifetime || (typeof c?.credits === 'number' && c.credits > 0)) hideCTA();
         else showCTA();
       }catch{}
@@ -296,6 +315,16 @@
       const input = document.getElementById('messageInput');
       const messageText = input.value.trim();
       if (!messageText) return;
+
+      // Block contact sharing for non-premium and upsell
+      if (isContactAttempt(messageText) && !IS_PREMIUM) {
+        appendMessage(
+          "I'd love to swap contact details, but sharing numbers, WhatsApp, emails or links is for Premium members only. Tap the pink button below to upgrade 💖",
+          "girl"
+        );
+        showCTA();
+        return; // don't send to backend
+      }
 
       appendMessage(messageText, 'user');
       input.value = '';
@@ -337,18 +366,16 @@
       }
     }
 
-    // Gift clicks -> upsell to premium (adds a girl message + shows CTA bar)
-    document.addEventListener('DOMContentLoaded', ()=>{
-      document.querySelectorAll('.gift-chip').forEach(el=>{
-        el.addEventListener('click', ()=>{
-          const label = el.getAttribute('title') || 'gift';
-          appendMessage(
-            `Aww, you're sweet! 🎁 Sending ${label.toLowerCase()} is for Premium members only. Tap the pink button below to upgrade and unlock gifts & pics ❤️`,
-            'girl'
-          );
-          showCTA();
-        });
-      });
+    // Gift clicks -> upsell to premium (event delegation so it always works)
+    document.getElementById('giftBar').addEventListener('click', (e)=>{
+      const chip = e.target.closest('.gift-chip');
+      if (!chip) return;
+      const label = chip.getAttribute('title') || 'gift';
+      appendMessage(
+        `Aww, you're sweet! 🎁 Sending ${label.toLowerCase()} is for Premium members only. Tap the pink button below to upgrade and unlock gifts & pics ❤️`,
+        'girl'
+      );
+      showCTA(); // reveal bottom CTA
     });
 
     // Boot
