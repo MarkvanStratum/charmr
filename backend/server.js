@@ -3055,14 +3055,7 @@ if (!user) {
   return res.status(404).json({ error: "User not found" });
 }
 
-    if (!user.lifetime && user.credits <= 0) {
-      return res.status(403).json({ error: "You're out of credits. Upgrade to premium to send more messages, share pictures and contact details so you can meet the girls!" });
-    }
-// Deduct 1 credit ONLY when user sends a message (not for AI replies)
-if (!user.lifetime) {
-  await pool.query("UPDATE users SET credits = credits - 1 WHERE id = $1", [userId]);
-}
-
+   
 
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, true, $3)`,
