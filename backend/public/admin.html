@@ -24,12 +24,15 @@
     .app { display:grid; grid-template-columns: 300px 1fr; height: calc(100vh - 70px); }
     .sidebar { border-right:1px solid var(--line); background:#fff; display:flex; flex-direction:column; }
     .side-head { padding:10px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center; justify-content:space-between; }
-    .side-list { overflow:auto; padding:8px; }
+    .side-list { overflow:auto; padding:8px; flex:1; }
     .conv { display:flex; align-items:center; gap:8px; padding:10px; border:1px solid transparent; border-radius:10px; cursor:pointer; }
     .conv:hover { background:#fafafa; }
     .conv.active { border-color:#ffd1e0; background:#fff5f7; }
     .conv .meta { font-size:12px; color:var(--sub); }
     .badge { margin-left:auto; min-width:18px; height:18px; padding:0 6px; border-radius:999px; background:var(--pink); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
+
+    .side-foot { padding:8px 10px; border-top:1px solid var(--line); font-size:12px; color:var(--sub); background:#fff; }
+    .side-foot code { background:#f3f4f6; padding:2px 6px; border-radius:6px; }
 
     .main { display:flex; flex-direction:column; }
     .chat-head { padding:10px 12px; border-bottom:1px solid var(--line); background:#fff; display:flex; align-items:center; gap:10px; }
@@ -45,6 +48,7 @@
     .composer .row { display:flex; gap:8px; width:100%; }
     .composer input[type="text"] { flex:1; min-width:260px; }
     .helper { font-size:12px; color:var(--sub); }
+
     .kv { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
     .kv > div { display:flex; flex-direction:column; }
     .kv input { width:240px; }
@@ -62,7 +66,7 @@
         </div>
         <div>
           <label>Operator Key</label>
-          <input id="opKey" placeholder="OPERATOR_KEY" />
+          <input id="opKey" placeholder="OPERATOR_KEY (leave empty if feed is public)" />
         </div>
         <div>
           <label>Operator Name (shown to user)</label>
@@ -85,14 +89,19 @@
       </div>
       <div id="convList" class="side-list"></div>
 
-      <!-- Manual add -->
+      <!-- Manual add (collapsible prompt) -->
       <div id="manualForm" style="padding:10px; border-top:1px solid var(--line); display:none;">
         <div style="display:flex; gap:6px; margin-bottom:6px;">
           <input id="manualUserId" type="number" placeholder="User ID" style="flex:1;">
           <input id="manualGirlId" type="number" placeholder="Girl ID" style="flex:1;">
         </div>
         <button id="btnManualAdd" style="width:100%;">Add chat</button>
-        <div class="helper" style="margin-top:6px;">Tip: chats discovered from feed will appear here automatically.</div>
+      </div>
+
+      <!-- Feed status -->
+      <div class="side-foot">
+        <div><strong>Feed:</strong> <span id="feedStatus">waiting…</span></div>
+        <div style="margin-top:4px">Path tried: <code id="feedUrl"></code></div>
       </div>
     </aside>
 
@@ -114,7 +123,7 @@
           <input id="imageFile" type="file" accept="image/*" />
           <button id="btnSendImage">Send Image</button>
         </div>
-        <div class="helper">New user replies are auto-detected from the feed and added to the sidebar with an unread badge.</div>
+        <div class="helper">Tip: Feeds auto-create chats. Unread badges show when a user replies.</div>
       </div>
     </main>
   </div>
@@ -126,7 +135,8 @@
 
   <script>
     // ---------- Config ----------
-    const FEED_PATH = '/api/feed'; // change if different
+    // We’ll try these in order and use the first that returns 200 JSON.
+    const FEED_CANDIDATES = ['/api/feed', '/feed', '/api/messages/recent'];
     // ----------------------------
 
     // Elements
@@ -151,6 +161,8 @@
       btnSendText: document.getElementById('btnSendText'),
       btnSendImage: document.getElementById('btnSendImage'),
       ping: document.getElementById('ping'),
+      feedStatus: document.getElementById('feedStatus'),
+      feedUrl: document.getElementById('feedUrl'),
     };
 
     function base(){ return (els.backendUrl.value || '').trim().replace(/\/+$/,''); }
@@ -161,6 +173,7 @@
     const store = {
       byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
+      chosenFeedPath: null,
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
@@ -177,7 +190,7 @@
     }
 
     // ----- Sidebar -----
-    function renderSidebar(){
+    function renderSidebar(autoSelectIfNone=true){
       els.convList.innerHTML = '';
       const list = [...store.byKey.values()].sort((a,b)=> (b.lastTs||0)-(a.lastTs||0));
       for (const c of list){
@@ -199,8 +212,12 @@
         els.convList.appendChild(item);
       }
       if (store.byKey.size===0){
-        els.convList.innerHTML = '<div class="helper">No chats discovered yet. If you’re chatting now, check FEED_PATH and CORS.</div>';
+        els.convList.innerHTML = '<div class="helper">No chats yet. Make sure feed endpoint is correct and accessible (CORS).</div>';
+      } else if (!store.activeKey && autoSelectIfNone) {
+        // Auto-open the newest chat
+        selectConversation(list[0].key);
       }
+
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
       document.title = totalUnread?`(${totalUnread}) Operator Console`:'Operator Console';
     }
@@ -236,42 +253,80 @@
     function selectConversation(key){
       store.activeKey = key;
       const conv = store.byKey.get(key);
-      if (conv){ conv.unread=0; renderSidebar(); fetchMessages(conv); checkTakeover(conv); }
+      if (conv){ conv.unread=0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
       renderChat(conv);
     }
 
     // ----- Feed discovery -----
+    async function resolveFeedOnce(){
+      // Try known candidates until one returns JSON 200
+      for (const path of FEED_CANDIDATES){
+        try{
+          const hdrs = {};
+          const k = (els.opKey.value||'').trim();
+          if (k) hdrs['X-Operator-Key'] = k;
+
+          const url = `${base()}${path}`;
+          const r = await fetch(url, { headers: hdrs });
+          if (!r.ok){ continue; }
+          const payload = await r.clone().json().catch(()=>null);
+          if (payload){
+            store.chosenFeedPath = path;
+            els.feedUrl.textContent = path;
+            els.feedStatus.textContent = 'connected';
+            return true;
+          }
+        }catch(e){ /* try next */ }
+      }
+      els.feedUrl.textContent = '(none)';
+      els.feedStatus.textContent = 'failed (check backend URL / CORS)';
+      return false;
+    }
+
     async function fetchFeed(){
+      if (!store.chosenFeedPath){
+        const ok = await resolveFeedOnce();
+        if (!ok) return;
+      }
       try{
         const hdrs = {};
         const k = (els.opKey.value||'').trim();
         if (k) hdrs['X-Operator-Key'] = k;
 
-        const url = `${base()}${FEED_PATH}`;
+        const url = `${base()}${store.chosenFeedPath}`;
+        els.feedUrl.textContent = store.chosenFeedPath;
+
         const r = await fetch(url, { headers: hdrs });
-        if (!r.ok){ console.warn('Feed fetch failed', r.status, url); return; }
+        if (!r.ok){ els.feedStatus.textContent = `HTTP ${r.status}`; return; }
         const payload = await r.json();
+
+        // Rows extraction (support both {rows:[...]} and [...] )
         const rows = Array.isArray(payload?.rows) ? payload.rows : (Array.isArray(payload) ? payload : []);
+        els.feedStatus.textContent = `ok · ${rows.length} rows`;
 
         let pingNeeded = false;
         for (const row of rows){
           const m = normalizeFeedRow(row);
           if (!m) continue;
 
-          // Always create/refresh the conversation (even if we can't be sure it's from user)
+          // Always create/refresh conversation when any message exists
           const cv = ensureConv(m.user_id, m.girl_id);
           const ts = new Date(m.created_at).getTime() || Date.now();
           if (ts > cv.lastTs) cv.lastTs = ts;
 
-          // Only bump unread if we’re confident it’s from the user
-          if ((m.from_user === true) && store.activeKey !== cv.key){
+          // Mark unread only if clearly from user and not active
+          if (m.from_user === true && store.activeKey !== cv.key){
             cv.unread = Math.min(99, (cv.unread||0)+1);
             pingNeeded = true;
           }
         }
-        if (pingNeeded) { try{ els.ping.play().catch(()=>{}); }catch{} }
+        if (pingNeeded){ try{ els.ping.play().catch(()=>{}); }catch{} }
         renderSidebar();
-      }catch(e){ console.warn('Feed error', e); }
+
+      }catch(e){
+        els.feedStatus.textContent = 'error (see console)';
+        console.warn('Feed error:', e);
+      }
     }
 
     // Be generous about field names/types
@@ -294,7 +349,7 @@
 
     // ----- Conversation fetch -----
     async function fetchMessages(conv){
-      if (!conv || !authOK()) return;
+      if (!conv || !authOK()) return; // messages endpoint likely needs operator key
       try{
         const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
           headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }
@@ -309,7 +364,7 @@
           conv.lastTs = new Date(last.created_at).getTime() || Date.now();
         }
         renderChat(conv);
-        renderSidebar();
+        renderSidebar(false);
       }catch(e){ /* silent */ }
     }
 
@@ -332,7 +387,7 @@
     // ----- Sending -----
     async function sendText(){
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first');
+      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
       const text = (els.textMsg.value||'').trim();
       if (!text) return;
       try{
@@ -348,7 +403,7 @@
 
     async function sendImage(){
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first');
+      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
       const url = (els.imageUrl.value||'').trim();
       const file = els.imageFile.files[0];
       if (!url && !file) return alert('Paste an image URL or choose a file');
@@ -378,7 +433,7 @@
     // ----- Takeover (active chat) -----
     els.btnGlobalStart.onclick = async ()=>{
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first');
+      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
       const body = { userId: conv.userId, girlId: conv.girlId, operatorName: (els.opName.value||'').trim() || null };
       const r = await fetch(`${base()}/api/takeover/start`, { method:'POST', headers: headersJSON(), body: JSON.stringify(body) });
       if (!r.ok) return alert('Failed to start takeover');
@@ -386,7 +441,7 @@
     };
     els.btnGlobalStop.onclick = async ()=>{
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first');
+      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
       const r = await fetch(`${base()}/api/takeover/stop`, {
         method:'POST', headers: headersJSON(),
         body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId })
@@ -401,20 +456,19 @@
       if (els.manualForm.style.display === '') els.manualForm.style.display = 'block';
       else els.manualForm.style.display = '';
     };
-    document.getElementById('btnManualAdd').onclick = ()=>{
-      const uid = Number(document.getElementById('manualUserId').value);
-      const gid = Number(document.getElementById('manualGirlId').value);
+    els.btnManualAdd.onclick = ()=>{
+      const uid = Number(els.manualUserId.value);
+      const gid = Number(els.manualGirlId.value);
       if (!uid || !gid) return;
       const c = ensureConv(uid, gid);
       renderSidebar(); selectConversation(c.key);
-      document.getElementById('manualUserId').value='';
-      document.getElementById('manualGirlId').value='';
+      els.manualUserId.value=''; els.manualGirlId.value='';
       els.manualForm.style.display = 'none';
     };
 
     // ----- Composer wiring -----
-    document.getElementById('btnSendText').onclick = sendText;
-    document.getElementById('btnSendImage').onclick = sendImage;
+    els.btnSendText.onclick = sendText;
+    els.btnSendImage.onclick = sendImage;
     els.textMsg.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
 
     // ----- Poll -----
