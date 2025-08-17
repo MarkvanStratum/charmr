@@ -345,7 +345,12 @@
 
     // ----- Conversation fetch -----
     async function fetchMessages(conv){
-      if (!conv || !haveOpKey()) return;
+      if (!conv) return;
+if (!haveOpKey()) {
+  els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
+  return;
+}
+
       try{
         const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
           headers: opHeader()
@@ -470,9 +475,19 @@
     // Keep chat pinned to bottom even on resize
     window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
 
+        // Keep chat pinned to bottom even on resize
+    window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
+
+    // When the operator key is filled in, auto-load messages for the active chat
+    els.opKey.addEventListener('input', () => {
+      const c = store.byKey.get(store.activeKey);
+      if (c && haveOpKey()) fetchMessages(c);
+    });
+
     // ----- Poll -----
     setInterval(()=>fetchFeed(false), 5000);           // discover & update list
     setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000); // active chat refresh
+
 
     // Boot
     (async function init(){
