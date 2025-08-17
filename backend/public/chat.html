@@ -10,7 +10,6 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-
   gtag('config', 'G-FDQ6REQWS8');
 </script>
   <link rel="stylesheet" href="style.css" />
@@ -49,7 +48,7 @@
       margin-right: 10px;
       border: 2px solid white;
     }
-    /* 🔹 NEW: live agent banner */
+    /* live agent banner */
     #liveBanner {
       background:#ffe082;
       color:#4a3b00;
@@ -58,7 +57,7 @@
       text-align:center;
     }
 
-    /* 🔹 NEW: Gift bar under header */
+    /* Gift bar under header */
     .gift-bar{
       border-bottom:1px solid #f1f1f1;
       background:#fff8fb;
@@ -137,14 +136,14 @@
     .chat-input button:hover {
       background-color: #d43d61;
     }
-    /* 🔹 NEW: sticky CTA bar shown when out of credits */
+    /* sticky CTA bar (unchanged) */
     .cta-bar {
-      display: none;            /* toggled via JS */
+      display: none;
       border-top: 1px solid #ffd1dc;
       background: #fff5f7;
       padding: 10px;
       text-align: center;
-      flex-shrink: 0;           /* always visible at bottom of container */
+      flex-shrink: 0;
     }
     .cta-link {
       display: inline-block;
@@ -165,7 +164,7 @@
       <h2 id="chatName"></h2>
     </div>
 
-    <!-- 🔹 NEW: Gift bar -->
+    <!-- Gift bar -->
     <div id="giftBar" class="gift-bar">
       <div style="margin-bottom:6px;">Send <strong id="giftGirlName">her</strong> a gift:</div>
       <div class="row">
@@ -176,12 +175,12 @@
       </div>
     </div>
 
-    <!-- 🔹 NEW: Live banner placeholder (inserted dynamically) -->
+    <!-- Live banner placeholder -->
     <div id="liveBanner" style="display:none"></div>
 
     <div class="chat-box" id="chatBox"></div>
 
-    <!-- 🔹 NEW: persistent CTA bar -->
+    <!-- persistent CTA bar (unchanged) -->
     <div id="ctaBar" class="cta-bar">
       <a class="cta-link" href="/checkout.html">GET PREMIUM NOW!</a>
     </div>
@@ -196,50 +195,40 @@
   <script>
     const backendUrl = "https://charmr-jfmc.onrender.com"; 
     const token = localStorage.getItem("token");
-
-    if (!token) {
-      window.location.href = "login.html";
-    }
+    if (!token) { window.location.href = "login.html"; }
 
     const params = new URLSearchParams(window.location.search);
     const girlId = parseInt(params.get('id'));
     const girl = girls.find(g => g.id === girlId);
 
     const chatBox = document.getElementById('chatBox');
-    const ctaBar = document.getElementById('ctaBar'); // 🔹 NEW
+    const ctaBar  = document.getElementById('ctaBar');
+
+    // set header + photo (unchanged)
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
-    // 🔹 NEW: name in gift bar
+    // set first-name in gift bar
     document.getElementById('giftGirlName').textContent = (girl.name || 'her').split(' ')[0];
 
-    // 🔹 NEW: takeover state & polling handle
+    // takeover state
     let TAKEOVER = false;
     let pollTimer = null;
 
-    // 🔹 NEW: out-of-credits sticky flag
+    // cta state
     let OUT_OF_CREDITS = false;
+    function showCTA(){ OUT_OF_CREDITS = true; ctaBar.style.display = 'block'; }
+    function hideCTA(){ OUT_OF_CREDITS = false; ctaBar.style.display = 'none'; }
 
-    // 🔹 NEW: helpers to show/hide CTA
-    function showCTA() {
-      OUT_OF_CREDITS = true;
-      ctaBar.style.display = 'block';
-    }
-    function hideCTA() {
-      OUT_OF_CREDITS = false;
-      ctaBar.style.display = 'none';
-    }
-
-    // 🔹 UPDATED: render text OR IMAGE:<url>
-    function appendMessage(text, sender, isTyping = false) {
+    // append message helper (unchanged)
+    function appendMessage(text, sender, isTyping=false){
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
-
-      if (isTyping) {
+      if (isTyping){
         msgDiv.classList.add('typing');
         msgDiv.textContent = '...';
       } else {
         const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
-        if (m) {
+        if (m){
           const img = document.createElement('img');
           img.src = m[1];
           img.alt = 'image';
@@ -253,75 +242,57 @@
           msgDiv.textContent = text;
         }
       }
-
       chatBox.appendChild(msgDiv);
       chatBox.scrollTop = chatBox.scrollHeight;
       return msgDiv;
     }
 
-    function randomDelay(min = 700, max = 2000) {
-      return Math.floor(Math.random() * (max - min + 1)) + min;
-    }
+    function randomDelay(min=700, max=2000){ return Math.floor(Math.random()*(max-min+1))+min; }
 
-    async function loadMessages() {
-      try {
+    async function loadMessages(){
+      try{
         const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
         chatBox.innerHTML = "";
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
-
-        // 🔹 keep CTA visible if we're out of credits
         if (OUT_OF_CREDITS) showCTA();
-      } catch (err) {
-        console.error("Error loading messages:", err);
-      }
+      }catch(e){ console.error("Error loading messages:", e); }
     }
 
-    // 🔹 NEW: check takeover and toggle banner + polling
-    async function checkTakeover() {
-      try {
+    async function checkTakeover(){
+      try{
         const res = await fetch(`${backendUrl}/api/takeover/status/${girlId}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         const data = await res.json();
         TAKEOVER = !!data.takeover;
-
         const banner = document.getElementById('liveBanner');
-        if (TAKEOVER) {
+        if (TAKEOVER){
           banner.style.display = '';
           banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
         } else {
           banner.style.display = 'none';
-          if (pollTimer) {
-            clearInterval(pollTimer);
-            pollTimer = null;
-          }
+          if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
         }
-      } catch (e) {
-        // fail closed (no banner)
-      }
+      }catch{}
     }
 
-    // 🔹 NEW: poll credits so CTA hides when they top up
-    async function refreshCredits() {
-      try {
+    async function refreshCredits(){
+      try{
         const r = await fetch(`${backendUrl}/api/credits`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (!r.ok) return;
         const c = await r.json(); // { credits, lifetime }
-        if (c?.lifetime || (typeof c?.credits === 'number' && c.credits > 0)) {
-          hideCTA();
-        } else {
-          showCTA();
-        }
-      } catch {}
+        if (c?.lifetime || (typeof c?.credits === 'number' && c.credits > 0)) hideCTA();
+        else showCTA();
+      }catch{}
     }
 
-    async function sendMessage() {
+    async function sendMessage(){
       const input = document.getElementById('messageInput');
       const messageText = input.value.trim();
       if (!messageText) return;
@@ -330,34 +301,27 @@
       input.value = '';
       const typingBubble = appendMessage("...", 'girl', true);
 
-      try {
+      try{
         const res = await fetch(`${backendUrl}/api/chat`, {
           method: "POST",
-          headers: { 
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          },
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
           body: JSON.stringify({ girlId, message: messageText })
         });
 
-        if (res.status === 403) {
+        if (res.status === 403){
           const data = await res.json();
           typingBubble.remove();
-
           appendMessage(data.error || "You're out of credits!", 'girl');
-
-          // 🔹 NEW: show persistent CTA instead of injecting a one-off button
           showCTA();
           chatBox.scrollTop = chatBox.scrollHeight;
           return;
         }
 
         const data = await res.json();
-        await new Promise(resolve => setTimeout(resolve, randomDelay()));
+        await new Promise(r => setTimeout(r, randomDelay()));
         typingBubble.remove();
 
-        // 🔹 if takeover is on, don't expect AI reply
-        if (data.takeover) {
+        if (data.takeover){
           TAKEOVER = true;
           checkTakeover();
           appendMessage("…", "girl", true);
@@ -366,30 +330,33 @@
         }
 
         appendMessage(data.reply || "(No reply received)", 'girl');
-
-        // 🔹 after each successful exchange, re-check credits (in case they topped up in another tab)
         refreshCredits();
-      } catch (err) {
-        console.error("Chat error:", err);
+      }catch(e){
+        console.error("Chat error:", e);
         typingBubble.remove();
       }
     }
 
-    // 🔹 NEW: Gift bar click -> upsell to premium
-    document.querySelectorAll('.gift-chip').forEach(el=>{
-      el.addEventListener('click', ()=>{
-        const label = el.getAttribute('title') || 'gift';
-        appendMessage(`Aww, you're sweet! 🎁 Sending ${label.toLowerCase()} is for Premium members only. Tap the pink button below to upgrade and unlock gifts & pics ❤️`, 'girl');
-        showCTA();
+    // Gift clicks -> upsell to premium (adds a girl message + shows CTA bar)
+    document.addEventListener('DOMContentLoaded', ()=>{
+      document.querySelectorAll('.gift-chip').forEach(el=>{
+        el.addEventListener('click', ()=>{
+          const label = el.getAttribute('title') || 'gift';
+          appendMessage(
+            `Aww, you're sweet! 🎁 Sending ${label.toLowerCase()} is for Premium members only. Tap the pink button below to upgrade and unlock gifts & pics ❤️`,
+            'girl'
+          );
+          showCTA();
+        });
       });
     });
 
-    // Initial boot
+    // Boot
     loadMessages();
     checkTakeover();
-    refreshCredits();                 // 🔹 check on load
+    refreshCredits();
     setInterval(checkTakeover, 10000);
-    setInterval(refreshCredits, 15000); // 🔹 keep CTA state fresh
+    setInterval(refreshCredits, 15000);
   </script>
 </body>
 </html>
