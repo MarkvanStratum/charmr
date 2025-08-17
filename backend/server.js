@@ -3056,7 +3056,7 @@ if (!user) {
 }
 
     if (!user.lifetime && user.credits <= 0) {
-      return res.status(403).json({ error: "I really wanna meet you, but you're out of credits I see. Please buy more so we can meet!" });
+      return res.status(403).json({ error: "You're out of credits. Upgrade to premium to send more messages, share pictures and contact details so you can meet the girls!" });
     }
 // Deduct 1 credit ONLY when user sends a message (not for AI replies)
 if (!user.lifetime) {
