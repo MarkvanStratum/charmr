@@ -127,7 +127,7 @@
 
   <script>
     // ---------- Config ----------
-    const FEED_PATH = '/api/feed'; // <- if your feed lives elsewhere, change this
+    const FEED_PATH = '/api/feed'; // change if your feed lives elsewhere
     // ----------------------------
 
     // Elements
@@ -163,7 +163,7 @@
     const store = {
       byKey: new Map(),
       activeKey: null,
-      lastFeedTs: 0, // used to detect new rows
+      lastFeedTs: 0,
     };
 
     function keyOf(userId, girlId){ return `${Number(userId)}-${Number(girlId)}`; }
@@ -188,7 +188,6 @@
     // -------- Sidebar rendering --------
     function renderSidebar(){
       els.convList.innerHTML = '';
-      // sort by lastTs desc
       const list = [...store.byKey.values()].sort((a,b)=> (b.lastTs||0) - (a.lastTs||0));
       for (const c of list){
         const item = document.createElement('div');
@@ -211,10 +210,12 @@
         els.convList.appendChild(item);
       }
 
-      // Title unread dot
+      if (store.byKey.size === 0) {
+        els.convList.innerHTML = '<div class="helper">No chats discovered yet. Check your feed endpoint or operator key.</div>';
+      }
+
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
-      if (totalUnread>0) document.title = `(${totalUnread}) Operator Console`;
-      else document.title = 'Operator Console';
+      document.title = totalUnread>0 ? `(${totalUnread}) Operator Console` : 'Operator Console';
     }
 
     // -------- Chat rendering --------
@@ -263,33 +264,29 @@
     }
 
     // -------- Data fetching --------
-    // Detect conversations from FEED
+    // Detect conversations from FEED (no auth required here; header sent only if present)
     async function fetchFeed(){
-      if (!authOK()) return;
       try{
-        const r = await fetch(`${base()}${FEED_PATH}`, { headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }});
-        if (!r.ok) return;
+        const hdrs = {};
+        const k = (els.opKey.value||'').trim();
+        if (k) hdrs['X-Operator-Key'] = k;
+
+        const r = await fetch(`${base()}${FEED_PATH}`, { headers: hdrs });
+        if (!r.ok) { console.warn('Feed fetch failed', r.status); return; }
 
         const payload = await r.json();
-        // EXPECTED SHAPE:
-        // { rows: [{ user_id, girl_id, text, from_user, created_at, ... }], now: "2025-08-17T..." }
-        // If your feed shape differs, adapt normalizeFeedRow below.
         const rows = Array.isArray(payload?.rows) ? payload.rows : (Array.isArray(payload) ? payload : []);
 
         let discovered = 0;
         for (const row of rows){
           const m = normalizeFeedRow(row);
           if (!m) continue;
-          // only consider messages FROM USER to start/refresh a conversation
           if (m.from_user){
             const cv = ensureConv(m.user_id, m.girl_id);
-            // update lastTs to keep ordering fresh
             const ts = new Date(m.created_at).getTime() || Date.now();
             if (ts > cv.lastTs){ cv.lastTs = ts; }
-            // If not active, bump unread
             if (store.activeKey !== cv.key){
               cv.unread = Math.min(99, (cv.unread||0) + 1);
-              // play ping once per poll if something new arrived
               discovered = 1;
             }
           }
@@ -297,20 +294,25 @@
         if (discovered){ try{ els.ping.play().catch(()=>{}); }catch{} }
         renderSidebar();
 
-      }catch(e){ /* silent */ }
+      }catch(e){ console.warn('Feed error', e); }
     }
 
-    // Adjust this if your feed rows are different
+    // Tolerant normalizer for different feed shapes
     function normalizeFeedRow(row){
-      if (row == null) return null;
-      // Try common keys; adapt as needed
-      const user_id = row.user_id ?? row.userId ?? row.userid;
-      const girl_id = row.girl_id ?? row.girlId ?? row.girlid;
-      const from_user = typeof row.from_user === 'boolean' ? row.from_user : !!row.fromUser;
-      const created_at = row.created_at ?? row.createdAt ?? Date.now();
-      const text = row.text ?? row.body ?? '';
+      if (!row) return null;
+      const user_id = Number(row.user_id ?? row.userId ?? row.userid ?? row.u_id ?? row.uid);
+      const girl_id = Number(row.girl_id ?? row.girlId ?? row.girlid ?? row.g_id ?? row.gid);
+
+      let from_user = row.from_user ?? row.fromUser ?? (row.sender ? row.sender === 'user' : undefined) ?? row.is_user;
+      if (typeof from_user === 'string') from_user = /^(true|1|user)$/i.test(from_user);
+      if (typeof from_user === 'number') from_user = from_user === 1;
+      from_user = !!from_user;
+
+      const created_at = row.created_at ?? row.createdAt ?? row.ts ?? Date.now();
+      const text = row.text ?? row.body ?? row.msg ?? '';
+
       if (!user_id || !girl_id) return null;
-      return { user_id:Number(user_id), girl_id:Number(girl_id), from_user, created_at, text };
+      return { user_id, girl_id, from_user, created_at, text };
     }
 
     // Load full message list for a conversation
@@ -325,7 +327,6 @@
         if (!Array.isArray(data)) return;
 
         conv.messages = data;
-        // set lastTs to newest
         if (data.length){
           const last = data[data.length - 1];
           conv.lastTs = new Date(last.created_at).getTime() || Date.now();
@@ -352,16 +353,11 @@
     }
 
     // Polling loops
+    setInterval(() => { fetchFeed(); }, 5000);  // discover chats from feed
     setInterval(() => {
-      // 1) discover chats with new user messages
-      fetchFeed();
-    }, 5000);
-
-    setInterval(() => {
-      // 2) refresh active conversation messages
       const conv = store.byKey.get(store.activeKey);
       if (conv) fetchMessages(conv);
-    }, 2000);
+    }, 2000); // refresh active chat
 
     // -------- Sending --------
     async function sendText(){
@@ -460,8 +456,7 @@
     });
 
     // -------- Boot --------
-    // Prime: try to discover chats immediately (if operator key present)
-    setTimeout(fetchFeed, 200);
+    setTimeout(fetchFeed, 200); // discover chats immediately
   </script>
 </body>
 </html>
