@@ -45,7 +45,6 @@
     .composer .row { display:flex; gap:8px; width:100%; }
     .composer input[type="text"] { flex:1; min-width:260px; }
     .helper { font-size:12px; color:var(--sub); }
-
     .kv { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
     .kv > div { display:flex; flex-direction:column; }
     .kv input { width:240px; }
@@ -86,7 +85,7 @@
       </div>
       <div id="convList" class="side-list"></div>
 
-      <!-- Manual add (collapsible prompt) -->
+      <!-- Manual add -->
       <div id="manualForm" style="padding:10px; border-top:1px solid var(--line); display:none;">
         <div style="display:flex; gap:6px; margin-bottom:6px;">
           <input id="manualUserId" type="number" placeholder="User ID" style="flex:1;">
@@ -127,7 +126,7 @@
 
   <script>
     // ---------- Config ----------
-    const FEED_PATH = '/api/feed'; // change if your feed lives elsewhere
+    const FEED_PATH = '/api/feed'; // change if different
     // ----------------------------
 
     // Elements
@@ -158,67 +157,55 @@
     function headersJSON(){ return { 'Content-Type':'application/json', 'X-Operator-Key': (els.opKey.value||'').trim() }; }
     function authOK(){ return (els.opKey.value||'').trim().length > 0; }
 
-    // Conversation store
-    // key = `${userId}-${girlId}`
+    // Store
     const store = {
-      byKey: new Map(),
+      byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
-      lastFeedTs: 0,
     };
-
-    function keyOf(userId, girlId){ return `${Number(userId)}-${Number(girlId)}`; }
+    function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
     function ensureConv(userId, girlId){
       const k = keyOf(userId, girlId);
-      if (!store.byKey.has(k)) {
+      if (!store.byKey.has(k)){
         store.byKey.set(k, {
-          key: k,
-          userId: Number(userId),
-          girlId: Number(girlId),
+          key: k, userId: Number(userId), girlId: Number(girlId),
           title: `User ${userId} · Girl ${girlId}`,
-          messages: [],
-          unread: 0,
-          lastTs: 0,
-          takeover: false
+          messages: [], unread: 0, lastTs: 0, takeover: false
         });
       }
       return store.byKey.get(k);
     }
 
-    // -------- Sidebar rendering --------
+    // ----- Sidebar -----
     function renderSidebar(){
       els.convList.innerHTML = '';
-      const list = [...store.byKey.values()].sort((a,b)=> (b.lastTs||0) - (a.lastTs||0));
+      const list = [...store.byKey.values()].sort((a,b)=> (b.lastTs||0)-(a.lastTs||0));
       for (const c of list){
         const item = document.createElement('div');
-        item.className = 'conv' + (store.activeKey === c.key ? ' active' : '');
+        item.className = 'conv' + (store.activeKey===c.key ? ' active':'');
         item.dataset.key = c.key;
 
         const title = document.createElement('div');
         title.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
-
         item.appendChild(title);
 
-        if (c.unread > 0){
+        if (c.unread>0){
           const badge = document.createElement('div');
           badge.className = 'badge';
           badge.textContent = c.unread;
           item.appendChild(badge);
         }
-
         item.onclick = () => selectConversation(c.key);
         els.convList.appendChild(item);
       }
-
-      if (store.byKey.size === 0) {
-        els.convList.innerHTML = '<div class="helper">No chats discovered yet. Check your feed endpoint or operator key.</div>';
+      if (store.byKey.size===0){
+        els.convList.innerHTML = '<div class="helper">No chats discovered yet. If you’re chatting now, check FEED_PATH and CORS.</div>';
       }
-
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
-      document.title = totalUnread>0 ? `(${totalUnread}) Operator Console` : 'Operator Console';
+      document.title = totalUnread?`(${totalUnread}) Operator Console`:'Operator Console';
     }
 
-    // -------- Chat rendering --------
+    // ----- Chat -----
     function renderChat(conv){
       els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
       els.liveBanner.style.display = conv?.takeover ? '' : 'none';
@@ -231,25 +218,15 @@
         const bubble = document.createElement('div');
         bubble.className = 'msg ' + (m.from_user ? 'user' : 'girl');
 
-        const content = document.createElement('div');
-        content.className = 'bubble';
-
+        const content = document.createElement('div'); content.className='bubble';
         const imgMatch = /^IMAGE:\s*(\S+)/i.exec(m.text||'');
-        if (imgMatch){
-          const img = document.createElement('img');
-          img.src = imgMatch[1];
-          img.alt = 'image';
-          content.appendChild(img);
-        } else {
-          content.textContent = m.text;
-        }
+        if (imgMatch){ const img=document.createElement('img'); img.src=imgMatch[1]; img.alt='image'; content.appendChild(img); }
+        else { content.textContent = m.text; }
 
-        const meta = document.createElement('div');
-        meta.className = 'meta';
+        const meta = document.createElement('div'); meta.className='meta';
         meta.textContent = new Date(m.created_at).toLocaleString();
 
-        bubble.appendChild(content);
-        bubble.appendChild(meta);
+        bubble.appendChild(content); bubble.appendChild(meta);
         wrap.appendChild(bubble);
         els.chatBox.appendChild(wrap);
       }
@@ -259,51 +236,51 @@
     function selectConversation(key){
       store.activeKey = key;
       const conv = store.byKey.get(key);
-      if (conv){ conv.unread = 0; renderSidebar(); fetchMessages(conv); checkTakeover(conv); }
+      if (conv){ conv.unread=0; renderSidebar(); fetchMessages(conv); checkTakeover(conv); }
       renderChat(conv);
     }
 
-    // -------- Data fetching --------
-    // Detect conversations from FEED (no auth required here; header sent only if present)
+    // ----- Feed discovery -----
     async function fetchFeed(){
       try{
         const hdrs = {};
         const k = (els.opKey.value||'').trim();
         if (k) hdrs['X-Operator-Key'] = k;
 
-        const r = await fetch(`${base()}${FEED_PATH}`, { headers: hdrs });
-        if (!r.ok) { console.warn('Feed fetch failed', r.status); return; }
-
+        const url = `${base()}${FEED_PATH}`;
+        const r = await fetch(url, { headers: hdrs });
+        if (!r.ok){ console.warn('Feed fetch failed', r.status, url); return; }
         const payload = await r.json();
         const rows = Array.isArray(payload?.rows) ? payload.rows : (Array.isArray(payload) ? payload : []);
 
-        let discovered = 0;
+        let pingNeeded = false;
         for (const row of rows){
           const m = normalizeFeedRow(row);
           if (!m) continue;
-          if (m.from_user){
-            const cv = ensureConv(m.user_id, m.girl_id);
-            const ts = new Date(m.created_at).getTime() || Date.now();
-            if (ts > cv.lastTs){ cv.lastTs = ts; }
-            if (store.activeKey !== cv.key){
-              cv.unread = Math.min(99, (cv.unread||0) + 1);
-              discovered = 1;
-            }
+
+          // Always create/refresh the conversation (even if we can't be sure it's from user)
+          const cv = ensureConv(m.user_id, m.girl_id);
+          const ts = new Date(m.created_at).getTime() || Date.now();
+          if (ts > cv.lastTs) cv.lastTs = ts;
+
+          // Only bump unread if we’re confident it’s from the user
+          if ((m.from_user === true) && store.activeKey !== cv.key){
+            cv.unread = Math.min(99, (cv.unread||0)+1);
+            pingNeeded = true;
           }
         }
-        if (discovered){ try{ els.ping.play().catch(()=>{}); }catch{} }
+        if (pingNeeded) { try{ els.ping.play().catch(()=>{}); }catch{} }
         renderSidebar();
-
       }catch(e){ console.warn('Feed error', e); }
     }
 
-    // Tolerant normalizer for different feed shapes
+    // Be generous about field names/types
     function normalizeFeedRow(row){
       if (!row) return null;
       const user_id = Number(row.user_id ?? row.userId ?? row.userid ?? row.u_id ?? row.uid);
       const girl_id = Number(row.girl_id ?? row.girlId ?? row.girlid ?? row.g_id ?? row.gid);
 
-      let from_user = row.from_user ?? row.fromUser ?? (row.sender ? row.sender === 'user' : undefined) ?? row.is_user;
+      let from_user = row.from_user ?? row.fromUser ?? (row.sender ? row.sender==='user' : undefined) ?? row.is_user;
       if (typeof from_user === 'string') from_user = /^(true|1|user)$/i.test(from_user);
       if (typeof from_user === 'number') from_user = from_user === 1;
       from_user = !!from_user;
@@ -315,7 +292,7 @@
       return { user_id, girl_id, from_user, created_at, text };
     }
 
-    // Load full message list for a conversation
+    // ----- Conversation fetch -----
     async function fetchMessages(conv){
       if (!conv || !authOK()) return;
       try{
@@ -328,7 +305,7 @@
 
         conv.messages = data;
         if (data.length){
-          const last = data[data.length - 1];
+          const last = data[data.length-1];
           conv.lastTs = new Date(last.created_at).getTime() || Date.now();
         }
         renderChat(conv);
@@ -336,7 +313,7 @@
       }catch(e){ /* silent */ }
     }
 
-    // Check takeover status
+    // ----- Takeover status -----
     async function checkTakeover(conv){
       if (!conv || !authOK()) return;
       try{
@@ -352,14 +329,7 @@
       }catch{}
     }
 
-    // Polling loops
-    setInterval(() => { fetchFeed(); }, 5000);  // discover chats from feed
-    setInterval(() => {
-      const conv = store.byKey.get(store.activeKey);
-      if (conv) fetchMessages(conv);
-    }, 2000); // refresh active chat
-
-    // -------- Sending --------
+    // ----- Sending -----
     async function sendText(){
       const conv = store.byKey.get(store.activeKey);
       if (!conv || !authOK()) return alert('Select a chat first');
@@ -367,8 +337,7 @@
       if (!text) return;
       try{
         const r = await fetch(`${base()}/api/operator/send`, {
-          method: 'POST',
-          headers: headersJSON(),
+          method:'POST', headers: headersJSON(),
           body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, text })
         });
         if (!r.ok) return alert('Failed to send text');
@@ -380,7 +349,6 @@
     async function sendImage(){
       const conv = store.byKey.get(store.activeKey);
       if (!conv || !authOK()) return alert('Select a chat first');
-
       const url = (els.imageUrl.value||'').trim();
       const file = els.imageFile.files[0];
       if (!url && !file) return alert('Paste an image URL or choose a file');
@@ -392,26 +360,23 @@
           form.append('girlId', conv.girlId);
           form.append('image', file);
           const rf = await fetch(`${base()}/api/operator/send-image`, {
-            method: 'POST',
-            headers: { 'X-Operator-Key': (els.opKey.value||'').trim() },
-            body: form
+            method:'POST', headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }, body: form
           });
           if (!rf.ok) throw new Error('upload failed');
         } else {
           const rj = await fetch(`${base()}/api/operator/send-image`, {
-            method: 'POST',
-            headers: headersJSON(),
+            method:'POST', headers: headersJSON(),
             body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, imageUrl: url })
           });
           if (!rj.ok) throw new Error('send failed');
         }
-        els.imageUrl.value = ''; els.imageFile.value = '';
+        els.imageUrl.value=''; els.imageFile.value='';
         fetchMessages(conv);
       }catch{ alert('Failed to send image'); }
     }
 
-    // -------- Takeover buttons (act on active chat) --------
-    els.btnGlobalStart.onclick = async () => {
+    // ----- Takeover (active chat) -----
+    els.btnGlobalStart.onclick = async ()=>{
       const conv = store.byKey.get(store.activeKey);
       if (!conv || !authOK()) return alert('Select a chat first');
       const body = { userId: conv.userId, girlId: conv.girlId, operatorName: (els.opName.value||'').trim() || null };
@@ -419,8 +384,7 @@
       if (!r.ok) return alert('Failed to start takeover');
       conv.takeover = true; els.liveBanner.style.display = '';
     };
-
-    els.btnGlobalStop.onclick = async () => {
+    els.btnGlobalStop.onclick = async ()=>{
       const conv = store.byKey.get(store.activeKey);
       if (!conv || !authOK()) return alert('Select a chat first');
       const r = await fetch(`${base()}/api/takeover/stop`, {
@@ -431,32 +395,34 @@
       conv.takeover = false; els.liveBanner.style.display = 'none';
     };
 
-    // -------- Manual add UI --------
-    els.btnAddChat.onclick = () => {
+    // ----- Manual add -----
+    els.btnAddChat.onclick = ()=>{
       els.manualForm.style.display = els.manualForm.style.display ? '' : 'block';
       if (els.manualForm.style.display === '') els.manualForm.style.display = 'block';
       else els.manualForm.style.display = '';
     };
-    els.btnManualAdd.onclick = () => {
-      const uid = Number(els.manualUserId.value);
-      const gid = Number(els.manualGirlId.value);
+    document.getElementById('btnManualAdd').onclick = ()=>{
+      const uid = Number(document.getElementById('manualUserId').value);
+      const gid = Number(document.getElementById('manualGirlId').value);
       if (!uid || !gid) return;
       const c = ensureConv(uid, gid);
-      renderSidebar();
-      selectConversation(c.key);
-      els.manualUserId.value=''; els.manualGirlId.value='';
+      renderSidebar(); selectConversation(c.key);
+      document.getElementById('manualUserId').value='';
+      document.getElementById('manualGirlId').value='';
       els.manualForm.style.display = 'none';
     };
 
-    // -------- Composer wiring --------
-    els.btnSendText.onclick = sendText;
-    els.btnSendImage.onclick = sendImage;
-    els.textMsg.addEventListener('keydown', (e)=>{
-      if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendText(); }
-    });
+    // ----- Composer wiring -----
+    document.getElementById('btnSendText').onclick = sendText;
+    document.getElementById('btnSendImage').onclick = sendImage;
+    els.textMsg.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
 
-    // -------- Boot --------
-    setTimeout(fetchFeed, 200); // discover chats immediately
+    // ----- Poll -----
+    setInterval(fetchFeed, 5000);  // discover chats
+    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000);
+
+    // Boot
+    setTimeout(fetchFeed, 200);
   </script>
 </body>
 </html>
