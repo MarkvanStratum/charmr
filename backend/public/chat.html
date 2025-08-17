@@ -63,6 +63,33 @@
     font-size: 14px;
     color: #555;
   }
+
+  /* ---------- FIX: gifts in a single horizontal row ---------- */
+  .gift-bar .row{
+    display:flex !important;
+    flex-direction:row !important;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin-top:6px;
+  }
+  .gift-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:36px; height:36px;
+    border-radius:999px;
+    background:#fff;
+    border:1px solid #ffd1dc;
+    font-size:18px;
+    cursor:pointer;
+    transition:transform .08s ease;
+    line-height:1;
+  }
+  .gift-chip:hover{ transform: translateY(-1px); }
+  /* ----------------------------------------------------------- */
+
   .gifts {
     display: flex;
     justify-content: center;
@@ -144,6 +171,27 @@
     background: #e63b5e;
   }
 
+  /* ---------- FIX: CTA looks like a button again ---------- */
+  .cta-bar {
+    display: block;
+    border-top: 1px solid #ffd1dc;
+    background: #fff5f7;
+    padding: 10px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .cta-bar a.cta-link{
+    display:inline-block;
+    background:#ef476f;
+    color:#fff !important;
+    padding:8px 12px;
+    border-radius:8px;
+    text-decoration:none !important;
+    font-weight:bold;
+  }
+  .cta-bar a.cta-link:hover{ filter:brightness(0.95); }
+  /* -------------------------------------------------------- */
+
   .upgrade-btn {
     background: #ff4d6d;
     border: none;
@@ -158,51 +206,6 @@
   .upgrade-btn:hover {
     background: #e63b5e;
   }
-/* --- FIX: keep gifts in a row & restore CTA button styles --- */
-
-/* gifts row should be horizontal chips */
-.gift-bar .row{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  justify-content:center;
-  align-items:center;
-}
-.gift-chip{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:36px; height:36px;
-  border-radius:999px;
-  background:#fff;
-  border:1px solid #ffd1dc;
-  font-size:18px;
-  cursor:pointer;
-  transition:transform .08s ease;
-}
-.gift-chip:hover{ transform: translateY(-1px); }
-
-/* CTA should be a pink button, not a plain link */
-#ctaBar{
-  display:block;                 /* always visible */
-  border-top:1px solid #ffd1dc;
-  background:#fff5f7;
-  padding:10px;
-  text-align:center;
-  flex-shrink:0;
-}
-#ctaBar .cta-link{
-  display:inline-block;
-  background:#ef476f;
-  color:#fff;
-  padding:8px 12px;
-  border-radius:8px;
-  text-decoration:none;
-  font-weight:bold;
-}
-#ctaBar .cta-link:hover{ filter:brightness(0.95); }
-
-
 </style>
 
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
