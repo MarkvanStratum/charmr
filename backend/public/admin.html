@@ -5,131 +5,238 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Operator Console</title>
   <style>
-    :root { --pink:#ef476f; --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; }
+    :root { --pink:#ef476f; --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; --sub:#6b7280; }
     * { box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; background: var(--bg); color: var(--ink); }
-    h1 { margin: 0 0 16px; }
-    .row { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:10px; }
-    .card { background: var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; max-width: 920px; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:12px 14px; border-bottom:1px solid var(--line); background:#fff; position:sticky; top:0; z-index:3; }
+    h1 { margin:0; font-size:18px; }
+    .topbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+    .topbar > * { margin:0; }
     label { font-weight:600; font-size:12px; color:#444; display:block; margin-bottom:4px; }
-    input, button { padding:10px 12px; font-size:14px; border-radius:10px; border:1px solid var(--line); }
+    input, button { padding:9px 10px; font-size:14px; border-radius:10px; border:1px solid var(--line); }
     input:focus { outline:2px solid #c8e3ff; border-color:#9ccaff; }
     button { background: var(--pink); color:#fff; border:none; cursor:pointer; }
     button.secondary { background:#555; }
+    button.ghost { background:#fff; color:#111; border:1px solid var(--line); }
     button:disabled { opacity:.6; cursor:not-allowed; }
-    input[type="number"] { width:120px; }
-    #backendUrl { width:360px; }
-    #opKey { width:260px; }
-    #opName { width:200px; }
-    .chat { background:#fff; border:1px solid var(--line); border-radius:12px; padding:12px; max-width: 920px; height:540px; overflow:auto; }
+
+    /* Layout */
+    .app { display:grid; grid-template-columns: 300px 1fr; height: calc(100vh - 70px); }
+    .sidebar { border-right:1px solid var(--line); background:#fff; display:flex; flex-direction:column; }
+    .side-head { padding:10px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center; justify-content:space-between; }
+    .side-list { overflow:auto; padding:8px; }
+    .conv { display:flex; align-items:center; gap:8px; padding:10px; border:1px solid transparent; border-radius:10px; cursor:pointer; }
+    .conv:hover { background:#fafafa; }
+    .conv.active { border-color:#ffd1e0; background:#fff5f7; }
+    .conv .meta { font-size:12px; color:var(--sub); }
+    .badge { margin-left:auto; min-width:18px; height:18px; padding:0 6px; border-radius:999px; background:var(--pink); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
+
+    .main { display:flex; flex-direction:column; }
+    .chat-head { padding:10px 12px; border-bottom:1px solid var(--line); background:#fff; display:flex; align-items:center; gap:10px; }
+    .chat-title { font-weight:800; }
+    .banner { background:#ffe082; color:#4a3b00; padding:6px 10px; border-radius:10px; display:inline-block; }
+    .chat-box { flex:1; padding:12px; overflow:auto; background:#fff0f3; }
     .msg { display:inline-block; margin:6px 0; max-width:76%; padding:10px 14px; border-radius:16px; line-height:1.3; word-wrap:break-word; white-space:pre-wrap; }
     .user { background: var(--pink); color:#fff; margin-left:auto; border-bottom-right-radius:6px; }
     .girl { background:#f1f1f1; color:#000; margin-right:auto; border-bottom-left-radius:6px; }
     .meta { font-size:11px; opacity:.6; margin-top:2px; }
-    .banner { background:#ffe082; color:#4a3b00; padding:6px 10px; border-radius:10px; display:inline-block; margin:10px 0; }
     .bubble img { max-width:280px; max-height:300px; border-radius:10px; display:block; object-fit:cover; }
-    .inputs-row input[type="text"] { flex:1; min-width:260px; }
+    .composer { padding:10px; border-top:1px solid var(--line); background:#fff; display:flex; gap:8px; flex-wrap:wrap; }
+    .composer .row { display:flex; gap:8px; width:100%; }
+    .composer input[type="text"] { flex:1; min-width:260px; }
+    .helper { font-size:12px; color:var(--sub); }
+
+    .kv { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+    .kv > div { display:flex; flex-direction:column; }
+    .kv input { width:240px; }
+    .kv small { font-size:11px; color:var(--sub); }
   </style>
 </head>
 <body>
-  <h1>Operator Console</h1>
+  <header>
+    <h1>Operator Console</h1>
+    <div class="topbar">
+      <div class="kv">
+        <div>
+          <label>Backend URL</label>
+          <input id="backendUrl" value="https://charmr-jfmc.onrender.com" />
+        </div>
+        <div>
+          <label>Operator Key</label>
+          <input id="opKey" placeholder="OPERATOR_KEY" />
+        </div>
+        <div>
+          <label>Operator Name (shown to user)</label>
+          <input id="opName" placeholder="Bella (Ops)" />
+        </div>
+      </div>
+      <div>
+        <button id="btnGlobalStart">Start Takeover (active chat)</button>
+        <button id="btnGlobalStop" class="secondary">Stop Takeover</button>
+      </div>
+    </div>
+  </header>
 
-  <div class="card">
-    <div class="row">
-      <div>
-        <label>Backend URL</label>
-        <input id="backendUrl" value="https://charmr-jfmc.onrender.com" />
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-head">
+        <strong>Chats</strong>
+        <button id="btnAddChat" class="ghost" title="Add chat manually">+ Add</button>
       </div>
-      <div>
-        <label>Operator Key</label>
-        <input id="opKey" placeholder="OPERATOR_KEY" />
+      <div id="convList" class="side-list"></div>
+
+      <!-- Manual add (collapsible prompt) -->
+      <div id="manualForm" style="padding:10px; border-top:1px solid var(--line); display:none;">
+        <div style="display:flex; gap:6px; margin-bottom:6px;">
+          <input id="manualUserId" type="number" placeholder="User ID" style="flex:1;">
+          <input id="manualGirlId" type="number" placeholder="Girl ID" style="flex:1;">
+        </div>
+        <button id="btnManualAdd" style="width:100%;">Add chat</button>
+        <div class="helper" style="margin-top:6px;">Tip: chats discovered from feed will appear here automatically.</div>
       </div>
-    </div>
-    <div class="row">
-      <div>
-        <label>User ID</label>
-        <input id="userId" type="number" placeholder="123" />
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="chat-head">
+        <div class="chat-title" id="chatTitle">No chat selected</div>
+        <span id="liveBanner" class="banner" style="display:none">🔴 Live agent is chatting</span>
       </div>
-      <div>
-        <label>Girl ID</label>
-        <input id="girlId" type="number" placeholder="1" />
+      <div id="chatBox" class="chat-box"></div>
+
+      <div class="composer">
+        <div class="row">
+          <input id="textMsg" type="text" placeholder="Type a message as the girl..." />
+          <button id="btnSendText">Send Text</button>
+        </div>
+        <div class="row">
+          <input id="imageUrl" type="text" placeholder="Or paste an image URL (https://...)" />
+          <input id="imageFile" type="file" accept="image/*" />
+          <button id="btnSendImage">Send Image</button>
+        </div>
+        <div class="helper">New user replies are auto-detected from the feed and added to the sidebar with an unread badge.</div>
       </div>
-      <div>
-        <label>Operator Name (shown to user)</label>
-        <input id="opName" placeholder="Bella (Ops)" />
-      </div>
-    </div>
-    <div class="row">
-      <button id="btnStart">Start Takeover</button>
-      <button id="btnStop" class="secondary">Stop Takeover</button>
-      <span id="status" class="banner" style="display:none">🔴 Takeover active</span>
-    </div>
+    </main>
   </div>
 
-  <h3 style="margin:16px 0 8px">Conversation</h3>
-  <div id="chat" class="chat"></div>
-
-  <div class="card" style="margin-top:12px;">
-    <div class="row inputs-row">
-      <input id="textMsg" type="text" placeholder="Type a message as the girl..." />
-      <button id="btnSendText">Send Text</button>
-    </div>
-    <div class="row inputs-row">
-      <input id="imageUrl" type="text" placeholder="Or paste an image URL (https://...)" />
-      <input id="imageFile" type="file" accept="image/*" />
-      <button id="btnSendImage">Send Image</button>
-    </div>
-  </div>
+  <!-- tiny notification sound -->
+  <audio id="ping" preload="auto">
+    <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA..." type="audio/mp3">
+  </audio>
 
   <script>
+    // ---------- Config ----------
+    const FEED_PATH = '/api/feed'; // <- if your feed lives elsewhere, change this
+    // ----------------------------
+
     // Elements
     const els = {
       backendUrl: document.getElementById('backendUrl'),
       opKey: document.getElementById('opKey'),
-      userId: document.getElementById('userId'),
-      girlId: document.getElementById('girlId'),
       opName: document.getElementById('opName'),
-      chat: document.getElementById('chat'),
-      status: document.getElementById('status'),
+      chatBox: document.getElementById('chatBox'),
+      chatTitle: document.getElementById('chatTitle'),
+      liveBanner: document.getElementById('liveBanner'),
+      convList: document.getElementById('convList'),
+      btnAddChat: document.getElementById('btnAddChat'),
+      manualForm: document.getElementById('manualForm'),
+      manualUserId: document.getElementById('manualUserId'),
+      manualGirlId: document.getElementById('manualGirlId'),
+      btnManualAdd: document.getElementById('btnManualAdd'),
+      btnGlobalStart: document.getElementById('btnGlobalStart'),
+      btnGlobalStop: document.getElementById('btnGlobalStop'),
       textMsg: document.getElementById('textMsg'),
       imageUrl: document.getElementById('imageUrl'),
       imageFile: document.getElementById('imageFile'),
-      btnStart: document.getElementById('btnStart'),
-      btnStop: document.getElementById('btnStop'),
       btnSendText: document.getElementById('btnSendText'),
-      btnSendImage: document.getElementById('btnSendImage')
+      btnSendImage: document.getElementById('btnSendImage'),
+      ping: document.getElementById('ping'),
     };
 
-    let pollTimer = null;
+    function base(){ return (els.backendUrl.value || '').trim().replace(/\/+$/,''); }
+    function headersJSON(){ return { 'Content-Type':'application/json', 'X-Operator-Key': (els.opKey.value||'').trim() }; }
+    function authOK(){ return (els.opKey.value||'').trim().length > 0; }
 
-    function idsOK() {
-      return Number(els.userId.value) > 0 && Number(els.girlId.value) > 0;
-    }
-    function authOK() {
-      return (els.opKey.value || '').trim().length > 0;
-    }
-    function base() {
-      return (els.backendUrl.value || '').trim().replace(/\/+$/,'');
-    }
-    function headersJSON() {
-      return { 'Content-Type':'application/json', 'X-Operator-Key': (els.opKey.value || '').trim() };
+    // Conversation store
+    // key = `${userId}-${girlId}`
+    const store = {
+      byKey: new Map(),
+      activeKey: null,
+      lastFeedTs: 0, // used to detect new rows
+    };
+
+    function keyOf(userId, girlId){ return `${Number(userId)}-${Number(girlId)}`; }
+
+    function ensureConv(userId, girlId){
+      const k = keyOf(userId, girlId);
+      if (!store.byKey.has(k)) {
+        store.byKey.set(k, {
+          key: k,
+          userId: Number(userId),
+          girlId: Number(girlId),
+          title: `User ${userId} · Girl ${girlId}`,
+          messages: [],
+          unread: 0,
+          lastTs: 0,
+          takeover: false
+        });
+      }
+      return store.byKey.get(k);
     }
 
-    function renderMessages(list) {
-      els.chat.innerHTML = '';
-      for (const m of list) {
+    // -------- Sidebar rendering --------
+    function renderSidebar(){
+      els.convList.innerHTML = '';
+      // sort by lastTs desc
+      const list = [...store.byKey.values()].sort((a,b)=> (b.lastTs||0) - (a.lastTs||0));
+      for (const c of list){
+        const item = document.createElement('div');
+        item.className = 'conv' + (store.activeKey === c.key ? ' active' : '');
+        item.dataset.key = c.key;
+
+        const title = document.createElement('div');
+        title.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
+
+        item.appendChild(title);
+
+        if (c.unread > 0){
+          const badge = document.createElement('div');
+          badge.className = 'badge';
+          badge.textContent = c.unread;
+          item.appendChild(badge);
+        }
+
+        item.onclick = () => selectConversation(c.key);
+        els.convList.appendChild(item);
+      }
+
+      // Title unread dot
+      const totalUnread = list.reduce((a,c)=>a+c.unread,0);
+      if (totalUnread>0) document.title = `(${totalUnread}) Operator Console`;
+      else document.title = 'Operator Console';
+    }
+
+    // -------- Chat rendering --------
+    function renderChat(conv){
+      els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
+      els.liveBanner.style.display = conv?.takeover ? '' : 'none';
+      els.chatBox.innerHTML = '';
+      if (!conv) return;
+
+      for (const m of conv.messages){
         const wrap = document.createElement('div');
         wrap.style.display = 'flex';
         const bubble = document.createElement('div');
         bubble.className = 'msg ' + (m.from_user ? 'user' : 'girl');
 
-        const match = /^IMAGE:\s*(\S+)/i.exec(m.text || "");
         const content = document.createElement('div');
         content.className = 'bubble';
 
-        if (match) {
+        const imgMatch = /^IMAGE:\s*(\S+)/i.exec(m.text||'');
+        if (imgMatch){
           const img = document.createElement('img');
-          img.src = match[1];
+          img.src = imgMatch[1];
           img.alt = 'image';
           content.appendChild(img);
         } else {
@@ -138,108 +245,159 @@
 
         const meta = document.createElement('div');
         meta.className = 'meta';
-        const ts = new Date(m.created_at);
-        meta.textContent = ts.toLocaleString();
+        meta.textContent = new Date(m.created_at).toLocaleString();
 
         bubble.appendChild(content);
         bubble.appendChild(meta);
         wrap.appendChild(bubble);
-        els.chat.appendChild(wrap);
+        els.chatBox.appendChild(wrap);
       }
-      els.chat.scrollTop = els.chat.scrollHeight;
+      els.chatBox.scrollTop = els.chatBox.scrollHeight;
     }
 
-    async function refresh() {
-      if (!idsOK() || !authOK()) return;
-      try {
-        const r = await fetch(`${base()}/api/operator/messages?userId=${Number(els.userId.value)}&girlId=${Number(els.girlId.value)}`, {
-          headers: { 'X-Operator-Key': (els.opKey.value || '').trim() }
+    function selectConversation(key){
+      store.activeKey = key;
+      const conv = store.byKey.get(key);
+      if (conv){ conv.unread = 0; renderSidebar(); fetchMessages(conv); checkTakeover(conv); }
+      renderChat(conv);
+    }
+
+    // -------- Data fetching --------
+    // Detect conversations from FEED
+    async function fetchFeed(){
+      if (!authOK()) return;
+      try{
+        const r = await fetch(`${base()}${FEED_PATH}`, { headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }});
+        if (!r.ok) return;
+
+        const payload = await r.json();
+        // EXPECTED SHAPE:
+        // { rows: [{ user_id, girl_id, text, from_user, created_at, ... }], now: "2025-08-17T..." }
+        // If your feed shape differs, adapt normalizeFeedRow below.
+        const rows = Array.isArray(payload?.rows) ? payload.rows : (Array.isArray(payload) ? payload : []);
+
+        let discovered = 0;
+        for (const row of rows){
+          const m = normalizeFeedRow(row);
+          if (!m) continue;
+          // only consider messages FROM USER to start/refresh a conversation
+          if (m.from_user){
+            const cv = ensureConv(m.user_id, m.girl_id);
+            // update lastTs to keep ordering fresh
+            const ts = new Date(m.created_at).getTime() || Date.now();
+            if (ts > cv.lastTs){ cv.lastTs = ts; }
+            // If not active, bump unread
+            if (store.activeKey !== cv.key){
+              cv.unread = Math.min(99, (cv.unread||0) + 1);
+              // play ping once per poll if something new arrived
+              discovered = 1;
+            }
+          }
+        }
+        if (discovered){ try{ els.ping.play().catch(()=>{}); }catch{} }
+        renderSidebar();
+
+      }catch(e){ /* silent */ }
+    }
+
+    // Adjust this if your feed rows are different
+    function normalizeFeedRow(row){
+      if (row == null) return null;
+      // Try common keys; adapt as needed
+      const user_id = row.user_id ?? row.userId ?? row.userid;
+      const girl_id = row.girl_id ?? row.girlId ?? row.girlid;
+      const from_user = typeof row.from_user === 'boolean' ? row.from_user : !!row.fromUser;
+      const created_at = row.created_at ?? row.createdAt ?? Date.now();
+      const text = row.text ?? row.body ?? '';
+      if (!user_id || !girl_id) return null;
+      return { user_id:Number(user_id), girl_id:Number(girl_id), from_user, created_at, text };
+    }
+
+    // Load full message list for a conversation
+    async function fetchMessages(conv){
+      if (!conv || !authOK()) return;
+      try{
+        const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
+          headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }
         });
-        if (!r.ok) throw new Error('fetch failed');
+        if (!r.ok) return;
         const data = await r.json();
-        if (Array.isArray(data)) renderMessages(data);
-      } catch (e) {
-        // silent
-      }
+        if (!Array.isArray(data)) return;
+
+        conv.messages = data;
+        // set lastTs to newest
+        if (data.length){
+          const last = data[data.length - 1];
+          conv.lastTs = new Date(last.created_at).getTime() || Date.now();
+        }
+        renderChat(conv);
+        renderSidebar();
+      }catch(e){ /* silent */ }
     }
 
-    function startPoll() {
-      if (pollTimer) return;
-      pollTimer = setInterval(refresh, 2000);
-      refresh();
+    // Check takeover status
+    async function checkTakeover(conv){
+      if (!conv || !authOK()) return;
+      try{
+        const r = await fetch(`${base()}/api/takeover/status/${conv.girlId}?userId=${conv.userId}`, {
+          headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }
+        });
+        if (!r.ok) return;
+        const data = await r.json();
+        conv.takeover = !!data.takeover;
+        if (store.activeKey === conv.key){
+          els.liveBanner.style.display = conv.takeover ? '' : 'none';
+        }
+      }catch{}
     }
-    function stopPoll() {
-      if (!pollTimer) return;
-      clearInterval(pollTimer);
-      pollTimer = null;
-    }
 
-    // Start takeover
-    els.btnStart.onclick = async () => {
-      if (!idsOK() || !authOK()) return alert('Fill Backend URL, Operator Key, User ID and Girl ID');
-      const body = {
-        userId: Number(els.userId.value),
-        girlId: Number(els.girlId.value),
-        operatorName: (els.opName.value || '').trim() || null
-      };
-      const r = await fetch(`${base()}/api/takeover/start`, {
-        method: 'POST',
-        headers: headersJSON(),
-        body: JSON.stringify(body)
-      });
-      if (!r.ok) return alert('Failed to start takeover');
-      els.status.style.display = '';
-      startPoll();
-    };
+    // Polling loops
+    setInterval(() => {
+      // 1) discover chats with new user messages
+      fetchFeed();
+    }, 5000);
 
-    // Stop takeover
-    els.btnStop.onclick = async () => {
-      if (!idsOK() || !authOK()) return;
-      const r = await fetch(`${base()}/api/takeover/stop`, {
-        method: 'POST',
-        headers: headersJSON(),
-        body: JSON.stringify({ userId: Number(els.userId.value), girlId: Number(els.girlId.value) })
-      });
-      if (!r.ok) return alert('Failed to stop takeover');
-      els.status.style.display = 'none';
-      // keep polling so you still see AI/user messages if you want
-    };
+    setInterval(() => {
+      // 2) refresh active conversation messages
+      const conv = store.byKey.get(store.activeKey);
+      if (conv) fetchMessages(conv);
+    }, 2000);
 
-    // Send text
-    els.btnSendText.onclick = async () => {
-      if (!idsOK() || !authOK()) return;
-      const text = (els.textMsg.value || '').trim();
+    // -------- Sending --------
+    async function sendText(){
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !authOK()) return alert('Select a chat first');
+      const text = (els.textMsg.value||'').trim();
       if (!text) return;
-      const r = await fetch(`${base()}/api/operator/send`, {
-        method: 'POST',
-        headers: headersJSON(),
-        body: JSON.stringify({ userId: Number(els.userId.value), girlId: Number(els.girlId.value), text })
-      });
-      if (!r.ok) return alert('Failed to send text');
-      els.textMsg.value = '';
-      refresh();
-    };
+      try{
+        const r = await fetch(`${base()}/api/operator/send`, {
+          method: 'POST',
+          headers: headersJSON(),
+          body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, text })
+        });
+        if (!r.ok) return alert('Failed to send text');
+        els.textMsg.value = '';
+        fetchMessages(conv);
+      }catch{ alert('Failed to send text'); }
+    }
 
-    // Send image (URL or file)
-    els.btnSendImage.onclick = async () => {
-      if (!idsOK() || !authOK()) return;
-      const url = (els.imageUrl.value || '').trim();
+    async function sendImage(){
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !authOK()) return alert('Select a chat first');
+
+      const url = (els.imageUrl.value||'').trim();
       const file = els.imageFile.files[0];
+      if (!url && !file) return alert('Paste an image URL or choose a file');
 
-      if (!url && !file) {
-        alert('Paste an image URL or choose a file first');
-        return;
-      }
-
-      try {
-        if (file) {
+      try{
+        if (file){
           const form = new FormData();
-          form.append('userId', Number(els.userId.value));
-          form.append('girlId', Number(els.girlId.value));
+          form.append('userId', conv.userId);
+          form.append('girlId', conv.girlId);
           form.append('image', file);
           const rf = await fetch(`${base()}/api/operator/send-image`, {
             method: 'POST',
-            headers: { 'X-Operator-Key': (els.opKey.value || '').trim() },
+            headers: { 'X-Operator-Key': (els.opKey.value||'').trim() },
             body: form
           });
           if (!rf.ok) throw new Error('upload failed');
@@ -247,24 +405,63 @@
           const rj = await fetch(`${base()}/api/operator/send-image`, {
             method: 'POST',
             headers: headersJSON(),
-            body: JSON.stringify({ userId: Number(els.userId.value), girlId: Number(els.girlId.value), imageUrl: url })
+            body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, imageUrl: url })
           });
           if (!rj.ok) throw new Error('send failed');
         }
-        els.imageUrl.value = '';
-        els.imageFile.value = '';
-        refresh();
-      } catch (e) {
-        alert('Failed to send image');
-      }
+        els.imageUrl.value = ''; els.imageFile.value = '';
+        fetchMessages(conv);
+      }catch{ alert('Failed to send image'); }
+    }
+
+    // -------- Takeover buttons (act on active chat) --------
+    els.btnGlobalStart.onclick = async () => {
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !authOK()) return alert('Select a chat first');
+      const body = { userId: conv.userId, girlId: conv.girlId, operatorName: (els.opName.value||'').trim() || null };
+      const r = await fetch(`${base()}/api/takeover/start`, { method:'POST', headers: headersJSON(), body: JSON.stringify(body) });
+      if (!r.ok) return alert('Failed to start takeover');
+      conv.takeover = true; els.liveBanner.style.display = '';
     };
 
-    // Auto-start polling once required fields are present
-    ['backendUrl','opKey','userId','girlId'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
-        if (idsOK() && authOK()) startPoll();
+    els.btnGlobalStop.onclick = async () => {
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !authOK()) return alert('Select a chat first');
+      const r = await fetch(`${base()}/api/takeover/stop`, {
+        method:'POST', headers: headersJSON(),
+        body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId })
       });
+      if (!r.ok) return alert('Failed to stop takeover');
+      conv.takeover = false; els.liveBanner.style.display = 'none';
+    };
+
+    // -------- Manual add UI --------
+    els.btnAddChat.onclick = () => {
+      els.manualForm.style.display = els.manualForm.style.display ? '' : 'block';
+      if (els.manualForm.style.display === '') els.manualForm.style.display = 'block';
+      else els.manualForm.style.display = '';
+    };
+    els.btnManualAdd.onclick = () => {
+      const uid = Number(els.manualUserId.value);
+      const gid = Number(els.manualGirlId.value);
+      if (!uid || !gid) return;
+      const c = ensureConv(uid, gid);
+      renderSidebar();
+      selectConversation(c.key);
+      els.manualUserId.value=''; els.manualGirlId.value='';
+      els.manualForm.style.display = 'none';
+    };
+
+    // -------- Composer wiring --------
+    els.btnSendText.onclick = sendText;
+    els.btnSendImage.onclick = sendImage;
+    els.textMsg.addEventListener('keydown', (e)=>{
+      if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendText(); }
     });
+
+    // -------- Boot --------
+    // Prime: try to discover chats immediately (if operator key present)
+    setTimeout(fetchFeed, 200);
   </script>
 </body>
 </html>
