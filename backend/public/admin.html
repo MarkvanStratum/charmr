@@ -52,7 +52,6 @@
     .kv { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
     .kv > div { display:flex; flex-direction:column; }
     .kv input { width:240px; }
-    .kv small { font-size:11px; color:var(--sub); }
   </style>
 </head>
 <body>
@@ -66,7 +65,7 @@
         </div>
         <div>
           <label>Operator Key</label>
-          <input id="opKey" placeholder="OPERATOR_KEY (leave empty if feed is public)" />
+          <input id="opKey" placeholder="OPERATOR_KEY (required for /api/operator/* endpoints)" />
         </div>
         <div>
           <label>Operator Name (shown to user)</label>
@@ -89,7 +88,7 @@
       </div>
       <div id="convList" class="side-list"></div>
 
-      <!-- Manual add (collapsible prompt) -->
+      <!-- Manual add -->
       <div id="manualForm" style="padding:10px; border-top:1px solid var(--line); display:none;">
         <div style="display:flex; gap:6px; margin-bottom:6px;">
           <input id="manualUserId" type="number" placeholder="User ID" style="flex:1;">
@@ -101,7 +100,7 @@
       <!-- Feed status -->
       <div class="side-foot">
         <div><strong>Feed:</strong> <span id="feedStatus">waiting…</span></div>
-        <div style="margin-top:4px">Path tried: <code id="feedUrl"></code></div>
+        <div style="margin-top:4px">Path: <code id="feedUrl">/api/operator/feed</code></div>
       </div>
     </aside>
 
@@ -123,20 +122,19 @@
           <input id="imageFile" type="file" accept="image/*" />
           <button id="btnSendImage">Send Image</button>
         </div>
-        <div class="helper">Tip: Feeds auto-create chats. Unread badges show when a user replies.</div>
+        <div class="helper">Chats are auto-created from the feed. Unread badges show when the user replies.</div>
       </div>
     </main>
   </div>
 
-  <!-- tiny notification sound -->
   <audio id="ping" preload="auto">
     <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA..." type="audio/mp3">
   </audio>
 
   <script>
     // ---------- Config ----------
-    // We’ll try these in order and use the first that returns 200 JSON.
-    const FEED_CANDIDATES = ['/api/feed', '/feed', '/api/messages/recent'];
+    const FEED_PATH = '/api/operator/feed';   // same as feed.html
+    const FEED_LIMIT = 100;                   // initial slice
     // ----------------------------
 
     // Elements
@@ -167,24 +165,36 @@
 
     function base(){ return (els.backendUrl.value || '').trim().replace(/\/+$/,''); }
     function headersJSON(){ return { 'Content-Type':'application/json', 'X-Operator-Key': (els.opKey.value||'').trim() }; }
-    function authOK(){ return (els.opKey.value||'').trim().length > 0; }
+    function opHeader(){ return { 'X-Operator-Key': (els.opKey.value||'').trim() }; }
+    function haveOpKey(){ return (els.opKey.value||'').trim().length > 0; }
 
     // Store
     const store = {
       byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
-      chosenFeedPath: null,
+      lastNow: null,    // server "now" from last feed poll
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
-    function ensureConv(userId, girlId){
+    function ensureConv(userId, girlId, girlName){
       const k = keyOf(userId, girlId);
       if (!store.byKey.has(k)){
         store.byKey.set(k, {
-          key: k, userId: Number(userId), girlId: Number(girlId),
-          title: `User ${userId} · Girl ${girlId}`,
-          messages: [], unread: 0, lastTs: 0, takeover: false
+          key: k,
+          userId: Number(userId),
+          girlId: Number(girlId),
+          title: `${girlName ? girlName : 'Girl '+girlId} · User ${userId}`,
+          messages: [],
+          unread: 0,
+          lastTs: 0,
+          takeover: false
         });
+      } else if (girlName) {
+        // keep the prettier title when we learn it
+        const cv = store.byKey.get(k);
+        if (cv && cv.title.startsWith('Girl ')) {
+          cv.title = `${girlName} · User ${userId}`;
+        }
       }
       return store.byKey.get(k);
     }
@@ -196,8 +206,6 @@
       for (const c of list){
         const item = document.createElement('div');
         item.className = 'conv' + (store.activeKey===c.key ? ' active':'');
-        item.dataset.key = c.key;
-
         const title = document.createElement('div');
         title.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
         item.appendChild(title);
@@ -212,14 +220,12 @@
         els.convList.appendChild(item);
       }
       if (store.byKey.size===0){
-        els.convList.innerHTML = '<div class="helper">No chats yet. Make sure feed endpoint is correct and accessible (CORS).</div>';
-      } else if (!store.activeKey && autoSelectIfNone) {
-        // Auto-open the newest chat
-        selectConversation(list[0].key);
+        els.convList.innerHTML = '<div class="helper">No chats yet. Check feed endpoint/CORS.</div>';
+      } else if (!store.activeKey && autoSelectIfNone){
+        selectConversation(list[0].key); // open newest
       }
-
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
-      document.title = totalUnread?`(${totalUnread}) Operator Console`:'Operator Console';
+      document.title = totalUnread ? `(${totalUnread}) Operator Console` : 'Operator Console';
     }
 
     // ----- Chat -----
@@ -230,10 +236,8 @@
       if (!conv) return;
 
       for (const m of conv.messages){
-        const wrap = document.createElement('div');
-        wrap.style.display = 'flex';
-        const bubble = document.createElement('div');
-        bubble.className = 'msg ' + (m.from_user ? 'user' : 'girl');
+        const wrap = document.createElement('div'); wrap.style.display='flex';
+        const bubble = document.createElement('div'); bubble.className = 'msg ' + (m.from_user ? 'user' : 'girl');
 
         const content = document.createElement('div'); content.className='bubble';
         const imgMatch = /^IMAGE:\s*(\S+)/i.exec(m.text||'');
@@ -253,75 +257,49 @@
     function selectConversation(key){
       store.activeKey = key;
       const conv = store.byKey.get(key);
-      if (conv){ conv.unread=0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
+      if (conv){ conv.unread = 0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
       renderChat(conv);
     }
 
-    // ----- Feed discovery -----
-    async function resolveFeedOnce(){
-      // Try known candidates until one returns JSON 200
-      for (const path of FEED_CANDIDATES){
-        try{
-          const hdrs = {};
-          const k = (els.opKey.value||'').trim();
-          if (k) hdrs['X-Operator-Key'] = k;
-
-          const url = `${base()}${path}`;
-          const r = await fetch(url, { headers: hdrs });
-          if (!r.ok){ continue; }
-          const payload = await r.clone().json().catch(()=>null);
-          if (payload){
-            store.chosenFeedPath = path;
-            els.feedUrl.textContent = path;
-            els.feedStatus.textContent = 'connected';
-            return true;
-          }
-        }catch(e){ /* try next */ }
-      }
-      els.feedUrl.textContent = '(none)';
-      els.feedStatus.textContent = 'failed (check backend URL / CORS)';
-      return false;
-    }
-
-    async function fetchFeed(){
-      if (!store.chosenFeedPath){
-        const ok = await resolveFeedOnce();
-        if (!ok) return;
-      }
+    // ----- FEED (same semantics as feed.html) -----
+    async function fetchFeed(initial=false){
       try{
-        const hdrs = {};
-        const k = (els.opKey.value||'').trim();
-        if (k) hdrs['X-Operator-Key'] = k;
+        const params = new URLSearchParams();
+        params.set('limit', String(FEED_LIMIT));
+        if (!initial && store.lastNow) params.set('since', store.lastNow);
 
-        const url = `${base()}${store.chosenFeedPath}`;
-        els.feedUrl.textContent = store.chosenFeedPath;
+        const url = `${base()}${FEED_PATH}?${params.toString()}`;
+        els.feedUrl.textContent = FEED_PATH;
 
-        const r = await fetch(url, { headers: hdrs });
-        if (!r.ok){ els.feedStatus.textContent = `HTTP ${r.status}`; return; }
-        const payload = await r.json();
+        const res = await fetch(url);  // feed.html hits this public endpoint directly
+        if (!res.ok){ els.feedStatus.textContent = `HTTP ${res.status}`; return; }
 
-        // Rows extraction (support both {rows:[...]} and [...] )
-        const rows = Array.isArray(payload?.rows) ? payload.rows : (Array.isArray(payload) ? payload : []);
+        const payload = await res.json();
+        const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+        store.lastNow = payload?.now || store.lastNow;
         els.feedStatus.textContent = `ok · ${rows.length} rows`;
 
         let pingNeeded = false;
-        for (const row of rows){
-          const m = normalizeFeedRow(row);
-          if (!m) continue;
 
-          // Always create/refresh conversation when any message exists
-          const cv = ensureConv(m.user_id, m.girl_id);
-          const ts = new Date(m.created_at).getTime() || Date.now();
+        // The feed rows have: id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text
+        for (const r of rows){
+          const userId = Number(r.userId);
+          const girlId = Number(r.girlId);
+          if (!userId || !girlId) continue;
+
+          const cv = ensureConv(userId, girlId, r.girlName);
+          const ts = new Date(r.createdAt).getTime() || Date.now();
           if (ts > cv.lastTs) cv.lastTs = ts;
 
-          // Mark unread only if clearly from user and not active
-          if (m.from_user === true && store.activeKey !== cv.key){
-            cv.unread = Math.min(99, (cv.unread||0)+1);
+          // only count unread when from user & convo not active
+          if (r.from === 'user' && store.activeKey !== cv.key){
+            cv.unread = Math.min(99, (cv.unread||0) + 1);
             pingNeeded = true;
           }
         }
+
         if (pingNeeded){ try{ els.ping.play().catch(()=>{}); }catch{} }
-        renderSidebar();
+        renderSidebar(initial);
 
       }catch(e){
         els.feedStatus.textContent = 'error (see console)';
@@ -329,30 +307,12 @@
       }
     }
 
-    // Be generous about field names/types
-    function normalizeFeedRow(row){
-      if (!row) return null;
-      const user_id = Number(row.user_id ?? row.userId ?? row.userid ?? row.u_id ?? row.uid);
-      const girl_id = Number(row.girl_id ?? row.girlId ?? row.girlid ?? row.g_id ?? row.gid);
-
-      let from_user = row.from_user ?? row.fromUser ?? (row.sender ? row.sender==='user' : undefined) ?? row.is_user;
-      if (typeof from_user === 'string') from_user = /^(true|1|user)$/i.test(from_user);
-      if (typeof from_user === 'number') from_user = from_user === 1;
-      from_user = !!from_user;
-
-      const created_at = row.created_at ?? row.createdAt ?? row.ts ?? Date.now();
-      const text = row.text ?? row.body ?? row.msg ?? '';
-
-      if (!user_id || !girl_id) return null;
-      return { user_id, girl_id, from_user, created_at, text };
-    }
-
     // ----- Conversation fetch -----
     async function fetchMessages(conv){
-      if (!conv || !authOK()) return; // messages endpoint likely needs operator key
+      if (!conv || !haveOpKey()) return; // operator endpoints need key
       try{
         const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
-          headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }
+          headers: opHeader()
         });
         if (!r.ok) return;
         const data = await r.json();
@@ -370,10 +330,10 @@
 
     // ----- Takeover status -----
     async function checkTakeover(conv){
-      if (!conv || !authOK()) return;
+      if (!conv || !haveOpKey()) return;
       try{
         const r = await fetch(`${base()}/api/takeover/status/${conv.girlId}?userId=${conv.userId}`, {
-          headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }
+          headers: opHeader()
         });
         if (!r.ok) return;
         const data = await r.json();
@@ -387,12 +347,13 @@
     // ----- Sending -----
     async function sendText(){
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
       const text = (els.textMsg.value||'').trim();
       if (!text) return;
       try{
         const r = await fetch(`${base()}/api/operator/send`, {
-          method:'POST', headers: headersJSON(),
+          method:'POST',
+          headers: headersJSON(),
           body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, text })
         });
         if (!r.ok) return alert('Failed to send text');
@@ -403,7 +364,7 @@
 
     async function sendImage(){
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
       const url = (els.imageUrl.value||'').trim();
       const file = els.imageFile.files[0];
       if (!url && !file) return alert('Paste an image URL or choose a file');
@@ -415,12 +376,15 @@
           form.append('girlId', conv.girlId);
           form.append('image', file);
           const rf = await fetch(`${base()}/api/operator/send-image`, {
-            method:'POST', headers: { 'X-Operator-Key': (els.opKey.value||'').trim() }, body: form
+            method:'POST',
+            headers: opHeader(),
+            body: form
           });
           if (!rf.ok) throw new Error('upload failed');
         } else {
           const rj = await fetch(`${base()}/api/operator/send-image`, {
-            method:'POST', headers: headersJSON(),
+            method:'POST',
+            headers: headersJSON(),
             body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, imageUrl: url })
           });
           if (!rj.ok) throw new Error('send failed');
@@ -433,7 +397,7 @@
     // ----- Takeover (active chat) -----
     els.btnGlobalStart.onclick = async ()=>{
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
       const body = { userId: conv.userId, girlId: conv.girlId, operatorName: (els.opName.value||'').trim() || null };
       const r = await fetch(`${base()}/api/takeover/start`, { method:'POST', headers: headersJSON(), body: JSON.stringify(body) });
       if (!r.ok) return alert('Failed to start takeover');
@@ -441,7 +405,7 @@
     };
     els.btnGlobalStop.onclick = async ()=>{
       const conv = store.byKey.get(store.activeKey);
-      if (!conv || !authOK()) return alert('Select a chat first and enter the correct Operator Key');
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
       const r = await fetch(`${base()}/api/takeover/stop`, {
         method:'POST', headers: headersJSON(),
         body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId })
@@ -453,8 +417,6 @@
     // ----- Manual add -----
     els.btnAddChat.onclick = ()=>{
       els.manualForm.style.display = els.manualForm.style.display ? '' : 'block';
-      if (els.manualForm.style.display === '') els.manualForm.style.display = 'block';
-      else els.manualForm.style.display = '';
     };
     els.btnManualAdd.onclick = ()=>{
       const uid = Number(els.manualUserId.value);
@@ -472,11 +434,15 @@
     els.textMsg.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
 
     // ----- Poll -----
-    setInterval(fetchFeed, 5000);  // discover chats
+    // discover chats (like feed.html): first full slice, then deltas
+    setInterval(()=>fetchFeed(false), 5000);
+    // active chat message refresh
     setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000);
 
     // Boot
-    setTimeout(fetchFeed, 200);
+    (async function init(){
+      await fetchFeed(true); // initial slice
+    })();
   </script>
 </body>
 </html>
