@@ -14,165 +14,152 @@
   </script>
   <link rel="stylesheet" href="style.css" />
   <style>
-    body {
-      background: linear-gradient(135deg, #ff9a9e, #fad0c4);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      font-family: Arial, sans-serif;
-    }
-    .chat-container {
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(0,0,0,0.2);
-      width: 400px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-    }
-    .chat-header {
-      display: flex;
-      align-items: center;
-      background-color: #ef476f;
-      color: white;
-      padding: 10px;
-      position: relative;
-      flex-shrink: 0;
-    }
-    .chat-header img {
-      width: 50px;
-      height: 50px;
-      border-radius: 50%;
-      margin-right: 10px;
-      border: 2px solid white;
-    }
-    /* live agent banner */
-    #liveBanner {
-      background:#ffe082;
-      color:#4a3b00;
-      padding:6px 10px;
-      font-size:12px;
-      text-align:center;
-    }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#ffcccc, #ffe6e6);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* keeps header/footer pinned */
+  }
 
-    /* Gift bar under header */
-    .gift-bar{
-      border-bottom:1px solid #f1f1f1;
-      background:#fff8fb;
-      padding:8px 10px;
-      text-align:center;
-      font-size:14px;
-      flex-shrink:0;
-    }
-    .gift-bar .row{
-      display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap;
-    }
-    .gift-chip{
-      display:inline-flex; align-items:center; justify-content:center;
-      width:36px; height:36px; border-radius:999px; background:#ffffff;
-      border:1px solid #ffd1dc; cursor:pointer; font-size:18px;
-      transition: transform .08s ease;
-    }
-    .gift-chip:hover{ transform: translateY(-1px); }
+  .chat-container {
+    width: 400px;
+    height: 90vh;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
 
-    .chat-box {
-      flex: 1;
-      padding: 10px;
-      overflow-y: auto;
-      background-color: #fff0f3;
-      display: flex;
-      flex-direction: column;
-    }
-    .message {
-      margin: 8px 0;
-      padding: 8px 12px;
-      border-radius: 15px;
-      max-width: 70%;
-      word-wrap: break-word;
-    }
-    .message.user {
-      background-color: #ef476f;
-      color: white;
-      align-self: flex-end;
-    }
-    .message.girl {
-      background-color: #f1f1f1;
-      color: black;
-      align-self: flex-start;
-    }
-    .message.typing {
-      font-style: italic;
-      color: #888;
-      animation: blink 1s infinite;
-      max-width: 40px;
-      padding: 8px;
-      text-align: center;
-      border-radius: 50%;
-    }
-    @keyframes blink {
-      0% { opacity: 1; }
-      50% { opacity: 0.4; }
-      100% { opacity: 1; }
-    }
-    .chat-input {
-      display: flex;
-      border-top: 1px solid #ccc;
-    }
-    .chat-input input {
-      flex: 1;
-      padding: 10px;
-      border: none;
-      font-size: 14px;
-    }
-    .chat-input button {
-      background-color: #ef476f;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      cursor: pointer;
-    }
-    .chat-input button:hover {
-      background-color: #d43d61;
-    }
+  .chat-header {
+    background: #ff4d6d;
+    color: #fff;
+    padding: 15px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
 
-    /* sticky CTA bar — always visible */
-    .cta-bar {
-      display: block;
-      border-top: 1px solid #ffd1dc;
-      background: #fff5f7;
-      padding: 10px;
-      text-align: center;
-      flex-shrink: 0;
-    }
-    .cta-link {
-      display: inline-block;
-      background: #ef476f;
-      color: #fff;
-      padding: 8px 12px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-    }
+  .chat-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
 
-    /* Site system notice (neutral card, not from the girl) */
-    .system-card{
-      background:#ffffff;
-      border:1px solid #ffd1dc;
-      border-radius:12px;
-      padding:12px;
-      margin:8px 0;
-      text-align:center;
-      color:#333;
-      box-shadow:0 2px 8px rgba(0,0,0,.05);
-      align-self:center;          /* center it */
-      max-width: 92%;
-    }
-    .system-card img{ height:28px; margin-bottom:6px; }
-    .system-card .title{ font-weight:800; margin-bottom:6px; }
-    .system-card p{ margin:4px 0 0; font-size:14px; line-height:1.35; }
-  </style>
+  .gift-bar {
+    background: #fff6f9;
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #ffd6e0;
+  }
+  .gift-bar p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #555;
+  }
+  .gifts {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .gift-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .gift-btn:hover {
+    transform: scale(1.2);
+  }
+
+  .chat-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background: #fff0f5;
+    min-height: 0; /* ensures only this scrolls */
+  }
+
+  .message {
+    margin: 8px 0;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 75%;
+    word-wrap: break-word;
+  }
+
+  .message.user {
+    background: #d1e7dd;
+    margin-left: auto;
+  }
+
+  .message.girl {
+    background: #ffe6eb;
+    margin-right: auto;
+  }
+
+  .message.premium {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    font-size: 14px;
+    text-align: center;
+    margin: 10px auto;
+    max-width: 90%;
+  }
+
+  .chat-input {
+    display: flex;
+    padding: 10px;
+    background: #fff;
+    border-top: 1px solid #ddd;
+  }
+
+  .chat-input textarea {
+    flex: 1;
+    resize: none;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+
+  .chat-input button {
+    background: #ff4d6d;
+    border: none;
+    color: #fff;
+    padding: 10px 15px;
+    margin-left: 8px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .chat-input button:hover {
+    background: #e63b5e;
+  }
+
+  .upgrade-btn {
+    background: #ff4d6d;
+    border: none;
+    color: #fff;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 0 0 10px 10px;
+    text-align: center;
+  }
+
+  .upgrade-btn:hover {
+    background: #e63b5e;
+  }
+</style>
+
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
