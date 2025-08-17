@@ -22,7 +22,6 @@
       height: 100vh;
       margin: 0;
       font-family: Arial, sans-serif;
-	overflow: hidden;
     }
     .chat-container {
       background: white;
@@ -85,7 +84,6 @@
       background-color: #fff0f3;
       display: flex;
       flex-direction: column;
-	min-height: 0;
     }
     .message {
       margin: 8px 0;
@@ -139,9 +137,9 @@
       background-color: #d43d61;
     }
 
-    /* sticky CTA bar — always visible */
+    /* sticky CTA bar — ALWAYS visible */
     .cta-bar {
-      display: block;
+      display: block;             /* <-- keep visible */
       border-top: 1px solid #ffd1dc;
       background: #fff5f7;
       padding: 10px;
@@ -157,23 +155,6 @@
       text-decoration: none;
       font-weight: bold;
     }
-
-    /* Site system notice (neutral card, not from the girl) */
-    .system-card{
-      background:#ffffff;
-      border:1px solid #ffd1dc;
-      border-radius:12px;
-      padding:12px;
-      margin:8px 0;
-      text-align:center;
-      color:#333;
-      box-shadow:0 2px 8px rgba(0,0,0,.05);
-      align-self:center;          /* center it */
-      max-width: 92%;
-    }
-    .system-card img{ height:28px; margin-bottom:6px; }
-    .system-card .title{ font-weight:800; margin-bottom:6px; }
-    .system-card p{ margin:4px 0 0; font-size:14px; line-height:1.35; }
   </style>
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
@@ -195,7 +176,7 @@
       </div>
     </div>
 
-    <!-- Live banner -->
+    <!-- Live banner placeholder -->
     <div id="liveBanner" style="display:none"></div>
 
     <div class="chat-box" id="chatBox"></div>
@@ -227,18 +208,21 @@
     // header + photo
     document.getElementById('chatName').textContent = girl.name;
     document.getElementById('chatPhoto').src = girl.image;
+    // first-name in gift bar
     document.getElementById('giftGirlName').textContent = (girl.name || 'her').split(' ')[0];
 
-    // state
+    // takeover state
     let TAKEOVER = false;
     let pollTimer = null;
-    let IS_PREMIUM = false; // you can flip this true when lifetime/premium
 
-    // Keep CTA visible
+    // premium/credits; CTA stays visible regardless
+    let IS_PREMIUM = false;
+
+    // make sure the CTA never hides
     function showCTA(){ ctaBar.style.display = 'block'; }
-    function hideCTA(){ ctaBar.style.display = 'block'; }
+    function hideCTA(){ ctaBar.style.display = 'block'; }  // intentionally keep it shown
 
-    // ---- helpers ----
+    // append message helper
     function appendMessage(text, sender, isTyping=false){
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
@@ -266,36 +250,17 @@
       return msgDiv;
     }
 
-    // NEW: neutral site notice card (not from the girl)
-    function appendSystemNotice(text){
-      const card = document.createElement('div');
-      card.className = 'system-card';
-      const logo = document.createElement('img');
-      logo.src = 'logo.png';
-      logo.alt = 'Site logo';
-      const title = document.createElement('div');
-      title.className = 'title';
-      title.textContent = 'Premium Feature';
-      const p = document.createElement('p');
-      p.textContent = text;
-      card.appendChild(logo);
-      card.appendChild(title);
-      card.appendChild(p);
-      chatBox.appendChild(card);
-      chatBox.scrollTop = chatBox.scrollHeight;
-      return card;
-    }
-
     function randomDelay(min=700, max=2000){ return Math.floor(Math.random()*(max-min+1))+min; }
 
     // Detect phone/email/links/handles/WhatsApp etc.
     function isContactAttempt(text) {
       if (!text) return false;
       const patterns = [
-        /@/i,
+        /@/i, // emails/handles
         /\b(whats?app|telegram|snap(chat)?|instagram|insta|tg|wechat|signal|viber)\b/i,
         /\b(phone|number|call|text|dm|pm)\b/i,
         /https?:\/\/|www\./i,
+        // phones
         /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
         /\b\+?\d{1,3}[-.\s]?\d{6,14}\b/
       ];
@@ -310,7 +275,7 @@
         const data = await res.json();
         chatBox.innerHTML = "";
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
-        showCTA();
+        showCTA(); // keep CTA visible
       }catch(e){ console.error("Error loading messages:", e); }
     }
 
@@ -339,9 +304,9 @@
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (!r.ok) return;
-        const c = await r.json();
+        const c = await r.json(); // { credits, lifetime }
         IS_PREMIUM = !!c?.lifetime;
-        showCTA();
+        showCTA(); // regardless of credits, keep bar visible
       }catch{}
     }
 
@@ -350,13 +315,14 @@
       const messageText = input.value.trim();
       if (!messageText) return;
 
-      // Contact sharing -> system notice (not from girl)
+      // Block contact sharing for non-premium; point to bottom CTA
       if (isContactAttempt(messageText) && !IS_PREMIUM) {
-        appendSystemNotice(
-          "Sharing numbers, WhatsApp, emails or links is a Premium feature. Upgrade using the pink button at the bottom to unlock it."
+        appendMessage(
+          "I'd love to swap contact details, but sharing numbers, WhatsApp, emails or links is for Premium members only. You can upgrade any time using the pink button at the bottom 💖",
+          "girl"
         );
         showCTA();
-        return;
+        return; // don't send to backend
       }
 
       appendMessage(messageText, 'user');
@@ -373,7 +339,6 @@
         if (res.status === 403){
           const data = await res.json();
           typingBubble.remove();
-          // keep existing credit error in a girl bubble
           appendMessage(data.error || "You're out of credits!", 'girl');
           showCTA();
           chatBox.scrollTop = chatBox.scrollHeight;
@@ -400,13 +365,14 @@
       }
     }
 
-    // Gift clicks -> system notice (not from girl)
+    // Gift clicks -> upsell (point to bottom CTA)
     document.getElementById('giftBar').addEventListener('click', (e)=>{
       const chip = e.target.closest('.gift-chip');
       if (!chip) return;
       const label = chip.getAttribute('title') || 'gift';
-      appendSystemNotice(
-        `Sending ${label.toLowerCase()} is a Premium feature. Upgrade using the pink button at the bottom to unlock gifts & pics.`
+      appendMessage(
+        `Aww, you're sweet! 🎁 Sending ${label.toLowerCase()} is for Premium members only. You can upgrade using the pink button at the bottom ❤️`,
+        'girl'
       );
       showCTA();
     });
