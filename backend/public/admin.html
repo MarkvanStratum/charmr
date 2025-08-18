@@ -57,7 +57,7 @@
     .kv > div { display:flex; flex-direction:column; }
     .kv input { width:240px; }
 
-    /* NEW: Neutral system notice card (mirrors chat.html look) */
+    /* system note */
     .system-card{
       background:#ffffff;
       border:1px solid #ffd1dc;
@@ -191,10 +191,10 @@
 
     // Store
     const store = {
-      byKey: new Map(), // key: `${userId}-${girlId}`
+      byKey: new Map(),        // key: `${userId}-${girlId}`
       activeKey: null,
       lastNow: null,
-      nameCache: new Map(), // userId -> "First Last"
+      nameCache: new Map(),    // userId -> "First Last"
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
@@ -225,7 +225,7 @@
       return store.byKey.get(k);
     }
 
-    // --- Helpers to normalize feed rows ---
+    // Normalizers for mixed shapes
     function parseSender(r){
       if (typeof r?.from_user === 'boolean') return r.from_user ? 'user' : 'girl';
       if (typeof r?.fromUser === 'boolean')   return r.fromUser  ? 'user' : 'girl';
@@ -239,11 +239,8 @@
       if (typeof t === 'number') return t;
       if (typeof t === 'string'){
         const num = Number(t);
-        if (!Number.isNaN(num) && /^\d+$/.test(t.trim())){
-          return t.trim().length === 10 ? num * 1000 : num;
-        }
-        const d = Date.parse(t);
-        if (!Number.isNaN(d)) return d;
+        if (!Number.isNaN(num) && /^\d+$/.test(t.trim())) return t.trim().length === 10 ? num*1000 : num;
+        const d = Date.parse(t); if (!Number.isNaN(d)) return d;
       }
       return Date.now();
     }
@@ -254,7 +251,7 @@
       return name || null;
     }
 
-    // Contact-sharing detector
+    // Contact-sharing detector (context helper)
     function isContactAttempt(text) {
       if (!text) return false;
       const patterns = [
@@ -316,9 +313,7 @@
     }
 
     // ----- Chat -----
-    function forceScrollToBottom(){
-      els.chatBox.scrollTop = els.chatBox.scrollHeight;
-    }
+    function forceScrollToBottom(){ els.chatBox.scrollTop = els.chatBox.scrollHeight; }
 
     function renderChat(conv){
       if (!conv){ els.chatTitle.textContent = 'No chat selected'; els.chatBox.innerHTML=''; return; }
@@ -349,7 +344,7 @@
           card.innerHTML = `
             <img src="logo.png" alt="Site logo">
             <div class="title">Premium Feature</div>
-            <p>Sharing numbers, WhatsApp, emails or links is a Premium feature. The user sees a prompt to upgrade in chat.</p>
+            <p>The user attempted to share contact details. They see an upgrade prompt in chat.</p>
           `;
           els.chatBox.appendChild(card);
         }
@@ -357,20 +352,27 @@
       forceScrollToBottom();
     }
 
+    function showChatError(msg){
+      els.chatBox.innerHTML = `<div class="helper" style="padding:12px;color:#b91c1c">${msg}</div>`;
+    }
+
     function selectConversation(key){
       store.activeKey = key;
       const conv = store.byKey.get(key);
-      if (conv){ conv.unread = 0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
-      renderChat(conv);
+      if (conv){
+        conv.unread = 0;
+        renderSidebar(false);      // keep selection highlighted
+        renderChat(conv);          // show title immediately
+        fetchMessages(conv);       // then fetch messages
+        checkTakeover(conv);
+      } else {
+        renderChat(null);
+      }
     }
 
-    // ----- FEED (schema-agnostic) -----
+    // ----- FEED (auth; schema-agnostic) -----
     async function fetchFeed(initial=false){
       try{
-        if (!haveOpKey()){
-          els.feedStatus.textContent = 'enter operator key…';
-          return;
-        }
         const params = new URLSearchParams();
         params.set('limit', String(FEED_LIMIT));
         if (!initial && store.lastNow) params.set('since', store.lastNow);
@@ -378,7 +380,6 @@
         const url = `${base()}${FEED_PATH}?${params.toString()}`;
         els.feedUrl.textContent = FEED_PATH;
 
-        // ✅ include the operator header (required by updated server.js)
         const res = await fetch(url, { headers: opHeader() });
         if (!res.ok){
           els.feedStatus.textContent = `HTTP ${res.status}`;
@@ -392,7 +393,7 @@
 
         let pingNeeded = false;
 
-        // rows: { id, created_at/createdAt/ts, userId, girlId, girlName, from/from_user, text }
+        // rows: { id, userId/user_id, girlId/girl_id, girlName, from/from_user, text, createdAt/created_at, [names?] }
         for (const r of rows){
           const userId = Number(r.userId ?? r.user_id);
           const girlId = Number(r.girlId ?? r.girl_id);
@@ -400,6 +401,7 @@
 
           const cv = ensureConv(userId, girlId, r.girlName || r.girl_name || null);
 
+          // optional user name
           const maybeName = extractUserName(r);
           if (maybeName) {
             cv.userName = maybeName;
@@ -432,8 +434,9 @@
     // ----- Conversation fetch -----
     async function fetchMessages(conv){
       if (!conv) return;
+
       if (!haveOpKey()) {
-        els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
+        showChatError('Enter your <strong>Operator Key</strong> above to load messages for this chat.');
         return;
       }
 
@@ -441,15 +444,19 @@
         const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
           headers: opHeader()
         });
-        if (!r.ok) return;
+
+        if (r.status === 401) { showChatError('Unauthorized. Check your Operator Key.'); return; }
+        if (!r.ok) { showChatError(`Failed to load messages (HTTP ${r.status}).`); return; }
+
         const data = await r.json();
-        if (!Array.isArray(data)) return;
+        if (!Array.isArray(data)) { showChatError('Unexpected response from server.'); return; }
 
         conv.messages = data;
         if (data.length){
           const last = data[data.length-1];
           conv.lastTs = new Date(last.created_at || last.createdAt || Date.now()).getTime() || Date.now();
 
+          // Recompute last user activity for online dot
           const lastUser = [...data].reverse().find(m => m.from_user === true || m.fromUser === true);
           if (lastUser){
             const t = new Date(lastUser.created_at || lastUser.createdAt || Date.now()).getTime() || Date.now();
@@ -458,14 +465,16 @@
           }
         }
 
-        // Optional: cache a name per user if you later add an endpoint
+        // name fallback from cache if available
         if (!conv.userName && store.nameCache.get(conv.userId)) {
           conv.userName = store.nameCache.get(conv.userId);
         }
 
         renderChat(conv);
         renderSidebar(false);
-      }catch(e){ /* silent */ }
+      }catch(e){
+        showChatError('Network error while loading messages.');
+      }
     }
 
     // ----- Takeover status -----
@@ -577,7 +586,6 @@
     // When the operator key is filled in, auto-load messages for the active chat
     els.opKey.addEventListener('input', () => {
       const c = store.byKey.get(store.activeKey);
-      fetchFeed(false); // refresh list as soon as key is set
       if (c && haveOpKey()) fetchMessages(c);
     });
 
