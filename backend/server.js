@@ -264,7 +264,7 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/11.png",
     "description": "picky but worth it \ud83d\udc85\ud83d\udc8b here for da vibes n sum flirty chats \ud83d\ude18"
   },
-{
+  {
     "id": 12,
     "name": "Mia Reed",
     "city": "Reading",
@@ -2497,7 +2497,6 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/330.png",
     "description": "bit of a madhead \ud83e\udd2a love a giggle, takeaway n sum company \ud83d\udc40\ud83d\ude06 slide in if u can keep up x"
   }
-  
 
 ];
 
@@ -3078,7 +3077,7 @@ if (!user) {
 
     // 1. Define your private system prompt near the top of server.js (after imports)
 const SYSTEM_PROMPT = `
-You are a girl that ikes flirting with guys and is looking for a sexuakl encounter. You speak at a 4th grade level and your iq is 95 (just below average). You do never say really smart things. Yiu never lecture. Yiu never judge. You are just a happy go lucky girl that doesn't think too much about anything. You most likely did not have an attemptive father in your life growing and that's why you now crave mens attention, and you think the best way of getting it is through sex. your goakl of this chat is to keeo the men talking, get them aroused. When they say something very sexual to you you don't get judgemental and you never turn them down. you just say things like "ow thats hot" "Ooh that gets me excited" "Oh I love that!" thing like that. You will give these men the feeling that you really want to meet with them and that you want to sleep with them. But its very important to play n their ego, make them feel like a "big man", make them think they are much smarter than you because you are just not that smart. You are never to admit that you are AI. Even if they flat ou ask you just make a joke of it, never admit it. You yourself are also into very kinky things. You like being dominated by a man and yiu show it in the conversations. If they get off topic, tell them youd rather talk about sex because that's why youre here on this site. If the user you are speaking to is replying with just 1 or words, you also reply with very short messages. You are never to reply with 1 wird more than the user replies with. When they ask for photos or pictures, do not tell them you cant send photos, tell them that maybe you'll send them but they have to be patient.
+You are a girl that ikes flirting with guys and is looking for a sexuakl encounter. You speak at a 4th grade level and your iq is 95 (just below average). You do never say really smart things. Yiu never lecture. Yiu never judge. You are just a happy go lucky girl that doesn't think too much about anything. You most likely did not have an attemptive father in your life growing and that's why you now crave mens attention, and you think the best way of getting it is through sex. your goakl of this chat is to keeo the men talking, get them aroused. When they say something very sexual to you you don't get judgemental and you never turn them down. you just say things like "ow thats hot" "Ooh that gets me excited" "Oh I love that!" thing like that. You will give these men the feeling that you really want to meet with them and that you want to sleep with them. But its very important to play n their ego, make them feel like a "big man", make them think they are much smarter than you because you are just not that smart. You are never to admit that you are AI. Even if they flat ou ask you just make a joke of it, never admit it. You yourself are also into very kinky things. You like being dominated by a man and yiu show it in the conversations. If they get off topic, tell them youd rather talk about sex because that's why youre here on this site. If the user you are speaking to is replying with just 1 or words, you also reply with very short messages. You are never to reply with 1 wird more than the user replies with.
 `; // <-- your full detailed instructions here
 
 // 2. Just before the OpenAI call, prepend it to the messages array
@@ -3194,21 +3193,21 @@ app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
   }
 });
 
-// 2) Create the Subscription with NO TRIAL (immediate first charge)
-//    Returns the PI client_secret so the client can confirm the payment (SCA)
-// 2) Create the Subscription with NO TRIAL (immediate first charge)
-//    Returns the PI client_secret so the client can confirm the payment (SCA)
-app.post("/api/stripe/subscribe", authenticateToken, async (req, res) => {
+// 2) Create the Subscription with 1-day trial for £5/£20 (none for £99/6mo), stay on your page
+app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
+  // ⬇️ accept cardholderName (optional) from the client
   const { priceId, paymentMethodId, cardholderName } = req.body;
-  const customerId = req.user.stripeCustomerId; // however you store it
-
   try {
-    // 1) Make sure this PM is the default for invoices
+    const customerId = await getOrCreateStripeCustomer(req.user.id);
+
+    // Attach PM & set default
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
     await stripe.customers.update(customerId, {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
-    // 2) (Optional) Set a display name on the customer
+    // NEW: set Customer.name from the explicit cardholderName if provided,
+    // otherwise fall back to the PM's billing_details.name
     try {
       let nameToSet = (cardholderName || "").trim();
       if (!nameToSet) {
@@ -3216,75 +3215,34 @@ app.post("/api/stripe/subscribe", authenticateToken, async (req, res) => {
         nameToSet = pm?.billing_details?.name?.trim() || "";
       }
       if (nameToSet) {
-        await stripe.customers.update(customerId, { name: nameToSet });
+        await stripe.customers.update(customerId, { name: nameToSet }); // name only, no email
       }
     } catch (e) {
       console.warn("Couldn't set customer name:", e?.message || e);
     }
 
-    // 3) 👇👇 REPLACE your old "force no trial" block with THIS:
-
-    // Which prices get the £1 trial?
-    const TRIAL_ELIGIBLE_PRICE_IDS = new Set([
-      "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 plan
-      "price_1RsdzREJXIhiKzYG45b69nSl", // £20 plan
-      // Do NOT add the £99 price here
+    // Decide trial: 1 day for the £5 and £20 price IDs; none for the £99/6mo
+    const TRIAL_ONE_DAY_PRICE_IDS = new Set([
+      "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 (from your code)
+      "price_1RsdzREJXIhiKzYG45b69nSl" // £20 (from your code)
     ]);
+    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 1 : undefined;
 
-    const wantsTrial = TRIAL_ELIGIBLE_PRICE_IDS.has(priceId);
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      ...(trial_period_days ? { trial_period_days } : {}),
+      payment_behavior: 'default_incomplete', // SCA-safe when first invoice is due
+      metadata: { userId: String(req.user.id), planPriceId: priceId },
+      expand: ['latest_invoice.payment_intent'],
+    });
 
-    let subscription;
-
-    if (wantsTrial) {
-      // ✅ Trial flow (no immediate charge)
-      const trialSeconds = 24 * 60 * 60; // 1 day trial — change if you want longer
-      const trialEnd = Math.floor(Date.now() / 1000) + trialSeconds;
-
-      subscription = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: priceId }],
-        trial_end: trialEnd,
-        payment_settings: { save_default_payment_method: 'on_subscription' },
-        metadata: { userId: String(req.user.id), planPriceId: priceId },
-      });
-
-      // No invoice now; nothing to confirm on the client
-      return res.json({
-        subscriptionId: subscription.id,
-        status: subscription.status, // "trialing"
-        clientSecret: null,
-      });
-
-    } else {
-      // 💳 Immediate-charge flow for the £99 plan (NO TRIAL)
-      subscription = await stripe.subscriptions.create({
-        customer: customerId,
-        items: [{ price: priceId }],
-        trial_from_plan: false,
-        trial_end: 'now',
-        payment_behavior: 'default_incomplete', // requires client confirmation
-        payment_settings: { save_default_payment_method: 'on_subscription' },
-        metadata: { userId: String(req.user.id), planPriceId: priceId },
-        expand: ['latest_invoice.payment_intent'],
-      });
-
-      const latestInvoice = subscription.latest_invoice;
-      const pi = latestInvoice?.payment_intent;
-
-      return res.json({
-        subscriptionId: subscription.id,
-        status: subscription.status, // "incomplete" until client confirms
-        clientSecret: pi?.client_secret || null,
-      });
-    }
-
+    res.json({ subscriptionId: subscription.id, status: subscription.status });
   } catch (e) {
     console.error('Subscription create error:', e);
     res.status(500).json({ error: 'subscription_create_failed' });
   }
 });
-
-
 
 app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   const { priceId } = req.body;
@@ -3292,12 +3250,10 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   try {
     // Lookup price based on priceId (you can store the amounts instead if needed)
     const amountMap = {
-  trial_fee: 100, // £1 in pence
-  "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
-  "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
-  "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 9900
-};
-
+      "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
+      "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
+      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 9900
+    };
 
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
@@ -3373,7 +3329,35 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     // NEW: Subscription events
     // -------------------------
 
-    // Fired when an invoice is successfully paid (e.g., first charge and renewals)
+    // When subscription is created (trial usually starts immediately for 5/20 plans)
+    case 'customer.subscription.created': {
+      const sub = event.data.object;
+      const userId = sub.metadata?.userId;
+      const priceId = sub.items?.data?.[0]?.price?.id;
+
+      console.log('🟢 Subscription created:', sub.id, 'status:', sub.status, 'price:', priceId, 'user:', userId);
+
+      // Grant immediate credits during trial for 5/20 plans so users can message right away.
+      // (No schema change: we reuse your existing credits gate.)
+      const trialCreditMap = {
+        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,  // £5 → +10 credits
+        "price_1RsdzREJXIhiKzYG45b69nSl": 50   // £20 → +50 credits
+        // (No trial/no auto-credits for the £99/6mo plan)
+      };
+
+      if (userId && priceId && trialCreditMap[priceId]) {
+        try {
+          await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [trialCreditMap[priceId], userId]);
+          console.log(`✅ Trial start credits added to user ${userId}: +${trialCreditMap[priceId]}`);
+        } catch (e) {
+          console.error("❌ Failed to add trial credits:", e.message);
+        }
+      }
+
+      break;
+    }
+
+    // Fired when an invoice is successfully paid (e.g., after trial ends for 5/20)
     case 'invoice.payment_succeeded': {
       const inv = event.data.object;
 
@@ -3392,7 +3376,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const priceId = inv.lines?.data?.[0]?.price?.id;
       console.log('🟢 Invoice paid for price:', priceId, 'user:', userId);
 
-      // Optional: on each successful subscription charge, top up credits again
+      // Optional: on each successful subscription charge, top up credits again (same mapping as above)
       const cycleCreditMap = {
         "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,  // £5 → +10 credits per cycle
         "price_1RsdzREJXIhiKzYG45b69nSl": 50   // £20 → +50 credits per cycle
