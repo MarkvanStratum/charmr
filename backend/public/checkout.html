@@ -33,9 +33,9 @@
       color: var(--ink);
       margin:0;
       padding: 12px;
-      padding-top: calc(12px + env(safe-area-inset-top)); /* ensure logo isn’t cut off */
+      padding-top: calc(12px + env(safe-area-inset-top));
       display:flex;
-      flex-direction:column;          /* logo on top, form below */
+      flex-direction:column;
       align-items:center;
       justify-content:flex-start;
       -webkit-text-size-adjust:100%;
@@ -50,15 +50,23 @@
       border:1px solid var(--line);
       border-radius:12px;
       display:flex;
+      flex-direction:column;
       align-items:center;
       justify-content:center;
-      padding:14px 0;
+      padding:14px 12px;
       margin:0 12px 12px;
       box-shadow: 0 4px 14px rgba(15,23,42,.06);
+      text-align:center;
     }
     .logo-bar img{max-height:48px; width:auto}
+    .logo-sub{
+      margin:6px 0 0;
+      font-size:12px;
+      color:#475569;
+      font-weight:600;
+    }
 
-    /* CARD (mobile-first, compact) */
+    /* CARD */
     #payment-form{
       width:100%;
       max-width: 560px;
@@ -67,7 +75,7 @@
       border:1px solid #f8c4d3;
       box-shadow: 0 10px 28px rgba(239,71,111,.14);
       padding:16px;
-      margin:0 12px 24px;
+      margin:0 12px 12px;
     }
 
     /* HERO */
@@ -75,9 +83,9 @@
     .hero h1{
       margin:0 0 8px 0;
       font-size: clamp(18px, 5vw, 22px);
-      letter-spacing:.4px;
-      text-transform:uppercase;
-      color:var(--brand);
+      letter-spacing:.2px;
+      text-transform:none;
+      color:var(--ink);
       text-align:center;
     }
     .hero-copy{
@@ -98,10 +106,9 @@
       padding:6px 10px;
     }
 
-    /* small badges row */
     .badges{
       display:flex; gap:10px; justify-content:center; align-items:center;
-      margin:4px 0 10px; opacity:.95;
+      margin:6px 0 10px; opacity:.95; flex-wrap:wrap;
     }
     .badge{
       display:inline-flex; align-items:center; gap:8px;
@@ -128,6 +135,8 @@
       display:inline-block; font-size:11px; font-weight:800; letter-spacing:.3px;
       background:#fff0f4; color:#b91c1c; border:1px solid #ffd1e0; padding:2px 8px; border-radius:999px; margin-left:8px;
     }
+    .per-month{font-weight:700; color:#0b0b0b}
+
     .plan input[type="radio"]:checked + label{
       border-radius:10px; outline:3px solid #ffe5ee; background:#fff8fb;
       padding:4px 6px;
@@ -160,7 +169,11 @@
     #submit:hover{background:var(--brand-dark)}
     #submit[disabled]{opacity:.7; cursor:not-allowed}
 
-    #message{margin-top:10px; font-size:14px; color:#b91c1c}
+    #message{
+      margin-top:10px; font-size:14px; color:#b91c1c;
+      background:#fff0f0; border:1px solid #fecaca; border-radius:10px; padding:8px; display:none;
+    }
+    #message[aria-hidden="false"]{display:block}
 
     /* Loading overlay */
     .loading-overlay{
@@ -195,19 +208,25 @@
       100%{width:100%}
     }
     .loading-sub{font-size:12px; color:var(--sub); margin-top:8px}
+
+    /* Footer */
+    .legal{
+      width:100%;
+      max-width:560px;
+      text-align:center;
+      font-size:12px;
+      color:var(--sub);
+      margin:8px 12px 24px;
+    }
+    .legal a{color:#334155; text-decoration:underline}
   </style>
 </head>
 <body>
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-<div class="logo-bar" style="display:flex; flex-direction:column; align-items:center;">
+<div class="logo-bar">
   <img src="logo.png" alt="Site logo" style="max-width:140px; height:auto;">
-  <p style="margin:4px 0 12px; font-size:8px; color:#475569; text-align:center; font-weight:500;">
-    It's Tinder without the bullshit, just sex, the way you like it!
-  </p>
-</div>
-
-
+  <p class="logo-sub">Secure, discreet, and easy to cancel.</p>
 </div>
 
 <!-- Loading overlay -->
@@ -225,16 +244,18 @@
 <form id="payment-form" aria-labelledby="age-title">
   <!-- HERO -->
   <div class="hero" role="region" aria-label="Checkout intro">
-    <h1 id="age-title">Unlock Special Features</h1>
+    <h1 id="age-title">Start Your Free Trial</h1>
 
     <div class="badges" aria-label="Security and privacy badges">
       <div class="badge">🔒 SSL Secure</div>
       <div class="badge">🕵️ Discreet Billing</div>
       <div class="badge">✅ Cancel Anytime</div>
+      <div class="badge">💳 Processed by Stripe</div>
     </div>
 
     <div class="hero-copy">
-      Start your free trial today. Unlock special features like picture sharing, contact sharing, and unlimited messages. Choose your plan, the first day is FREE!
+      The first day is <strong>free</strong>. After the trial, your chosen plan renews automatically until cancelled.
+      You can cancel in Settings at any time — no questions asked.
     </div>
 
     <div class="steps" aria-label="How it works">
@@ -249,8 +270,12 @@
     <div class="plan">
       <input type="radio" name="plan" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" id="plan5" checked>
       <label for="plan5">
-        <span class="plan-title">Starter — Personal Chats </span>
-        <span class="plan-fine">Send pictures, gifts and with limited chat. <strong>Free</strong> today, then <span class="curr-symbol">£</span>0.16/day. Cancel anytime.</span>
+        <span class="plan-title">Starter — Personal Chats</span>
+        <span class="plan-fine">
+          Send pictures, gifts and limited chat. <strong>Free</strong> today, then
+          <span class="curr-symbol">£</span>0.16/day
+          <span class="per-month">(~<span class="curr-symbol">£</span>4.80/month)</span>. Cancel anytime.
+        </span>
       </label>
     </div>
 
@@ -258,7 +283,11 @@
       <input type="radio" name="plan" value="price_1RsdzREJXIhiKzYG45b69nSl" id="plan20">
       <label for="plan20">
         <span class="plan-title">Plus — Extended Messages <span class="plan-popular">Most Popular</span></span>
-        <span class="plan-fine">Send pictures, gifts, share contacts and social media, extended chat. <strong>Free</strong> today, then <span class="curr-symbol">£</span>0.66/day. Cancel anytime.</span>
+        <span class="plan-fine">
+          Pictures, gifts, contact/social sharing, extended chat. <strong>Free</strong> today, then
+          <span class="curr-symbol">£</span>0.66/day
+          <span class="per-month">(~<span class="curr-symbol">£</span>19.80/month)</span>. Cancel anytime.
+        </span>
       </label>
     </div>
 
@@ -272,20 +301,39 @@
   </div>
 
   <label for="cardholder-name">Name on card</label>
-  <input type="text" id="cardholder-name" placeholder="Full name" required />
+  <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name" inputmode="text"/>
 
-  <div id="card-element"><!-- Stripe injects card input here --></div>
+  <div id="card-element" aria-label="Card details (powered by Stripe)"><!-- Stripe injects card input here --></div>
 
   <!-- Trust row -->
-  <div class="trust">
+  <div class="trust" aria-label="Payment trust information">
     <div class="tag">🔒 Secure payment via Stripe</div>
     <div class="tag">🕵 Discreet billing</div>
+    <div class="tag">💳 Visa • Mastercard • AmEx</div>
     <div class="tag ok">✔ Age 18+ only</div>
   </div>
 
-  <button type="submit" id="submit">Start Free Trial</button>
-  <div id="message"></div>
+  <details class="hero-copy" style="margin:8px 0 12px">
+    <summary style="cursor:pointer; font-weight:700">Why we ask for a card for the free trial</summary>
+    We verify you’re over 18 and combat spam/abuse. You won’t be charged today.
+    If you keep your plan past the free day, the renewal will start automatically.
+    You can cancel anytime in Settings → Subscription before renewal.
+  </details>
+
+  <button type="submit" id="submit" aria-label="Start free trial — secure checkout">Start Free Trial</button>
+  <div id="message" role="alert" aria-hidden="true"></div>
 </form>
+
+<div class="legal" aria-label="Company and policy links">
+  <div style="margin-bottom:6px;">Payment processing by Stripe. We never store full card numbers.</div>
+  <div>
+    <a href="/terms" rel="nofollow">Terms</a> •
+    <a href="/privacy" rel="nofollow">Privacy</a> •
+    <a href="/refunds" rel="nofollow">Refund Policy</a> •
+    <a href="mailto:support@yoursite.com">Support</a>
+  </div>
+  <div style="margin-top:6px;">© 2025 Your Company Ltd · Company No. 00000000</div>
+</div>
 
 <script>
   // Stripe integration (unchanged backend behavior)
@@ -375,6 +423,7 @@
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     message.textContent = "";
+    message.setAttribute('aria-hidden','true');
     submitBtn.disabled = true;
     showLoading();
     startThreeDSWatcher();
@@ -388,6 +437,7 @@
       console.error(err);
       hideLoading();
       message.textContent = err.message || "Something went wrong. Try again.";
+      message.setAttribute('aria-hidden','false');
     } finally {
       submitBtn.disabled = false;
     }
