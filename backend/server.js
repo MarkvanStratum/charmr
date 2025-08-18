@@ -3198,19 +3198,17 @@ app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
 //    Returns the PI client_secret so the client can confirm the payment (SCA)
 // 2) Create the Subscription with NO TRIAL (immediate first charge)
 //    Returns the PI client_secret so the client can confirm the payment (SCA)
-app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
+app.post("/api/stripe/subscribe", authenticateToken, async (req, res) => {
   const { priceId, paymentMethodId, cardholderName } = req.body;
+  const customerId = req.user.stripeCustomerId; // however you store it
 
   try {
-    const customerId = await getOrCreateStripeCustomer(req.user.id);
-
-    // Attach PM & set as default for invoices
-    await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
+    // 1) Make sure this PM is the default for invoices
     await stripe.customers.update(customerId, {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
-    // Optional: set a display name (NO email touches Stripe)
+    // 2) (Optional) Set a display name on the customer
     try {
       let nameToSet = (cardholderName || "").trim();
       if (!nameToSet) {
@@ -3224,32 +3222,68 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
       console.warn("Couldn't set customer name:", e?.message || e);
     }
 
-    // 🔑 Force NO TRIAL even if the Price has trial days in Dashboard
-    // 🔑 Force NO TRIAL even if the Price has trial days in Dashboard
-// ✅ Start subscription IN TRIAL (no immediate charge)
-const trialSeconds = 24 * 60 * 60; // 1 day trial — change if you want longer
-const trialEnd = Math.floor(Date.now() / 1000) + trialSeconds;
+    // 3) 👇👇 REPLACE your old "force no trial" block with THIS:
 
-const subscription = await stripe.subscriptions.create({
-  customer: customerId,
-  items: [{ price: priceId }],
-  trial_end: trialEnd, // charge after the trial ends
-  payment_settings: { save_default_payment_method: 'on_subscription' },
-  metadata: { userId: String(req.user.id), planPriceId: priceId },
-});
+    // Which prices get the £1 trial?
+    const TRIAL_ELIGIBLE_PRICE_IDS = new Set([
+      "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 plan
+      "price_1RsdzREJXIhiKzYG45b69nSl", // £20 plan
+      // Do NOT add the £99 price here
+    ]);
 
-// No immediate invoice when trialing, so nothing to confirm client-side
-res.json({
-  subscriptionId: subscription.id,
-  status: subscription.status, // "trialing"
-  clientSecret: null
-});
+    const wantsTrial = TRIAL_ELIGIBLE_PRICE_IDS.has(priceId);
+
+    let subscription;
+
+    if (wantsTrial) {
+      // ✅ Trial flow (no immediate charge)
+      const trialSeconds = 24 * 60 * 60; // 1 day trial — change if you want longer
+      const trialEnd = Math.floor(Date.now() / 1000) + trialSeconds;
+
+      subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: priceId }],
+        trial_end: trialEnd,
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        metadata: { userId: String(req.user.id), planPriceId: priceId },
+      });
+
+      // No invoice now; nothing to confirm on the client
+      return res.json({
+        subscriptionId: subscription.id,
+        status: subscription.status, // "trialing"
+        clientSecret: null,
+      });
+
+    } else {
+      // 💳 Immediate-charge flow for the £99 plan (NO TRIAL)
+      subscription = await stripe.subscriptions.create({
+        customer: customerId,
+        items: [{ price: priceId }],
+        trial_from_plan: false,
+        trial_end: 'now',
+        payment_behavior: 'default_incomplete', // requires client confirmation
+        payment_settings: { save_default_payment_method: 'on_subscription' },
+        metadata: { userId: String(req.user.id), planPriceId: priceId },
+        expand: ['latest_invoice.payment_intent'],
+      });
+
+      const latestInvoice = subscription.latest_invoice;
+      const pi = latestInvoice?.payment_intent;
+
+      return res.json({
+        subscriptionId: subscription.id,
+        status: subscription.status, // "incomplete" until client confirms
+        clientSecret: pi?.client_secret || null,
+      });
+    }
 
   } catch (e) {
     console.error('Subscription create error:', e);
     res.status(500).json({ error: 'subscription_create_failed' });
   }
 });
+
 
 
 app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
