@@ -2,13 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Charmr • Checkout</title>
 
-  <!-- Stripe.js -->
-  <script src="https://js.stripe.com/v3"></script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
 
-  <!-- Charmr-like styling -->
+  <!-- Stripe.js v3 -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- Charmr styling -->
   <style>
     :root{
       --pink:#ff4d6d;
@@ -20,10 +29,12 @@
       --muted:#666;
       --card:#fff;
       --ring:#ffd1dc;
+      --line:#e5e7eb;
       --shadow:0 8px 24px rgba(0,0,0,.12);
       --radius:16px;
     }
     *{ box-sizing:border-box; }
+    html,body{height:100%}
     body{
       margin:0;
       font-family: Arial, Helvetica, sans-serif;
@@ -35,6 +46,7 @@
       padding:24px;
       color:var(--ink);
     }
+
     .shell{
       width:min(980px, 100%);
       background:var(--card);
@@ -52,27 +64,27 @@
       color:#fff;
       padding:16px 20px;
     }
-    .header img{
-      width:40px; height:40px; border-radius:50%;
-      background:#fff; object-fit:cover;
-    }
-    .header h1{
-      font-size:20px; margin:0;
-    }
-    .sub{
-      font-size:13px; opacity:.95; margin-top:2px;
-    }
+    .header img{ width:40px; height:40px; border-radius:50%; background:#fff; object-fit:cover; }
+    .header h1{ font-size:20px; margin:0; }
+    .sub{ font-size:13px; opacity:.95; margin-top:2px; }
+
     .content{
       padding:22px;
       background:#fff5f7;
       border-top:1px solid var(--ring);
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:18px;
     }
-    .grid{
+    @media (max-width:900px){ .content{ grid-template-columns:1fr; } }
+
+    /* Plans */
+    .plans{
       display:grid;
       grid-template-columns: repeat(3, minmax(0,1fr));
       gap:16px;
     }
-    @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
+    @media (max-width:900px){ .plans{ grid-template-columns:1fr; } }
     .card{
       background:#fff;
       border:1px solid var(--ring);
@@ -80,67 +92,93 @@
       box-shadow:0 2px 8px rgba(0,0,0,.05);
       padding:18px;
       display:flex; flex-direction:column;
+      position:relative;
+    }
+    .radio{
+      position:absolute; top:12px; right:12px;
     }
     .badge{
       display:inline-block;
-      font-size:12px;
-      color:#fff;
-      background:var(--pink);
-      border-radius:999px;
-      padding:4px 10px;
-      font-weight:700;
-      letter-spacing:.2px;
+      font-size:12px; color:#fff; background:var(--pink);
+      border-radius:999px; padding:4px 10px; font-weight:700; letter-spacing:.2px;
     }
     .title{ font-size:18px; font-weight:800; margin:10px 0 4px; color:#d81b60; }
-    .price{
-      font-weight:900; font-size:28px; margin:4px 0 12px;
-    }
+    .price{ font-weight:900; font-size:28px; margin:4px 0 12px; }
     .desc{ color:var(--muted); font-size:14px; margin:0 0 10px; }
-    ul.features{
-      margin:10px 0 16px; padding-left:18px; color:#444; font-size:14px;
-    }
+    ul.features{ margin:10px 0 0; padding-left:18px; color:#444; font-size:14px; }
     ul.features li{ margin:6px 0; }
-    .cta{
-      margin-top:auto;
-      display:flex; gap:10px; align-items:center;
+    .card input[type="radio"]{ accent-color:#ef476f }
+
+    .card.pop{ border-width:2px; }
+
+    /* Payment pane */
+    .pay{
+      background:#fff;
+      border:1px solid var(--ring);
+      border-radius:var(--radius);
+      box-shadow:0 2px 8px rgba(0,0,0,.05);
+      padding:18px;
+      display:flex; flex-direction:column;
     }
+    label[for="cardholder-name"]{ display:block; margin:8px 0 6px; font-weight:700; font-size:14px }
+    input[type="text"]{
+      width:100%; padding:12px; border:1px solid #d1d5db; border-radius:10px; font-size:16px; margin-bottom:10px;
+    }
+    #card-element{
+      padding:12px; border:1px solid #d1d5db; border-radius:10px; margin-bottom:12px; background:#fafafa;
+    }
+    .trust{
+      display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 10px; color:#555; font-size:12px;
+    }
+    .tag{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px}
+
     .btn{
       width:100%;
-      appearance:none;
-      border:none;
-      background:var(--cta);
-      color:#fff;
-      border-radius:10px;
-      padding:12px 14px;
-      font-weight:800;
-      cursor:pointer;
-      box-shadow: var(--shadow);
-      transition:transform .06s ease, filter .12s ease;
-      text-align:center;
+      appearance:none; border:none; background:var(--cta); color:#fff;
+      border-radius:10px; padding:12px 14px; font-weight:800; cursor:pointer;
+      box-shadow: var(--shadow); transition:transform .06s ease, filter .12s ease; text-align:center; font-size:16px;
     }
     .btn:hover{ filter:brightness(.95); }
     .btn:active{ transform:translateY(1px); }
-    .btn[disabled]{ opacity:.5; cursor:not-allowed; filter:grayscale(.2); }
+    .btn[disabled]{ opacity:.7; cursor:not-allowed; }
 
-    .footer{
-      padding:14px 20px;
-      border-top:1px solid var(--ring);
-      background:#fff;
-      color:#555;
-      font-size:12px;
-      display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
+    .foot{
+      padding:14px 20px; border-top:1px solid var(--ring); background:#fff; color:#555; font-size:12px; display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;
     }
-    .note{ color:#666; }
-    .link{
-      color:#fff; text-decoration:none; font-weight:700;
-      background:#ef476f; padding:6px 10px; border-radius:8px;
+    .link{ color:#fff; text-decoration:none; font-weight:700; background:#ef476f; padding:6px 10px; border-radius:8px; }
+
+    #message{
+      margin-top:10px; font-size:14px; color:#b91c1c; background:#fff0f0; border:1px solid #fecaca; border-radius:10px; padding:8px; display:none;
     }
+    #message[aria-hidden="false"]{ display:block; }
+
+    /* Loading overlay (for 3DS) */
+    .loading-overlay{
+      position:fixed; inset:0; background:rgba(255,255,255,.92);
+      display:none; align-items:center; justify-content:center; flex-direction:column;
+      z-index:9999; backdrop-filter:saturate(1.1) blur(2px);
+    }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{
+      width:min(92vw,420px); background:#fff; border:1px solid var(--line); border-radius:14px;
+      box-shadow:0 10px 28px rgba(239,71,111,.12); padding:18px; text-align:center;
+    }
+    .loading-title{ font-weight:900; letter-spacing:.3px; margin:2px 0 10px; color:#111 }
+    .progress-wrap{ width:100%; height:10px; background:#f3f4f6; border-radius:999px; overflow:hidden; border:1px solid #e5e7eb; }
+    .progress-bar{
+      width:0%; height:100%; background:linear-gradient(90deg, var(--cta), var(--pink-2));
+      animation: loadingBar 2.2s ease-in-out infinite;
+    }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+    .loading-sub{ font-size:12px; color:#555; margin-top:8px }
   </style>
 </head>
 <body>
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
   <div class="shell">
     <div class="header">
-      <img src="logo.png" alt="Charmr Logo" />
+      <img src="logo.png" alt="Charmr Logo"/>
       <div>
         <h1>Upgrade to Charmr Premium</h1>
         <div class="sub">Unlock contact sharing, unlimited pictures, gifts & more.</div>
@@ -148,26 +186,25 @@
     </div>
 
     <div class="content">
-      <div class="grid">
-        <!-- Plan 1: £5/mo -->
+      <!-- Plans (three options with radios) -->
+      <div class="plans" role="group" aria-label="Subscription plans">
+        <!-- £5/mo -->
         <div class="card">
+          <input class="radio" type="radio" name="plan" id="plan5" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" checked>
           <span class="badge">Starter</span>
           <div class="title">Basic Access</div>
           <div class="price">£5<span style="font-size:14px;font-weight:700">/mo</span></div>
           <p class="desc">Great if you’re just getting started.</p>
           <ul class="features">
-            <li>Send & receive messages</li>
-            <li>Receive <strong>2 pictures</strong> per chat</li>
+            <li>Messages included</li>
+            <li>Receive up to 2 pictures</li>
             <li>Gift suggestions</li>
           </ul>
-          <div class="cta">
-            <button class="btn" data-mode="subscription"
-              data-price="price_1Rsdy1EJXIhiKzYGOtzvwhUH">Get Starter</button>
-          </div>
         </div>
 
-        <!-- Plan 2: £20/mo -->
-        <div class="card" style="border-width:2px">
+        <!-- £20/mo -->
+        <div class="card pop">
+          <input class="radio" type="radio" name="plan" id="plan20" value="price_1RsdzREJXIhiKzYG45b69nSl">
           <span class="badge">Most Popular</span>
           <div class="title">Premium</div>
           <div class="price">£20<span style="font-size:14px;font-weight:700">/mo</span></div>
@@ -177,87 +214,175 @@
             <li>Contact & links sharing</li>
             <li>Send gifts & priority replies</li>
           </ul>
-          <div class="cta">
-            <button class="btn" data-mode="subscription"
-              data-price="price_1RsdzREJXIhiKzYG45b69nSl">Get Premium</button>
-          </div>
         </div>
 
-        <!-- Plan 3: VIP (placeholder until you provide a price_id) -->
+        <!-- VIP £990 / 6 months -->
         <div class="card">
+          <input class="radio" type="radio" name="plan" id="planVip" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f">
           <span class="badge">VIP</span>
           <div class="title">VIP Access</div>
-          <div class="price">£—<span style="font-size:14px;font-weight:700">/mo</span></div>
-          <p class="desc">White-glove experience, exclusive perks.</p>
+          <div class="price">£990<span style="font-size:14px;font-weight:700">/6 mo</span></div>
+          <p class="desc">White-glove service & exclusive perks.</p>
           <ul class="features">
+            <li>All Premium features</li>
             <li>Fast-lane support</li>
-            <li>Exclusive drops</li>
-            <li>Early access to new features</li>
+            <li>Early feature access</li>
           </ul>
-          <div class="cta">
-            <!-- Add data-price="price_xxx" when you have it -->
-            <button class="btn" disabled title="Add Stripe price_id to enable">Coming Soon</button>
-          </div>
         </div>
       </div>
+
+      <!-- Payment pane (Stripe Elements on-site) -->
+      <form class="pay" id="payment-form" aria-label="Secure payment form">
+        <label for="cardholder-name">Name on card</label>
+        <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name"/>
+
+        <div id="card-element" aria-label="Card details (powered by Stripe)"><!-- Stripe injects here --></div>
+
+        <div class="trust" aria-label="Payment trust information">
+          <div class="tag">🔒 Secure via Stripe</div>
+          <div class="tag">🕵️ Discreet billing</div>
+          <div class="tag">💳 Visa • Mastercard • AmEx</div>
+        </div>
+
+        <button type="submit" class="btn" id="submit">Start Subscription</button>
+        <div id="message" role="alert" aria-hidden="true"></div>
+      </form>
     </div>
 
-    <div class="footer">
-      <div class="note">Payments secured by Stripe. You can cancel anytime.</div>
+    <div class="foot">
+      <div>Payments secured by Stripe. You can cancel anytime.</div>
       <a class="link" href="/chat.html">Back to chat</a>
     </div>
   </div>
 
+  <!-- Loading overlay for 3DS/SCA -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true" aria-live="polite" aria-label="Processing payment">
+    <div class="loading-box" role="status">
+      <div class="loading-title">Processing your payment…</div>
+      <div class="progress-wrap" aria-hidden="true"><div class="progress-bar"></div></div>
+      <div class="loading-sub">You may be asked to complete a quick 3-D Secure check with your bank. Please don’t close this window.</div>
+    </div>
+  </div>
+
   <script>
-    // 1) Replace with your real Stripe publishable key
-    const STRIPE_PUBLISHABLE_KEY = "pk_live_xxx"; // <-- TODO
+    // Use the same publishable key + backend flow as your current page
+    const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
+    const elements = stripe.elements();
+    const card = elements.create("card");
+    card.mount("#card-element");
 
-    // 2) Success & cancel URLs (adjust to your site)
-    const successUrl = window.location.origin + "/success.html";
-    const cancelUrl  = window.location.origin + "/checkout.html";
+    const form = document.getElementById("payment-form");
+    const message = document.getElementById("message");
+    const submitBtn = document.getElementById("submit");
 
-    // Guard
-    if (!STRIPE_PUBLISHABLE_KEY || STRIPE_PUBLISHABLE_KEY.includes("pk_live_xxx")) {
-      console.warn("Set STRIPE_PUBLISHABLE_KEY to your real publishable key.");
-    }
+    const overlay = document.getElementById('loading-overlay');
+    function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
+    function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
 
-    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-
-    function setLoading(btn, on){
-      if (!btn) return;
-      btn.dataset.originalText ??= btn.textContent;
-      btn.disabled = !!on;
-      btn.textContent = on ? "Redirecting…" : btn.dataset.originalText;
-    }
-
-    async function goToCheckout(price, mode, btn){
-      try{
-        setLoading(btn, true);
-        const { error } = await stripe.redirectToCheckout({
-          mode: mode || "subscription",
-          lineItems: [{ price, quantity: 1 }],
-          successUrl,
-          cancelUrl
-        });
-        if (error) {
-          alert(error.message || "Unable to start checkout.");
+    // Helper copied from your current checkout (robust JSON parsing on error)
+    async function fetchJSON(url, options = {}) {
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          Accept: "application/json",
+          ...(options.body ? {"Content-Type":"application/json"} : {}),
+          ...(options.headers || {})
         }
-      } catch (e){
-        console.error(e);
-        alert("Something went wrong starting checkout.");
-      } finally {
-        setLoading(btn, false);
-      }
+      });
+      const text = await res.text();
+      let data;
+      try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text || `HTTP ${res.status}` }; }
+      if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
+      return data;
     }
 
-    // Bind all buy buttons
-    document.querySelectorAll(".btn[data-price]").forEach(btn=>{
-      btn.addEventListener("click", ()=>{
-        const price = btn.getAttribute("data-price");
-        const mode  = btn.getAttribute("data-mode") || "subscription";
-        if (!price){ return; }
-        goToCheckout(price, mode, btn);
+    // Watch for new 3DS iframes and hide overlay when challenge appears
+    let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+    function startThreeDSWatcher(){
+      baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+      const isThreeDSLike = (iframe) => {
+        const t = (iframe.getAttribute('title') || '').toLowerCase();
+        return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
+      };
+      const observer = new MutationObserver((mutations) => {
+        for (const m of mutations) {
+          for (const node of m.addedNodes) {
+            if (node.tagName === 'IFRAME' && !baselineIframes.has(node)) {
+              if (isThreeDSLike(node)) {
+                const done = () => { hideLoading(); observer.disconnect(); };
+                if (node.complete) done(); else node.addEventListener('load', done, { once:true });
+                return;
+              }
+            }
+          }
+        }
       });
+      observer.observe(document.documentElement, { childList:true, subtree:true });
+    }
+
+    async function startSubscription(priceId, cardholderName) {
+      // Require auth token (same as existing page)
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
+
+      // 1) Create SetupIntent on server
+      const siData = await fetchJSON("/api/stripe/setup-intent", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      // 2) Confirm card setup (may trigger 3DS)
+      const { setupIntent, error } = await stripe.confirmCardSetup(siData.clientSecret, {
+        payment_method: {
+          card,
+          billing_details: { name: cardholderName || "" }
+        }
+      });
+      if (error) throw new Error(error.message);
+
+      // 3) Create subscription with chosen price on server
+      const subData = await fetchJSON("/api/stripe/subscribe", {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({
+          priceId,
+          paymentMethodId: setupIntent.payment_method
+        })
+      });
+
+      // 4) Confirm first invoice payment (SCA) if required
+      if (!subData.clientSecret) throw new Error("Missing payment client secret.");
+      const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret);
+      if (confirmErr) throw new Error(confirmErr.message || "Payment confirmation failed.");
+
+      // 5) Success → redirect to thank-you
+      window.location.href = "https://www.charmr.xyz/thankyou.html";
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      message.textContent = "";
+      message.setAttribute('aria-hidden','true');
+      submitBtn.disabled = true;
+      showLoading();
+      startThreeDSWatcher();
+
+      // Selected plan (radio in the plan cards)
+      const selected = document.querySelector('input[name="plan"]:checked');
+      const priceId = selected ? selected.value : null;
+      const name = document.getElementById("cardholder-name").value;
+
+      try {
+        if (!priceId) throw new Error("Please select a plan.");
+        await startSubscription(priceId, name);
+      } catch (err) {
+        console.error(err);
+        hideLoading();
+        message.textContent = err.message || "Something went wrong. Try again.";
+        message.setAttribute('aria-hidden','false');
+      } finally {
+        submitBtn.disabled = false;
+      }
     });
   </script>
 </body>
