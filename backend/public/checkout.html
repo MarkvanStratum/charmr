@@ -416,6 +416,15 @@
       throw new Error(subData?.error || "Subscription failed");
     }
 
+    // 🔑 NEW: confirm the first invoice payment (SCA) before redirecting
+    if (!subData.clientSecret) {
+      throw new Error("Missing payment client secret.");
+    }
+    const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret);
+    if (confirmErr) {
+      throw new Error(confirmErr.message || "Payment confirmation failed.");
+    }
+
     // Success -> go to thank you page
     window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
   }
