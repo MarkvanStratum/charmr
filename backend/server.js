@@ -3225,11 +3225,7 @@ app.post("/api/stripe/subscribe", authenticateToken, async (req, res) => {
     // 3) 👇👇 REPLACE your old "force no trial" block with THIS:
 
     // Which prices get the £1 trial?
-    const TRIAL_ELIGIBLE_PRICE_IDS = new Set([
-      "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 plan
-      "price_1RsdzREJXIhiKzYG45b69nSl", // £20 plan
-      // Do NOT add the £99 price here
-    ]);
+    const TRIAL_ELIGIBLE_PRICE_IDS = new Set([]);
 
     const wantsTrial = TRIAL_ELIGIBLE_PRICE_IDS.has(priceId);
 
