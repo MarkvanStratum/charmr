@@ -164,7 +164,7 @@
     padding: 10px 15px;
     margin-left: 8px;
     border-radius: 5px;
-    cursor: pointer;
+    cursor: pointer.
   }
 
   .chat-input button:hover {
@@ -357,18 +357,21 @@
         msgDiv.textContent = '...';
       } else {
         const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
-        if (m){
+        // NEW: also accept an <img src="..."> snippet and extract its URL
+        const tag = !m ? /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(text || "") : null;
+
+        if (m || tag){
           // ======== ADDED: handle picture limit + overlay for received images ========
-          const url = m[1];
+          const url = m ? m[1] : tag[1];
           const wrap = document.createElement('div');
           wrap.className = 'image-wrap';
 
           const img = document.createElement('img');
           img.src = url;
           img.alt = 'image';
-          img.loading = 'eager';          // added
-          img.decoding = 'sync';          // added
-          img.referrerPolicy = 'no-referrer'; // added
+          img.loading = 'eager';
+          img.decoding = 'sync';
+          img.referrerPolicy = 'no-referrer';
           wrap.appendChild(img);
 
           if (sender === 'girl') {
@@ -394,13 +397,13 @@
       chatBox.appendChild(msgDiv);
 
       // ensure newest media is visible immediately after it finishes decoding
-      if (msgDiv.querySelector('img')) {
-        const im = msgDiv.querySelector('img');
+      const im = msgDiv.querySelector('img');
+      if (im) {
         if (im.complete) {
           chatBox.scrollTop = chatBox.scrollHeight;
         } else {
           im.addEventListener('load', () => { chatBox.scrollTop = chatBox.scrollHeight; }, { once: true });
-          im.addEventListener('error', () => { /* swallow */ }, { once: true });
+          im.addEventListener('error', () => {}, { once: true });
         }
       } else {
         chatBox.scrollTop = chatBox.scrollHeight;
@@ -555,7 +558,7 @@
       appendSystemNotice(
         `Sending ${label.toLowerCase()} is a Premium feature. Upgrade using the pink button at the bottom to unlock gifts & pics.`
       );
-      showCTA();
+        showCTA();
     });
 
     // Boot
