@@ -3196,6 +3196,8 @@ app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
 
 // 2) Create the Subscription with NO TRIAL (immediate first charge)
 //    Returns the PI client_secret so the client can confirm the payment (SCA)
+// 2) Create the Subscription with NO TRIAL (immediate first charge)
+//    Returns the PI client_secret so the client can confirm the payment (SCA)
 app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
   const { priceId, paymentMethodId, cardholderName } = req.body;
 
@@ -3222,11 +3224,12 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
       console.warn("Couldn't set customer name:", e?.message || e);
     }
 
-    // 🔑 NO trial fields at all — invoice is created immediately
+    // 🔑 Force NO TRIAL even if the Price has trial days in Dashboard
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
-      payment_behavior: 'default_incomplete', // SCA-safe: first invoice will need confirmation on client
+      trial_end: 'now',                                  // ⬅️ THIS LINE forces immediate billing
+      payment_behavior: 'default_incomplete',            // SCA-safe: first invoice requires client confirmation
       payment_settings: { save_default_payment_method: 'on_subscription' },
       metadata: { userId: String(req.user.id), planPriceId: priceId },
       expand: ['latest_invoice.payment_intent'],
@@ -3235,7 +3238,6 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
     const latestInvoice = subscription.latest_invoice;
     const pi = latestInvoice?.payment_intent;
 
-    // Return what the client needs to finish the first charge
     res.json({
       subscriptionId: subscription.id,
       status: subscription.status, // likely "incomplete" until client confirms
@@ -3246,6 +3248,7 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'subscription_create_failed' });
   }
 });
+
 
 app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   const { priceId } = req.body;
