@@ -236,49 +236,6 @@
     font-size:14px;
   }
   /* =================================================================== */
-
-  /* ===== NEW: picture lock styling ===== */
-  .image-wrap{
-    position: relative;
-    display: inline-block;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .image-wrap img{
-    display:block;
-    max-width: 220px;
-    max-height: 260px;
-    border-radius: 10px;
-    object-fit: cover;
-  }
-  .image-wrap.locked img{
-    filter: blur(10px);
-  }
-  .image-overlay{
-    position:absolute;
-    inset:0;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    text-align:center;
-    padding:10px;
-    gap:8px;
-    background: rgba(0,0,0,0.4);
-    color:#fff;
-    font-size: 13px;
-  }
-  .image-overlay .btn{
-    display:inline-block;
-    padding:8px 10px;
-    border-radius:8px;
-    background:#ef476f;
-    color:#fff;
-    text-decoration:none;
-    font-weight:bold;
-  }
-  .image-overlay .btn:hover{ filter:brightness(0.95); }
-  /* ===================================== */
   </style>
 
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
@@ -340,55 +297,11 @@
     let pollTimer = null;
     let IS_PREMIUM = false; // you can flip this true when lifetime/premium
 
-    // NEW: track count of pictures received from girl during this chat
-    let RECEIVED_GIRL_IMAGE_COUNT = 0;
-    const FREE_IMAGE_LIMIT = 2;
-
     // Keep CTA visible
     function showCTA(){ ctaBar.style.display = 'block'; }
     function hideCTA(){ ctaBar.style.display = 'block'; }
 
     // ---- helpers ----
-
-    // NEW: create image bubble with optional lock overlay
-    function appendImage(url, sender){
-      const msgDiv = document.createElement('div');
-      msgDiv.className = `message ${sender}`;
-
-      const wrap = document.createElement('div');
-      wrap.className = 'image-wrap';
-
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = 'image';
-
-      // lock logic: only for images sent by girl, when over free limit and not premium
-      let locked = false;
-      if (sender === 'girl'){
-        RECEIVED_GIRL_IMAGE_COUNT += 1;
-        if (!IS_PREMIUM && RECEIVED_GIRL_IMAGE_COUNT > FREE_IMAGE_LIMIT){
-          locked = true;
-          wrap.classList.add('locked');
-
-          const overlay = document.createElement('div');
-          overlay.className = 'image-overlay';
-          overlay.innerHTML = `
-            <div>You've received the maximum number of pictures on your current plan.<br/>
-            Click the button below to upgrade to Premium to receive more pictures.</div>
-            <a class="btn" href="/checkout.html">Upgrade to Premium</a>
-          `;
-          wrap.appendChild(overlay);
-        }
-      }
-
-      wrap.appendChild(img);
-      msgDiv.appendChild(wrap);
-      chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
-
-      return msgDiv;
-    }
-
     function appendMessage(text, sender, isTyping=false){
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
@@ -398,13 +311,17 @@
       } else {
         const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
         if (m){
-          msgDiv.remove(); // use the image-specific renderer instead
-          return appendImage(m[1], sender);
+          const img = document.createElement('img');
+          img.src = m[1];
+          img.alt = 'image';
+          img.style.maxWidth = '220px';
+          img.style.maxHeight = '260px';
+          img.style.borderRadius = '10px';
+          img.style.display = 'block';
+          img.style.objectFit = 'cover';
+          msgDiv.appendChild(img);
         } else {
           msgDiv.textContent = text;
-          chatBox.appendChild(msgDiv);
-          chatBox.scrollTop = chatBox.scrollHeight;
-          return msgDiv;
         }
       }
       chatBox.appendChild(msgDiv);
@@ -455,10 +372,6 @@
         });
         const data = await res.json();
         chatBox.innerHTML = "";
-
-        // reset count then rebuild from history so older chats respect the limit
-        RECEIVED_GIRL_IMAGE_COUNT = 0;
-
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
         showCTA();
       }catch(e){ console.error("Error loading messages:", e); }
@@ -474,7 +387,7 @@
         const banner = document.getElementById('liveBanner');
         if (TAKEOVER){
           banner.style.display = '';
-          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
+          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '';
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
         } else {
           banner.style.display = 'none';
