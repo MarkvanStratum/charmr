@@ -188,7 +188,7 @@
     .loading-box{
       width:min(92vw,420px);
       background:#fff; border:1px solid var(--line); border-radius:14px;
-      box-shadow:0 10px 28px rgba(15,23,42,.12);
+      box-shadow:0 10px 28px rgba(239,71,111,.12);
       padding:18px;
       text-align:center;
     }
@@ -365,9 +365,12 @@
       });
 
       paymentRequest.canMakePayment().then(function(result){
-        if (result) {
+        // Only show if there's actually a supported wallet (prevents blank space)
+        if (result && (result.applePay || result.googlePay)) {
           document.getElementById('wallet-row').style.display = 'block';
           prButton.mount('#payment-request-button');
+        } else {
+          document.getElementById('wallet-row').style.display = 'none';
         }
       });
 
