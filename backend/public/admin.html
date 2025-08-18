@@ -57,7 +57,6 @@
     .kv > div { display:flex; flex-direction:column; }
     .kv input { width:240px; }
 
-    /* NEW: Neutral system notice card (mirrors chat.html look) */
     .system-card{
       background:#ffffff;
       border:1px solid #ffd1dc;
@@ -153,9 +152,9 @@
 
   <script>
     // ---------- Config ----------
-    const FEED_PATH = '/api/operator/feed';   // same as feed.html
-    const FEED_LIMIT = 100;                   // initial slice
-    const ONLINE_MS = 2 * 60 * 1000;          // user considered online if last user msg < 2 min
+    const FEED_PATH = '/api/operator/feed';
+    const FEED_LIMIT = 100;
+    const ONLINE_MS = 2 * 60 * 1000;
     // ----------------------------
 
     // Elements
@@ -194,6 +193,7 @@
       byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
       lastNow: null,
+      nameCache: new Map(), // userId -> "First Last" (optional; filled if backend supports it)
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
@@ -204,6 +204,8 @@
           key: k,
           userId: Number(userId),
           girlId: Number(girlId),
+          girlName: girlName || null,
+          userName: null,
           title: `${girlName ? girlName : 'Girl '+girlId} · User ${userId}`,
           messages: [],
           unread: 0,
@@ -215,13 +217,37 @@
       } else if (girlName) {
         const cv = store.byKey.get(k);
         if (cv && cv.title.startsWith('Girl ')) {
+          cv.girlName = girlName;
           cv.title = `${girlName} · User ${userId}`;
         }
       }
       return store.byKey.get(k);
     }
 
-    // Contact-sharing detector (same idea as chat.html)
+    // Schema helpers
+    function parseSender(r){
+      if (typeof r?.from_user === 'boolean') return r.from_user ? 'user' : 'girl';
+      if (typeof r?.fromUser === 'boolean')   return r.fromUser  ? 'user' : 'girl';
+      const f = (r?.from || '').toString().toLowerCase();
+      if (['user','u','customer'].includes(f)) return 'user';
+      if (['girl','g','agent','bot'].includes(f)) return 'girl';
+      return null;
+    }
+    function parseTimestamp(r){
+      let t = r?.createdAt ?? r?.created_at ?? r?.timestamp ?? r?.ts;
+      if (typeof t === 'number') return t;
+      if (typeof t === 'string'){
+        const num = Number(t);
+        if (!Number.isNaN(num) && /^\d+$/.test(t.trim())){
+          return t.trim().length === 10 ? num * 1000 : num; // sec vs ms
+        }
+        const d = Date.parse(t);
+        if (!Number.isNaN(d)) return d;
+      }
+      return Date.now();
+    }
+
+    // Contact-sharing detector (context notice)
     function isContactAttempt(text) {
       if (!text) return false;
       const patterns = [
@@ -239,7 +265,6 @@
     function renderSidebar(autoSelectIfNone=true){
       els.convList.innerHTML = '';
 
-      // Only show conversations where the user has replied at least once
       const listAll = [...store.byKey.values()];
       const list = listAll
         .filter(c => c.hasUserReply)
@@ -253,13 +278,14 @@
         const item = document.createElement('div');
         item.className = 'conv' + (store.activeKey===c.key ? ' active':'');
 
+        const metaName = c.userName ? ` (${c.userName})` : '';
         const left = document.createElement('div');
-        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
+        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId}${metaName} · g:${c.girlId}</div>`;
         item.appendChild(left);
 
-        // online dot (based on lastUserTs recency)
+        const online = Date.now() - (c.lastUserTs||0) < ONLINE_MS;
         const dot = document.createElement('div');
-        dot.className = 'dot' + ((Date.now() - (c.lastUserTs||0) < ONLINE_MS) ? ' online' : '');
+        dot.className = 'dot' + (online ? ' online' : '');
         item.appendChild(dot);
 
         if (c.unread>0){
@@ -275,7 +301,7 @@
       if (list.length===0){
         els.convList.innerHTML = '<div class="helper">No chats with user replies yet.</div>';
       } else if (!store.activeKey && autoSelectIfNone){
-        selectConversation(list[0].key); // open the newest user-reply thread
+        selectConversation(list[0].key);
       }
 
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
@@ -283,15 +309,14 @@
     }
 
     // ----- Chat -----
-    function forceScrollToBottom(){
-      els.chatBox.scrollTop = els.chatBox.scrollHeight;
-    }
+    function forceScrollToBottom(){ els.chatBox.scrollTop = els.chatBox.scrollHeight; }
 
     function renderChat(conv){
-      els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
+      if (!conv){ els.chatTitle.textContent = 'No chat selected'; els.chatBox.innerHTML=''; return; }
+      const nameSuffix = conv.userName ? ` — ${conv.userName}` : '';
+      els.chatTitle.textContent = conv.title + nameSuffix;
       els.liveBanner.style.display = conv?.takeover ? '' : 'none';
       els.chatBox.innerHTML = '';
-      if (!conv) return;
 
       for (const m of conv.messages){
         const wrap = document.createElement('div'); wrap.style.display='flex';
@@ -303,13 +328,12 @@
         else { content.textContent = m.text; }
 
         const meta = document.createElement('div'); meta.className='meta';
-        meta.textContent = new Date(m.created_at).toLocaleString();
+        meta.textContent = new Date(m.created_at || m.createdAt || Date.now()).toLocaleString();
 
         bubble.appendChild(content); bubble.appendChild(meta);
         wrap.appendChild(bubble);
         els.chatBox.appendChild(wrap);
 
-        // NEW: show official site notice right after a user's contact attempt
         if (m.from_user && isContactAttempt(m.text)) {
           const card = document.createElement('div');
           card.className = 'system-card';
@@ -331,7 +355,7 @@
       renderChat(conv);
     }
 
-    // ----- FEED (same semantics as feed.html) -----
+    // ----- FEED (uses operator auth header) -----
     async function fetchFeed(initial=false){
       try{
         const params = new URLSearchParams();
@@ -341,7 +365,8 @@
         const url = `${base()}${FEED_PATH}?${params.toString()}`;
         els.feedUrl.textContent = FEED_PATH;
 
-        const res = await fetch(url);
+        // FIX: include operator header so the server authorizes us
+        const res = await fetch(url, { headers: opHeader() });
         if (!res.ok){ els.feedStatus.textContent = `HTTP ${res.status}`; return; }
 
         const payload = await res.json();
@@ -351,18 +376,18 @@
 
         let pingNeeded = false;
 
-        // rows: { id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text }
         for (const r of rows){
-          const userId = Number(r.userId);
-          const girlId = Number(r.girlId);
+          const userId = Number(r.userId ?? r.user_id);
+          const girlId = Number(r.girlId ?? r.girl_id);
           if (!userId || !girlId) continue;
 
-          const cv = ensureConv(userId, girlId, r.girlName);
-          const ts = new Date(r.createdAt).getTime() || Date.now();
+          const cv = ensureConv(userId, girlId, r.girlName || r.girl_name || null);
 
+          const ts = parseTimestamp(r);
           if (ts > cv.lastTs) cv.lastTs = ts;
 
-          if (r.from === 'user'){
+          const sender = parseSender(r);
+          if (sender === 'user'){
             cv.hasUserReply = true;
             if (ts > cv.lastUserTs) cv.lastUserTs = ts;
             if (store.activeKey !== cv.key){
@@ -381,46 +406,54 @@
       }
     }
 
-    // ----- Conversation fetch -----
+    // ----- Conversation fetch (filter feed instead of non-existent endpoint) -----
     async function fetchMessages(conv){
       if (!conv) return;
-      if (!haveOpKey()) {
-        els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
-        return;
-      }
-
       try{
-        const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
-          headers: opHeader()
-        });
-        if (!r.ok) return;
-        const data = await r.json();
-        if (!Array.isArray(data)) return;
+        // pull a larger slice of the feed and filter for this thread
+        const params = new URLSearchParams();
+        params.set('limit', '1000');
+        const url = `${base()}${FEED_PATH}?${params.toString()}`;
+        const res = await fetch(url, { headers: opHeader() });
+        if (!res.ok) return;
 
-        conv.messages = data;
-        if (data.length){
-          const last = data[data.length-1];
+        const payload = await res.json();
+        const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+
+        const thread = rows
+          .filter(r => Number(r.userId ?? r.user_id) === conv.userId && Number(r.girlId ?? r.girl_id) === conv.girlId)
+          .map(r => ({
+            from_user: parseSender(r) === 'user',
+            text: r.text,
+            created_at: r.createdAt || r.created_at || r.ts || Date.now()
+          }))
+          .sort((a,b)=> new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+        conv.messages = thread;
+
+        if (thread.length){
+          const last = thread[thread.length-1];
           conv.lastTs = new Date(last.created_at).getTime() || Date.now();
+
+          const lastUser = [...thread].reverse().find(m => m.from_user === true);
+          if (lastUser){
+            const t = new Date(lastUser.created_at).getTime() || Date.now();
+            conv.lastUserTs = Math.max(conv.lastUserTs || 0, t);
+            conv.hasUserReply = true;
+          }
         }
+
         renderChat(conv);
         renderSidebar(false);
       }catch(e){ /* silent */ }
     }
 
-    // ----- Takeover status -----
-    async function checkTakeover(conv){
-      if (!conv || !haveOpKey()) return;
-      try{
-        const r = await fetch(`${base()}/api/takeover/status/${conv.girlId}?userId=${conv.userId}`, {
-          headers: opHeader()
-        });
-        if (!r.ok) return;
-        const data = await r.json();
-        conv.takeover = !!data.takeover;
-        if (store.activeKey === conv.key){
-          els.liveBanner.style.display = conv.takeover ? '' : 'none';
-        }
-      }catch{}
+    // ----- Takeover status (rely on local state; server doesn't expose operator status endpoint) -----
+    function checkTakeover(conv){
+      // no-op: /api/takeover/status in server.js requires a user token; we keep local state
+      if (conv && store.activeKey === conv.key) {
+        els.liveBanner.style.display = conv.takeover ? '' : 'none';
+      }
     }
 
     // ----- Sending -----
@@ -500,7 +533,7 @@
       const gid = Number(els.manualGirlId.value);
       if (!uid || !gid) return;
       const c = ensureConv(uid, gid);
-      c.hasUserReply = true; // force show if you add manually
+      c.hasUserReply = true;
       renderSidebar(); selectConversation(c.key);
       els.manualUserId.value=''; els.manualGirlId.value=''; els.manualForm.style.display = 'none';
     };
@@ -510,22 +543,20 @@
     els.btnSendImage.onclick = sendImage;
     els.textMsg.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
 
-    // Keep chat pinned to bottom even on resize
     window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
 
-    // When the operator key is filled in, auto-load messages for the active chat
     els.opKey.addEventListener('input', () => {
       const c = store.byKey.get(store.activeKey);
       if (c && haveOpKey()) fetchMessages(c);
     });
 
     // ----- Poll -----
-    setInterval(()=>fetchFeed(false), 5000);           // discover & update list
-    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000); // active chat refresh
+    setInterval(()=>fetchFeed(false), 5000);
+    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000);
 
     // Boot
     (async function init(){
-      await fetchFeed(true); // initial slice
+      await fetchFeed(true);
     })();
   </script>
 </body>
