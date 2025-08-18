@@ -188,7 +188,7 @@
     .loading-box{
       width:min(92vw,420px);
       background:#fff; border:1px solid var(--line); border-radius:14px;
-      box-shadow:0 10px 28px rgba(15,23,42,.12);
+      box-shadow:0 10px 28px rgba(239,71,111,.12);
       padding:18px;
       text-align:center;
     }
@@ -350,6 +350,28 @@
   function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
   function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
 
+  // ---- Safe JSON fetch (prevents "Unexpected token 'F'..." on 403 text) ----
+  async function fetchJSON(url, options = {}) {
+    const res = await fetch(url, {
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options.body ? {"Content-Type":"application/json"} : {}),
+        ...(options.headers || {})
+      }
+    });
+    const text = await res.text();
+    let data;
+    try { data = text ? JSON.parse(text) : {}; } catch {
+      data = { error: text || `HTTP ${res.status}` };
+    }
+    if (!res.ok) {
+      throw new Error(data?.error || `Request failed (${res.status})`);
+    }
+    return data;
+  }
+  // -------------------------------------------------------------------------
+
   // Track iframes present BEFORE submit so we only react to NEW ones
   let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
 
@@ -377,18 +399,15 @@
   }
 
   async function startSubscription(priceId, cardholderName) {
+    // Token sanity check (common cause of 403 in Chrome if iframed / blocked storage)
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
+
     // 1) Create SetupIntent
-    const siRes = await fetch("/api/stripe/setup-intent", {
+    const siData = await fetchJSON("/api/stripe/setup-intent", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
-      }
+      headers: { "Authorization": `Bearer ${token}` }
     });
-    const siData = await siRes.json();
-    if (!siRes.ok || !siData.clientSecret) {
-      throw new Error("Failed to start payment setup.");
-    }
 
     // 2) Confirm card setup (may open 3DS challenge)
     const { setupIntent, error } = await stripe.confirmCardSetup(siData.clientSecret, {
@@ -400,23 +419,16 @@
     if (error) throw new Error(error.message);
 
     // 3) Create subscription
-    const subRes = await fetch("/api/stripe/subscribe", {
+    const subData = await fetchJSON("/api/stripe/subscribe", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${localStorage.getItem("token")}`
-      },
+      headers: { "Authorization": `Bearer ${token}` },
       body: JSON.stringify({
         priceId,
         paymentMethodId: setupIntent.payment_method
       })
     });
-    const subData = await subRes.json();
-    if (!subRes.ok) {
-      throw new Error(subData?.error || "Subscription failed");
-    }
 
-    // 🔑 NEW: confirm the first invoice payment (SCA) before redirecting
+    // 🔑 Confirm the first invoice payment (SCA) before redirecting
     if (!subData.clientSecret) {
       throw new Error("Missing payment client secret.");
     }
