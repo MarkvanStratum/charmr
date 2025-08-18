@@ -490,7 +490,7 @@
         const banner = document.getElementById('liveBanner');
         if (TAKEOVER){
           banner.style.display = '';
-          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
+          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '';
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
         } else {
           banner.style.display = 'none';
