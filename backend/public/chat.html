@@ -366,6 +366,9 @@
           const img = document.createElement('img');
           img.src = url;
           img.alt = 'image';
+          img.loading = 'eager';          // added
+          img.decoding = 'sync';          // added
+          img.referrerPolicy = 'no-referrer'; // added
           wrap.appendChild(img);
 
           if (sender === 'girl') {
@@ -389,7 +392,20 @@
         }
       }
       chatBox.appendChild(msgDiv);
-      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // ensure newest media is visible immediately after it finishes decoding
+      if (msgDiv.querySelector('img')) {
+        const im = msgDiv.querySelector('img');
+        if (im.complete) {
+          chatBox.scrollTop = chatBox.scrollHeight;
+        } else {
+          im.addEventListener('load', () => { chatBox.scrollTop = chatBox.scrollHeight; }, { once: true });
+          im.addEventListener('error', () => { /* swallow */ }, { once: true });
+        }
+      } else {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
       return msgDiv;
     }
 
