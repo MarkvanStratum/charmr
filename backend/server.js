@@ -3226,26 +3226,25 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
 
     // 🔑 Force NO TRIAL even if the Price has trial days in Dashboard
     // 🔑 Force NO TRIAL even if the Price has trial days in Dashboard
+// ✅ Start subscription IN TRIAL (no immediate charge)
+const trialSeconds = 24 * 60 * 60; // 1 day trial — change if you want longer
+const trialEnd = Math.floor(Date.now() / 1000) + trialSeconds;
+
 const subscription = await stripe.subscriptions.create({
   customer: customerId,
   items: [{ price: priceId }],
-  trial_from_plan: false,                 // ⬅️ add this
-  trial_end: 'now',                       // already present
-  payment_behavior: 'default_incomplete', // first invoice requires client confirmation
+  trial_end: trialEnd, // charge after the trial ends
   payment_settings: { save_default_payment_method: 'on_subscription' },
   metadata: { userId: String(req.user.id), planPriceId: priceId },
-  expand: ['latest_invoice.payment_intent'],
 });
 
+// No immediate invoice when trialing, so nothing to confirm client-side
+res.json({
+  subscriptionId: subscription.id,
+  status: subscription.status, // "trialing"
+  clientSecret: null
+});
 
-    const latestInvoice = subscription.latest_invoice;
-    const pi = latestInvoice?.payment_intent;
-
-    res.json({
-      subscriptionId: subscription.id,
-      status: subscription.status, // likely "incomplete" until client confirms
-      clientSecret: pi?.client_secret || null
-    });
   } catch (e) {
     console.error('Subscription create error:', e);
     res.status(500).json({ error: 'subscription_create_failed' });
@@ -3259,10 +3258,12 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
   try {
     // Lookup price based on priceId (you can store the amounts instead if needed)
     const amountMap = {
-      "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
-      "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
-      "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 9900
-    };
+  trial_fee: 100, // £1 in pence
+  "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 500,
+  "price_1RsdzREJXIhiKzYG45b69nSl": 2000,
+  "price_1Rt6NcEJXIhiKzYGMsEZFd8f": 9900
+};
+
 
     const amount = amountMap[priceId];
     if (!amount) return res.status(400).json({ error: "Invalid priceId" });
