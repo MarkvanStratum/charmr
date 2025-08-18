@@ -3225,15 +3225,18 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
     }
 
     // 🔑 Force NO TRIAL even if the Price has trial days in Dashboard
-    const subscription = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [{ price: priceId }],
-      trial_end: 'now',                                  // ⬅️ THIS LINE forces immediate billing
-      payment_behavior: 'default_incomplete',            // SCA-safe: first invoice requires client confirmation
-      payment_settings: { save_default_payment_method: 'on_subscription' },
-      metadata: { userId: String(req.user.id), planPriceId: priceId },
-      expand: ['latest_invoice.payment_intent'],
-    });
+    // 🔑 Force NO TRIAL even if the Price has trial days in Dashboard
+const subscription = await stripe.subscriptions.create({
+  customer: customerId,
+  items: [{ price: priceId }],
+  trial_from_plan: false,                 // ⬅️ add this
+  trial_end: 'now',                       // already present
+  payment_behavior: 'default_incomplete', // first invoice requires client confirmation
+  payment_settings: { save_default_payment_method: 'on_subscription' },
+  metadata: { userId: String(req.user.id), planPriceId: priceId },
+  expand: ['latest_invoice.payment_intent'],
+});
+
 
     const latestInvoice = subscription.latest_invoice;
     const pi = latestInvoice?.payment_intent;
