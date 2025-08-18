@@ -336,8 +336,9 @@
 
     // state
     let TAKEOVER = false;
-    let pollTimer = null;
+    let pollTimer = null;   // takeover-only polling
     let IS_PREMIUM = false; // you can flip this true when lifetime/premium
+    let MSGS_TIMER = null;  // <-- added: general polling when NOT in takeover
 
     // ==== ADDED: track number of pictures received from the girl ====
     let RECEIVED_GIRL_IMAGE_COUNT = 0;
@@ -347,6 +348,18 @@
     // Keep CTA visible
     function showCTA(){ ctaBar.style.display = 'block'; }
     function hideCTA(){ ctaBar.style.display = 'block'; }
+
+    // ---- ADDED: start/stop general polling outside of takeover ----
+    function ensureMessagesPolling(){
+      if (TAKEOVER){
+        if (MSGS_TIMER){ clearInterval(MSGS_TIMER); MSGS_TIMER = null; }
+        return;
+      }
+      if (!MSGS_TIMER){
+        MSGS_TIMER = setInterval(loadMessages, 2000);
+      }
+    }
+    // ----------------------------------------------------------------
 
     // ---- helpers ----
     function appendMessage(text, sender, isTyping=false){
@@ -483,7 +496,12 @@
           banner.style.display = 'none';
           if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
         }
-      }catch{}
+        // keep general polling in sync
+        ensureMessagesPolling();
+      }catch{
+        // on errors, still make sure we're polling in non-takeover mode
+        ensureMessagesPolling();
+      }
     }
 
     async function refreshCredits(){
@@ -567,6 +585,7 @@
     loadMessages();
     checkTakeover();
     refreshCredits();
+    ensureMessagesPolling(); // <-- start non-takeover polling immediately
     setInterval(checkTakeover, 10000);
     setInterval(refreshCredits, 15000);
   </script>
