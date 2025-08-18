@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Chat</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(#ffcccc, #ffe6e6);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden; /* keeps header/footer pinned */
+  }
+
+  .chat-container {
+    width: 400px;
+    height: 90vh;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .chat-header {
+    background: #ff4d6d;
+    color: #fff;
+    padding: 15px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chat-header img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+  }
+
+  .gift-bar {
+    background: #fff6f9;
+    padding: 8px;
+    text-align: center;
+    border-bottom: 1px solid #ffd6e0;
+  }
+  .gift-bar p {
+    margin: 4px 0;
+    font-size: 14px;
+    color: #555;
+  }
+
+  /* ---------- FIX: gifts in a single horizontal row ---------- */
+  .gift-bar .row{
+    display:flex !important;
+    flex-direction:row !important;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    gap:10px;
+    margin-top:6px;
+  }
+  .gift-chip{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:36px; height:36px;
+    border-radius:999px;
+    background:#fff;
+    border:1px solid #ffd1dc;
+    font-size:18px;
+    cursor:pointer;
+    transition:transform .08s ease;
+    line-height:1;
+  }
+  .gift-chip:hover{ transform: translateY(-1px); }
+  /* ----------------------------------------------------------- */
+
+  .gifts {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+  .gift-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+  }
+  .gift-btn:hover {
+    transform: scale(1.2);
+  }
+
+  .chat-box {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    background: #fff0f5;
+    min-height: 0; /* ensures only this scrolls */
+  }
+
+  .message {
+    margin: 8px 0;
+    padding: 10px;
+    border-radius: 8px;
+    max-width: 75%;
+    word-wrap: break-word;
+  }
+
+  .message.user {
+    background: #d1e7dd;
+    margin-left: auto;
+  }
+
+  .message.girl {
+    background: #ffe6eb;
+    margin-right: auto;
+  }
+
+  .message.premium {
+    background: #fff3cd;
+    border: 1px solid #ffeeba;
+    color: #856404;
+    font-size: 14px;
+    text-align: center;
+    margin: 10px auto;
+    max-width: 90%;
+  }
+
+  .chat-input {
+    display: flex;
+    padding: 10px;
+    background: #fff;
+    border-top: 1px solid #ddd;
+  }
+
+  .chat-input textarea {
+    flex: 1;
+    resize: none;
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+  }
+
+  .chat-input button {
+    background: #ff4d6d;
+    border: none;
+    color: #fff;
+    padding: 10px 15px;
+    margin-left: 8px;
+    border-radius: 5px;
+    cursor: pointer.
+  }
+
+  .chat-input button:hover {
+    background: #e63b5e;
+  }
+
+  /* ---------- FIX: CTA looks like a button again ---------- */
+  .cta-bar {
+    display: block;
+    border-top: 1px solid #ffd1dc;
+    background: #fff5f7;
+    padding: 10px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .cta-bar a.cta-link{
+    display:inline-block;
+    background:#ef476f;
+    color:#fff !important;
+    padding:8px 12px;
+    border-radius:8px;
+    text-decoration:none !important;
+    font-weight:bold;
+  }
+  .cta-bar a.cta-link:hover{ filter:brightness(0.95); }
+  /* -------------------------------------------------------- */
+
+  .upgrade-btn {
+    background: #ff4d6d;
+    border: none;
+    color: #fff;
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 0 0 10px 10px;
+    text-align: center;
+  }
+
+  .upgrade-btn:hover {
+    background: #e63b5e;
+  }
+
+  /* ===== NEW: clean system notice styling (logo sized, tidy text) ===== */
+  .system-card{
+    background:#ffffff;
+    border:1px solid #ffd1dc;
+    border-radius:12px;
+    padding:12px;
+    margin:10px auto;
+    text-align:center;
+    max-width:90%;
+    color:#444;
+    box-shadow:0 2px 6px rgba(0,0,0,.04);
+  }
+  .system-card img{
+    max-width:64px;
+    height:auto;
+    display:block;
+    margin:0 auto 6px;
+  }
+  .system-card .title{
+    font-weight:700;
+    color:#d81b60;
+    margin-bottom:6px;
+  }
+  .system-card p{
+    margin:0;
+    line-height:1.35;
+    font-size:14px;
+  }
+  /* =================================================================== */
+
+  /* ======== ADDED: picture-wrap + lock overlay styles (minimal) ======= */
+  .image-wrap{
+    position: relative;
+    display: inline-block;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .image-wrap img{
+    display:block;
+    max-width: 220px;
+    max-height: 260px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+  .image-wrap.locked img{
+    filter: blur(10px);
+  }
+  .image-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:10px;
+    background: rgba(0,0,0,0.45);
+    color:#fff;
+    font-size:13px;
+    gap:8px;
+  }
+  .image-overlay a{
+    display:inline-block;
+    background:#ef476f;
+    color:#fff;
+    text-decoration:none;
+    padding:8px 10px;
+    border-radius:8px;
+    font-weight:bold;
+  }
+  /* =================================================================== */
+  </style>
+
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <img id="chatPhoto" src="" alt="Girl Photo">
+      <h2 id="chatName"></h2>
+    </div>
+
+    <!-- Gift bar -->
+    <div id="giftBar" class="gift-bar">
+      <div style="margin-bottom:6px;">Send <strong id="giftGirlName">her</strong> a gift:</div>
+      <div class="row">
+        <div class="gift-chip" data-gift="flowers" title="Flowers">💐</div>
+        <div class="gift-chip" data-gift="ring" title="Ring">💍</div>
+        <div class="gift-chip" data-gift="candy" title="Chocolate">🍫</div>
+        <div class="gift-chip" data-gift="puppy" title="Puppy">🐶</div>
+      </div>
+    </div>
+
+    <!-- Live banner -->
+    <div id="liveBanner" style="display:none"></div>
+
+    <div class="chat-box" id="chatBox"></div>
+
+    <!-- persistent CTA bar -->
+    <div id="ctaBar" class="cta-bar">
+      <a class="cta-link" href="/checkout.html">GET PREMIUM NOW!</a>
+    </div>
+
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="Type a message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+  <script src="girls.js"></script>
+  <script>
+    const backendUrl = "https://charmr-jfmc.onrender.com"; 
+    const token = localStorage.getItem("token");
+    if (!token) { window.location.href = "login.html"; }
+
+    const params = new URLSearchParams(window.location.search);
+    const girlId = parseInt(params.get('id'));
+    const girl = girls.find(g => g.id === girlId);
+
+    const chatBox = document.getElementById('chatBox');
+    const ctaBar  = document.getElementById('ctaBar');
+
+    // header + photo
+    document.getElementById('chatName').textContent = girl.name;
+    document.getElementById('chatPhoto').src = girl.image;
+    document.getElementById('giftGirlName').textContent = (girl.name || 'her').split(' ')[0];
+
+    // state
+    let TAKEOVER = false;
+    let pollTimer = null;   // takeover-only polling
+    let IS_PREMIUM = false; // you can flip this true when lifetime/premium
+    let MSGS_TIMER = null;  // <-- added: general polling when NOT in takeover
+
+    // ==== ADDED: track number of pictures received from the girl ====
+    let RECEIVED_GIRL_IMAGE_COUNT = 0;
+    const FREE_IMAGE_LIMIT = 2;
+    // ================================================================
+
+    // Keep CTA visible
+    function showCTA(){ ctaBar.style.display = 'block'; }
+    function hideCTA(){ ctaBar.style.display = 'block'; }
+
+    // ---- ADDED: start/stop general polling outside of takeover ----
+    function ensureMessagesPolling(){
+      if (TAKEOVER){
+        if (MSGS_TIMER){ clearInterval(MSGS_TIMER); MSGS_TIMER = null; }
+        return;
+      }
+      if (!MSGS_TIMER){
+        MSGS_TIMER = setInterval(loadMessages, 2000);
+      }
+    }
+    // ----------------------------------------------------------------
+
+    // ---- helpers ----
+    function appendMessage(text, sender, isTyping=false){
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${sender}`;
+      if (isTyping){
+        msgDiv.classList.add('typing');
+        msgDiv.textContent = '...';
+      } else {
+        // NOTE: match IMAGE: anywhere in the string (not just at start)
+        const m = /IMAGE:\s*([^\s<>"']+)/i.exec(text || "");
+        // also accept an <img src="..."> snippet and extract its URL
+        const tag = !m ? /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(text || "") : null;
+        // fallback: plain image URL
+        const urlOnly = (!m && !tag) ? /(https?:\/\/[^\s"'()]+?\.(?:png|jpe?g|gif|webp))(?:[^\s"')]*)?/i.exec(text || "") : null;
+
+        if (m || tag || urlOnly){
+          // ======== handle picture limit + overlay for received images ========
+          const url = m ? m[1] : (tag ? tag[1] : urlOnly[1]);
+          const wrap = document.createElement('div');
+          wrap.className = 'image-wrap';
+
+          const img = document.createElement('img');
+          img.src = url;
+          img.alt = 'image';
+          img.loading = 'eager';
+          img.decoding = 'sync';
+          img.referrerPolicy = 'no-referrer';
+          wrap.appendChild(img);
+
+          if (sender === 'girl') {
+            RECEIVED_GIRL_IMAGE_COUNT += 1;
+            if (!IS_PREMIUM && RECEIVED_GIRL_IMAGE_COUNT > FREE_IMAGE_LIMIT) {
+              wrap.classList.add('locked');
+              const overlay = document.createElement('div');
+              overlay.className = 'image-overlay';
+              overlay.innerHTML = `
+                <div>You've received the maximum amount of pictures on your current plan. Click the button below to upgrade to premium to receive more pictures.</div>
+                <a href="/checkout.html">Upgrade to Premium</a>
+              `;
+              wrap.appendChild(overlay);
+            }
+          }
+          // ===================================================================
+
+          msgDiv.appendChild(wrap);
+        } else {
+          msgDiv.textContent = text;
+        }
+      }
+      chatBox.appendChild(msgDiv);
+
+      // ensure newest media is visible immediately after it finishes decoding
+      const im = msgDiv.querySelector('img');
+      if (im) {
+        if (im.complete) {
+          chatBox.scrollTop = chatBox.scrollHeight;
+        } else {
+          im.addEventListener('load', () => { chatBox.scrollTop = chatBox.scrollHeight; }, { once: true });
+          im.addEventListener('error', () => {}, { once: true });
+        }
+      } else {
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      return msgDiv;
+    }
+
+    // neutral site notice card (not from the girl)
+    function appendSystemNotice(text){
+      const card = document.createElement('div');
+      card.className = 'system-card';
+      const logo = document.createElement('img');
+      logo.src = 'logo.png';
+      logo.alt = 'Site logo';
+      const title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = 'Premium Feature';
+      const p = document.createElement('p');
+      p.textContent = text;
+      card.appendChild(logo);
+      card.appendChild(title);
+      card.appendChild(p);
+      chatBox.appendChild(card);
+      chatBox.scrollTop = chatBox.scrollHeight;
+      return card;
+    }
+
+    function randomDelay(min=700, max=2000){ return Math.floor(Math.random()*(max-min+1))+min; }
+
+    // Detect phone/email/links/handles/WhatsApp etc.
+    function isContactAttempt(text) {
+      if (!text) return false;
+      const patterns = [
+        /@/i,
+        /\b(whats?app|telegram|snap(chat)?|instagram|insta|tg|wechat|signal|viber)\b/i,
+        /\b(phone|number|call|text|dm|pm)\b/i,
+        /https?:\/\/|www\./i,
+        /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
+        /\b\+?\d{1,3}[-.\s]?\d{6,14}\b/
+      ];
+      return patterns.some(re => re.test(text));
+    }
+
+    async function loadMessages(){
+      try{
+        const res = await fetch(`${backendUrl}/api/messages/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        chatBox.innerHTML = "";
+
+        // reset count before replaying history
+        RECEIVED_GIRL_IMAGE_COUNT = 0;
+
+        data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
+        showCTA();
+      }catch(e){ console.error("Error loading messages:", e); }
+    }
+
+    async function checkTakeover(){
+      try{
+        const res = await fetch(`${backendUrl}/api/takeover/status/${girlId}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        const data = await res.json();
+        TAKEOVER = !!data.takeover;
+        const banner = document.getElementById('liveBanner');
+        if (TAKEOVER){
+          banner.style.display = '';
+          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '';
+          if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
+        } else {
+          banner.style.display = 'none';
+          if (pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+        }
+        // keep general polling in sync
+        ensureMessagesPolling();
+      }catch{
+        // on errors, still make sure we're polling in non-takeover mode
+        ensureMessagesPolling();
+      }
+    }
+
+    async function refreshCredits(){
+      try{
+        const r = await fetch(`${backendUrl}/api/credits`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (!r.ok) return;
+        const c = await r.json();
+        IS_PREMIUM = !!c?.lifetime;
+        showCTA();
+      }catch{}
+    }
+
+    async function sendMessage(){
+      const input = document.getElementById('messageInput');
+      const messageText = input.value.trim();
+      if (!messageText) return;
+
+      // Contact sharing -> system notice (not from girl)
+      if (isContactAttempt(messageText) && !IS_PREMIUM) {
+        appendSystemNotice(
+          "Sharing numbers, WhatsApp, emails or links is a Premium feature. Upgrade using the pink button at the bottom to unlock it."
+        );
+        showCTA();
+        return;
+      }
+
+      appendMessage(messageText, 'user');
+      input.value = '';
+      const typingBubble = appendMessage("...", 'girl', true);
+
+      try{
+        const res = await fetch(`${backendUrl}/api/chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+          body: JSON.stringify({ girlId, message: messageText })
+        });
+
+        if (res.status === 403){
+          const data = await res.json();
+          typingBubble.remove();
+          appendMessage(data.error || "You're out of credits!", 'girl');
+          showCTA();
+          chatBox.scrollTop = chatBox.scrollHeight;
+          return;
+        }
+
+        const data = await res.json();
+        await new Promise(r => setTimeout(r, randomDelay()));
+        typingBubble.remove();
+
+        if (data.takeover){
+          TAKEOVER = true;
+          checkTakeover();
+          appendMessage("…", "girl", true);
+          if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
+          return;
+        }
+
+        appendMessage(data.reply || "(No reply received)", 'girl');
+        refreshCredits();
+      }catch(e){
+        console.error("Chat error:", e);
+        typingBubble.remove();
+      }
+    }
+
+    // Gift clicks -> system notice (not from girl)
+    document.getElementById('giftBar').addEventListener('click', (e)=>{
+      const chip = e.target.closest('.gift-chip');
+      if (!chip) return;
+      const label = chip.getAttribute('title') || 'gift';
+      appendSystemNotice(
+        `Sending ${label.toLowerCase()} is a Premium feature. Upgrade using the pink button at the bottom to unlock gifts & pics.`
+      );
+        showCTA();
+    });
+
+    // Boot
+    loadMessages();
+    checkTakeover();
+    refreshCredits();
+    ensureMessagesPolling(); // <-- start non-takeover polling immediately
+    setInterval(checkTakeover, 10000);
+    setInterval(refreshCredits, 15000);
+  </script>
+</body>
+</html>

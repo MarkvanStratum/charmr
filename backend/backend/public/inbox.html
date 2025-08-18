@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Inbox</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
+  <style>
+    /* Simple styles for message cards */
+    .message-card {
+      display: flex;
+      align-items: center;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+      text-decoration: none;
+      color: inherit;
+    }
+    .message-card img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin-right: 15px;
+    }
+    .message-info {
+      flex: 1;
+    }
+    .message-info strong {
+      display: block;
+      font-size: 1.1em;
+      margin-bottom: 5px;
+    }
+    .message-time {
+      font-size: 0.8em;
+      color: #666;
+      margin-top: 3px;
+    }
+  </style>
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</head>
+<body>
+  <h1>Your Messages</h1>
+  <div id="messageList">
+    <p>Loading messages...</p>
+  </div>
+
+  <script src="girls.js"></script>
+  <script>
+    async function loadMessages() {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        document.getElementById('messageList').innerHTML = '<p>Please log in to view messages.</p>';
+        return;
+      }
+
+      try {
+        const res = await fetch('https://charmr-jfmc.onrender.com/api/messages', {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error("Unauthorized or failed to fetch");
+        }
+
+        const data = await res.json(); // data is an object, not array
+
+        if (Object.keys(data).length === 0) {
+          document.getElementById('messageList').innerHTML = '<p>No messages yet.</p>';
+          return;
+        }
+
+        const container = document.getElementById('messageList');
+        container.innerHTML = '';
+
+        for (const key in data) {
+          const msgs = data[key];
+          const lastMessage = msgs[msgs.length - 1];
+
+          // Extract girlId from "userId-girlId"
+          const girlId = Number(key.split('-')[1]);
+          const girl = girls.find(g => g.id === girlId) || { name: 'Unknown', image: 'default-avatar.png' };
+
+          const card = document.createElement('a');
+          card.href = `chat.html?id=${girlId}`;
+          card.className = 'message-card';
+          card.innerHTML = `
+            <img src="${girl.image}" alt="${girl.name}">
+            <div class="message-info">
+              <strong>${girl.name}</strong>
+              <p>${lastMessage.text}</p>
+              <div class="message-time">${new Date(lastMessage.time).toLocaleString()}</div>
+            </div>
+          `;
+          container.appendChild(card);
+        }
+      } catch (err) {
+        console.error('Error loading messages:', err);
+        document.getElementById('messageList').innerHTML = '<p>Failed to load messages.</p>';
+      }
+    }
+
+    loadMessages();
+    setInterval(loadMessages, 30000);
+  </script>
+</body>
+</html>

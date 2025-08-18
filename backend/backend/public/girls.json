@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Amelia White",
+    "age": 27,
+    "city": "London",
+    "image": "placeholder.jpg",
+    "description": "Heya! Born in East London, love dogs n' drum & bass. Message me x"
+  },
+  {
+    "name": "Sophie Clarke",
+    "age": 29,
+    "city": "Manchester",
+    "image": "placeholder.jpg",
+    "description": "Lowkey gym rat. Can cook a proper roast too. Let’s get to know each other :)"
+  },
+  {
+    "name": "Lucy Walker",
+    "age": 24,
+    "city": "Bristol",
+    "image": "placeholder.jpg",
+    "description": "Just a Bristol babe who loves her vinyl collection. Swipe if ur cute 😘"
+  }
+  // ... add 297 more like these ...
+]
