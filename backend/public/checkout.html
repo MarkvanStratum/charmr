@@ -8,7 +8,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag(){dataLayer.push(arguments);} 
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8');
   </script>
@@ -399,7 +399,7 @@
   }
 
   async function startSubscription(priceId, cardholderName) {
-    // Token sanity check (common cause of 403 in Chrome if iframed / blocked storage)
+    // Token sanity check (common cause of 403 if blocked storage)
     const token = localStorage.getItem("token");
     if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
 
@@ -424,20 +424,23 @@
       headers: { "Authorization": `Bearer ${token}` },
       body: JSON.stringify({
         priceId,
-        paymentMethodId: setupIntent.payment_method
+        paymentMethodId: setupIntent.payment_method,
+        cardholderName: cardholderName || ""
       })
     });
 
-    // 🔑 Confirm the first invoice payment (SCA) before redirecting
-    if (!subData.clientSecret) {
-      throw new Error("Missing payment client secret.");
-    }
-    const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret);
-    if (confirmErr) {
-      throw new Error(confirmErr.message || "Payment confirmation failed.");
+    // 4) If Stripe requires SCA for the first invoice, confirm it. 
+    //    Provide a return_url so full-page redirect lands on thank-you.
+    if (subData.clientSecret) {
+      const returnUrl = `${location.origin}/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
+      const result = await stripe.confirmCardPayment(subData.clientSecret, { return_url: returnUrl });
+      if (result?.error) {
+        throw new Error(result.error.message || "Payment confirmation failed.");
+      }
+      // If a full-page redirect happened, code below won't run — that's fine.
     }
 
-    // Success -> go to thank you page
+    // 5) Success → go to thank-you (trials often won't need clientSecret)
     window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
   }
 
