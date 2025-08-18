@@ -264,7 +264,7 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/11.png",
     "description": "picky but worth it \ud83d\udc85\ud83d\udc8b here for da vibes n sum flirty chats \ud83d\ude18"
   },
-  {
+{
     "id": 12,
     "name": "Mia Reed",
     "city": "Reading",
@@ -2497,6 +2497,7 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/330.png",
     "description": "bit of a madhead \ud83e\udd2a love a giggle, takeaway n sum company \ud83d\udc40\ud83d\ude06 slide in if u can keep up x"
   }
+  
 
 ];
 
@@ -3193,21 +3194,21 @@ app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
   }
 });
 
-// 2) Create the Subscription with 1-day trial for £5/£20 (none for £99/6mo), stay on your page
+// 2) Create the Subscription with NO TRIAL (immediate first charge)
+//    Returns the PI client_secret so the client can confirm the payment (SCA)
 app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
-  // ⬇️ accept cardholderName (optional) from the client
   const { priceId, paymentMethodId, cardholderName } = req.body;
+
   try {
     const customerId = await getOrCreateStripeCustomer(req.user.id);
 
-    // Attach PM & set default
+    // Attach PM & set as default for invoices
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customerId });
     await stripe.customers.update(customerId, {
       invoice_settings: { default_payment_method: paymentMethodId },
     });
 
-    // NEW: set Customer.name from the explicit cardholderName if provided,
-    // otherwise fall back to the PM's billing_details.name
+    // Optional: set a display name (NO email touches Stripe)
     try {
       let nameToSet = (cardholderName || "").trim();
       if (!nameToSet) {
@@ -3215,29 +3216,31 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
         nameToSet = pm?.billing_details?.name?.trim() || "";
       }
       if (nameToSet) {
-        await stripe.customers.update(customerId, { name: nameToSet }); // name only, no email
+        await stripe.customers.update(customerId, { name: nameToSet });
       }
     } catch (e) {
       console.warn("Couldn't set customer name:", e?.message || e);
     }
 
-    // Decide trial: 1 day for the £5 and £20 price IDs; none for the £99/6mo
-    const TRIAL_ONE_DAY_PRICE_IDS = new Set([
-      "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 (from your code)
-      "price_1RsdzREJXIhiKzYG45b69nSl" // £20 (from your code)
-    ]);
-    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 1 : undefined;
-
+    // 🔑 NO trial fields at all — invoice is created immediately
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceId }],
-      ...(trial_period_days ? { trial_period_days } : {}),
-      payment_behavior: 'default_incomplete', // SCA-safe when first invoice is due
+      payment_behavior: 'default_incomplete', // SCA-safe: first invoice will need confirmation on client
+      payment_settings: { save_default_payment_method: 'on_subscription' },
       metadata: { userId: String(req.user.id), planPriceId: priceId },
       expand: ['latest_invoice.payment_intent'],
     });
 
-    res.json({ subscriptionId: subscription.id, status: subscription.status });
+    const latestInvoice = subscription.latest_invoice;
+    const pi = latestInvoice?.payment_intent;
+
+    // Return what the client needs to finish the first charge
+    res.json({
+      subscriptionId: subscription.id,
+      status: subscription.status, // likely "incomplete" until client confirms
+      clientSecret: pi?.client_secret || null
+    });
   } catch (e) {
     console.error('Subscription create error:', e);
     res.status(500).json({ error: 'subscription_create_failed' });
@@ -3329,35 +3332,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     // NEW: Subscription events
     // -------------------------
 
-    // When subscription is created (trial usually starts immediately for 5/20 plans)
-    case 'customer.subscription.created': {
-      const sub = event.data.object;
-      const userId = sub.metadata?.userId;
-      const priceId = sub.items?.data?.[0]?.price?.id;
-
-      console.log('🟢 Subscription created:', sub.id, 'status:', sub.status, 'price:', priceId, 'user:', userId);
-
-      // Grant immediate credits during trial for 5/20 plans so users can message right away.
-      // (No schema change: we reuse your existing credits gate.)
-      const trialCreditMap = {
-        "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,  // £5 → +10 credits
-        "price_1RsdzREJXIhiKzYG45b69nSl": 50   // £20 → +50 credits
-        // (No trial/no auto-credits for the £99/6mo plan)
-      };
-
-      if (userId && priceId && trialCreditMap[priceId]) {
-        try {
-          await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [trialCreditMap[priceId], userId]);
-          console.log(`✅ Trial start credits added to user ${userId}: +${trialCreditMap[priceId]}`);
-        } catch (e) {
-          console.error("❌ Failed to add trial credits:", e.message);
-        }
-      }
-
-      break;
-    }
-
-    // Fired when an invoice is successfully paid (e.g., after trial ends for 5/20)
+    // Fired when an invoice is successfully paid (e.g., first charge and renewals)
     case 'invoice.payment_succeeded': {
       const inv = event.data.object;
 
@@ -3376,7 +3351,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const priceId = inv.lines?.data?.[0]?.price?.id;
       console.log('🟢 Invoice paid for price:', priceId, 'user:', userId);
 
-      // Optional: on each successful subscription charge, top up credits again (same mapping as above)
+      // Optional: on each successful subscription charge, top up credits again
       const cycleCreditMap = {
         "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,  // £5 → +10 credits per cycle
         "price_1RsdzREJXIhiKzYG45b69nSl": 50   // £20 → +50 credits per cycle
