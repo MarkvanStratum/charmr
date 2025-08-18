@@ -236,6 +236,48 @@
     font-size:14px;
   }
   /* =================================================================== */
+
+  /* ======== ADDED: picture-wrap + lock overlay styles (minimal) ======= */
+  .image-wrap{
+    position: relative;
+    display: inline-block;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .image-wrap img{
+    display:block;
+    max-width: 220px;
+    max-height: 260px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+  .image-wrap.locked img{
+    filter: blur(10px);
+  }
+  .image-overlay{
+    position:absolute;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:10px;
+    background: rgba(0,0,0,0.45);
+    color:#fff;
+    font-size:13px;
+    gap:8px;
+  }
+  .image-overlay a{
+    display:inline-block;
+    background:#ef476f;
+    color:#fff;
+    text-decoration:none;
+    padding:8px 10px;
+    border-radius:8px;
+    font-weight:bold;
+  }
+  /* =================================================================== */
   </style>
 
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
@@ -297,6 +339,11 @@
     let pollTimer = null;
     let IS_PREMIUM = false; // you can flip this true when lifetime/premium
 
+    // ==== ADDED: track number of pictures received from the girl ====
+    let RECEIVED_GIRL_IMAGE_COUNT = 0;
+    const FREE_IMAGE_LIMIT = 2;
+    // ================================================================
+
     // Keep CTA visible
     function showCTA(){ ctaBar.style.display = 'block'; }
     function hideCTA(){ ctaBar.style.display = 'block'; }
@@ -311,15 +358,32 @@
       } else {
         const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
         if (m){
+          // ======== ADDED: handle picture limit + overlay for received images ========
+          const url = m[1];
+          const wrap = document.createElement('div');
+          wrap.className = 'image-wrap';
+
           const img = document.createElement('img');
-          img.src = m[1];
+          img.src = url;
           img.alt = 'image';
-          img.style.maxWidth = '220px';
-          img.style.maxHeight = '260px';
-          img.style.borderRadius = '10px';
-          img.style.display = 'block';
-          img.style.objectFit = 'cover';
-          msgDiv.appendChild(img);
+          wrap.appendChild(img);
+
+          if (sender === 'girl') {
+            RECEIVED_GIRL_IMAGE_COUNT += 1;
+            if (!IS_PREMIUM && RECEIVED_GIRL_IMAGE_COUNT > FREE_IMAGE_LIMIT) {
+              wrap.classList.add('locked');
+              const overlay = document.createElement('div');
+              overlay.className = 'image-overlay';
+              overlay.innerHTML = `
+                <div>You've received the maximum amount of pictures on your current plan. Click the button below to upgrade to premium to receive more pictures.</div>
+                <a href="/checkout.html">Upgrade to Premium</a>
+              `;
+              wrap.appendChild(overlay);
+            }
+          }
+          // ==========================================================================
+
+          msgDiv.appendChild(wrap);
         } else {
           msgDiv.textContent = text;
         }
@@ -372,6 +436,11 @@
         });
         const data = await res.json();
         chatBox.innerHTML = "";
+
+        // ==== ADDED: reset count before replaying history ====
+        RECEIVED_GIRL_IMAGE_COUNT = 0;
+        // =====================================================
+
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
         showCTA();
       }catch(e){ console.error("Error loading messages:", e); }
@@ -387,7 +456,7 @@
         const banner = document.getElementById('liveBanner');
         if (TAKEOVER){
           banner.style.display = '';
-          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '';
+          banner.textContent = data.operatorName ? `🔴 ${data.operatorName} is live` : '🔴 Live agent is chatting';
           if (!pollTimer) pollTimer = setInterval(loadMessages, 2000);
         } else {
           banner.style.display = 'none';
