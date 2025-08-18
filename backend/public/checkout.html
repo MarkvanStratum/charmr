@@ -188,7 +188,7 @@
     .loading-box{
       width:min(92vw,420px);
       background:#fff; border:1px solid var(--line); border-radius:14px;
-      box-shadow:0 10px 28px rgba(239,71,111,.12);
+      box-shadow:0 10px 28px rgba(15,23,42,.12);
       padding:18px;
       text-align:center;
     }
@@ -303,12 +303,6 @@
   <label for="cardholder-name">Name on card</label>
   <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name" inputmode="text"/>
 
-  <!-- Wallets (Google Pay / Apple Pay) -->
-  <div id="wallet-row" style="margin:10px 0; display:none">
-    <div id="payment-request-button"></div>
-    <div style="text-align:center; color:#64748b; font-size:12px; margin:8px 0;">or use your card</div>
-  </div>
-
   <div id="card-element" aria-label="Card details (powered by Stripe)"><!-- Stripe injects card input here --></div>
 
   <!-- Trust row -->
@@ -347,114 +341,6 @@
   const elements = stripe.elements();
   const card = elements.create("card");
   card.mount("#card-element");
-
-  // ----- Wallets: Google Pay / Apple Pay via Payment Request Button -----
-  (function initWallets(){
-    try {
-      const paymentRequest = stripe.paymentRequest({
-        country: 'GB',            // set to your business country
-        currency: 'gbp',          // match your price currency
-        total: { label: 'Verify card for free trial', amount: 0 },
-        requestPayerName: true,
-        requestPayerEmail: false
-      });
-
-      const prButton = elements.create('paymentRequestButton', {
-        paymentRequest,
-        style: { paymentRequestButton: { type: 'long' } }
-      });
-
-      paymentRequest.canMakePayment().then(function(result){
-        // Only show if there's actually a supported wallet (prevents blank space)
-        if (result && (result.applePay || result.googlePay)) {
-          document.getElementById('wallet-row').style.display = 'block';
-          prButton.mount('#payment-request-button');
-        } else {
-          document.getElementById('wallet-row').style.display = 'none';
-        }
-      });
-
-      paymentRequest.on('paymentmethod', async function(ev){
-        const message = document.getElementById('message');
-        try {
-          // show loading & watch for 3DS iframe
-          showLoading();
-          startThreeDSWatcher();
-
-          // 1) Create SetupIntent
-          const siRes = await fetch("/api/stripe/setup-intent", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            }
-          });
-          const siData = await siRes.json();
-          if (!siRes.ok || !siData.clientSecret) {
-            ev.complete('fail');
-            throw new Error(siData.error || "Failed to start payment setup.");
-          }
-
-          // 2) Confirm setup using wallet PM
-          const confirmRes = await stripe.confirmCardSetup(
-            siData.clientSecret,
-            { payment_method: ev.paymentMethod.id },
-            { handleActions: true }
-          );
-          if (confirmRes.error) {
-            ev.complete('fail');
-            throw new Error(confirmRes.error.message);
-          }
-          const setupIntent = confirmRes.setupIntent;
-
-          // 3) Create subscription
-          const selectedPlan = document.querySelector('input[name="plan"]:checked').value;
-          const subRes = await fetch("/api/stripe/subscribe", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${localStorage.getItem("token")}`
-            },
-            body: JSON.stringify({
-              priceId: selectedPlan,
-              paymentMethodId: setupIntent.payment_method
-            })
-          });
-          const subData = await subRes.json();
-          if (!subRes.ok) {
-            ev.complete('fail');
-            throw new Error(subData?.error || "Subscription failed");
-          }
-
-          // 4) Confirm first invoice payment (SCA)
-          if (!subData.clientSecret) {
-            ev.complete('fail');
-            throw new Error("Missing payment client secret.");
-          }
-          const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret);
-          if (confirmErr) {
-            ev.complete('fail');
-            throw new Error(confirmErr.message || "Payment confirmation failed.");
-          }
-
-          ev.complete('success');
-          window.location.href = `/thankyou.html?priceId=${encodeURIComponent(selectedPlan)}`;
-        } catch (err) {
-          console.error(err);
-          if (message) {
-            message.textContent = err.message || "Something went wrong. Try again.";
-            message.setAttribute('aria-hidden','false');
-          }
-          ev.complete('fail');
-        } finally {
-          hideLoading();
-        }
-      });
-    } catch (e) {
-      console.warn("Payment Request Button init failed:", e);
-    }
-  })();
-  // ----- end wallets -----
 
   const form = document.getElementById("payment-form");
   const message = document.getElementById("message");
@@ -543,8 +429,7 @@
     window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
   }
 
-  const formEl = document.getElementById("payment-form");
-  formEl.addEventListener("submit", async (e) => {
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
     message.textContent = "";
     message.setAttribute('aria-hidden','true');
