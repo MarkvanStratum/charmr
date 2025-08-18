@@ -356,13 +356,16 @@
         msgDiv.classList.add('typing');
         msgDiv.textContent = '...';
       } else {
-        const m = /^IMAGE:\s*(\S+)/i.exec(text || "");
-        // NEW: also accept an <img src="..."> snippet and extract its URL
+        // NOTE: match IMAGE: anywhere in the string (not just at start)
+        const m = /IMAGE:\s*([^\s<>"']+)/i.exec(text || "");
+        // also accept an <img src="..."> snippet and extract its URL
         const tag = !m ? /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(text || "") : null;
+        // fallback: plain image URL
+        const urlOnly = (!m && !tag) ? /(https?:\/\/[^\s"'()]+?\.(?:png|jpe?g|gif|webp))(?:[^\s"')]*)?/i.exec(text || "") : null;
 
-        if (m || tag){
-          // ======== ADDED: handle picture limit + overlay for received images ========
-          const url = m ? m[1] : tag[1];
+        if (m || tag || urlOnly){
+          // ======== handle picture limit + overlay for received images ========
+          const url = m ? m[1] : (tag ? tag[1] : urlOnly[1]);
           const wrap = document.createElement('div');
           wrap.className = 'image-wrap';
 
@@ -387,7 +390,7 @@
               wrap.appendChild(overlay);
             }
           }
-          // ==========================================================================
+          // ===================================================================
 
           msgDiv.appendChild(wrap);
         } else {
@@ -456,9 +459,8 @@
         const data = await res.json();
         chatBox.innerHTML = "";
 
-        // ==== ADDED: reset count before replaying history ====
+        // reset count before replaying history
         RECEIVED_GIRL_IMAGE_COUNT = 0;
-        // =====================================================
 
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
         showCTA();
