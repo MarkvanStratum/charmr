@@ -194,6 +194,7 @@
       byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
       lastNow: null,
+      nameCache: new Map(), // userId -> "First Last"
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
@@ -204,6 +205,8 @@
           key: k,
           userId: Number(userId),
           girlId: Number(girlId),
+          girlName: girlName || null,
+          userName: null,
           title: `${girlName ? girlName : 'Girl '+girlId} · User ${userId}`,
           messages: [],
           unread: 0,
@@ -215,10 +218,41 @@
       } else if (girlName) {
         const cv = store.byKey.get(k);
         if (cv && cv.title.startsWith('Girl ')) {
+          cv.girlName = girlName;
           cv.title = `${girlName} · User ${userId}`;
         }
       }
       return store.byKey.get(k);
+    }
+
+    // --- Helpers to normalize feed rows ---
+    function parseSender(r){
+      if (typeof r?.from_user === 'boolean') return r.from_user ? 'user' : 'girl';
+      if (typeof r?.fromUser === 'boolean')   return r.fromUser  ? 'user' : 'girl';
+      const f = (r?.from || '').toString().toLowerCase();
+      if (['user','u','customer'].includes(f)) return 'user';
+      if (['girl','g','agent','bot'].includes(f)) return 'girl';
+      return null;
+    }
+    function parseTimestamp(r){
+      let t = r?.createdAt ?? r?.created_at ?? r?.timestamp ?? r?.ts;
+      if (typeof t === 'number') return t;
+      if (typeof t === 'string'){
+        const num = Number(t);
+        if (!Number.isNaN(num) && /^\d+$/.test(t.trim())){
+          // seconds vs ms
+          return t.trim().length === 10 ? num * 1000 : num;
+        }
+        const d = Date.parse(t);
+        if (!Number.isNaN(d)) return d;
+      }
+      return Date.now();
+    }
+    function extractUserName(r){
+      const first = r?.userFirstName || r?.firstName || '';
+      const last  = r?.userLastName  || r?.lastName  || '';
+      const name  = r?.userName || [first,last].filter(Boolean).join(' ').trim();
+      return name || null;
     }
 
     // Contact-sharing detector (same idea as chat.html)
@@ -253,13 +287,15 @@
         const item = document.createElement('div');
         item.className = 'conv' + (store.activeKey===c.key ? ' active':'');
 
+        const metaName = c.userName ? ` (${c.userName})` : '';
         const left = document.createElement('div');
-        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
+        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId}${metaName} · g:${c.girlId}</div>`;
         item.appendChild(left);
 
         // online dot (based on lastUserTs recency)
+        const online = Date.now() - (c.lastUserTs||0) < ONLINE_MS;
         const dot = document.createElement('div');
-        dot.className = 'dot' + ((Date.now() - (c.lastUserTs||0) < ONLINE_MS) ? ' online' : '');
+        dot.className = 'dot' + (online ? ' online' : '');
         item.appendChild(dot);
 
         if (c.unread>0){
@@ -288,10 +324,11 @@
     }
 
     function renderChat(conv){
-      els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
+      if (!conv){ els.chatTitle.textContent = 'No chat selected'; els.chatBox.innerHTML=''; return; }
+      const nameSuffix = conv.userName ? ` — ${conv.userName}` : '';
+      els.chatTitle.textContent = conv.title + nameSuffix;
       els.liveBanner.style.display = conv?.takeover ? '' : 'none';
       els.chatBox.innerHTML = '';
-      if (!conv) return;
 
       for (const m of conv.messages){
         const wrap = document.createElement('div'); wrap.style.display='flex';
@@ -303,13 +340,13 @@
         else { content.textContent = m.text; }
 
         const meta = document.createElement('div'); meta.className='meta';
-        meta.textContent = new Date(m.created_at).toLocaleString();
+        meta.textContent = new Date(m.created_at || m.createdAt || Date.now()).toLocaleString();
 
         bubble.appendChild(content); bubble.appendChild(meta);
         wrap.appendChild(bubble);
         els.chatBox.appendChild(wrap);
 
-        // NEW: show official site notice right after a user's contact attempt
+        // Site notice (context for operator)
         if (m.from_user && isContactAttempt(m.text)) {
           const card = document.createElement('div');
           card.className = 'system-card';
@@ -331,7 +368,7 @@
       renderChat(conv);
     }
 
-    // ----- FEED (same semantics as feed.html) -----
+    // ----- FEED (schema-agnostic) -----
     async function fetchFeed(initial=false){
       try{
         const params = new URLSearchParams();
@@ -351,18 +388,26 @@
 
         let pingNeeded = false;
 
-        // rows: { id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text }
+        // rows: { id, created_at/createdAt/ts, userId, girlId, girlName, from/from_user, text, [userFirstName, userLastName, userName] }
         for (const r of rows){
-          const userId = Number(r.userId);
-          const girlId = Number(r.girlId);
+          const userId = Number(r.userId ?? r.user_id);
+          const girlId = Number(r.girlId ?? r.girl_id);
           if (!userId || !girlId) continue;
 
-          const cv = ensureConv(userId, girlId, r.girlName);
-          const ts = new Date(r.createdAt).getTime() || Date.now();
+          const cv = ensureConv(userId, girlId, r.girlName || r.girl_name || null);
 
+          // user name if present in feed
+          const maybeName = extractUserName(r);
+          if (maybeName) {
+            cv.userName = maybeName;
+            store.nameCache.set(userId, maybeName);
+          }
+
+          const ts = parseTimestamp(r);
           if (ts > cv.lastTs) cv.lastTs = ts;
 
-          if (r.from === 'user'){
+          const sender = parseSender(r);
+          if (sender === 'user'){
             cv.hasUserReply = true;
             if (ts > cv.lastUserTs) cv.lastUserTs = ts;
             if (store.activeKey !== cv.key){
@@ -399,9 +444,36 @@
 
         conv.messages = data;
         if (data.length){
+          // latest overall ts
           const last = data[data.length-1];
-          conv.lastTs = new Date(last.created_at).getTime() || Date.now();
+          conv.lastTs = new Date(last.created_at || last.createdAt || Date.now()).getTime() || Date.now();
+
+          // RECALC lastUserTs from messages (keeps the online dot correct even if feed missed a row)
+          const lastUser = [...data].reverse().find(m => m.from_user === true || m.fromUser === true);
+          if (lastUser){
+            const t = new Date(lastUser.created_at || lastUser.createdAt || Date.now()).getTime() || Date.now();
+            conv.lastUserTs = Math.max(conv.lastUserTs || 0, t);
+            conv.hasUserReply = true;
+          }
         }
+
+        // Try to resolve user name once per user (optional backend; fails silently if missing)
+        if (!conv.userName && !store.nameCache.has(conv.userId)) {
+          try {
+            const rr = await fetch(`${base()}/api/operator/user-info?userId=${conv.userId}`, { headers: opHeader() });
+            if (rr.ok) {
+              const info = await rr.json();
+              const nm = (info?.name) || [info?.firstName, info?.lastName].filter(Boolean).join(' ').trim();
+              if (nm) {
+                conv.userName = nm;
+                store.nameCache.set(conv.userId, nm);
+              }
+            }
+          } catch {}
+        } else if (!conv.userName && store.nameCache.get(conv.userId)) {
+          conv.userName = store.nameCache.get(conv.userId);
+        }
+
         renderChat(conv);
         renderSidebar(false);
       }catch(e){ /* silent */ }
