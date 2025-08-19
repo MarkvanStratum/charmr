@@ -278,6 +278,30 @@
     font-weight:bold;
   }
   /* =================================================================== */
+
+  /* ===================== PROMO MODAL (ADDED) ========================= */
+  .promo-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:10000;align-items:center;justify-content:center}
+  .promo-card{width:min(520px,92vw);background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;border:1px solid #ffd1dc}
+  .promo-head{background:#ff4d6d;color:#fff;padding:14px 16px;font-weight:bold}
+  .promo-body{padding:16px}
+  .promo-title{font-size:18px;font-weight:800;margin:0 0 6px}
+  .promo-sub{color:#555;margin:0 0 10px;line-height:1.35}
+  .promo-list{margin:0 0 12px 16px;padding:0;color:#444}
+  .promo-list li{margin:4px 0}
+  .promo-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+  .btn{padding:10px 12px;border-radius:10px;border:1px solid #ffd1dc;background:#fff;cursor:pointer}
+  .btn.primary{background:#ef476f;color:#fff;border:none}
+  .btn.ghost{background:#fff;color:#111;border:1px solid #e6e6e6}
+  .promo-questions .q{margin:12px 0}
+  .promo-questions label{display:block;font-weight:600;margin-bottom:6px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chips label{cursor:pointer}
+  .chips input{display:none}
+  .chips .chip{border:1px solid #e6e6e6;border-radius:999px;padding:8px 12px}
+  .chips input:checked + .chip{border-color:#ef476f;background:#fff5f7}
+  .progress{height:8px;background:#f1f1f1;border-radius:999px;overflow:hidden}
+  .progress>div{height:100%;width:0;background:#ef476f;transition:width .2s}
+  /* =================================================================== */
   </style>
 
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
@@ -316,6 +340,91 @@
     </div>
   </div>
 
+  <!-- ================ PROMO MODAL HTML (ADDED) =================== -->
+  <div id="promoBackdrop" class="promo-backdrop" aria-hidden="true">
+    <div class="promo-card" role="dialog" aria-modal="true" aria-labelledby="promoTitle">
+      <div class="promo-head">Charmr Premium Invitation</div>
+
+      <!-- Step 1: Intro -->
+      <div id="promoStepIntro" class="promo-body">
+        <h3 id="promoTitle" class="promo-title">CONGRATULATIONS! You have been selected for a chance to try Charmr for FREE!</h3>
+        <p class="promo-sub">
+          Get <strong>unlimited messages</strong>, <strong>unlimited sending and receiving of images</strong>,
+          <strong>contact and social media sharing</strong>, <strong>gift sending</strong> and more.<br>
+          <strong>Value £99</strong> — <strong>your price: FREE</strong>.
+        </p>
+        <p class="promo-sub"><em>But first, answer a few questions to see if you qualify.</em></p>
+        <div class="promo-actions">
+          <button id="promoStart" class="btn primary">Start</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Questions -->
+      <div id="promoStepQs" class="promo-body" style="display:none">
+        <div class="promo-questions">
+          <div class="q">
+            <label>Are you a man or a woman?</label>
+            <div class="chips">
+              <label><input type="radio" name="q_gender" value="man"><span class="chip">Man</span></label>
+              <label><input type="radio" name="q_gender" value="woman"><span class="chip">Woman</span></label>
+            </div>
+          </div>
+          <div class="q">
+            <label>Are you over 40 years of age?</label>
+            <div class="chips">
+              <label><input type="radio" name="q_over40" value="yes"><span class="chip">Yes</span></label>
+              <label><input type="radio" name="q_over40" value="no"><span class="chip">No</span></label>
+            </div>
+          </div>
+          <div class="q">
+            <label>Do you have a job?</label>
+            <div class="chips">
+              <label><input type="radio" name="q_job" value="yes"><span class="chip">Yes</span></label>
+              <label><input type="radio" name="q_job" value="no"><span class="chip">No</span></label>
+            </div>
+          </div>
+          <div class="q">
+            <label>What are you looking for on Charmr?</label>
+            <div class="chips">
+              <label><input type="radio" name="q_goal" value="sex"><span class="chip">Sex</span></label>
+              <label><input type="radio" name="q_goal" value="love"><span class="chip">Love</span></label>
+            </div>
+          </div>
+        </div>
+        <div class="promo-actions">
+          <button id="promoQsNext" class="btn primary">Continue</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Loading -->
+      <div id="promoStepLoading" class="promo-body" style="display:none">
+        <p class="promo-sub">Processing answers…</p>
+        <div class="progress"><div id="promoProgress"></div></div>
+      </div>
+
+      <!-- Step 4: Qualified -->
+      <div id="promoStepDone" class="promo-body" style="display:none">
+        <h3 class="promo-title">CONGRATULATIONS! You've qualified to try the premium features of Charmr for FREE!</h3>
+        <ul class="promo-list">
+          <li>Unlimited messages</li>
+          <li>Unlimited sending and receiving of images</li>
+          <li>Contact and social media sharing</li>
+          <li>Gift sending and more</li>
+        </ul>
+        <p class="promo-sub"><strong>Value £99</strong> — <strong>your price: FREE</strong>.</p>
+        <p class="promo-sub">
+          In order to make sure everyone on this site is 18+ we use Visa, Mastercard and the Age Verification Providers
+          Association to verify your age using your Visa or Mastercard on the next page. This works because banks only
+          issue credit cards to people over 18, so it’s a fast way to keep our community adult-only.
+        </p>
+        <div class="promo-actions">
+          <a class="btn primary" href="https://www.charmr.xyz/checkout2">VERIFY MY AGE</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ============================================================ -->
+
   <script src="girls.js"></script>
   <script>
     const backendUrl = "https://charmr-jfmc.onrender.com"; 
@@ -344,6 +453,21 @@
     let RECEIVED_GIRL_IMAGE_COUNT = 0;
     const FREE_IMAGE_LIMIT = 2;
     // ================================================================
+
+    // ======= ADDED: promo trigger state =======
+    let PREMIUM_BLOCK_COUNT = 0;
+    let PROMO_TIMER = null;
+    let PROMO_SHOWN = false;
+
+    function recordPremiumBlock(){
+      if (PROMO_SHOWN) return;
+      PREMIUM_BLOCK_COUNT++;
+      if (PREMIUM_BLOCK_COUNT >= 2){
+        if (PROMO_TIMER) { clearTimeout(PROMO_TIMER); }
+        PROMO_TIMER = setTimeout(()=>{ openPromoIntro(); }, 15000); // wait 15s after last block
+      }
+    }
+    // ==========================================
 
     // Keep CTA visible
     function showCTA(){ ctaBar.style.display = 'block'; }
@@ -527,6 +651,7 @@
           "Sharing numbers, WhatsApp, emails or links is a Premium feature. Upgrade using the pink button at the bottom to unlock it."
         );
         showCTA();
+        recordPremiumBlock(); // ADDED: count this block
         return;
       }
 
@@ -578,8 +703,70 @@
       appendSystemNotice(
         `Sending ${label.toLowerCase()} is a Premium feature. Upgrade using the pink button at the bottom to unlock gifts & pics.`
       );
-        showCTA();
+      showCTA();
+      recordPremiumBlock(); // ADDED: count this block too
     });
+
+    // ======== PROMO MODAL SCRIPT (ADDED) =========
+    function openPromoIntro(){
+      if (PROMO_SHOWN) return;
+      PROMO_SHOWN = true;
+      const backdrop = document.getElementById('promoBackdrop');
+      showStep('promoStepIntro');
+      backdrop.style.display = 'flex';
+      backdrop.setAttribute('aria-hidden','false');
+    }
+    function showStep(id){
+      document.getElementById('promoStepIntro').style.display = 'none';
+      document.getElementById('promoStepQs').style.display = 'none';
+      document.getElementById('promoStepLoading').style.display = 'none';
+      document.getElementById('promoStepDone').style.display = 'none';
+      document.getElementById(id).style.display = '';
+    }
+
+    (function wirePromo(){
+      const backdrop = document.getElementById('promoBackdrop');
+      const btnStart = document.getElementById('promoStart');
+      const btnQsNext = document.getElementById('promoQsNext');
+      const progressEl = document.getElementById('promoProgress');
+
+      btnStart?.addEventListener('click', ()=>{ showStep('promoStepQs'); });
+
+      btnQsNext?.addEventListener('click', ()=>{
+        // require all answers selected
+        const g = document.querySelector('input[name="q_gender"]:checked');
+        const o40 = document.querySelector('input[name="q_over40"]:checked');
+        const job = document.querySelector('input[name="q_job"]:checked');
+        const goal = document.querySelector('input[name="q_goal"]:checked');
+        if (!g || !o40 || !job || !goal) { alert('Please answer all questions.'); return; }
+
+        showStep('promoStepLoading');
+        // 5s progress
+        let elapsed = 0;
+        progressEl.style.width = '0%';
+        const total = 5000, tick = 100;
+        const t = setInterval(()=>{
+          elapsed += tick;
+          progressEl.style.width = Math.min(100, Math.floor(elapsed/total*100)) + '%';
+          if (elapsed >= total){
+            clearInterval(t);
+            showStep('promoStepDone');
+          }
+        }, tick);
+      });
+
+      // click backdrop to close (only on success step to avoid accidental exits)
+      backdrop.addEventListener('click', (e)=>{
+        if (e.target === backdrop){
+          const doneVisible = document.getElementById('promoStepDone').style.display !== 'none';
+          if (doneVisible){
+            backdrop.style.display = 'none';
+            backdrop.setAttribute('aria-hidden','true');
+          }
+        }
+      });
+    })();
+    // ============================================
 
     // Boot
     loadMessages();

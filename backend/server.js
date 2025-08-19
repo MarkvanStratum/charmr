@@ -12,8 +12,6 @@ import { sendWelcomeEmail } from './email.js';
 import crypto from 'crypto';
 import { sendPasswordResetEmail } from './email.js';
 
-import { initNotifications } from "./src/notifications.js";
-
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
 import multer from "multer";
@@ -2502,14 +2500,6 @@ const profiles = [
 
 ];
 
-const notify = initNotifications({
-  pool,
-  transactionalEmailApi,
-  profiles,
-  cooldownMinutes: 30
-});
-
-
 const firstMessages = {
   1: "Hey",
 2: "How are you?",
@@ -2896,8 +2886,11 @@ app.post("/api/operator/send-image", authenticateOperator, upload.single("image"
     if (!finalUrl) return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
 
     const text = `IMAGE:${finalUrl}`;
-    await notify.createMessageAndNotify({ userId, girlId, fromUser: true, text: message });
-
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3)`,
+      [Number(userId), Number(girlId), text]
+    );
 
     res.json({ ok: true, url: finalUrl });
   } catch (e) {
@@ -3098,8 +3091,10 @@ const completion = await openai.chat.completions.create({
 
     const reply = completion.choices[0].message.content;
 
-    await notify.createMessageAndNotify({ userId, girlId, fromUser: false, text: reply });
-
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, false, $3)`,
+      [userId, girlId, reply]
+    );
 
     res.json({ reply });
 
@@ -3130,8 +3125,10 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     const messages = Object.values(firstMessages);
     const text = messages[Math.floor(Math.random() * messages.length)];
 
-    await notify.createMessageAndNotify({ userId, girlId, fromUser: false, text });
-
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, false, $3)`,
+      [userId, girlId, text]
+    );
 
     // ✅ No credit deduction — girl is starting the chat
 
