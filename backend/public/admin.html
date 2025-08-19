@@ -28,7 +28,7 @@
     .conv { display:flex; align-items:center; gap:8px; padding:10px; border:1px solid transparent; border-radius:10px; cursor:pointer; }
     .conv:hover { background:#fafafa; }
     .conv.active { border-color:#ffd1e0; background:#fff5f7; }
-    .conv .meta { font-size:12px; color:#sub; }
+    .conv .meta { font-size:12px; color:var(--sub); }
     .badge { margin-left:auto; min-width:18px; height:18px; padding:0 6px; border-radius:999px; background:var(--pink); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
     .dot { width:8px; height:8px; border-radius:999px; background:#cbd5e1; margin-left:6px; }
     .dot.online { background: var(--ok); box-shadow:0 0 0 3px #e7f9f1 inset; }
@@ -299,7 +299,7 @@
       }
 
       if (list.length===0){
-        els.convList.innerHTML = '<div class="helper">No chats with user replies yet.</div>';
+        els.convList.innerHTML = '<div class="helper" style="padding:10px">No chats with user replies yet.<br/><br/>If you just added your Operator Key, give it a second or start a test chat.</div>';
       } else if (!store.activeKey && autoSelectIfNone){
         selectConversation(list[0].key);
       }
@@ -376,13 +376,11 @@
             return { ok:true, status:r.status, url:u, data };
           }
           if (r.status !== 404){
-            // Other error: stop and surface it
             const text = await r.text().catch(()=> '');
             return { ok:false, status:r.status, url:u, error:text || `HTTP ${r.status}` };
           }
-          // 404 -> try next shape
         }catch(e){
-          // network error -> try next
+          /* try next */
         }
       }
       return { ok:false, status:404, url:urls[urls.length-1], error:'HTTP 404' };
@@ -401,6 +399,10 @@
         const res = await fetch(url, { headers: opHeader() });
         if (!res.ok){
           els.feedStatus.textContent = `HTTP ${res.status}`;
+          if (res.status === 401) {
+            // helpful hint if no/invalid key
+            document.getElementById('convList').innerHTML = '<div class="helper" style="padding:10px">Unauthorized (401). Enter a valid <strong>Operator Key</strong> above to load the feed.</div>';
+          }
           return;
         }
 
@@ -457,12 +459,10 @@
         return;
       }
 
-      // Try common shapes your server.js variants use
       const urls = [
         `${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`,
         `${base()}/api/operator/messages/${conv.userId}/${conv.girlId}`,
         `${base()}/api/operator/messages/${conv.girlId}?userId=${conv.userId}`,
-        // Older alt:
         `${base()}/api/admin/messages?userId=${conv.userId}&girlId=${conv.girlId}`,
       ];
 
@@ -475,7 +475,6 @@
         return;
       }
 
-      // Accept either an array or {messages:[…]}
       const payload = res.data;
       const msgs = Array.isArray(payload) ? payload
                   : (Array.isArray(payload?.messages) ? payload.messages : []);
@@ -490,7 +489,6 @@
         const last = msgs[msgs.length-1];
         conv.lastTs = new Date(last.created_at || last.createdAt || Date.now()).getTime() || Date.now();
 
-        // Recompute last user activity for online dot
         const lastUser = [...msgs].reverse().find(m => m.from_user === true || m.fromUser === true);
         if (lastUser){
           const t = new Date(lastUser.created_at || lastUser.createdAt || Date.now()).getTime() || Date.now();
@@ -499,7 +497,6 @@
         }
       }
 
-      // name fallback from cache if available
       if (!conv.userName && store.nameCache.get(conv.userId)) {
         conv.userName = store.nameCache.get(conv.userId);
       }
@@ -614,10 +611,13 @@
     // Keep chat pinned to bottom even on resize
     window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
 
-    // When the operator key is filled in, auto-load messages for the active chat
+    // When the operator key is filled in, auto-load messages & feed
     els.opKey.addEventListener('input', () => {
       const c = store.byKey.get(store.activeKey);
-      if (c && haveOpKey()) fetchMessages(c);
+      if (haveOpKey()) {
+        fetchFeed(true);
+        if (c) fetchMessages(c);
+      }
     });
 
     // ----- Poll -----
