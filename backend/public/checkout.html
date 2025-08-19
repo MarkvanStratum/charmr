@@ -264,12 +264,12 @@
           <input class="radio" type="radio" name="plan" id="planVip" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f">
           <span class="badge">Lifetime</span>
           <div class="title">Lifetime — Unlimited Chats</div>
-          <div class="price">£99 one‑time</div>
+          <div class="price">£99 one-time</div>
           <p class="desc">All features unlimited. Priority support included.</p>
           <ul class="features">
             <li>All Plus features</li>
             <li>Priority support</li>
-            <li>One‑time payment</li>
+            <li>One-time payment</li>
 	<li>Girls will know you have money, which makes them want you more.</li>
           </ul>
         </div>
@@ -307,6 +307,42 @@
       <div class="loading-sub">You may be asked to complete a quick 3-D Secure check with your bank. Please don’t close this window.</div>
     </div>
   </div>
+
+  <!-- === ADDED: currency symbol swap based on IP geolocation === -->
+  <script>
+  (function () {
+    const EURO_CC = new Set([
+      "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
+      "LV","LT","LU","MT","NL","PT","SK","SI","ES"
+    ]);
+
+    function replacePoundWith(symbol) {
+      try {
+        const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(n => {
+          if (n.nodeValue && n.nodeValue.indexOf("£") !== -1) {
+            n.nodeValue = n.nodeValue.replace(/£/g, symbol);
+          }
+        });
+      } catch (e) {}
+    }
+
+    fetch("https://ipapi.co/json/")
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        const cc = (data && data.country) || "";
+        if (cc === "US") {
+          replacePoundWith("$");
+        } else if (EURO_CC.has(cc)) {
+          replacePoundWith("€");
+        }
+      })
+      .catch(() => {});
+  })();
+  </script>
+  <!-- === END ADDED === -->
 
   <script>
     // Use the same publishable key + backend flow as your current page
