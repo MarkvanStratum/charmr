@@ -181,14 +181,23 @@
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
-    function ensureConv(userId, girlId, girlName){
+    // ---- NEW: helpers to format title & ensure userName support ----
+    function formatTitle(c){
+      const girl = c.girlName ? c.girlName : ('Girl ' + c.girlId);
+      const user = 'User ' + c.userId + (c.userName ? (' (' + c.userName + ')') : '');
+      return `${girl} · ${user}`;
+    }
+
+    function ensureConv(userId, girlId, girlName, userName){
       const k = keyOf(userId, girlId);
       if (!store.byKey.has(k)){
         store.byKey.set(k, {
           key: k,
           userId: Number(userId),
           girlId: Number(girlId),
-          title: `${girlName ? girlName : 'Girl '+girlId} · User ${userId}`,
+          girlName: girlName || null,
+          userName: userName || null,
+          title: "",
           messages: [],
           unread: 0,
           lastTs: 0,        // last message ts (any sender)
@@ -196,14 +205,20 @@
           hasUserReply: false,
           takeover: false
         });
-      } else if (girlName) {
+      } else {
         const cv = store.byKey.get(k);
-        if (cv && cv.title.startsWith('Girl ')) {
-          cv.title = `${girlName} · User ${userId}`;
+        if (girlName && (!cv.girlName || String(cv.girlName).startsWith('Girl '))) {
+          cv.girlName = girlName;
+        }
+        if (userName && !cv.userName) {
+          cv.userName = userName;
         }
       }
-      return store.byKey.get(k);
+      const cv = store.byKey.get(k);
+      cv.title = formatTitle(cv);
+      return cv;
     }
+    // ----------------------------------------------------------------
 
     // ----- Sidebar -----
     function renderSidebar(autoSelectIfNone=true){
@@ -288,6 +303,8 @@
       store.activeKey = key;
       const conv = store.byKey.get(key);
       if (conv){ conv.unread = 0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
+      // Try to load user's name if we don't have it yet
+      maybeLoadUserName(conv);
       renderChat(conv);
     }
 
@@ -311,13 +328,13 @@
 
         let pingNeeded = false;
 
-        // rows: { id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text }
+        // rows: { id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text, userName? }
         for (const r of rows){
           const userId = Number(r.userId);
           const girlId = Number(r.girlId);
           if (!userId || !girlId) continue;
 
-          const cv = ensureConv(userId, girlId, r.girlName);
+          const cv = ensureConv(userId, girlId, r.girlName, r.userName);
           const ts = new Date(r.createdAt).getTime() || Date.now();
 
           // track latest any-message timestamp
@@ -488,6 +505,24 @@ if (!haveOpKey()) {
     setInterval(()=>fetchFeed(false), 5000);           // discover & update list
     setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000); // active chat refresh
 
+    // ---- NEW: lazy fetch user name if missing (optional safe) ----
+    async function maybeLoadUserName(conv){
+      if (!conv || conv.userName || !haveOpKey()) return;
+      try{
+        const r = await fetch(`${base()}/api/operator/user/${conv.userId}`, { headers: opHeader() });
+        if (r.ok){
+          const data = await r.json();
+          const name = data?.name || data?.userName || data?.username;
+          if (name){
+            conv.userName = name;
+            conv.title = formatTitle(conv);
+            if (store.activeKey === conv.key){ renderChat(conv); }
+            renderSidebar(false);
+          }
+        }
+      }catch{}
+    }
+    // ---------------------------------------------------------------
 
     // Boot
     (async function init(){
