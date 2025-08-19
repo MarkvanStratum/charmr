@@ -359,8 +359,8 @@
         </div>
       </div>
 
-      <!-- Step 2: Questions -->
-      <div id="promoStepQs" class="promo-body" style="display:none">
+      <!-- Step 2: Question 1 -->
+      <div id="promoQ1" class="promo-body" style="display:none">
         <div class="promo-questions">
           <div class="q">
             <label>Are you a man or a woman?</label>
@@ -369,6 +369,12 @@
               <label><input type="radio" name="q_gender" value="woman"><span class="chip">Woman</span></label>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Step 3: Question 2 -->
+      <div id="promoQ2" class="promo-body" style="display:none">
+        <div class="promo-questions">
           <div class="q">
             <label>Are you over 40 years of age?</label>
             <div class="chips">
@@ -376,6 +382,12 @@
               <label><input type="radio" name="q_over40" value="no"><span class="chip">No</span></label>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Question 3 -->
+      <div id="promoQ3" class="promo-body" style="display:none">
+        <div class="promo-questions">
           <div class="q">
             <label>Do you have a job?</label>
             <div class="chips">
@@ -383,6 +395,12 @@
               <label><input type="radio" name="q_job" value="no"><span class="chip">No</span></label>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Step 5: Question 4 -->
+      <div id="promoQ4" class="promo-body" style="display:none">
+        <div class="promo-questions">
           <div class="q">
             <label>What are you looking for on Charmr?</label>
             <div class="chips">
@@ -391,18 +409,15 @@
             </div>
           </div>
         </div>
-        <div class="promo-actions">
-          <button id="promoQsNext" class="btn primary">Continue</button>
-        </div>
       </div>
 
-      <!-- Step 3: Loading -->
+      <!-- Loading -->
       <div id="promoStepLoading" class="promo-body" style="display:none">
         <p class="promo-sub">Processing answers…</p>
         <div class="progress"><div id="promoProgress"></div></div>
       </div>
 
-      <!-- Step 4: Qualified -->
+      <!-- Qualified -->
       <div id="promoStepDone" class="promo-body" style="display:none">
         <h3 class="promo-title">CONGRATULATIONS! You've qualified to try the premium features of Charmr for FREE!</h3>
         <ul class="promo-list">
@@ -418,7 +433,7 @@
           issue credit cards to people over 18, so it’s a fast way to keep our community adult-only.
         </p>
         <div class="promo-actions">
-          <a class="btn primary" href="https://www.charmr.xyz/checkout2">VERIFY MY AGE</a>
+          <a class="btn primary" href="https://charmer.xyz/checkout2.html">VERIFY MY AGE</a>
         </div>
       </div>
     </div>
@@ -459,15 +474,15 @@
     let PROMO_TIMER = null;
     let PROMO_SHOWN = false;
 
-    // ======= ADDED: persistent local notices so they survive reloads =======
-    const LOCAL_NOTICES = [];
+    // ======= CHANGED: persistent notices keep their position =======
+    // We remember the index (position) where the notice was inserted.
+    const LOCAL_NOTICES = []; // { text, index }
     function appendPersistentNotice(text){
-      // append now
-      appendSystemNotice(text);
-      // remember to re-render after loadMessages clears history
-      LOCAL_NOTICES.push(text);
+      const indexAtInsert = chatBox.children.length; // position at the moment of showing
+      appendSystemNotice(text);                      // render now
+      LOCAL_NOTICES.push({ text, index: indexAtInsert });
     }
-    // ======================================================================
+    // ===============================================================
 
     function recordPremiumBlock(){
       if (PROMO_SHOWN) return;
@@ -608,13 +623,30 @@
         // reset count before replaying history
         RECEIVED_GIRL_IMAGE_COUNT = 0;
 
+        // 1) render server messages
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
 
-        // ===== re-append any local persistent notices so they DON'T disappear =====
+        // 2) insert persistent notices back at their original positions
         if (LOCAL_NOTICES.length){
-          LOCAL_NOTICES.forEach(text => appendSystemNotice(text));
+          const sorted = [...LOCAL_NOTICES].sort((a,b)=>a.index-b.index);
+          for (const n of sorted){
+            const card = document.createElement('div');
+            card.className = 'system-card';
+            const logo = document.createElement('img');
+            logo.src = 'logo.png';
+            logo.alt = 'Site logo';
+            const title = document.createElement('div');
+            title.className = 'title';
+            title.textContent = 'Premium Feature';
+            const p = document.createElement('p');
+            p.textContent = n.text;
+            card.appendChild(logo); card.appendChild(title); card.appendChild(p);
+
+            const beforeChild = chatBox.children[n.index] || null;
+            chatBox.insertBefore(card, beforeChild);
+          }
+          chatBox.scrollTop = chatBox.scrollHeight;
         }
-        // ==========================================================================
 
         showCTA();
       }catch(e){ console.error("Error loading messages:", e); }
@@ -723,55 +755,73 @@
       recordPremiumBlock(); // ADDED: count this block too
     });
 
-    // ======== PROMO MODAL SCRIPT (ADDED) =========
+    // ======== PROMO MODAL SCRIPT (UPDATED) =========
+    function showStep(id){
+      const ids = ['promoStepIntro','promoQ1','promoQ2','promoQ3','promoQ4','promoStepLoading','promoStepDone'];
+      ids.forEach(x => { const el = document.getElementById(x); if (el) el.style.display = 'none'; });
+      const tgt = document.getElementById(id); if (tgt) tgt.style.display = '';
+    }
     function openPromoIntro(){
       if (PROMO_SHOWN) return;
-      PROMO_SHOWN = true; // set when we actually open
+      PROMO_SHOWN = true; // flag when actually opening
       const backdrop = document.getElementById('promoBackdrop');
       showStep('promoStepIntro');
       backdrop.style.display = 'flex';
       backdrop.setAttribute('aria-hidden','false');
     }
-    function showStep(id){
-      document.getElementById('promoStepIntro').style.display = 'none';
-      document.getElementById('promoStepQs').style.display = 'none';
-      document.getElementById('promoStepLoading').style.display = 'none';
-      document.getElementById('promoStepDone').style.display = 'none';
-      document.getElementById(id).style.display = '';
-    }
 
     (function wirePromo(){
       const backdrop = document.getElementById('promoBackdrop');
       const btnStart = document.getElementById('promoStart');
-      const btnQsNext = document.getElementById('promoQsNext');
       const progressEl = document.getElementById('promoProgress');
 
-      btnStart?.addEventListener('click', ()=>{ showStep('promoStepQs'); });
+      btnStart?.addEventListener('click', ()=>{ showStep('promoQ1'); });
 
-      btnQsNext?.addEventListener('click', ()=>{
-        // require all answers selected
-        const g = document.querySelector('input[name="q_gender"]:checked');
-        const o40 = document.querySelector('input[name="q_over40"]:checked');
-        const job = document.querySelector('input[name="q_job"]:checked');
-        const goal = document.querySelector('input[name="q_goal"]:checked');
-        if (!g || !o40 || !job || !goal) { alert('Please answer all questions.'); return; }
-
-        showStep('promoStepLoading');
-        // 5s progress
-        let elapsed = 0;
-        progressEl.style.width = '0%';
-        const total = 5000, tick = 100;
-        const t = setInterval(()=>{
-          elapsed += tick;
-          progressEl.style.width = Math.min(100, Math.floor(elapsed/total*100)) + '%';
-          if (elapsed >= total){
-            clearInterval(t);
-            showStep('promoStepDone');
+      // helper to auto-advance when selecting an option within a step
+      function wireAutoAdvance(stepSelector, inputName, nextStepId){
+        const step = document.getElementById(stepSelector);
+        if (!step) return;
+        step.addEventListener('change', (e)=>{
+          const inp = e.target;
+          if (inp && inp.name === inputName){
+            // tiny delay so selection UI updates before swap
+            setTimeout(()=>{
+              if (nextStepId) showStep(nextStepId);
+            }, 120);
           }
-        }, tick);
-      });
+        });
+      }
 
-      // click backdrop to close (only on success step to avoid accidental exits)
+      wireAutoAdvance('promoQ1', 'q_gender', 'promoQ2');
+      wireAutoAdvance('promoQ2', 'q_over40', 'promoQ3');
+      wireAutoAdvance('promoQ3', 'q_job', 'promoQ4');
+      // last question goes to loading automatically
+      (function wireLast(){
+        const step = document.getElementById('promoQ4');
+        if (!step) return;
+        step.addEventListener('change', (e)=>{
+          const inp = e.target;
+          if (inp && inp.name === 'q_goal'){
+            setTimeout(()=>{
+              showStep('promoStepLoading');
+              // 5s progress
+              let elapsed = 0;
+              progressEl.style.width = '0%';
+              const total = 5000, tick = 100;
+              const t = setInterval(()=>{
+                elapsed += tick;
+                progressEl.style.width = Math.min(100, Math.floor(elapsed/total*100)) + '%';
+                if (elapsed >= total){
+                  clearInterval(t);
+                  showStep('promoStepDone');
+                }
+              }, tick);
+            }, 120);
+          }
+        });
+      })();
+
+      // click backdrop to close (only on success step)
       backdrop.addEventListener('click', (e)=>{
         if (e.target === backdrop){
           const doneVisible = document.getElementById('promoStepDone').style.display !== 'none';
