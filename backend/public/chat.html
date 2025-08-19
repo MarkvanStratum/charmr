@@ -337,6 +337,8 @@
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message...">
       <button onclick="sendMessage()">Send</button>
+      <!-- ADDED: Send photo button (counts as premium attempt) -->
+      <button id="sendPhotoBtn" type="button">Send photo</button>
     </div>
   </div>
 
@@ -753,6 +755,15 @@
       );
       showCTA();
       recordPremiumBlock(); // ADDED: count this block too
+    });
+
+    // ADDED: Send photo button handler (notice + counts toward promo)
+    document.getElementById('sendPhotoBtn').addEventListener('click', ()=>{
+      appendPersistentNotice(
+        "Sending photos is a Premium feature. Upgrade using the pink button at the bottom to unlock it."
+      );
+      showCTA();
+      recordPremiumBlock();
     });
 
     // ======== PROMO MODAL SCRIPT (UPDATED) =========
