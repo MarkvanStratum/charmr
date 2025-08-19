@@ -123,18 +123,6 @@
     .link-plain{ color:#ef476f; text-decoration:none; font-weight:800 }
   </style>
 
-  <!-- FIRST-TIME VIEW GUARD (mirrors your other page) -->
-  <script>
-    (function(){
-      // If they've already seen this quiz page, send them to profiles
-      if (localStorage.getItem('seenQuizOnce') === 'true') {
-        window.location.href = 'profiles.html';
-        return;
-      }
-      // Mark as seen immediately so it only shows once
-      localStorage.setItem('seenQuizOnce', 'true');
-    })();
-  </script>
 </head>
 <body>
   <!-- Logo + subtitle -->
@@ -172,7 +160,7 @@
           </p>
           <p class="lead">
             <strong>Important:</strong> not everyone gets this opportunity — it’s only offered to a
-            limited number of visitors chosen at random. We do this to encourage erified age verification because of the adult nature of the content on this site and for the legality and safety of our members.
+            limited number of visitors chosen at random. We do this to encourage age verification because of the adult nature of the content on this site and for the legality and safety of our members.
           </p>
           <p class="lead"><strong>Regular price £99</strong> — <span class="lead-cta">your price: FREE</span>.</p>
           <p class="lead small">

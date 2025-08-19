@@ -178,5 +178,43 @@
   </main>
 
   <script src="./signup.js"></script>
+
+  <!-- 🔹 Added redirect logic -->
+  <script>
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const padded = base64.padEnd(base64.length + (4 - base64.length % 4) % 4, '=');
+        return JSON.parse(atob(padded));
+      } catch {
+        return null;
+      }
+    }
+    function getUserIdFromSignup(data) {
+      if (data && data.token) {
+        const payload = parseJwt(data.token);
+        if (payload) {
+          return payload.sub || payload.userId || payload.id || (payload.user && payload.user.id) || null;
+        }
+      }
+      return (data && (data.user?.id || data.id)) || null;
+    }
+
+    // Intercept signup completion if signup.js dispatches a "signupSuccess" event with {detail: data}
+    document.addEventListener("signupSuccess", (e) => {
+      const data = e.detail;
+      localStorage.setItem("token", data.token);
+
+      const userId = getUserIdFromSignup(data);
+      const key = userId ? `quiz_seen_${userId}` : `quiz_seen_unknown`;
+
+      if (!localStorage.getItem(key)) {
+        window.location.href = "https://charmr.xyz/quiz.html";
+      } else {
+        window.location.href = "profiles.html";
+      }
+    });
+  </script>
 </body>
 </html>
