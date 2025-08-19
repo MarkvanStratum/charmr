@@ -394,11 +394,20 @@
         })
       });
 
-      // 4) Confirm first invoice payment (SCA) if required
-      if (!subData.clientSecret) throw new Error("Missing payment client secret.");
-      const returnUrl = `${location.origin}/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
-      const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret, { return_url: returnUrl });
-      if (confirmErr) throw new Error(confirmErr.message || "Payment confirmation failed.");
+      // 4) Handle invoice payment if required, otherwise redirect
+const returnUrl = "https://www.charmr.xyz/thankyou.html?priceId=" + encodeURIComponent(priceId);
+
+if (subData.clientSecret) {
+  // Invoice requires payment/SCA → confirm it
+  const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret, {
+    return_url: returnUrl,
+  });
+  if (confirmErr) throw new Error(confirmErr.message || "Payment confirmation failed.");
+} else {
+  // No PaymentIntent (e.g., free trial) → go straight to thank-you
+  window.location.href = returnUrl;
+}
+
 
       // 5) Success → redirect to thank-you
       window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;

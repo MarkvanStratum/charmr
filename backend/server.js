@@ -3229,15 +3229,27 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
     const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 1 : undefined;
 
     const subscription = await stripe.subscriptions.create({
-      customer: customerId,
-      items: [{ price: priceId }],
-      ...(trial_period_days ? { trial_period_days } : {}),
-      payment_behavior: 'default_incomplete', // SCA-safe when first invoice is due
-      metadata: { userId: String(req.user.id), planPriceId: priceId },
-      expand: ['latest_invoice.payment_intent'],
-    });
+  customer: customerId,
+  items: [{ price: priceId }],
+  ...(trial_period_days ? { trial_period_days } : {}),
+  payment_behavior: 'default_incomplete', // SCA-safe when first invoice is due
+  metadata: { userId: String(req.user.id), planPriceId: priceId },
+  expand: ['latest_invoice.payment_intent'],
+});
 
-    res.json({ subscriptionId: subscription.id, status: subscription.status });
+// 👇 add this instead of the old res.json
+const latestInvoice = subscription.latest_invoice;
+let clientSecret = null;
+if (latestInvoice && latestInvoice.payment_intent && typeof latestInvoice.payment_intent !== 'string') {
+  clientSecret = latestInvoice.payment_intent.client_secret;
+}
+
+res.json({
+  subscriptionId: subscription.id,
+  status: subscription.status,
+  clientSecret, // now returned to the frontend
+});
+
   } catch (e) {
     console.error('Subscription create error:', e);
     res.status(500).json({ error: 'subscription_create_failed' });
