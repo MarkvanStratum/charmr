@@ -70,10 +70,9 @@ function toBool(x) {
   return false;
 }
 
-// ---------- Auth (User) ----------
 function authenticateToken(req, res, next) {
   const auth = req.headers.authorization || "";
-  the tok = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  const tok = auth.startsWith("Bearer ") ? auth.slice(7) : null; // ← FIXED
   if (!tok) return res.status(401).json({ error: "No token" });
   try {
     const obj = jwt.verify(tok, JWT_SECRET);
