@@ -56,22 +56,6 @@
     .kv { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
     .kv > div { display:flex; flex-direction:column; }
     .kv input { width:240px; }
-
-    /* NEW: Neutral system notice card (mirrors chat.html look) */
-    .system-card{
-      background:#ffffff;
-      border:1px solid #ffd1dc;
-      border-radius:12px;
-      padding:12px;
-      margin:8px auto;
-      text-align:center;
-      color:#333;
-      box-shadow:0 2px 8px rgba(0,0,0,.05);
-      max-width:92%;
-    }
-    .system-card img{ height:24px; margin-bottom:6px; }
-    .system-card .title{ font-weight:800; margin-bottom:6px; }
-    .system-card p{ margin:4px 0 0; font-size:14px; line-height:1.35; }
   </style>
 </head>
 <body>
@@ -221,20 +205,6 @@
       return store.byKey.get(k);
     }
 
-    // Contact-sharing detector (same idea as chat.html)
-    function isContactAttempt(text) {
-      if (!text) return false;
-      const patterns = [
-        /@/i,
-        /\b(whats?app|telegram|snap(chat)?|instagram|insta|tg|wechat|signal|viber)\b/i,
-        /\b(phone|number|call|text|dm|pm)\b/i,
-        /https?:\/\/|www\./i,
-        /\b\d{3}[-.\s]?\d{3}[-.\s]?\d{4}\b/,
-        /\b\+?\d{1,3}[-.\s]?\d{6,14}\b/
-      ];
-      return patterns.some(re => re.test(text));
-    }
-
     // ----- Sidebar -----
     function renderSidebar(autoSelectIfNone=true){
       els.convList.innerHTML = '';
@@ -244,6 +214,7 @@
       const list = listAll
         .filter(c => c.hasUserReply)
         .sort((a,b)=>{
+          // newest user replies on top; fallback to lastTs
           const au = a.lastUserTs || 0, bu = b.lastUserTs || 0;
           if (bu !== au) return bu - au;
           return (b.lastTs||0) - (a.lastTs||0);
@@ -284,6 +255,7 @@
 
     // ----- Chat -----
     function forceScrollToBottom(){
+      // always keep viewport pinned to newest message
       els.chatBox.scrollTop = els.chatBox.scrollHeight;
     }
 
@@ -308,18 +280,6 @@
         bubble.appendChild(content); bubble.appendChild(meta);
         wrap.appendChild(bubble);
         els.chatBox.appendChild(wrap);
-
-        // NEW: show official site notice right after a user's contact attempt
-        if (m.from_user && isContactAttempt(m.text)) {
-          const card = document.createElement('div');
-          card.className = 'system-card';
-          card.innerHTML = `
-            <img src="logo.png" alt="Site logo">
-            <div class="title">Premium Feature</div>
-            <p>Sharing numbers, WhatsApp, emails or links is a Premium feature. The user sees a prompt to upgrade in chat.</p>
-          `;
-          els.chatBox.appendChild(card);
-        }
       }
       forceScrollToBottom();
     }
@@ -360,8 +320,10 @@
           const cv = ensureConv(userId, girlId, r.girlName);
           const ts = new Date(r.createdAt).getTime() || Date.now();
 
+          // track latest any-message timestamp
           if (ts > cv.lastTs) cv.lastTs = ts;
 
+          // if message is from user, mark flags, lastUserTs, unread
           if (r.from === 'user'){
             cv.hasUserReply = true;
             if (ts > cv.lastUserTs) cv.lastUserTs = ts;
@@ -384,10 +346,10 @@
     // ----- Conversation fetch -----
     async function fetchMessages(conv){
       if (!conv) return;
-      if (!haveOpKey()) {
-        els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
-        return;
-      }
+if (!haveOpKey()) {
+  els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
+  return;
+}
 
       try{
         const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
@@ -513,6 +475,9 @@
     // Keep chat pinned to bottom even on resize
     window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
 
+        // Keep chat pinned to bottom even on resize
+    window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
+
     // When the operator key is filled in, auto-load messages for the active chat
     els.opKey.addEventListener('input', () => {
       const c = store.byKey.get(store.activeKey);
@@ -522,6 +487,7 @@
     // ----- Poll -----
     setInterval(()=>fetchFeed(false), 5000);           // discover & update list
     setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000); // active chat refresh
+
 
     // Boot
     (async function init(){
