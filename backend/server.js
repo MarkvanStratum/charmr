@@ -6,10 +6,30 @@ import multer from "multer";
 import fetch from "node-fetch";
 import { Pool } from "pg";
 import SibApiV3Sdk from "sib-api-v3-sdk";
+import path from "path";                 // <-- added
+import fs from "fs";                     // <-- added
+import { fileURLToPath } from "url";     // <-- added
+
+// Resolve __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);   // <-- added
+const __dirname = path.dirname(__filename);          // <-- added
 
 const app = express();
 app.use(express.json({ limit: "4mb" }));
 app.use(cors());
+
+// Serve static assets (root and optional /public)  <-- added
+app.use(express.static(path.join(__dirname), { extensions: ["html","htm","css","js"] }));
+try {
+  app.use(express.static(path.join(__dirname, "public"), { extensions: ["html","htm","css","js"] }));
+} catch { /* ok if /public doesn't exist */ }
+
+// Explicit admin route (supports root/admin.html or public/admin.html)  <-- added
+app.get(["/admin", "/admin.html"], (req, res) => {
+  const rootAdmin = path.join(__dirname, "admin.html");
+  const publicAdmin = path.join(__dirname, "public", "admin.html");
+  res.sendFile(fs.existsSync(rootAdmin) ? rootAdmin : publicAdmin);
+});
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "devsecret";
@@ -53,7 +73,7 @@ function toBool(x) {
 // ---------- Auth (User) ----------
 function authenticateToken(req, res, next) {
   const auth = req.headers.authorization || "";
-  const tok = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+  the tok = auth.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!tok) return res.status(401).json({ error: "No token" });
   try {
     const obj = jwt.verify(tok, JWT_SECRET);
