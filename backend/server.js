@@ -6,30 +6,10 @@ import multer from "multer";
 import fetch from "node-fetch";
 import { Pool } from "pg";
 import SibApiV3Sdk from "sib-api-v3-sdk";
-import path from "path";                 // <-- added
-import fs from "fs";                     // <-- added
-import { fileURLToPath } from "url";     // <-- added
-
-// Resolve __dirname in ESM
-const __filename = fileURLToPath(import.meta.url);   // <-- added
-const __dirname = path.dirname(__filename);          // <-- added
 
 const app = express();
 app.use(express.json({ limit: "4mb" }));
 app.use(cors());
-
-// Serve static assets (root and optional /public)  <-- added
-app.use(express.static(path.join(__dirname), { extensions: ["html","htm","css","js"] }));
-try {
-  app.use(express.static(path.join(__dirname, "public"), { extensions: ["html","htm","css","js"] }));
-} catch { /* ok if /public doesn't exist */ }
-
-// Explicit admin route (supports root/admin.html or public/admin.html)  <-- added
-app.get(["/admin", "/admin.html"], (req, res) => {
-  const rootAdmin = path.join(__dirname, "admin.html");
-  const publicAdmin = path.join(__dirname, "public", "admin.html");
-  res.sendFile(fs.existsSync(rootAdmin) ? rootAdmin : publicAdmin);
-});
 
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = process.env.JWT_SECRET || "devsecret";
@@ -70,9 +50,70 @@ function toBool(x) {
   return false;
 }
 
+// ---------- RESTORED STATIC PROFILES + FIRST MESSAGES ----------
+
+// Static girl profiles (from your backup)
+const profiles = [
+  { id: 1,  name: "Amber Taylor",  city: "Oxford",     image: "https://notadatingsite.online/pics/1.png",  description: "a bit mental, a bit sweet 🤪🍭 depends how u treat me lol" },
+  { id: 2,  name: "Mia Smith",     city: "Bath",       image: "https://notadatingsite.online/pics/2.png",  description: "snap me if u cute 😜💌 got a soft spot 4 accents n cheeky grins" },
+  { id: 3,  name: "Chloe Moore",   city: "Aberdeen",   image: "https://notadatingsite.online/pics/3.png",  description: "wat u see is wat u get 😉 cheeky smile n even cheekier mind lol 😈" },
+  { id: 4,  name: "Skye Bennett",  city: "Liverpool",  image: "https://notadatingsite.online/pics/4.png",  description: "jus here 4 banter n belly laffs 😂💃 slide in if ur tall n not dull x" },
+  { id: 5,  name: "Ruby Davies",   city: "Leicester",  image: "https://notadatingsite.online/pics/5.png",  description: "just a norty gal lookin 4 sum fun 🥴🥂 dnt b shy luv 😏 holla innit 💋" },
+  { id: 6,  name: "Niamh Davies",  city: "Cardiff",    image: "https://notadatingsite.online/pics/6.png",  description: "just a norty gal lookin 4 sum fun 🥴🥂 dnt b shy luv 😏 holla innit 💋" },
+  { id: 7,  name: "Ruby Clarke",   city: "Newcastle",  image: "https://notadatingsite.online/pics/7.png",  description: "no filter. no drama. jus vibes 😎💃 sum1 show me a gud time pls x" },
+  { id: 8,  name: "Daisy Evans",   city: "Derby",      image: "https://notadatingsite.online/pics/8.png",  description: "wat u see is wat u get 😉 cheeky smile n even cheekier mind lol 😈" },
+  { id: 9,  name: "Chloe White",   city: "York",       image: "https://notadatingsite.online/pics/9.png",  description: "jus on here coz me mate told me 2 😂 bored af tbh... suprise me? 🤣" },
+  { id: 10, name: "Lexi Turner",   city: "Bristol",    image: "https://notadatingsite.online/pics/10.png", description: "bit of a madhead 🤪 love a giggle, takeaway n sum company 👀😆 slide in if u can keep up x" },
+  { id: 11, name: "Millie Watson", city: "Hull",       image: "https://notadatingsite.online/pics/11.png", description: "picky but worth it 💅💋 here for da vibes n sum flirty chats 😘" },
+];
+const profileById = new Map(profiles.map(p => [p.id, p]));
+
+// Pool of 100 first messages (restored concept; varied, flirty, SFW)
+const FIRST_MESSAGES = [
+  "Hey you 😊", "Hi there 👋", "Hello stranger 😉", "You popped up on my screen 😇",
+  "Heyyy, how’s your day?", "Look who I found 😏", "Fancy a chat? 💬", "You seem fun 😄",
+  "What’s good?", "Miss me already? 😂", "Well hello there 😌", "Finally found you 🙈",
+  "Thought I’d say hi 💕", "How’s your evening going?", "Be honest—tea or coffee? ☕️",
+  "I like your vibe already 😎", "Tell me a secret 🤫", "Guess my favorite emoji 😜",
+  "What are you up to right now?", "I’m in the mood for banter 😂", "Sundays = lazy cuddles 🥱",
+  "You look like trouble (good kind) 😈", "Where are you from?", "Your smile caught me 😌",
+  "I’m a sucker for accents 👂", "We’re a match, aren’t we? 😏", "Spill—cats or dogs? 🐶🐱",
+  "Late-night chats are the best 🌙", "Rate your day out of 10?", "Tell me your dream holiday ✈️",
+  "I’ll go first if you do 😇", "Bet you can’t guess my type 😉", "Ice breaker: pineapple on pizza? 🍍",
+  "I’ve got stories… you in? 😅", "You seem cheeky already 😜", "Let’s skip small talk 😌",
+  "I’m a hugger. You? 🤗", "What’s your red flag? 😂", "Bold move saying hi—respect 👊",
+  "You look like fun on a night out 🍹", "We’d get along, I can tell 😌", "I’m picky but worth it 💅",
+  "Be honest: gym or naps? 💤", "Tell me your best joke 😄", "I talk in memes sometimes 💀",
+  "Your energy is immaculate ✨", "Say something sweet 😘", "I’m bored—entertain me 😆",
+  "Would we be chaos or cute? 😇", "Walks or wine? 🚶‍♂️🍷", "I make great playlists 🎶",
+  "I burn toast but try my best 😂", "Tell me about your tattoos 👀", "What’s your go-to order? 🍔",
+  "I love a cheeky grin 😏", "Bet you can’t make me blush 😳", "So… what’s your love language? 💞",
+  "Spontaneous or planner?", "Talk to me like we’ve met", "Are you flirting already? 👀",
+  "I’m trouble with a smile 😉", "We’d make a good team 😌", "You + me + pizza = yes 🍕",
+  "Night owl or early bird? 🐦", "Rainy day plans?", "Teach me something new 📚",
+  "Tell me your guilty pleasure 😏", "I’m a sucker for good banter 😂", "Voice notes or texts?",
+  "Two truths & a lie—go!", "We need a cute selfie pact 🤳", "What’s your star sign? ✨",
+  "If we matched irl, I’d say hi first 😌", "You look like the cuddly type 🥰",
+  "Dare you to impress me 😜", "We feel like a plot twist 📖", "Let’s start a little chaos 😈",
+  "Describe your perfect date 💫", "Be mine for a minute? ⏱️", "I like fearless energy 🔥",
+  "Binge-watch buddy? 📺", "I make elite hot chocolate ☕️", "Tell me a fun fact about you",
+  "Okay, but who hurt you? 😅", "You’re kinda my type ngl 😌", "I bring snacks to dates 🍫",
+  "Kisses or cuddles? 😘", "Best concert you’ve been to?", "You’re giving main character vibes 🎬",
+  "I will judge your music taste 😏", "Wanna swap embarrassing stories? 😂",
+  "I’m soft but spicy 🌶️", "Fancy being my favorite person today? 💖",
+  "What’s your green flag? ✅", "We should do something silly soon 🤪",
+  "Tell me how you like your eggs 🍳", "Beach or city break? 🏖️🏙️",
+  "I bet you smell nice 😂", "What tattoo should I get?", "Let’s plan an imaginary date 😌",
+  "You feel familiar somehow 😇", "I’m blushing already 😳", "I’m stealing your hoodie btw 🧥",
+  "Okay your turn—say hi properly 😜", "I’m a walking red flag… kidding (mostly) 😂",
+  "You can call me yours for now 💕", "Shots or mocktails? 🥃🍹", "Dance with me? 💃",
+  "I like you already. Oops. 😅", "We’re gonna be fun, I can tell 😈"
+];
+
+// ---------- Auth (User) ----------
 function authenticateToken(req, res, next) {
   const auth = req.headers.authorization || "";
-  const tok = auth.startsWith("Bearer ") ? auth.slice(7) : null; // ← FIXED
+  const tok = auth.startsWith("Bearer ") ? auth.slice(7) : null;
   if (!tok) return res.status(401).json({ error: "No token" });
   try {
     const obj = jwt.verify(tok, JWT_SECRET);
@@ -123,10 +164,15 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-// Girls list (static/demo)
+// Girls list (static/demo via DB)
 app.get("/api/girls", async (_req, res) => {
   const { rows } = await pool.query("SELECT id, name, image FROM girls ORDER BY id ASC");
   ok(res, rows);
+});
+
+// RESTORED: Return static profiles list
+app.get("/api/profiles", (_req, res) => {
+  ok(res, profiles);
 });
 
 // Fetch messages for a logged-in user + a girl
@@ -174,6 +220,29 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
   } catch (e) {
     console.error("chat error", e);
     bad(res, "Chat failed", 500);
+  }
+});
+
+// RESTORED: Send a random “first message” from the girl to the user
+app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
+  try {
+    const userId = Number(req.user.id);
+    const girlId = Number(req.body?.girlId);
+    if (!girlId) return bad(res, "girlId required");
+
+    // Pick a random first message
+    const text = FIRST_MESSAGES[Math.floor(Math.random() * FIRST_MESSAGES.length)] || "Hi 👋";
+
+    // Insert as if sent by the girl
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1,$2,false,$3)`,
+      [userId, girlId, text]
+    );
+
+    ok(res, { ok: true, text });
+  } catch (e) {
+    console.error("send-initial-message error", e);
+    bad(res, "Failed to send initial message", 500);
   }
 });
 
