@@ -459,6 +459,16 @@
     let PROMO_TIMER = null;
     let PROMO_SHOWN = false;
 
+    // ======= ADDED: persistent local notices so they survive reloads =======
+    const LOCAL_NOTICES = [];
+    function appendPersistentNotice(text){
+      // append now
+      appendSystemNotice(text);
+      // remember to re-render after loadMessages clears history
+      LOCAL_NOTICES.push(text);
+    }
+    // ======================================================================
+
     function recordPremiumBlock(){
       if (PROMO_SHOWN) return;
       PREMIUM_BLOCK_COUNT++;
@@ -467,7 +477,6 @@
         PROMO_TIMER = setTimeout(()=>{ openPromoIntro(); }, 15000); // wait 15s after last block
       }
     }
-    // ==========================================
 
     // Keep CTA visible
     function showCTA(){ ctaBar.style.display = 'block'; }
@@ -600,6 +609,13 @@
         RECEIVED_GIRL_IMAGE_COUNT = 0;
 
         data.forEach(msg => appendMessage(msg.text, msg.from_user ? "user" : "girl"));
+
+        // ===== re-append any local persistent notices so they DON'T disappear =====
+        if (LOCAL_NOTICES.length){
+          LOCAL_NOTICES.forEach(text => appendSystemNotice(text));
+        }
+        // ==========================================================================
+
         showCTA();
       }catch(e){ console.error("Error loading messages:", e); }
     }
@@ -645,9 +661,9 @@
       const messageText = input.value.trim();
       if (!messageText) return;
 
-      // Contact sharing -> system notice (not from girl)
+      // Contact sharing -> system notice (not from girl) + persist + count block
       if (isContactAttempt(messageText) && !IS_PREMIUM) {
-        appendSystemNotice(
+        appendPersistentNotice(
           "Sharing numbers, WhatsApp, emails or links is a Premium feature. Upgrade using the pink button at the bottom to unlock it."
         );
         showCTA();
@@ -695,12 +711,12 @@
       }
     }
 
-    // Gift clicks -> system notice (not from girl)
+    // Gift clicks -> system notice (not from girl) + persist + count block
     document.getElementById('giftBar').addEventListener('click', (e)=>{
       const chip = e.target.closest('.gift-chip');
       if (!chip) return;
       const label = chip.getAttribute('title') || 'gift';
-      appendSystemNotice(
+      appendPersistentNotice(
         `Sending ${label.toLowerCase()} is a Premium feature. Upgrade using the pink button at the bottom to unlock gifts & pics.`
       );
       showCTA();
@@ -710,7 +726,7 @@
     // ======== PROMO MODAL SCRIPT (ADDED) =========
     function openPromoIntro(){
       if (PROMO_SHOWN) return;
-      PROMO_SHOWN = true;
+      PROMO_SHOWN = true; // set when we actually open
       const backdrop = document.getElementById('promoBackdrop');
       showStep('promoStepIntro');
       backdrop.style.display = 'flex';
