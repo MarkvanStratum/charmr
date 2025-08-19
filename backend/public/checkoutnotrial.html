@@ -9,7 +9,7 @@
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag(){dataLayer.push(arguments);} 
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8');
   </script>
@@ -42,9 +42,15 @@
       min-height:100vh;
       display:flex;
       align-items:center;
+      /* FIX: avoid vertical centering on small screens so the first plan isn't clipped */
       justify-content:center;
       padding:24px;
       color:var(--ink);
+    }
+    /* Mobile/top-cutoff fix */
+    @media (max-width:900px){
+      body{ align-items:stretch; justify-content:flex-start; }
+    }
     }
 
     .shell{
@@ -64,7 +70,8 @@
       color:#fff;
       padding:16px 20px;
     }
-    .header img{ width:40px; height:40px; border-radius:50%; background:#fff; object-fit:cover; }
+    
+    
     .header h1{ font-size:20px; margin:0; }
     .sub{ font-size:13px; opacity:.95; margin-top:2px; }
 
@@ -90,7 +97,7 @@
       border:1px solid var(--ring);
       border-radius:var(--radius);
       box-shadow:0 2px 8px rgba(0,0,0,.05);
-      padding:18px;
+      padding:18px 18px 20px;
       display:flex; flex-direction:column;
       position:relative;
     }
@@ -103,9 +110,9 @@
       border-radius:999px; padding:4px 10px; font-weight:700; letter-spacing:.2px;
     }
     .title{ font-size:18px; font-weight:800; margin:10px 0 4px; color:#d81b60; }
-    .price{ font-weight:900; font-size:28px; margin:4px 0 12px; }
+    .price{ font-weight:900; font-size:18px; line-height:1.4; margin:4px 0 10px; }
     .desc{ color:var(--muted); font-size:14px; margin:0 0 10px; }
-    ul.features{ margin:10px 0 0; padding-left:18px; color:#444; font-size:14px; }
+    ul.features{ margin:8px 0 0; padding-left:18px; color:#444; font-size:14px; }
     ul.features li{ margin:6px 0; }
     .card input[type="radio"]{ accent-color:#ef476f }
 
@@ -171,62 +178,99 @@
     }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
     .loading-sub{ font-size:12px; color:#555; margin-top:8px }
+      /* --- Mobile top-cutoff hardening --- */
+    @media (max-width:900px){
+      /* ensure the layout starts at the top of the viewport on phones */
+      body{ justify-content:flex-start; }
+      /* let the first plan breathe below the header radius and avoid clipping */
+      .shell{ overflow:visible; }
+      .plans{ margin-top:12px; }
+      .card{ scroll-margin-top:20px; }
+      .card:first-child{ margin-top:8px; }
+    }
+      /* Top logo bar (from original checkout) */
+    .logo-bar{
+      width:min(980px,100%);
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:14px 12px;
+      margin:0 auto 12px;
+      box-shadow:0 4px 14px rgba(15,23,42,.06);
+      text-align:center;
+    }
+    .logo-bar img{ max-height:48px; width:auto }
+    .logo-sub{ margin:6px 0 0; font-size:12px; color:#475569; font-weight:600 }
+      /* Stack top logo above content instead of side-by-side */
+    body{ flex-direction:column; align-items:center; justify-content:flex-start; }
   </style>
 </head>
 <body>
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  
+
+  <div class="logo-bar">
+    <img src="logo.png" alt="Charmr Logo"/>
+    <p class="logo-sub">Secure, discreet, and easy to cancel.</p>
+  </div>
 
   <div class="shell">
     <div class="header">
-      <img src="logo.png" alt="Charmr Logo"/>
       <div>
-        <h1>Upgrade to Charmr Premium</h1>
-        <div class="sub">Unlock contact sharing, unlimited pictures, gifts & more.</div>
+        <!-- Text replaced with the copy from your existing checkout -->
+        <h1>Start Your Free Trial</h1>
+        <div class="sub">The first day is <strong>free</strong>. After the trial, your chosen plan renews automatically until cancelled. You can cancel in Settings at any time.</div>
       </div>
     </div>
 
     <div class="content">
       <!-- Plans (three options with radios) -->
       <div class="plans" role="group" aria-label="Subscription plans">
-        <!-- £5/mo -->
+        <!-- Starter (formerly £5/mo card) -->
         <div class="card">
           <input class="radio" type="radio" name="plan" id="plan5" value="price_1Rsdy1EJXIhiKzYGOtzvwhUH" checked>
           <span class="badge">Starter</span>
-          <div class="title">Basic Access</div>
-          <div class="price">£5<span style="font-size:14px;font-weight:700">/mo</span></div>
-          <p class="desc">Great if you’re just getting started.</p>
+          <div class="title">Starter — Personal Chats</div>
+          <div class="price">Free today, then £0.16/day</div>
+          <p class="desc">Receive unlimited pictures, send pictures, send gifts and unlimited chat. Cancel anytime.</p>
           <ul class="features">
-            <li>Messages included</li>
-            <li>Receive up to 2 pictures</li>
-            <li>Gift suggestions</li>
+            <li>Unlimited chat</li>
+            <li>Receive & send pictures</li>
+            <li>Send gifts</li>
           </ul>
         </div>
 
-        <!-- £20/mo -->
+        <!-- Plus (formerly £20/mo card) -->
         <div class="card pop">
           <input class="radio" type="radio" name="plan" id="plan20" value="price_1RsdzREJXIhiKzYG45b69nSl">
           <span class="badge">Most Popular</span>
-          <div class="title">Premium</div>
-          <div class="price">£20<span style="font-size:14px;font-weight:700">/mo</span></div>
-          <p class="desc">Unlock all premium features.</p>
+          <div class="title">Plus — Share Contacts</div>
+          <div class="price">Free today, then £0.66/day</div>
+          <p class="desc">Receive unlimited pictures, send pictures, send gifts, contact/social sharing, unlimited chat.</p>
           <ul class="features">
+	<li>Unlimited chat</li>
+            <li>Contact & social sharing</li>
             <li>Unlimited pictures</li>
-            <li>Contact & links sharing</li>
-            <li>Send gifts & priority replies</li>
+		<li>Send gifts</li>
+            <li>Priority replies</li>
           </ul>
         </div>
 
-        <!-- VIP £990 / 6 months -->
+        <!-- Lifetime (replacing VIP text) -->
         <div class="card">
           <input class="radio" type="radio" name="plan" id="planVip" value="price_1Rt6NcEJXIhiKzYGMsEZFd8f">
-          <span class="badge">VIP</span>
-          <div class="title">VIP Access</div>
-          <div class="price">£990<span style="font-size:14px;font-weight:700">/6 mo</span></div>
-          <p class="desc">White-glove service & exclusive perks.</p>
+          <span class="badge">Lifetime</span>
+          <div class="title">Lifetime — Unlimited Chats</div>
+          <div class="price">£99 one‑time</div>
+          <p class="desc">All features unlimited. Priority support included.</p>
           <ul class="features">
-            <li>All Premium features</li>
-            <li>Fast-lane support</li>
-            <li>Early feature access</li>
+            <li>All Plus features</li>
+            <li>Priority support</li>
+            <li>One‑time payment</li>
+	<li>Girls will know you have money, which makes them want you more.</li>
           </ul>
         </div>
       </div>
@@ -352,11 +396,12 @@
 
       // 4) Confirm first invoice payment (SCA) if required
       if (!subData.clientSecret) throw new Error("Missing payment client secret.");
-      const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret);
+      const returnUrl = `${location.origin}/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
+      const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret, { return_url: returnUrl });
       if (confirmErr) throw new Error(confirmErr.message || "Payment confirmation failed.");
 
       // 5) Success → redirect to thank-you
-      window.location.href = "https://www.charmr.xyz/thankyou.html";
+      window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
     }
 
     form.addEventListener("submit", async (e) => {
