@@ -53,7 +53,11 @@
     .composer input[type="text"] { flex:1; min-width:260px; }
     .helper { font-size:12px; color:var(--sub); }
 
-    /* system note */
+    .kv { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+    .kv > div { display:flex; flex-direction:column; }
+    .kv input { width:240px; }
+
+    /* NEW: Neutral system notice card (mirrors chat.html look) */
     .system-card{
       background:#ffffff;
       border:1px solid #ffd1dc;
@@ -149,9 +153,9 @@
 
   <script>
     // ---------- Config ----------
-    const FEED_PATH = '/api/operator/feed';
-    const FEED_LIMIT = 100;
-    const ONLINE_MS = 2 * 60 * 1000;
+    const FEED_PATH = '/api/operator/feed';   // same as feed.html
+    const FEED_LIMIT = 100;                   // initial slice
+    const ONLINE_MS = 2 * 60 * 1000;          // user considered online if last user msg < 2 min
     // ----------------------------
 
     // Elements
@@ -187,10 +191,9 @@
 
     // Store
     const store = {
-      byKey: new Map(),        // key: `${userId}-${girlId}`
+      byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
       lastNow: null,
-      nameCache: new Map(),    // userId -> "First Last"
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
@@ -201,53 +204,24 @@
           key: k,
           userId: Number(userId),
           girlId: Number(girlId),
-          girlName: girlName || null,
-          userName: null,
           title: `${girlName ? girlName : 'Girl '+girlId} · User ${userId}`,
           messages: [],
           unread: 0,
-          lastTs: 0,
-          lastUserTs: 0,
+          lastTs: 0,        // last message ts (any sender)
+          lastUserTs: 0,    // last USER msg ts (for sorting/online)
           hasUserReply: false,
           takeover: false
         });
       } else if (girlName) {
         const cv = store.byKey.get(k);
         if (cv && cv.title.startsWith('Girl ')) {
-          cv.girlName = girlName;
           cv.title = `${girlName} · User ${userId}`;
         }
       }
       return store.byKey.get(k);
     }
 
-    // Normalizers for mixed shapes
-    function parseSender(r){
-      if (typeof r?.from_user === 'boolean') return r.from_user ? 'user' : 'girl';
-      if (typeof r?.fromUser === 'boolean')   return r.fromUser  ? 'user' : 'girl';
-      const f = (r?.from || '').toString().toLowerCase();
-      if (['user','u','customer'].includes(f)) return 'user';
-      if (['girl','g','agent','bot'].includes(f)) return 'girl';
-      return null;
-    }
-    function parseTimestamp(r){
-      let t = r?.createdAt ?? r?.created_at ?? r?.timestamp ?? r?.ts;
-      if (typeof t === 'number') return t;
-      if (typeof t === 'string'){
-        const num = Number(t);
-        if (!Number.isNaN(num) && /^\d+$/.test(t.trim())) return t.trim().length === 10 ? num*1000 : num;
-        const d = Date.parse(t); if (!Number.isNaN(d)) return d;
-      }
-      return Date.now();
-    }
-    function extractUserName(r){
-      const first = r?.userFirstName || r?.firstName || '';
-      const last  = r?.userLastName  || r?.lastName  || '';
-      const name  = r?.userName || [first,last].filter(Boolean).join(' ').trim();
-      return name || null;
-    }
-
-    // Contact-sharing detector (context helper)
+    // Contact-sharing detector (same idea as chat.html)
     function isContactAttempt(text) {
       if (!text) return false;
       const patterns = [
@@ -265,6 +239,7 @@
     function renderSidebar(autoSelectIfNone=true){
       els.convList.innerHTML = '';
 
+      // Only show conversations where the user has replied at least once
       const listAll = [...store.byKey.values()];
       const list = listAll
         .filter(c => c.hasUserReply)
@@ -278,14 +253,13 @@
         const item = document.createElement('div');
         item.className = 'conv' + (store.activeKey===c.key ? ' active':'');
 
-        const metaName = c.userName ? ` (${c.userName})` : '';
         const left = document.createElement('div');
-        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId}${metaName} · g:${c.girlId}</div>`;
+        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
         item.appendChild(left);
 
-        const online = Date.now() - (c.lastUserTs||0) < ONLINE_MS;
+        // online dot (based on lastUserTs recency)
         const dot = document.createElement('div');
-        dot.className = 'dot' + (online ? ' online' : '');
+        dot.className = 'dot' + ((Date.now() - (c.lastUserTs||0) < ONLINE_MS) ? ' online' : '');
         item.appendChild(dot);
 
         if (c.unread>0){
@@ -299,9 +273,9 @@
       }
 
       if (list.length===0){
-        els.convList.innerHTML = '<div class="helper" style="padding:10px">No chats with user replies yet.<br/><br/>If you just added your Operator Key, give it a second or start a test chat.</div>';
+        els.convList.innerHTML = '<div class="helper">No chats with user replies yet.</div>';
       } else if (!store.activeKey && autoSelectIfNone){
-        selectConversation(list[0].key);
+        selectConversation(list[0].key); // open the newest user-reply thread
       }
 
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
@@ -309,14 +283,15 @@
     }
 
     // ----- Chat -----
-    function forceScrollToBottom(){ els.chatBox.scrollTop = els.chatBox.scrollHeight; }
+    function forceScrollToBottom(){
+      els.chatBox.scrollTop = els.chatBox.scrollHeight;
+    }
 
     function renderChat(conv){
-      if (!conv){ els.chatTitle.textContent = 'No chat selected'; els.chatBox.innerHTML=''; return; }
-      const nameSuffix = conv.userName ? ` — ${conv.userName}` : '';
-      els.chatTitle.textContent = conv.title + nameSuffix;
+      els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
       els.liveBanner.style.display = conv?.takeover ? '' : 'none';
       els.chatBox.innerHTML = '';
+      if (!conv) return;
 
       for (const m of conv.messages){
         const wrap = document.createElement('div'); wrap.style.display='flex';
@@ -328,19 +303,20 @@
         else { content.textContent = m.text; }
 
         const meta = document.createElement('div'); meta.className='meta';
-        meta.textContent = new Date(m.created_at || m.createdAt || Date.now()).toLocaleString();
+        meta.textContent = new Date(m.created_at).toLocaleString();
 
         bubble.appendChild(content); bubble.appendChild(meta);
         wrap.appendChild(bubble);
         els.chatBox.appendChild(wrap);
 
+        // NEW: show official site notice right after a user's contact attempt
         if (m.from_user && isContactAttempt(m.text)) {
           const card = document.createElement('div');
           card.className = 'system-card';
           card.innerHTML = `
             <img src="logo.png" alt="Site logo">
             <div class="title">Premium Feature</div>
-            <p>The user attempted to share contact details. They see an upgrade prompt in chat.</p>
+            <p>Sharing numbers, WhatsApp, emails or links is a Premium feature. The user sees a prompt to upgrade in chat.</p>
           `;
           els.chatBox.appendChild(card);
         }
@@ -348,45 +324,14 @@
       forceScrollToBottom();
     }
 
-    function showChatError(msg){
-      els.chatBox.innerHTML = `<div class="helper" style="padding:12px;color:#b91c1c">${msg}</div>`;
-    }
-
     function selectConversation(key){
       store.activeKey = key;
       const conv = store.byKey.get(key);
-      if (conv){
-        conv.unread = 0;
-        renderSidebar(false);      // keep selection highlighted
-        renderChat(conv);          // show title immediately
-        fetchMessages(conv);       // then fetch messages
-        checkTakeover(conv);
-      } else {
-        renderChat(null);
-      }
+      if (conv){ conv.unread = 0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
+      renderChat(conv);
     }
 
-    // ---------- Flexible GET helper (tries multiple endpoint shapes) ----------
-    async function GET_json_fallback(urls, headers){
-      for (const u of urls){
-        try{
-          const r = await fetch(u, { headers });
-          if (r.ok){
-            const data = await r.json();
-            return { ok:true, status:r.status, url:u, data };
-          }
-          if (r.status !== 404){
-            const text = await r.text().catch(()=> '');
-            return { ok:false, status:r.status, url:u, error:text || `HTTP ${r.status}` };
-          }
-        }catch(e){
-          /* try next */
-        }
-      }
-      return { ok:false, status:404, url:urls[urls.length-1], error:'HTTP 404' };
-    }
-
-    // ----- FEED (auth; schema-agnostic) -----
+    // ----- FEED (same semantics as feed.html) -----
     async function fetchFeed(initial=false){
       try{
         const params = new URLSearchParams();
@@ -396,15 +341,8 @@
         const url = `${base()}${FEED_PATH}?${params.toString()}`;
         els.feedUrl.textContent = FEED_PATH;
 
-        const res = await fetch(url, { headers: opHeader() });
-        if (!res.ok){
-          els.feedStatus.textContent = `HTTP ${res.status}`;
-          if (res.status === 401) {
-            // helpful hint if no/invalid key
-            document.getElementById('convList').innerHTML = '<div class="helper" style="padding:10px">Unauthorized (401). Enter a valid <strong>Operator Key</strong> above to load the feed.</div>';
-          }
-          return;
-        }
+        const res = await fetch(url);
+        if (!res.ok){ els.feedStatus.textContent = `HTTP ${res.status}`; return; }
 
         const payload = await res.json();
         const rows = Array.isArray(payload?.rows) ? payload.rows : [];
@@ -413,25 +351,18 @@
 
         let pingNeeded = false;
 
-        // rows: { id, userId/user_id, girlId/girl_id, girlName, from/from_user, text, createdAt/created_at, [names?] }
+        // rows: { id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text }
         for (const r of rows){
-          const userId = Number(r.userId ?? r.user_id);
-          const girlId = Number(r.girlId ?? r.girl_id);
+          const userId = Number(r.userId);
+          const girlId = Number(r.girlId);
           if (!userId || !girlId) continue;
 
-          const cv = ensureConv(userId, girlId, r.girlName || r.girl_name || null);
+          const cv = ensureConv(userId, girlId, r.girlName);
+          const ts = new Date(r.createdAt).getTime() || Date.now();
 
-          const maybeName = extractUserName(r);
-          if (maybeName) {
-            cv.userName = maybeName;
-            store.nameCache.set(userId, maybeName);
-          }
-
-          const ts = parseTimestamp(r);
           if (ts > cv.lastTs) cv.lastTs = ts;
 
-          const sender = parseSender(r);
-          if (sender === 'user'){
+          if (r.from === 'user'){
             cv.hasUserReply = true;
             if (ts > cv.lastUserTs) cv.lastUserTs = ts;
             if (store.activeKey !== cv.key){
@@ -450,59 +381,30 @@
       }
     }
 
-    // ----- Conversation fetch (now resilient to 404 path changes) -----
+    // ----- Conversation fetch -----
     async function fetchMessages(conv){
       if (!conv) return;
-
       if (!haveOpKey()) {
-        showChatError('Enter your <strong>Operator Key</strong> above to load messages for this chat.');
+        els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
         return;
       }
 
-      const urls = [
-        `${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`,
-        `${base()}/api/operator/messages/${conv.userId}/${conv.girlId}`,
-        `${base()}/api/operator/messages/${conv.girlId}?userId=${conv.userId}`,
-        `${base()}/api/admin/messages?userId=${conv.userId}&girlId=${conv.girlId}`,
-      ];
+      try{
+        const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
+          headers: opHeader()
+        });
+        if (!r.ok) return;
+        const data = await r.json();
+        if (!Array.isArray(data)) return;
 
-      const res = await GET_json_fallback(urls, opHeader());
-
-      if (!res.ok){
-        if (res.status === 401) { showChatError('Unauthorized. Check your Operator Key.'); return; }
-        if (res.status === 404) { showChatError('Messages endpoint not found (404). Check server routes.'); return; }
-        showChatError(`Failed to load messages (${res.error || 'unknown error'}).`);
-        return;
-      }
-
-      const payload = res.data;
-      const msgs = Array.isArray(payload) ? payload
-                  : (Array.isArray(payload?.messages) ? payload.messages : []);
-
-      if (!Array.isArray(msgs)){
-        showChatError('Unexpected response from server.');
-        return;
-      }
-
-      conv.messages = msgs;
-      if (msgs.length){
-        const last = msgs[msgs.length-1];
-        conv.lastTs = new Date(last.created_at || last.createdAt || Date.now()).getTime() || Date.now();
-
-        const lastUser = [...msgs].reverse().find(m => m.from_user === true || m.fromUser === true);
-        if (lastUser){
-          const t = new Date(lastUser.created_at || lastUser.createdAt || Date.now()).getTime() || Date.now();
-          conv.lastUserTs = Math.max(conv.lastUserTs || 0, t);
-          conv.hasUserReply = true;
+        conv.messages = data;
+        if (data.length){
+          const last = data[data.length-1];
+          conv.lastTs = new Date(last.created_at).getTime() || Date.now();
         }
-      }
-
-      if (!conv.userName && store.nameCache.get(conv.userId)) {
-        conv.userName = store.nameCache.get(conv.userId);
-      }
-
-      renderChat(conv);
-      renderSidebar(false);
+        renderChat(conv);
+        renderSidebar(false);
+      }catch(e){ /* silent */ }
     }
 
     // ----- Takeover status -----
@@ -598,7 +500,7 @@
       const gid = Number(els.manualGirlId.value);
       if (!uid || !gid) return;
       const c = ensureConv(uid, gid);
-      c.hasUserReply = true;
+      c.hasUserReply = true; // force show if you add manually
       renderSidebar(); selectConversation(c.key);
       els.manualUserId.value=''; els.manualGirlId.value=''; els.manualForm.style.display = 'none';
     };
@@ -611,22 +513,19 @@
     // Keep chat pinned to bottom even on resize
     window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
 
-    // When the operator key is filled in, auto-load messages & feed
+    // When the operator key is filled in, auto-load messages for the active chat
     els.opKey.addEventListener('input', () => {
       const c = store.byKey.get(store.activeKey);
-      if (haveOpKey()) {
-        fetchFeed(true);
-        if (c) fetchMessages(c);
-      }
+      if (c && haveOpKey()) fetchMessages(c);
     });
 
     // ----- Poll -----
-    setInterval(()=>fetchFeed(false), 5000);
-    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000);
+    setInterval(()=>fetchFeed(false), 5000);           // discover & update list
+    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000); // active chat refresh
 
     // Boot
     (async function init(){
-      await fetchFeed(true);
+      await fetchFeed(true); // initial slice
     })();
   </script>
 </body>
