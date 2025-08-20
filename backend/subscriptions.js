@@ -9,11 +9,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-
    PLAN & ENTITLEMENTS
 ---------------------------------------------------------------------------*/
 
-// Map your Stripe price IDs here (fill in your real price ids)
+// Map your Stripe price IDs here (use the exact IDs used in server.js)
 export const PRICE_IDS = {
-  PLUS_5_GBP_MONTH: process.env.PRICE_5_GBP_MONTH,       // £5/mo (gifts + images)
-  PRO_20_GBP_MONTH: process.env.PRICE_20_GBP_MONTH,      // £20/mo (+ contact sharing)
-  ULTRA_99_GBP_6MO: process.env.PRICE_99_GBP_6MO,        // £99/6mo (everything unlimited)
+  PLUS_5_GBP_MONTH: "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5/mo (gifts + images)
+  PRO_20_GBP_MONTH: "price_1RsdzREJXIhiKzYG45b69nSl", // £20/mo (+ contact sharing)
+  ULTRA_99_GBP_6MO: "price_1Rt6NcEJXIhiKzYGMsEZFd8f", // £99/6mo (everything unlimited)
 };
 
 // Normalize to a "tier" string you can use everywhere in code.
