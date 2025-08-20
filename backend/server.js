@@ -1173,24 +1173,38 @@ app.get("/api/me/entitlements", authenticateToken, async (req, res) => {
   }
 });
 
+// 🔹 Gift images map (expects files under /public/gifts/*)
+const GIFT_IMAGE_MAP = {
+  flowers: "flowers.png",
+  chocolates: "chocolates.png",
+  ring: "ring.png",
+  puppy: "puppy.png",
+};
+
 // 🔹 NEW: protected USER routes (gift / photo / contact sharing)
 // These mirror your existing operator sends but enforce plan features.
 // Frontend can call these; operator endpoints remain unchanged.
 
-// Send a gift (text format: GIFT:<type>)
+// Send a gift → now sends as an IMAGE:<url> message using the map above
 app.post("/api/gifts/send", authenticateToken, requireEntitlement(pool, "send_gift"), async (req, res) => {
   try {
     const userId = req.user.id;
     const { girlId, giftType } = req.body || {};
     if (!girlId || !giftType) return res.status(400).json({ error: "girlId and giftType are required" });
 
-    const text = `GIFT:${String(giftType).toLowerCase()}`;
+    const key = String(giftType).toLowerCase().trim();
+    const file = GIFT_IMAGE_MAP[key];
+    if (!file) return res.status(400).json({ error: "Unknown gift type" });
+
+    const finalUrl = `${req.protocol}://${req.get("host")}/gifts/${file}`;
+    const text = `IMAGE:${finalUrl}`;
+
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text)
        VALUES ($1,$2,true,$3)`,
       [Number(userId), Number(girlId), text]
     );
-    res.json({ ok: true });
+    res.json({ ok: true, url: finalUrl, gift: key });
   } catch (e) {
     console.error("Gift send error:", e);
     res.status(500).json({ error: "Failed to send gift" });
