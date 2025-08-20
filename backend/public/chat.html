@@ -684,7 +684,7 @@
     // Try new entitlements endpoint; fall back to credits/lifetime
     async function refreshEntitlements(){
       try{
-        const r = await fetch(`${backendUrl}/api/entitlements`, {
+        const r = await fetch(`${backendUrl}/api/me/entitlements`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (r.ok){
