@@ -726,14 +726,28 @@
       const messageText = input.value.trim();
       if (!messageText) return;
 
-      // Contact sharing gating: allowed only if ENTITLEMENTS.canShareContacts
-      if (isContactAttempt(messageText) && !ENTITLEMENTS.canShareContacts) {
-        appendPersistentNotice(
-          "Sharing numbers, WhatsApp, emails or links is a Premium feature (included in the £20/mo plan and VIP). Tap the pink button below to upgrade."
-        );
-        showCTA();
-        recordPremiumBlock();
-        return;
+      // Contact sharing gating
+      if (isContactAttempt(messageText)) {
+        if (!ENTITLEMENTS.canShareContacts) {
+          appendPersistentNotice(
+            "Sharing numbers, WhatsApp, emails or links is a Premium feature (included in the £20/mo plan and VIP). Tap the pink button below to upgrade."
+          );
+          showCTA();
+          recordPremiumBlock();
+          return;
+        } else {
+          // Allowed: use protected endpoint so server logs CONTACT: properly
+          appendMessage(messageText, 'user');
+          input.value = '';
+          try {
+            await fetch(`${backendUrl}/api/contacts/share`, {
+              method: "POST",
+              headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ girlId, contactText: messageText })
+            });
+          } catch(e) { console.error("Contact share failed:", e); }
+          return;
+        }
       }
 
       appendMessage(messageText, 'user');
@@ -777,7 +791,7 @@
     }
 
     // Gift clicks -> allow if entitlement, else block + promo
-    document.getElementById('giftBar').addEventListener('click', (e)=>{
+    document.getElementById('giftBar').addEventListener('click', async (e)=>{
       const chip = e.target.closest('.gift-chip');
       if (!chip) return;
       const label = chip.getAttribute('title') || 'gift';
@@ -791,17 +805,18 @@
         return;
       }
 
-      // If allowed, post a lightweight "gift" message to the thread so AI reacts
-      const giftMsg = `GIFT:${(label || 'gift').toUpperCase()}`;
+      // Allowed: send via protected endpoint so server enforces plan
       appendMessage(`You sent a ${label.toLowerCase()} 💝`, 'user');
-      fetch(`${backendUrl}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ girlId, message: giftMsg })
-      }).catch(()=>{});
+      try{
+        await fetch(`${backendUrl}/api/gifts/send`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ girlId, giftType: label.toLowerCase() })
+        });
+      }catch(err){ console.error("Gift send failed:", err); }
     });
 
-    // SEND PHOTO: click -> file picker; if allowed, embed as IMAGE: data URL
+    // SEND PHOTO: click -> file picker; if allowed, upload via protected endpoint
     const photoBtn = document.getElementById('sendPhotoBtn');
     const photoInput = document.getElementById('photoInput');
 
@@ -817,28 +832,33 @@
       photoInput.click();
     });
 
-    photoInput.addEventListener('change', ()=>{
+    photoInput.addEventListener('change', async ()=>{
       const file = photoInput.files && photoInput.files[0];
       if (!file) return;
 
-      // Simple client-side send: embed as base64 so it renders immediately
-      // (Note: this stores the data URI in your DB via /api/chat)
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const dataUrl = reader.result; // data:image/...
-        appendMessage(`IMAGE:${dataUrl}`, 'user'); // will render on replay too
-        try{
-          await fetch(`${backendUrl}/api/chat`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-            body: JSON.stringify({ girlId, message: `IMAGE:${dataUrl}` })
-          });
-        }catch(e){ console.error("Photo send failed:", e); }
-      };
-      reader.readAsDataURL(file);
+      // Upload using multipart to /api/photos/send (server will return the hosted URL)
+      try {
+        const fd = new FormData();
+        fd.append("girlId", String(girlId));
+        fd.append("image", file);
 
-      // reset input so selecting same file again still triggers change
-      photoInput.value = "";
+        const resp = await fetch(`${backendUrl}/api/photos/send`, {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` },
+          body: fd
+        });
+        const data = await resp.json();
+        if (data?.ok && data?.url) {
+          appendMessage(`IMAGE:${data.url}`, 'user');
+        } else {
+          appendPersistentNotice("Photo upload failed. Please try again.");
+        }
+      } catch (e) {
+        console.error("Photo send failed:", e);
+        appendPersistentNotice("Photo upload failed. Please try again.");
+      } finally {
+        photoInput.value = "";
+      }
     });
 
     // ======== PROMO MODAL SCRIPT =========

@@ -5,7 +5,9 @@ import pkg from "pg";
 const { Pool } = pkg;
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" });
 
-// ---- PLAN & ENTITLEMENTS -------------------------------------------------
+/* -------------------------------------------------------------------------
+   PLAN & ENTITLEMENTS
+---------------------------------------------------------------------------*/
 
 // Map your Stripe price IDs here (fill in your real price ids)
 export const PRICE_IDS = {
@@ -34,6 +36,7 @@ export function computeEntitlements({ tier = "free", status = "inactive", trialE
     status: isActive ? (onTrial ? "trialing" : "active") : "inactive",
     canSendGifts: false,
     canSendImages: false,
+    // IMPORTANT: avoid Infinity because JSON → null; use a big finite number instead
     maxReceivedImagesUnblurred: 2, // non-paying: only first 2 visible
     canShareContacts: false,
   };
@@ -41,32 +44,37 @@ export function computeEntitlements({ tier = "free", status = "inactive", trialE
   if (!isActive) return base;
 
   if (tier === "plus") {
-    return { ...base,
+    return {
+      ...base,
       canSendGifts: true,
       canSendImages: true,
-      maxReceivedImagesUnblurred: Infinity,
+      maxReceivedImagesUnblurred: 9999,
     };
   }
   if (tier === "pro") {
-    return { ...base,
+    return {
+      ...base,
       canSendGifts: true,
       canSendImages: true,
-      maxReceivedImagesUnblurred: Infinity,
+      maxReceivedImagesUnblurred: 9999,
       canShareContacts: true,
     };
   }
   if (tier === "ultra") {
-    return { ...base,
+    return {
+      ...base,
       canSendGifts: true,
       canSendImages: true,
-      maxReceivedImagesUnblurred: Infinity,
+      maxReceivedImagesUnblurred: 9999,
       canShareContacts: true,
     };
   }
   return base;
 }
 
-// ---- DB -------------------------------------------------------------------
+/* -------------------------------------------------------------------------
+   DB
+---------------------------------------------------------------------------*/
 
 export async function ensureSubscriptionTables(pool) {
   await pool.query(`
@@ -118,7 +126,8 @@ export async function upsertSubscription(pool, { userId, stripeCustomerId, strip
     if (stripeSubscription.current_period_end) current_period_end = new Date(stripeSubscription.current_period_end * 1000);
   }
 
-  await pool.query(`
+  await pool.query(
+    `
     INSERT INTO subscriptions (user_id, stripe_customer_id, stripe_subscription_id, tier, status, current_period_end, trial_end, cancel_at_period_end, updated_at)
     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
     ON CONFLICT (user_id) DO UPDATE SET
@@ -130,7 +139,9 @@ export async function upsertSubscription(pool, { userId, stripeCustomerId, strip
       trial_end = EXCLUDED.trial_end,
       cancel_at_period_end = EXCLUDED.cancel_at_period_end,
       updated_at = NOW();
-  `, [userId, stripeCustomerId || null, stripe_subscription_id, tier, status, current_period_end, trial_end, cancel_at_period_end]);
+  `,
+    [userId, stripeCustomerId || null, stripe_subscription_id, tier, status, current_period_end, trial_end, cancel_at_period_end]
+  );
 }
 
 export async function getUserSubscription(pool, userId) {
@@ -149,7 +160,9 @@ export function entitlementsFromRow(row) {
   });
 }
 
-// ---- Middleware -----------------------------------------------------------
+/* -------------------------------------------------------------------------
+   Middleware
+---------------------------------------------------------------------------*/
 
 // Put this in front of routes like "send photo", "send gift", "share contact"
 export function requireEntitlement(pool, capability) {
@@ -162,15 +175,18 @@ export function requireEntitlement(pool, capability) {
       const rights = entitlementsFromRow(sub);
 
       const gate = {
-        "send_gift": rights.canSendGifts,
-        "send_image": rights.canSendImages,
-        "share_contact": rights.canShareContacts,
+        send_gift: rights.canSendGifts,
+        send_image: rights.canSendImages,
+        share_contact: rights.canShareContacts,
       }[capability];
 
-      if (!gate) return res.status(402).json({ // 402 Payment Required (semantically nice here)
-        error: "Feature requires a higher plan",
-        entitlements: rights
-      });
+      if (!gate) {
+        return res.status(402).json({
+          // 402 Payment Required (semantically nice here)
+          error: "Feature requires a higher plan",
+          entitlements: rights,
+        });
+      }
 
       next();
     } catch (e) {
@@ -180,7 +196,9 @@ export function requireEntitlement(pool, capability) {
   };
 }
 
-// ---- Stripe Webhook handler ----------------------------------------------
+/* -------------------------------------------------------------------------
+   Stripe Webhook handler
+---------------------------------------------------------------------------*/
 
 export function stripeWebhookHandler(pool) {
   return async (req, res) => {
@@ -201,17 +219,17 @@ export function stripeWebhookHandler(pool) {
           const customerId = session.customer;
           const subscriptionId = session.subscription;
 
-          // Load the subscription from Stripe
-          const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+          if (subscriptionId) {
+            const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+            const userId = Number(session.metadata?.userId) || Number(stripeSub?.metadata?.userId);
 
-          // Find the user by metadata (or by your own linkage to stripe_customer_id)
-          const userId = Number(session.metadata?.userId);
-          if (userId) {
-            await upsertSubscription(pool, {
-              userId,
-              stripeCustomerId: customerId,
-              stripeSubscription: stripeSub,
-            });
+            if (userId) {
+              await upsertSubscription(pool, {
+                userId,
+                stripeCustomerId: customerId,
+                stripeSubscription: stripeSub,
+              });
+            }
           }
           break;
         }
@@ -220,24 +238,43 @@ export function stripeWebhookHandler(pool) {
         case "customer.subscription.updated":
         case "customer.subscription.deleted": {
           const stripeSub = event.data.object;
-          // Look up your user by stored stripe_customer_id
           const customerId = stripeSub.customer;
 
-          const { rows } = await pool.query(
-            `SELECT id FROM users WHERE id IN (
-               SELECT user_id FROM subscriptions WHERE stripe_customer_id = $1
-             )`,
-            [customerId]
-          );
+          // Prefer metadata.userId that we set when creating the subscription
+          let userId = Number(stripeSub?.metadata?.userId);
 
-          // If we don’t have a row yet, we’ll need another mapping strategy.
-          // Ideally, we stored userId in metadata when creating the Checkout Session.
-          if (rows[0]) {
+          // Fallback #1: Look up an existing row by customer id
+          if (!userId) {
+            const { rows } = await pool.query(
+              `SELECT user_id FROM subscriptions WHERE stripe_customer_id = $1 LIMIT 1`,
+              [customerId]
+            );
+            userId = rows?.[0]?.user_id ? Number(rows[0].user_id) : null;
+          }
+
+          // Fallback #2: Read Customer metadata (we set metadata.userId when creating the Customer)
+          if (!userId && customerId) {
+            try {
+              const cust = await stripe.customers.retrieve(customerId);
+              userId = Number(cust?.metadata?.userId) || null;
+            } catch (e) {
+              // ignore
+            }
+          }
+
+          if (userId) {
             await upsertSubscription(pool, {
-              userId: rows[0].id,
+              userId,
               stripeCustomerId: customerId,
               stripeSubscription: stripeSub,
             });
+          } else {
+            console.warn(
+              "Could not resolve userId for subscription event; customerId=",
+              customerId,
+              "subId=",
+              stripeSub?.id
+            );
           }
           break;
         }
@@ -247,12 +284,14 @@ export function stripeWebhookHandler(pool) {
           const invoice = event.data.object;
           const customerId = invoice.customer;
 
-          // Set to 'past_due' (or 'inactive') to lock features
-          await pool.query(`
+          await pool.query(
+            `
             UPDATE subscriptions
               SET status='past_due', updated_at=NOW()
               WHERE stripe_customer_id=$1
-          `, [customerId]);
+          `,
+            [customerId]
+          );
 
           break;
         }
