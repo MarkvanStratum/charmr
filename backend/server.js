@@ -22,7 +22,8 @@ import {
   entitlementsFromRow,
   getUserSubscription,
   requireEntitlement,
-  stripeWebhookHandler
+  stripeWebhookHandler,
+  upsertSubscription
 } from "./subscriptions.js";
 
 // Define __dirname for ES modules
@@ -959,6 +960,13 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
   expand: ['latest_invoice.payment_intent'],
 });
 
+// 🔑 Immediately mirror Stripe state in DB so entitlements unlock without waiting for webhooks
+await upsertSubscription(pool, {
+  userId: req.user.id,
+  stripeCustomerId: customerId,
+  stripeSubscription: subscription,
+});
+
 // 👇 add this instead of the old res.json
 const latestInvoice = subscription.latest_invoice;
 let clientSecret = null;
@@ -1034,7 +1042,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       const amountMap = {
         "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,
         "price_1RsdzREJXIhiKzYG45b69nSl": 50,
-        "price_1Rse1SEJXIhiKzYGhUalpwBS": "lifetime"
+        "price_1Rse1SEJXIhiKzYhUalpwBS": "lifetime"
       };
 
       const value = amountMap[priceId];
