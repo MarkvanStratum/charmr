@@ -16,6 +16,15 @@ import { sendPasswordResetEmail } from './email.js';
 import fs from "fs";
 import multer from "multer";
 
+// 🔹 NEW: central subscription logic (keeps this file small)
+import {
+  ensureSubscriptionTables,
+  entitlementsFromRow,
+  getUserSubscription,
+  requireEntitlement,
+  stripeWebhookHandler
+} from "./subscriptions.js";
+
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -179,6 +188,9 @@ app.get("/api/get-stripe-session", async (req, res) => {
       ON operator_overrides(user_id, girl_id) WHERE is_active = true;
     `);
 
+    // 🔹 NEW: make sure subscriptions table exists (centralized entitlements)
+    await ensureSubscriptionTables(pool);
+
     console.log("✅ Tables are ready");
   } catch (err) {
     console.error("❌ Error creating tables:", err);
@@ -221,7 +233,7 @@ const profiles = [
     "city": "Leicester",
     "image": "https://notadatingsite.online/pics/5.png",
     "description": "just a norty gal lookin 4 sum fun \ud83e\udd74\ud83e\udd42 dnt b shy luv \ud83d\ude0f holla innit \ud83d\udc8b"
-  },
+  } ,
   {
     "id": 6,
     "name": "Niamh Davies",
@@ -2840,22 +2852,6 @@ app.post("/api/takeover/stop", authenticateOperator, async (req, res) => {
   }
 });
 
-// 🔹 NEW: operator send (text as the girl)
-app.post("/api/operator/send", authenticateOperator, async (req, res) => {
-  const { userId, girlId, text } = req.body || {};
-  try {
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,false,$3)`,
-      [Number(userId), Number(girlId), text]
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    console.error(e);
-    res.status(500).json({ error: "Failed to send operator message" });
-  }
-});
-
 // 🔹 NEW: image upload config + operator send image
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, UPLOAD_DIR),
@@ -3285,6 +3281,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 
 
 
+// 🔹 KEEP your existing webhook at /webhook (credits, etc.)
 import bodyParser from "body-parser"; // Add this at the top if not present
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
@@ -3420,6 +3417,99 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   }
 
   res.status(200).send('Received');
+});
+
+// 🔹 NEW: dedicated webhook for entitlements (keeps your existing /webhook intact)
+//    Add this endpoint in Stripe Dashboard as another webhook endpoint.
+app.post(
+  "/webhook-subscriptions",
+  express.raw({ type: "application/json" }),
+  stripeWebhookHandler(pool)
+);
+
+// 🔹 NEW: expose current entitlements to the frontend (chat.html will call this)
+app.get("/api/me/entitlements", authenticateToken, async (req, res) => {
+  try {
+    const sub = await getUserSubscription(pool, req.user.id);
+    const rights = entitlementsFromRow(sub);
+    res.json(rights);
+  } catch (e) {
+    console.error("Entitlements error:", e);
+    res.status(500).json({ error: "Failed to load entitlements" });
+  }
+});
+
+// 🔹 NEW: protected USER routes (gift / photo / contact sharing)
+// These mirror your existing operator sends but enforce plan features.
+// Frontend can call these; operator endpoints remain unchanged.
+
+// Send a gift (text format: GIFT:<type>)
+app.post("/api/gifts/send", authenticateToken, requireEntitlement(pool, "send_gift"), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { girlId, giftType } = req.body || {};
+    if (!girlId || !giftType) return res.status(400).json({ error: "girlId and giftType are required" });
+
+    const text = `GIFT:${String(giftType).toLowerCase()}`;
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,true,$3)`,
+      [Number(userId), Number(girlId), text]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Gift send error:", e);
+    res.status(500).json({ error: "Failed to send gift" });
+  }
+});
+
+// Send a user image (multipart 'image' OR JSON { imageUrl })
+app.post("/api/photos/send", authenticateToken, requireEntitlement(pool, "send_image"), upload.single("image"), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { girlId, imageUrl } = req.body || {};
+    if (!girlId) return res.status(400).json({ error: "girlId is required" });
+
+    let finalUrl = imageUrl;
+    if (req.file) {
+      finalUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    }
+    if (!finalUrl) return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
+
+    const text = `IMAGE:${finalUrl}`;
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,true,$3)`,
+      [Number(userId), Number(girlId), text]
+    );
+    res.json({ ok: true, url: finalUrl });
+  } catch (e) {
+    console.error("User photo send error:", e);
+    res.status(500).json({ error: "Failed to send photo" });
+  }
+});
+
+// Share contact (unblocks contact info exchange on paid tiers)
+app.post("/api/contacts/share", authenticateToken, requireEntitlement(pool, "share_contact"), async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { girlId, contactText } = req.body || {};
+    if (!girlId || !contactText) return res.status(400).json({ error: "girlId and contactText are required" });
+
+    const sanitized = String(contactText).trim();
+    if (!sanitized) return res.status(400).json({ error: "Empty contactText" });
+
+    const text = `CONTACT:${sanitized}`;
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,true,$3)`,
+      [Number(userId), Number(girlId), text]
+    );
+    res.json({ ok: true });
+  } catch (e) {
+    console.error("Share contact error:", e);
+    res.status(500).json({ error: "Failed to share contact" });
+  }
 });
 
 app.post('/api/create-checkout-session', async (req, res) => {
