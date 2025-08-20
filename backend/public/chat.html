@@ -462,15 +462,6 @@
     document.getElementById('chatPhoto').src = girl.image;
     document.getElementById('giftGirlName').textContent = (girl.name || 'her').split(' ')[0];
 
-    // ===== FRONTEND mirror of gift image map (to show instantly) =====
-    const GIFT_IMAGE_MAP = {
-      flowers: "flowers.png",
-      chocolates: "chocolates.png",
-      ring: "ring.png",
-      puppy: "puppy.png",
-    };
-    // =================================================================
-
     // state
     let TAKEOVER = false;
     let pollTimer = null;   // takeover-only polling
@@ -814,25 +805,13 @@
         return;
       }
 
-      // Normalize to server keys (server expects 'chocolates' not 'chocolate')
-      const rawKey = (label || '').toLowerCase().trim(); // flowers | ring | chocolate | puppy
-      const key = rawKey === 'chocolate' ? 'chocolates' : rawKey;
-
-      // Optimistically show the gift image immediately
-      const file = GIFT_IMAGE_MAP[key];
-      if (file){
-        const url = `${backendUrl}/gifts/${file}`;
-        appendMessage(`IMAGE:${url}`, 'user');
-      } else {
-        appendMessage(`You sent a ${label.toLowerCase()} 💝`, 'user');
-      }
-
-      // Send to server (which will also store IMAGE:<url>)
+      // Allowed: send via protected endpoint so server enforces plan
+      appendMessage(`You sent a ${label.toLowerCase()} 💝`, 'user');
       try{
         await fetch(`${backendUrl}/api/gifts/send`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ girlId, giftType: key })
+          body: JSON.stringify({ girlId, giftType: label.toLowerCase() })
         });
       }catch(err){ console.error("Gift send failed:", err); }
     });
