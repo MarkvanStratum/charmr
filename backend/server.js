@@ -221,7 +221,8 @@ const profiles = [
     "city": "Aberdeen",
     "image": "https://notadatingsite.online/pics/3.png",
     "description": "wat u see is wat u get \ud83d\ude09 cheeky smile n even cheekier mind lol \ud83d\ude08"
-  }  ,{
+  },
+{
     "id": 4,
     "name": "Skye Bennett",
     "city": "Liverpool",
