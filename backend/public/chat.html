@@ -530,43 +530,56 @@
         msgDiv.classList.add('typing');
         msgDiv.textContent = '...';
       } else {
-        // NOTE: match IMAGE: anywhere in the string (not just at start)
-        const m = /IMAGE:\s*([^\s<>"']+)/i.exec(text || "");
-        const tag = !m ? /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(text || "") : null;
-        const urlOnly = (!m && !tag) ? /(https?:\/\/[^\s"'()]+?\.(?:png|jpe?g|gif|webp))(?:[^\s"')]*)?/i.exec(text || "") : null;
-
-        if (m || tag || urlOnly){
-          const url = m ? m[1] : (tag ? tag[1] : urlOnly[1]);
+        /* NEW: Render GIFT:<type> as an image from /images/<type>.png */
+        const g = /^GIFT:\s*(flowers|ring|chocolate|puppy)\b/i.exec(text || "");
+        if (g){
+          const name = g[1].toLowerCase();
           const wrap = document.createElement('div');
           wrap.className = 'image-wrap';
-
           const img = document.createElement('img');
-          img.src = url;
-          img.alt = 'image';
-          img.loading = 'eager';
-          img.decoding = 'sync';
-          img.referrerPolicy = 'no-referrer';
+          img.src = `/images/${name}.png`;
+          img.alt = `${name} gift`;
           wrap.appendChild(img);
+          msgDiv.appendChild(wrap);
+        } else {
+          // NOTE: match IMAGE: anywhere in the string (not just at start)
+          const m = /IMAGE:\s*([^\s<>"']+)/i.exec(text || "");
+          const tag = !m ? /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(text || "") : null;
+          const urlOnly = (!m && !tag) ? /(https?:\/\/[^\s"'()]+?\.(?:png|jpe?g|gif|webp))(?:[^\s"')]*)?/i.exec(text || "") : null;
 
-          if (sender === 'girl') {
-            RECEIVED_GIRL_IMAGE_COUNT += 1;
-            const limit = ENTITLEMENTS.maxReceivedImagesUnblurred ?? FREE_IMAGE_LIMIT;
-            const isBlur = !(ENTITLEMENTS.canSendImages) && RECEIVED_GIRL_IMAGE_COUNT > limit; // free users see only first N unblurred
-            if (isBlur) {
-              wrap.classList.add('locked');
-              const overlay = document.createElement('div');
-              overlay.className = 'image-overlay';
-              overlay.innerHTML = `
+          if (m || tag || urlOnly){
+            const url = m ? m[1] : (tag ? tag[1] : urlOnly[1]);
+            const wrap = document.createElement('div');
+            wrap.className = 'image-wrap';
+
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = 'image';
+            img.loading = 'eager';
+            img.decoding = 'sync';
+            img.referrerPolicy = 'no-referrer';
+            wrap.appendChild(img);
+
+            if (sender === 'girl') {
+              RECEIVED_GIRL_IMAGE_COUNT += 1;
+              const limit = ENTITLEMENTS.maxReceivedImagesUnblurred ?? FREE_IMAGE_LIMIT;
+              const isBlur = !(ENTITLEMENTS.canSendImages) && RECEIVED_GIRL_IMAGE_COUNT > limit; // free users see only first N unblurred
+              if (isBlur) {
+                wrap.classList.add('locked');
+                const overlay = document.createElement('div');
+                overlay.className = 'image-overlay';
+                overlay.innerHTML = `
                 <div>You've received the maximum amount of pictures on your current plan. Click the button below to upgrade to premium to receive more pictures.</div>
                 <a href="https://charmr.xyz/checkout.html">Upgrade to Premium</a>
               `;
-              wrap.appendChild(overlay);
+                wrap.appendChild(overlay);
+              }
             }
-          }
 
-          msgDiv.appendChild(wrap);
-        } else {
-          msgDiv.textContent = text;
+            msgDiv.appendChild(wrap);
+          } else {
+            msgDiv.textContent = text;
+          }
         }
       }
       chatBox.appendChild(msgDiv);
