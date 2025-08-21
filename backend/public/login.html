@@ -179,8 +179,13 @@
           localStorage.removeItem("cachedMessages"); // prevent data leaks between users
           alert("Login successful!");
 
-          // Redirect logic: send everyone to quiz.html after login
-          window.location.href = "quiz.html";
+          // Redirect logic: first login -> quiz.html, subsequent logins -> profiles.html
+          if (!localStorage.getItem("hasCompletedQuiz")) {
+            localStorage.setItem("hasCompletedQuiz", "true");
+            window.location.href = "quiz.html";
+          } else {
+            window.location.href = "profiles.html";
+          }
 
         } else {
           alert(data.error || "Login failed. Please check your credentials.");
