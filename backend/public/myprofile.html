@@ -67,6 +67,10 @@
     <p><strong>Email:</strong> <span id="email">Loading...</span></p>
     <p><strong>Credits left:</strong> <span id="credits">Loading...</span></p>
     <p><strong>Lifetime access:</strong> <span id="lifetime">Loading...</span></p>
+
+    <!-- 🔹 Subscription plan panel -->
+    <div id="subscription-panel" style="margin-top:14px;"></div>
+
     <div class="profile-buttons">
       <button>Edit Profile</button>
       <button onclick="logout()">Logout</button>
@@ -103,17 +107,109 @@
           : `${creditData.credits} messages`;
         document.getElementById("lifetime").innerText = creditData.lifetime ? "Yes ✅" : "No";
 
+        // 🔹 After profile basics, load subscription block
+        await loadSubscriptionPanel(token);
+
       } catch (err) {
         console.error("Profile error:", err);
         alert("Could not load your profile.");
       }
     }
 
+    // 🔹 Subscription panel logic
+    async function loadSubscriptionPanel(token) {
+      const target = document.getElementById('subscription-panel');
+      if (!target) return;
+
+      const labelMap = {
+        free: 'Free',
+        plus: 'Plus (£5/mo)',
+        pro: 'Pro (£20/mo)',
+        ultra: 'Ultra (£99 / 6mo)'
+      };
+
+      function fmt(d) {
+        try { return new Date(d).toLocaleString(); } catch { return d || ''; }
+      }
+
+      target.innerHTML = 'Loading subscription...';
+      try {
+        const r = await fetch('/api/me/subscription', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        });
+        if (!r.ok) throw new Error('Failed to load subscription');
+        const sub = await r.json();
+
+        const tierName = labelMap[sub.tier] || sub.tier || 'Free';
+        const isPaid = sub.tier && sub.tier !== 'free' && sub.status !== 'inactive';
+        const willCancel = !!sub.cancelAtPeriodEnd;
+
+        let html = `
+          <div style="padding:12px;border:1px solid #eee;border-radius:8px;background:#faf7ff;text-align:left">
+            <div style="font-weight:700;margin-bottom:6px">Subscription</div>
+            <div>Plan: <b>${tierName}</b></div>
+            <div>Status: <b>${sub.status}</b></div>
+            ${sub.trialEnd ? `<div>Trial ends: ${fmt(sub.trialEnd)}</div>` : ``}
+            ${sub.currentPeriodEnd ? `<div>Current period end: ${fmt(sub.currentPeriodEnd)}</div>` : ``}
+        `;
+
+        if (isPaid && !willCancel) {
+          html += `
+            <button id="cancelSubBtn" style="
+              margin-top:10px;padding:10px 16px;border:0;border-radius:6px;
+              background:#6a3fb5;color:#fff;cursor:pointer">
+              Cancel subscription
+            </button>
+            <div style="font-size:12px;color:#6b7280;margin-top:6px">
+              Cancels at the end of the current period.
+            </div>
+          `;
+        } else if (isPaid && willCancel) {
+          html += `<div style="margin-top:10px;color:#b91c1c">
+            Cancellation scheduled at period end.
+          </div>`;
+        } else {
+          html += `<div style="margin-top:10px;color:#6b7280">No active subscription.</div>`;
+        }
+
+        html += `</div>`;
+        target.innerHTML = html;
+
+        const btn = document.getElementById('cancelSubBtn');
+        if (btn) {
+          btn.onclick = async () => {
+            if (!confirm('Cancel at the period end?')) return;
+            btn.disabled = true;
+            try {
+              const rr = await fetch('/api/stripe/cancel', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({ atPeriodEnd: true })
+              });
+              const data = await rr.json();
+              if (!rr.ok) throw new Error(data?.error || 'Cancel failed');
+              alert('Cancellation scheduled. You keep access until the period end.');
+              loadSubscriptionPanel(token);
+            } catch (e) {
+              alert(e.message || 'Failed to cancel');
+              btn.disabled = false;
+            }
+          };
+        }
+      } catch (e) {
+        target.innerHTML = `<div style="color:#b91c1c">Could not load subscription.</div>`;
+        console.warn('Subscription panel error:', e);
+      }
+    }
+
     function logout() {
-  localStorage.removeItem("token");
-  localStorage.removeItem("cachedMessages"); // ✅ extra cleanup
-  window.location.href = "/login.html";
-}
+      localStorage.removeItem("token");
+      localStorage.removeItem("cachedMessages"); // ✅ extra cleanup
+      window.location.href = "/login.html";
+    }
 
     loadProfile();
   </script>
