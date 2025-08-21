@@ -803,30 +803,58 @@
       }
     }
 
+    /* ======= ADDED: local price map for confirmation dialog ======= */
+    const GIFT_PRICES_GBP = { chocolate: 5, flowers: 15, puppy: 25, ring: 99 };
+    /* ============================================================= */
+
     // Gift clicks -> allow if entitlement, else block + promo
     document.getElementById('giftBar').addEventListener('click', async (e)=>{
       const chip = e.target.closest('.gift-chip');
       if (!chip) return;
-      const label = chip.getAttribute('title') || 'gift';
 
       if (!ENTITLEMENTS.canSendGifts){
+        const labelBlocked = (chip.getAttribute('title') || 'gift').toLowerCase();
         appendPersistentNotice(
-          `Sending ${label.toLowerCase()} is a Premium feature. Upgrade using the pink button at the bottom to unlock gifts & pics.`
+          `Sending ${labelBlocked} is a Premium feature. Upgrade using the pink button at the bottom to unlock gifts & pics.`
         );
         showCTA();
         recordPremiumBlock();
         return;
       }
 
-      // Allowed: send via protected endpoint so server enforces plan
-      appendMessage(`You sent a ${label.toLowerCase()} 💝`, 'user');
+      // Determine gift type + price
+      let type = (chip.dataset.gift || '').toLowerCase();
+      if (type === 'candy') type = 'chocolate'; // normalize
+      const label = (chip.getAttribute('title') || type).toLowerCase();
+      const price = GIFT_PRICES_GBP[type];
+      if (!price) { console.warn('Unknown gift type:', type); return; }
+
+      // Confirmation popup in GBP
+      const ok = confirm(`Send ${label} for £${price}?`);
+      if (!ok) return;
+
+      // Charge and send via new endpoint
       try{
-        await fetch(`${backendUrl}/api/gifts/send`, {
+        const resp = await fetch(`${backendUrl}/api/gifts/buy`, {
           method: "POST",
           headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
-          body: JSON.stringify({ girlId, giftType: label.toLowerCase() })
+          body: JSON.stringify({ girlId, giftType: type })
         });
-      }catch(err){ console.error("Gift send failed:", err); }
+        const data = await resp.json();
+
+        // If SCA is needed and Stripe.js is present, you could confirm here.
+        if (!resp.ok){
+          alert(data?.error || 'Payment failed');
+          return;
+        }
+
+        // Show immediate feedback; server also inserts GIFT:<type> into chat log
+        appendMessage(`You sent ${label} 💝`, 'user');
+        refreshEntitlements();
+      }catch(err){
+        console.error("Gift purchase failed:", err);
+        alert('Payment failed');
+      }
     });
 
     // SEND PHOTO: click -> file picker; if allowed, upload via protected endpoint
