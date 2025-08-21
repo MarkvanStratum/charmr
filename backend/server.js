@@ -3449,6 +3449,19 @@ app.get("/api/me/entitlements", authenticateToken, async (req, res) => {
   }
 });
 
+// --- Add in server.js (near your other subscription routes) ---
+
+// 1) Get the user's subscription snapshot for the profile page
+app.get("/api/me/subscription", authenticateToken, async (req, res) => {
+  ...
+});
+
+// 2) Cancel (default: at the period end). Pass { atPeriodEnd:false } to cancel now.
+app.post("/api/stripe/cancel", authenticateToken, async (req, res) => {
+  ...
+});
+
+
 // 🔹 NEW: protected USER routes (gift / photo / contact sharing)
 // These mirror your existing operator sends but enforce plan features.
 // Frontend can call these; operator endpoints remain unchanged.
