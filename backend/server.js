@@ -2890,27 +2890,22 @@ const upload = multer({
 });
 
 // 🔹 NEW: operator send-image (multipart or URL)
-app.post("/api/operator/send-image", authenticateOperator, upload.single("image"), async (req, res) => {
+// 🔹 NEW: operator send-text
+app.post("/api/operator/send", authenticateOperator, async (req, res) => {
   try {
-    const { userId, girlId, imageUrl } = req.body || {};
-
-    let finalUrl = imageUrl;
-    if (req.file) {
-      finalUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    const { userId, girlId, text } = req.body || {};
+    if (!userId || !girlId || !text) {
+      return res.status(400).json({ error: "userId, girlId and text are required" });
     }
-    if (!finalUrl) return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
-
-    const text = `IMAGE:${finalUrl}`;
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text)
        VALUES ($1,$2,false,$3)`,
       [Number(userId), Number(girlId), text]
     );
-
-    res.json({ ok: true, url: finalUrl });
+    res.json({ ok: true });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ error: "Failed to send operator image" });
+    res.status(500).json({ error: "Failed to send operator text" });
   }
 });
 
