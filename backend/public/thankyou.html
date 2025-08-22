@@ -152,7 +152,7 @@
         const data = await resp.json();
         code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
       }
-    } catch(e) { /* fall back below */ }
+    } catch(e) { /* default below */ }
     return preferred.includes(code) ? 9 : 2;
   }
 
