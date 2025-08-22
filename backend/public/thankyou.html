@@ -139,22 +139,43 @@
     return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
   }
 
+  // GEO-BASED AMOUNT: US/GB/AU/NZ => $9, others => $2
+  async function resolveGeoAmount() {
+    const preferred = ["US","GB","AU","NZ"];
+    let code = "";
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const resp = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const data = await resp.json();
+        code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
+      }
+    } catch(e) { /* fall back below */ }
+    return preferred.includes(code) ? 9 : 2;
+  }
+
   // prevent double-fire on reload/back
   if (!sessionStorage.getItem('gaffpro_converted')) {
-    window.goaffpro_order = {
-      number: uniqueOrderId(),
-      total: 10,
-      currency: "USD"
-    };
+    (async function () {
+      const saleAmount = await resolveGeoAmount();
 
-    (function fire(){
-      if (typeof window.goaffproTrackConversion === "function") {
-        console.log("GoAffPro: firing conversion", window.goaffpro_order);
-        window.goaffproTrackConversion(window.goaffpro_order);
-        sessionStorage.setItem('gaffpro_converted', '1');
-      } else {
-        setTimeout(fire, 150);
-      }
+      window.goaffpro_order = {
+        number: uniqueOrderId(),
+        total: saleAmount,
+        currency: "USD"
+      };
+
+      (function fire(){
+        if (typeof window.goaffproTrackConversion === "function") {
+          console.log("GoAffPro: firing conversion", window.goaffpro_order);
+          window.goaffproTrackConversion(window.goaffpro_order);
+          sessionStorage.setItem('gaffpro_converted', '1');
+        } else {
+          setTimeout(fire, 150);
+        }
+      })();
     })();
   } else {
     console.log("GoAffPro: conversion already fired in this session");
