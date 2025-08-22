@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Operator Console</title>
+  <style>
+    :root { --pink:#ef476f; --ink:#222; --bg:#fafafa; --card:#fff; --line:#e6e6e6; --sub:#6b7280; --ok:#10b981; }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin:0; background:var(--bg); color:var(--ink); }
+    header { padding:12px 14px; border-bottom:1px solid var(--line); background:#fff; position:sticky; top:0; z-index:3; }
+    h1 { margin:0; font-size:18px; }
+    .topbar { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+    .topbar > * { margin:0; }
+    label { font-weight:600; font-size:12px; color:#444; display:block; margin-bottom:4px; }
+    input, button { padding:9px 10px; font-size:14px; border-radius:10px; border:1px solid var(--line); }
+    input:focus { outline:2px solid #c8e3ff; border-color:#9ccaff; }
+    button { background: var(--pink); color:#fff; border:none; cursor:pointer; }
+    button.secondary { background:#555; }
+    button.ghost { background:#fff; color:#111; border:1px solid var(--line); }
+    button:disabled { opacity:.6; cursor:not-allowed; }
+
+    /* Layout */
+    .app { display:grid; grid-template-columns: 300px 1fr; height: calc(100vh - 70px); }
+    .sidebar { border-right:1px solid var(--line); background:#fff; display:flex; flex-direction:column; }
+    .side-head { padding:10px; border-bottom:1px solid var(--line); display:flex; gap:8px; align-items:center; justify-content:space-between; }
+    .side-list { overflow:auto; padding:8px; flex:1; }
+    .conv { display:flex; align-items:center; gap:8px; padding:10px; border:1px solid transparent; border-radius:10px; cursor:pointer; }
+    .conv:hover { background:#fafafa; }
+    .conv.active { border-color:#ffd1e0; background:#fff5f7; }
+    .conv .meta { font-size:12px; color:var(--sub); }
+    .badge { margin-left:auto; min-width:18px; height:18px; padding:0 6px; border-radius:999px; background:var(--pink); color:#fff; font-size:11px; display:flex; align-items:center; justify-content:center; }
+    .dot { width:8px; height:8px; border-radius:999px; background:#cbd5e1; margin-left:6px; }
+    .dot.online { background: var(--ok); box-shadow:0 0 0 3px #e7f9f1 inset; }
+
+    .side-foot { padding:8px 10px; border-top:1px solid var(--line); font-size:12px; color:var(--sub); background:#fff; }
+    .side-foot code { background:#f3f4f6; padding:2px 6px; border-radius:6px; }
+
+    .main { display:flex; flex-direction:column; min-height:0; }
+    .chat-head { padding:10px 12px; border-bottom:1px solid var(--line); background:#fff; display:flex; align-items:center; gap:10px; }
+    .chat-title { font-weight:800; }
+    .banner { background:#ffe082; color:#4a3b00; padding:6px 10px; border-radius:10px; display:inline-block; }
+    .chat-box { flex:1; padding:12px; overflow:auto; background:#fff0f3; scroll-behavior:smooth; }
+    .msg { display:inline-block; margin:6px 0; max-width:76%; padding:10px 14px; border-radius:16px; line-height:1.3; word-wrap:break-word; white-space:pre-wrap; }
+    .user { background: var(--pink); color:#fff; margin-left:auto; border-bottom-right-radius:6px; }
+    .girl { background:#f1f1f1; color:#000; margin-right:auto; border-bottom-left-radius:6px; }
+    .meta { font-size:11px; opacity:.6; margin-top:2px; }
+    .bubble img { max-width:280px; max-height:300px; border-radius:10px; display:block; object-fit:cover; }
+
+    /* Keep the composer always visible under the chat */
+    .composer { position:sticky; bottom:0; padding:10px; border-top:1px solid var(--line); background:#fff; display:flex; gap:8px; flex-wrap:wrap; }
+    .composer .row { display:flex; gap:8px; width:100%; }
+    .composer input[type="text"] { flex:1; min-width:260px; }
+    .helper { font-size:12px; color:var(--sub); }
+
+    .kv { display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap; }
+    .kv > div { display:flex; flex-direction:column; }
+    .kv input { width:240px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Operator Console</h1>
+    <div class="topbar">
+      <div class="kv">
+        <div>
+          <label>Backend URL</label>
+          <input id="backendUrl" value="https://charmr-jfmc.onrender.com" />
+        </div>
+        <div>
+          <label>Operator Key</label>
+          <input id="opKey" placeholder="OPERATOR_KEY (required for /api/operator/* endpoints)" />
+        </div>
+        <div>
+          <label>Operator Name (shown to user)</label>
+          <input id="opName" placeholder="Bella (Ops)" />
+        </div>
+      </div>
+      <div>
+        <button id="btnGlobalStart">Start Takeover (active chat)</button>
+        <button id="btnGlobalStop" class="secondary">Stop Takeover</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="side-head">
+        <strong>Chats</strong>
+        <button id="btnAddChat" class="ghost" title="Add chat manually">+ Add</button>
+      </div>
+      <div id="convList" class="side-list"></div>
+
+      <!-- Manual add -->
+      <div id="manualForm" style="padding:10px; border-top:1px solid var(--line); display:none;">
+        <div style="display:flex; gap:6px; margin-bottom:6px;">
+          <input id="manualUserId" type="number" placeholder="User ID" style="flex:1;">
+          <input id="manualGirlId" type="number" placeholder="Girl ID" style="flex:1;">
+        </div>
+        <button id="btnManualAdd" style="width:100%;">Add chat</button>
+      </div>
+
+      <!-- Feed status -->
+      <div class="side-foot">
+        <div><strong>Feed:</strong> <span id="feedStatus">waiting…</span></div>
+        <div style="margin-top:4px">Path: <code id="feedUrl">/api/operator/feed</code></div>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="main">
+      <div class="chat-head">
+        <div class="chat-title" id="chatTitle">No chat selected</div>
+        <span id="liveBanner" class="banner" style="display:none">🔴 Live agent is chatting</span>
+        <!-- >>> NEW: show subscription status if available -->
+        <span id="subBadge" class="banner" style="display:none">💳 Active subscription</span>
+        <!-- >>> NEW: a tiny status label for online/offline -->
+        <span id="chatStatus" style="font-size:12px; color:#6b7280;"></span>
+      </div>
+      <div id="chatBox" class="chat-box"></div>
+
+      <div class="composer">
+        <div class="row">
+          <input id="textMsg" type="text" placeholder="Type a message as the girl..." />
+          <button id="btnSendText">Send Text</button>
+        </div>
+        <div class="row">
+          <input id="imageUrl" type="text" placeholder="Or paste an image URL (https://...)" />
+          <input id="imageFile" type="file" accept="image/*" />
+          <button id="btnSendImage">Send Image</button>
+        </div>
+        <div class="helper">Only chats with a user reply appear here. Newest replies stay on top.</div>
+      </div>
+    </main>
+  </div>
+
+  <audio id="ping" preload="auto">
+    <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA..." type="audio/mp3">
+  </audio>
+
+  <script>
+    // ---------- Config ----------
+    const FEED_PATH = '/api/operator/feed';   // same as feed.html
+    const FEED_LIMIT = 100;                   // initial slice
+    const ONLINE_MS = 2 * 60 * 1000;          // user considered online if last user msg < 2 min
+    // ----------------------------
+
+    // Elements
+    const els = {
+      backendUrl: document.getElementById('backendUrl'),
+      opKey: document.getElementById('opKey'),
+      opName: document.getElementById('opName'),
+      chatBox: document.getElementById('chatBox'),
+      chatTitle: document.getElementById('chatTitle'),
+      liveBanner: document.getElementById('liveBanner'),
+      convList: document.getElementById('convList'),
+      btnAddChat: document.getElementById('btnAddChat'),
+      manualForm: document.getElementById('manualForm'),
+      manualUserId: document.getElementById('manualUserId'),
+      manualGirlId: document.getElementById('manualGirlId'),
+      btnManualAdd: document.getElementById('btnManualAdd'),
+      btnGlobalStart: document.getElementById('btnGlobalStart'),
+      btnGlobalStop: document.getElementById('btnGlobalStop'),
+      textMsg: document.getElementById('textMsg'),
+      imageUrl: document.getElementById('imageUrl'),
+      imageFile: document.getElementById('imageFile'),
+      btnSendText: document.getElementById('btnSendText'),
+      btnSendImage: document.getElementById('btnSendImage'),
+      ping: document.getElementById('ping'),
+      feedStatus: document.getElementById('feedStatus'),
+      feedUrl: document.getElementById('feedUrl'),
+      // >>> NEW:
+      subBadge: document.getElementById('subBadge'),
+      chatStatus: document.getElementById('chatStatus'),
+    };
+
+    function base(){ return (els.backendUrl.value || '').trim().replace(/\/+$/,''); }
+    function headersJSON(){ return { 'Content-Type':'application/json', 'X-Operator-Key': (els.opKey.value||'').trim() }; }
+    function opHeader(){ return { 'X-Operator-Key': (els.opKey.value||'').trim() }; }
+    function haveOpKey(){ return (els.opKey.value||'').trim().length > 0; }
+
+    // Store
+    const store = {
+      byKey: new Map(), // key: `${userId}-${girlId}`
+      activeKey: null,
+      lastNow: null,
+      // >>> NEW: presence cache { [userId]: timestamp ms }
+      presence: {},
+      // >>> NEW: subscription cache { [userId]: boolean|null|undefined }
+      subs: {},
+      // >>> NEW: name cache { [userId]: "Full Name" }
+      names: {},
+    };
+    function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
+
+    // ---- helpers to format title & ensure userName support ----
+    function formatTitle(c){
+      const girl = c.girlName ? c.girlName : ('Girl ' + c.girlId);
+      const user = 'User ' + c.userId + (c.userName ? (' (' + c.userName + ')') : '');
+      return `${girl} · ${user}`;
+    }
+
+    function ensureConv(userId, girlId, girlName, userName){
+      const k = keyOf(userId, girlId);
+      if (!store.byKey.has(k)){
+        store.byKey.set(k, {
+          key: k,
+          userId: Number(userId),
+          girlId: Number(girlId),
+          girlName: girlName || null,
+          userName: userName || null,
+          title: "",
+          messages: [],
+          unread: 0,
+          lastTs: 0,        // last message ts (any sender)
+          lastUserTs: 0,    // last USER msg ts (for sorting/online)
+          hasUserReply: false,
+          takeover: false
+        });
+      } else {
+        const cv = store.byKey.get(k);
+        if (girlName && (!cv.girlName || String(cv.girlName).startsWith('Girl '))) {
+          cv.girlName = girlName;
+        }
+        if (userName && !cv.userName) {
+          cv.userName = userName;
+        }
+      }
+      const cv = store.byKey.get(k);
+      cv.title = formatTitle(cv);
+      return cv;
+    }
+
+    // ----- Sidebar -----
+    function renderSidebar(autoSelectIfNone=true){
+      els.convList.innerHTML = '';
+
+      const listAll = [...store.byKey.values()];
+      const list = listAll
+        .filter(c => c.hasUserReply)
+        .sort((a,b)=>{
+          const au = a.lastUserTs || 0, bu = b.lastUserTs || 0;
+          if (bu !== au) return bu - au;
+          return (b.lastTs||0) - (a.lastTs||0);
+        });
+
+      for (const c of list){
+        const item = document.createElement('div');
+        item.className = 'conv' + (store.activeKey===c.key ? ' active':'');
+
+        const left = document.createElement('div');
+        left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
+        item.appendChild(left);
+
+        // online dot using presence (fallback to lastUserTs)
+        const lastSeenMs = store.presence[c.userId] ?? c.lastUserTs;
+        const isOnline = (Date.now() - (lastSeenMs||0)) < ONLINE_MS;
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (isOnline ? ' online' : '');
+        item.appendChild(dot);
+
+        if (c.unread>0){
+          const badge = document.createElement('div');
+          badge.className = 'badge';
+          badge.textContent = c.unread;
+          item.appendChild(badge);
+        }
+        item.onclick = () => selectConversation(c.key);
+        els.convList.appendChild(item);
+      }
+
+      if (list.length===0){
+        els.convList.innerHTML = '<div class="helper">No chats with user replies yet.</div>';
+      } else if (!store.activeKey && autoSelectIfNone){
+        selectConversation(list[0].key);
+      }
+
+      const totalUnread = list.reduce((a,c)=>a+c.unread,0);
+      document.title = totalUnread ? `(${totalUnread}) Operator Console` : 'Operator Console';
+    }
+
+    // ----- Chat -----
+    function forceScrollToBottom(){
+      els.chatBox.scrollTop = els.chatBox.scrollHeight;
+    }
+
+    function renderChat(conv){
+      els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
+      els.liveBanner.style.display = conv?.takeover ? '' : 'none';
+      updateChatHeaderStatus(conv); // >>> NEW
+      els.chatBox.innerHTML = '';
+      if (!conv) return;
+
+      for (const m of conv.messages){
+        const wrap = document.createElement('div'); wrap.style.display='flex';
+        const bubble = document.createElement('div'); bubble.className = 'msg ' + (m.from_user ? 'user' : 'girl');
+
+        const content = document.createElement('div'); content.className='bubble';
+        const imgMatch = /^IMAGE:\s*(\S+)/i.exec(m.text||'');
+        if (imgMatch){ const img=document.createElement('img'); img.src=imgMatch[1]; img.alt='image'; content.appendChild(img); }
+        else { content.textContent = m.text; }
+
+        const meta = document.createElement('div'); meta.className='meta';
+        meta.textContent = new Date(m.created_at).toLocaleString();
+
+        bubble.appendChild(content); bubble.appendChild(meta);
+        wrap.appendChild(bubble);
+        els.chatBox.appendChild(wrap);
+      }
+      forceScrollToBottom();
+    }
+
+    function selectConversation(key){
+      store.activeKey = key;
+      const conv = store.byKey.get(key);
+      if (conv){ conv.unread = 0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
+      maybeLoadUserName(conv);
+      // >>> NEW: try subscription & update status immediately
+      checkSubscription(conv);
+      updateChatHeaderStatus(conv);
+      renderChat(conv);
+    }
+
+    // ----- FEED -----
+    async function fetchFeed(initial=false){
+      try{
+        const params = new URLSearchParams();
+        params.set('limit', String(FEED_LIMIT));
+        if (!initial && store.lastNow) params.set('since', store.lastNow);
+
+        const url = `${base()}${FEED_PATH}?${params.toString()}`;
+        els.feedUrl.textContent = FEED_PATH;
+
+        const res = await fetch(url);
+        if (!res.ok){ els.feedStatus.textContent = `HTTP ${res.status}`; return; }
+
+        const payload = await res.json();
+        const rows = Array.isArray(payload?.rows) ? payload.rows : [];
+        store.lastNow = payload?.now || store.lastNow;
+        els.feedStatus.textContent = `ok · ${rows.length} rows`;
+
+        let pingNeeded = false;
+
+        for (const r of rows){
+          const userId = Number(r.userId);
+          const girlId = Number(r.girlId);
+          if (!userId || !girlId) continue;
+
+          const cv = ensureConv(userId, girlId, r.girlName, r.userName);
+          const ts = new Date(r.createdAt).getTime() || Date.now();
+
+          if (ts > cv.lastTs) cv.lastTs = ts;
+
+          if (r.from === 'user'){
+            cv.hasUserReply = true;
+            if (ts > cv.lastUserTs) cv.lastUserTs = ts;
+            if (store.activeKey !== cv.key){
+              cv.unread = Math.min(99, (cv.unread||0) + 1);
+              pingNeeded = true;
+            }
+            // >>> NEW: refresh presence cache
+            store.presence[userId] = Math.max(store.presence[userId]||0, ts);
+          }
+        }
+
+        if (pingNeeded){ try{ els.ping.play().catch(()=>{}); }catch{} }
+        renderSidebar(initial);
+
+      }catch(e){
+        els.feedStatus.textContent = 'error (see console)';
+        console.warn('Feed error:', e);
+      }
+    }
+
+    // ----- Conversation fetch -----
+    async function fetchMessages(conv){
+      if (!conv) return;
+      if (!haveOpKey()) {
+        els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
+        return;
+      }
+
+      try{
+        const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
+          headers: opHeader()
+        });
+        if (!r.ok) return;
+        const data = await r.json();
+        if (!Array.isArray(data)) return;
+
+        conv.messages = data;
+        if (data.length){
+          const last = data[data.length-1];
+          conv.lastTs = new Date(last.created_at).getTime() || Date.now();
+        }
+        renderChat(conv);
+        renderSidebar(false);
+      }catch(e){ /* silent */ }
+    }
+
+    // ----- Takeover status -----
+    async function checkTakeover(conv){
+      if (!conv || !haveOpKey()) return;
+      try{
+        const r = await fetch(`${base()}/api/takeover/status/${conv.girlId}?userId=${conv.userId}`, {
+          headers: opHeader()
+        });
+        if (!r.ok) return;
+        const data = await r.json();
+        conv.takeover = !!data.takeover;
+        if (store.activeKey === conv.key){
+          els.liveBanner.style.display = conv.takeover ? '' : 'none';
+        }
+      }catch{}
+    }
+
+    // >>> NEW: Presence (fixes “online”)
+    async function fetchPresence(){
+      try{
+        const r = await fetch(`${base()}/api/operator/presence`);
+        if (!r.ok) return;
+        const data = await r.json();
+        const presence = data?.presence || {};
+        // presence is an object: { userId: ISOString }
+        for (const uid in presence){
+          const ts = Date.parse(presence[uid]);
+          if (!isNaN(ts)){
+            store.presence[Number(uid)] = Math.max(store.presence[Number(uid)]||0, ts);
+          }
+        }
+        // Update any conversation’s lastUserTs if we now know a fresher last_seen
+        for (const cv of store.byKey.values()){
+          const seen = store.presence[cv.userId];
+          if (seen && seen > (cv.lastUserTs||0)){ cv.lastUserTs = seen; }
+        }
+        renderSidebar(false);
+        // update header status for active chat
+        const c = store.byKey.get(store.activeKey);
+        updateChatHeaderStatus(c);
+      }catch(e){ /* ignore */ }
+    }
+
+    // >>> NEW: tiny status text next to header
+    function updateChatHeaderStatus(conv){
+      if (!conv){ els.chatStatus.textContent = ''; els.subBadge.style.display='none'; return; }
+      const lastSeenMs = store.presence[conv.userId] ?? conv.lastUserTs;
+      const online = (Date.now() - (lastSeenMs||0)) < ONLINE_MS;
+      els.chatStatus.textContent = online ? '● online' : (lastSeenMs ? ('last seen ' + new Date(lastSeenMs).toLocaleTimeString()) : '');
+      // subscription badge
+      const sub = store.subs[conv.userId];
+      els.subBadge.style.display = sub === true ? '' : 'none';
+    }
+
+    // >>> NEW: Subscription (best-effort; requires a server endpoint)
+    async function checkSubscription(conv){
+      if (!conv || !haveOpKey()) return;
+      // cache hit?
+      if (store.subs[conv.userId] !== undefined){ updateChatHeaderStatus(conv); return; }
+      try{
+        const r = await fetch(`${base()}/api/operator/subscription/${conv.userId}`, { headers: opHeader() });
+        if (!r.ok){ store.subs[conv.userId] = null; updateChatHeaderStatus(conv); return; }
+        const data = await r.json();
+        // expect { active: boolean } or { status: 'active'|'trialing'|'canceled', ... }
+        const active = typeof data?.active === 'boolean'
+          ? data.active
+          : (data?.status === 'active' || data?.status === 'trialing');
+        store.subs[conv.userId] = !!active;
+        updateChatHeaderStatus(conv);
+      }catch{
+        store.subs[conv.userId] = null;
+        updateChatHeaderStatus(conv);
+      }
+    }
+
+    // ----- Sending -----
+    async function sendText(){
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
+      const text = (els.textMsg.value||'').trim();
+      if (!text) return;
+      try{
+        const r = await fetch(`${base()}/api/operator/send`, {
+          method:'POST',
+          headers: headersJSON(),
+          body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, text })
+        });
+        if (!r.ok) return alert('Failed to send text');
+        els.textMsg.value = '';
+        fetchMessages(conv);
+      }catch{ alert('Failed to send text'); }
+    }
+
+    async function sendImage(){
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
+      const url = (els.imageUrl.value||'').trim();
+      const file = els.imageFile.files[0];
+      if (!url && !file) return alert('Paste an image URL or choose a file');
+
+      try{
+        if (file){
+          const form = new FormData();
+          form.append('userId', conv.userId);
+          form.append('girlId', conv.girlId);
+          form.append('image', file);
+          const rf = await fetch(`${base()}/api/operator/send-image`, {
+            method:'POST',
+            headers: opHeader(),
+            body: form
+          });
+          if (!rf.ok) throw new Error('upload failed');
+        } else {
+          const rj = await fetch(`${base()}/api/operator/send-image`, {
+            method:'POST',
+            headers: headersJSON(),
+            body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId, imageUrl: url })
+          });
+          if (!rj.ok) throw new Error('send failed');
+        }
+        els.imageUrl.value=''; els.imageFile.value='';
+        fetchMessages(conv);
+      }catch{ alert('Failed to send image'); }
+    }
+
+    // ----- Takeover (active chat) -----
+    els.btnGlobalStart.onclick = async ()=>{
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
+      const body = { userId: conv.userId, girlId: conv.girlId, operatorName: (els.opName.value||'').trim() || null };
+      const r = await fetch(`${base()}/api/takeover/start`, { method:'POST', headers: headersJSON(), body: JSON.stringify(body) });
+      if (!r.ok) return alert('Failed to start takeover');
+      conv.takeover = true; els.liveBanner.style.display = '';
+    };
+    els.btnGlobalStop.onclick = async ()=>{
+      const conv = store.byKey.get(store.activeKey);
+      if (!conv || !haveOpKey()) return alert('Select a chat and enter the Operator Key');
+      const r = await fetch(`${base()}/api/takeover/stop`, {
+        method:'POST', headers: headersJSON(),
+        body: JSON.stringify({ userId: conv.userId, girlId: conv.girlId })
+      });
+      if (!r.ok) return alert('Failed to stop takeover');
+      conv.takeover = false; els.liveBanner.style.display = 'none';
+    };
+
+    // ----- Manual add -----
+    els.btnAddChat.onclick = ()=>{ els.manualForm.style.display = els.manualForm.style.display ? '' : 'block'; };
+    els.btnManualAdd.onclick = ()=>{
+      const uid = Number(els.manualUserId.value);
+      const gid = Number(els.manualGirlId.value);
+      if (!uid || !gid) return;
+      const c = ensureConv(uid, gid);
+      c.hasUserReply = true;
+      renderSidebar(); selectConversation(c.key);
+      els.manualUserId.value=''; els.manualGirlId.value=''; els.manualForm.style.display = 'none';
+    };
+
+    // ----- Composer wiring -----
+    els.btnSendText.onclick = sendText;
+    els.btnSendImage.onclick = sendImage;
+    els.textMsg.addEventListener('keydown', (e)=>{ if (e.key==='Enter' && !e.shiftKey){ e.preventDefault(); sendText(); } });
+
+    // Keep chat pinned to bottom even on resize
+    window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
+    window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
+
+    // When the operator key is filled in, auto-load messages for the active chat
+    els.opKey.addEventListener('input', () => {
+      const c = store.byKey.get(store.activeKey);
+      if (c && haveOpKey()) fetchMessages(c);
+    });
+
+    // ----- Poll -----
+    setInterval(()=>fetchFeed(false), 5000);
+    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000);
+    // >>> NEW: poll presence periodically to keep online status true/false
+    setInterval(fetchPresence, 15000);
+
+    // ---- keep: lazy fetch user name if server provides it ----
+    async function maybeLoadUserName(conv){
+      if (!conv || conv.userName || !haveOpKey()) return;
+      try{
+        const r = await fetch(`${base()}/api/operator/user/${conv.userId}`, { headers: opHeader() });
+        if (r.ok){
+          const data = await r.json();
+          const name = data?.name || data?.userName || data?.username;
+          if (name){
+            conv.userName = name;
+            conv.title = formatTitle(conv);
+            if (store.activeKey === conv.key){ renderChat(conv); }
+            renderSidebar(false);
+          }
+        }
+      }catch{}
+    }
+
+    // >>> Boot
+    (async function init(){
+      await fetchFeed(true);
+      await fetchPresence(); // initial presence snapshot
+    })();
+  </script>
+</body>
+</html>
