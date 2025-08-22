@@ -2882,10 +2882,12 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+  limits: { fileSize: 20 * 1024 * 1024 }, // bump to 20MB (or whatever you prefer)
   fileFilter: (req, file, cb) => {
-    const ok = /image\/(png|jpe?g|gif|webp|bmp|svg\+xml)/i.test(file.mimetype);
-    cb(ok ? null : new Error("Only image files are allowed"), ok);
+    // accept common image types + HEIC/HEIF
+    const ok = /image\/(png|jpe?g|gif|webp|bmp|svg\+xml|heic|heif)/i.test(file.mimetype);
+    if (!ok) return cb(new Error("Unsupported image type. Allowed: PNG, JPG, GIF, WEBP, BMP, SVG, HEIC, HEIF"));
+    cb(null, true);
   }
 });
 
