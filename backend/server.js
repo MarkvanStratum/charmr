@@ -307,7 +307,7 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/13.png",
     "description": "just a norty gal lookin 4 sum fun \ud83e\udd74\ud83e\udd42 dnt b shy luv \ud83d\ude0f holla innit \ud83d\udc8b"
   },
-  {
+{
     "id": 14,
     "name": "Maisie Davies",
     "city": "Swansea",
@@ -2528,6 +2528,7 @@ const profiles = [
   }
   
   
+  
 
 ];
 
@@ -2908,6 +2909,35 @@ app.post("/api/operator/send", authenticateOperator, async (req, res) => {
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: "Failed to send operator text" });
+  }
+});
+
+// 🔹 NEW: operator send-image (multipart 'image' OR JSON { imageUrl })
+app.post("/api/operator/send-image", authenticateOperator, upload.single("image"), async (req, res) => {
+  try {
+    const { userId, girlId, imageUrl } = req.body || {};
+    if (!userId || !girlId) {
+      return res.status(400).json({ error: "userId and girlId are required" });
+    }
+
+    let finalUrl = imageUrl;
+    if (req.file) {
+      finalUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+    }
+    if (!finalUrl) {
+      return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
+    }
+
+    const text = `IMAGE:${finalUrl}`;
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3)`,
+      [Number(userId), Number(girlId), text]
+    );
+    res.json({ ok: true, url: finalUrl });
+  } catch (e) {
+    console.error("Operator image send error:", e);
+    res.status(500).json({ error: "Failed to send operator image" });
   }
 });
 
