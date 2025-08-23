@@ -88,6 +88,13 @@
     <aside class="sidebar">
       <div class="side-head">
         <strong>Chats</strong>
+
+        <!-- NEW: Filter by User ID (enter to filter, clear to reset) -->
+        <div style="display:flex; align-items:center; gap:6px; margin-left:auto;">
+          <input id="filterUserId" type="number" inputmode="numeric" placeholder="User ID" style="width:120px;">
+          <button id="btnClearFilter" class="ghost" title="Clear filter">✕</button>
+        </div>
+
         <button id="btnAddChat" class="ghost" title="Add chat manually">+ Add</button>
       </div>
       <div id="convList" class="side-list"></div>
@@ -113,6 +120,10 @@
       <div class="chat-head">
         <div class="chat-title" id="chatTitle">No chat selected</div>
         <span id="liveBanner" class="banner" style="display:none">🔴 Live agent is chatting</span>
+        <!-- >>> NEW: show subscription status if available -->
+        <span id="subBadge" class="banner" style="display:none">💳 Active subscription</span>
+        <!-- >>> NEW: a tiny status label for online/offline -->
+        <span id="chatStatus" style="font-size:12px; color:#6b7280;"></span>
       </div>
       <div id="chatBox" class="chat-box"></div>
 
@@ -166,6 +177,13 @@
       ping: document.getElementById('ping'),
       feedStatus: document.getElementById('feedStatus'),
       feedUrl: document.getElementById('feedUrl'),
+      // >>> NEW:
+      subBadge: document.getElementById('subBadge'),
+      chatStatus: document.getElementById('chatStatus'),
+
+      // NEW: filter controls
+      filterUserId: document.getElementById('filterUserId'),
+      btnClearFilter: document.getElementById('btnClearFilter'),
     };
 
     function base(){ return (els.backendUrl.value || '').trim().replace(/\/+$/,''); }
@@ -178,10 +196,18 @@
       byKey: new Map(), // key: `${userId}-${girlId}`
       activeKey: null,
       lastNow: null,
+      // >>> NEW: presence cache { [userId]: timestamp ms }
+      presence: {},
+      // >>> NEW: subscription cache { [userId]: boolean|null|undefined }
+      subs: {},
+      // >>> NEW: name cache { [userId]: "Full Name" }
+      names: {},
+      // NEW: current filter (null means off)
+      filterUserId: null,
     };
     function keyOf(u,g){ return `${Number(u)}-${Number(g)}`; }
 
-    // ---- NEW: helpers to format title & ensure userName support ----
+    // ---- helpers to format title & ensure userName support ----
     function formatTitle(c){
       const girl = c.girlName ? c.girlName : ('Girl ' + c.girlId);
       const user = 'User ' + c.userId + (c.userName ? (' (' + c.userName + ')') : '');
@@ -218,18 +244,20 @@
       cv.title = formatTitle(cv);
       return cv;
     }
-    // ----------------------------------------------------------------
 
     // ----- Sidebar -----
     function renderSidebar(autoSelectIfNone=true){
       els.convList.innerHTML = '';
 
-      // Only show conversations where the user has replied at least once
       const listAll = [...store.byKey.values()];
-      const list = listAll
+      // NEW: apply user filter if set
+      const listFiltered = store.filterUserId == null
+        ? listAll
+        : listAll.filter(c => c.userId === store.filterUserId);
+
+      const list = listFiltered
         .filter(c => c.hasUserReply)
         .sort((a,b)=>{
-          // newest user replies on top; fallback to lastTs
           const au = a.lastUserTs || 0, bu = b.lastUserTs || 0;
           if (bu !== au) return bu - au;
           return (b.lastTs||0) - (a.lastTs||0);
@@ -243,9 +271,11 @@
         left.innerHTML = `<strong>${c.title}</strong><div class="meta">u:${c.userId} · g:${c.girlId}</div>`;
         item.appendChild(left);
 
-        // online dot (based on lastUserTs recency)
+        // online dot using presence (fallback to lastUserTs)
+        const lastSeenMs = store.presence[c.userId] ?? c.lastUserTs;
+        const isOnline = (Date.now() - (lastSeenMs||0)) < ONLINE_MS;
         const dot = document.createElement('div');
-        dot.className = 'dot' + ((Date.now() - (c.lastUserTs||0) < ONLINE_MS) ? ' online' : '');
+        dot.className = 'dot' + (isOnline ? ' online' : '');
         item.appendChild(dot);
 
         if (c.unread>0){
@@ -259,9 +289,9 @@
       }
 
       if (list.length===0){
-        els.convList.innerHTML = '<div class="helper">No chats with user replies yet.</div>';
-      } else if (!store.activeKey && autoSelectIfNone){
-        selectConversation(list[0].key); // open the newest user-reply thread
+        els.convList.innerHTML = '<div class="helper">' + (store.filterUserId==null ? 'No chats with user replies yet.' : 'No chats for this user.') + '</div>';
+      } else if ((!store.activeKey || !list.some(c => c.key === store.activeKey)) && autoSelectIfNone){
+        selectConversation(list[0].key);
       }
 
       const totalUnread = list.reduce((a,c)=>a+c.unread,0);
@@ -270,13 +300,13 @@
 
     // ----- Chat -----
     function forceScrollToBottom(){
-      // always keep viewport pinned to newest message
       els.chatBox.scrollTop = els.chatBox.scrollHeight;
     }
 
     function renderChat(conv){
       els.chatTitle.textContent = conv ? conv.title : 'No chat selected';
       els.liveBanner.style.display = conv?.takeover ? '' : 'none';
+      updateChatHeaderStatus(conv); // >>> NEW
       els.chatBox.innerHTML = '';
       if (!conv) return;
 
@@ -303,12 +333,14 @@
       store.activeKey = key;
       const conv = store.byKey.get(key);
       if (conv){ conv.unread = 0; renderSidebar(false); fetchMessages(conv); checkTakeover(conv); }
-      // Try to load user's name if we don't have it yet
       maybeLoadUserName(conv);
+      // >>> NEW: try subscription & update status immediately
+      checkSubscription(conv);
+      updateChatHeaderStatus(conv);
       renderChat(conv);
     }
 
-    // ----- FEED (same semantics as feed.html) -----
+    // ----- FEED -----
     async function fetchFeed(initial=false){
       try{
         const params = new URLSearchParams();
@@ -328,7 +360,6 @@
 
         let pingNeeded = false;
 
-        // rows: { id, createdAt, userId, girlId, girlName, from ("user"/"girl"), text, userName? }
         for (const r of rows){
           const userId = Number(r.userId);
           const girlId = Number(r.girlId);
@@ -337,10 +368,8 @@
           const cv = ensureConv(userId, girlId, r.girlName, r.userName);
           const ts = new Date(r.createdAt).getTime() || Date.now();
 
-          // track latest any-message timestamp
           if (ts > cv.lastTs) cv.lastTs = ts;
 
-          // if message is from user, mark flags, lastUserTs, unread
           if (r.from === 'user'){
             cv.hasUserReply = true;
             if (ts > cv.lastUserTs) cv.lastUserTs = ts;
@@ -348,6 +377,8 @@
               cv.unread = Math.min(99, (cv.unread||0) + 1);
               pingNeeded = true;
             }
+            // >>> NEW: refresh presence cache
+            store.presence[userId] = Math.max(store.presence[userId]||0, ts);
           }
         }
 
@@ -363,10 +394,10 @@
     // ----- Conversation fetch -----
     async function fetchMessages(conv){
       if (!conv) return;
-if (!haveOpKey()) {
-  els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
-  return;
-}
+      if (!haveOpKey()) {
+        els.chatBox.innerHTML = '<div class="helper" style="padding:12px">Enter your <strong>Operator Key</strong> above to load messages for this chat.</div>';
+        return;
+      }
 
       try{
         const r = await fetch(`${base()}/api/operator/messages?userId=${conv.userId}&girlId=${conv.girlId}`, {
@@ -400,6 +431,64 @@ if (!haveOpKey()) {
           els.liveBanner.style.display = conv.takeover ? '' : 'none';
         }
       }catch{}
+    }
+
+    // >>> NEW: Presence (fixes “online”)
+    async function fetchPresence(){
+      try{
+        const r = await fetch(`${base()}/api/operator/presence`);
+        if (!r.ok) return;
+        const data = await r.json();
+        const presence = data?.presence || {};
+        // presence is an object: { userId: ISOString }
+        for (const uid in presence){
+          const ts = Date.parse(presence[uid]);
+          if (!isNaN(ts)){
+            store.presence[Number(uid)] = Math.max(store.presence[Number(uid)]||0, ts);
+          }
+        }
+        // Update any conversation’s lastUserTs if we now know a fresher last_seen
+        for (const cv of store.byKey.values()){
+          const seen = store.presence[cv.userId];
+          if (seen && seen > (cv.lastUserTs||0)){ cv.lastUserTs = seen; }
+        }
+        renderSidebar(false);
+        // update header status for active chat
+        const c = store.byKey.get(store.activeKey);
+        updateChatHeaderStatus(c);
+      }catch(e){ /* ignore */ }
+    }
+
+    // >>> NEW: tiny status text next to header
+    function updateChatHeaderStatus(conv){
+      if (!conv){ els.chatStatus.textContent = ''; els.subBadge.style.display='none'; return; }
+      const lastSeenMs = store.presence[conv.userId] ?? conv.lastUserTs;
+      const online = (Date.now() - (lastSeenMs||0)) < ONLINE_MS;
+      els.chatStatus.textContent = online ? '● online' : (lastSeenMs ? ('last seen ' + new Date(lastSeenMs).toLocaleTimeString()) : '');
+      // subscription badge
+      const sub = store.subs[conv.userId];
+      els.subBadge.style.display = sub === true ? '' : 'none';
+    }
+
+    // >>> NEW: Subscription (best-effort; requires a server endpoint)
+    async function checkSubscription(conv){
+      if (!conv || !haveOpKey()) return;
+      // cache hit?
+      if (store.subs[conv.userId] !== undefined){ updateChatHeaderStatus(conv); return; }
+      try{
+        const r = await fetch(`${base()}/api/operator/subscription/${conv.userId}`, { headers: opHeader() });
+        if (!r.ok){ store.subs[conv.userId] = null; updateChatHeaderStatus(conv); return; }
+        const data = await r.json();
+        // expect { active: boolean } or { status: 'active'|'trialing'|'canceled', ... }
+        const active = typeof data?.active === 'boolean'
+          ? data.active
+          : (data?.status === 'active' || data?.status === 'trialing');
+        store.subs[conv.userId] = !!active;
+        updateChatHeaderStatus(conv);
+      }catch{
+        store.subs[conv.userId] = null;
+        updateChatHeaderStatus(conv);
+      }
     }
 
     // ----- Sending -----
@@ -479,7 +568,7 @@ if (!haveOpKey()) {
       const gid = Number(els.manualGirlId.value);
       if (!uid || !gid) return;
       const c = ensureConv(uid, gid);
-      c.hasUserReply = true; // force show if you add manually
+      c.hasUserReply = true;
       renderSidebar(); selectConversation(c.key);
       els.manualUserId.value=''; els.manualGirlId.value=''; els.manualForm.style.display = 'none';
     };
@@ -491,9 +580,20 @@ if (!haveOpKey()) {
 
     // Keep chat pinned to bottom even on resize
     window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
-
-        // Keep chat pinned to bottom even on resize
     window.addEventListener('resize', ()=>{ forceScrollToBottom(); });
+
+    // NEW: filter wiring
+    els.filterUserId.addEventListener('input', ()=>{
+      const val = els.filterUserId.value.trim();
+      store.filterUserId = val === '' ? null : Number(val);
+      if (Number.isNaN(store.filterUserId)) store.filterUserId = null;
+      renderSidebar(true);
+    });
+    els.btnClearFilter.addEventListener('click', ()=>{
+      els.filterUserId.value = '';
+      store.filterUserId = null;
+      renderSidebar(true);
+    });
 
     // When the operator key is filled in, auto-load messages for the active chat
     els.opKey.addEventListener('input', () => {
@@ -502,10 +602,12 @@ if (!haveOpKey()) {
     });
 
     // ----- Poll -----
-    setInterval(()=>fetchFeed(false), 5000);           // discover & update list
-    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000); // active chat refresh
+    setInterval(()=>fetchFeed(false), 5000);
+    setInterval(()=>{ const c = store.byKey.get(store.activeKey); if (c) fetchMessages(c); }, 2000);
+    // >>> NEW: poll presence periodically to keep online status true/false
+    setInterval(fetchPresence, 15000);
 
-    // ---- NEW: lazy fetch user name if missing (optional safe) ----
+    // ---- keep: lazy fetch user name if server provides it ----
     async function maybeLoadUserName(conv){
       if (!conv || conv.userName || !haveOpKey()) return;
       try{
@@ -522,11 +624,11 @@ if (!haveOpKey()) {
         }
       }catch{}
     }
-    // ---------------------------------------------------------------
 
-    // Boot
+    // >>> Boot
     (async function init(){
-      await fetchFeed(true); // initial slice
+      await fetchFeed(true);
+      await fetchPresence(); // initial presence snapshot
     })();
   </script>
 </body>
