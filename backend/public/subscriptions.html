@@ -3,23 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>My Profile</title>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-FDQ6REQWS8');
-</script>
+  <title>Subscriptions</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     body {
       background: linear-gradient(to bottom right, #f2e6ff, #ffffff);
       font-family: Arial, sans-serif;
     }
-    .profile-container {
+    .subscription-container {
       max-width: 600px;
       margin: 40px auto;
       background: #fff;
@@ -28,68 +19,33 @@
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
       text-align: center;
     }
-    .profile-container img {
-      width: 120px;
-      height: 120px;
-      border-radius: 50%;
-      object-fit: cover;
-      margin-bottom: 15px;
-      border: 3px solid #6a3fb5;
-    }
-    .profile-container h2 {
-      margin-bottom: 5px;
+    .subscription-container h2 {
+      margin-bottom: 20px;
       color: #6a3fb5;
     }
-    .profile-container p {
-      margin: 8px 0;
-      color: #444;
+    .back-link {
+      display:inline-block;
+      margin-top:20px;
+      padding:10px 16px;
+      background:#6a3fb5;
+      color:white;
+      border-radius:6px;
+      text-decoration:none;
     }
-    .profile-buttons button {
-      margin: 10px;
-      padding: 10px 20px;
-      border: none;
-      background: #6a3fb5;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-    .profile-buttons button:hover {
-      background: #562e94;
+    .back-link:hover {
+      background:#562e94;
     }
   </style>
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
-  <div class="profile-container">
-    <img src="https://via.placeholder.com/120" alt="User Photo">
-    <h2 id="username">Loading...</h2>
-    <p><strong>Email:</strong> <span id="email">Loading...</span></p>
-    <p><strong>Credits left:</strong> <span id="credits">Loading...</span></p>
-    <p><strong>Lifetime access:</strong> <span id="lifetime">Loading...</span></p>
-
-    <!-- 🔹 Subscription link (moved details to subscriptions.html) -->
-    <div style="margin-top:14px;">
-      <a href="subscriptions.html" style="
-        display:inline-block;
-        padding:10px 16px;
-        background:#6a3fb5;
-        color:#fff;
-        border-radius:6px;
-        text-decoration:none;
-      ">
-        See Active Subscriptions
-      </a>
-    </div>
-
-    <div class="profile-buttons">
-      <button>Edit Profile</button>
-      <button onclick="logout()">Logout</button>
-    </div>
+  <div class="subscription-container">
+    <h2>Your Subscription</h2>
+    <div id="subscription-panel">Loading subscription...</div>
+    <a href="myprofile.html" class="back-link">← Back to Profile</a>
   </div>
 
   <script>
-    async function loadProfile() {
+    async function loadSubscription() {
       const token = localStorage.getItem("token");
       if (!token) {
         alert("You must be logged in");
@@ -97,41 +53,7 @@
         return;
       }
 
-      try {
-        // 🔹 Fetch credits and lifetime info
-        const creditRes = await fetch("/api/credits", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const creditData = await creditRes.json();
-        if (!creditRes.ok) throw new Error(creditData.error || "Failed to fetch credits");
-
-        // 🔹 Decode token to extract user email
-        const [, payload] = token.split(".");
-        const decoded = JSON.parse(atob(payload));
-        const email = decoded.email;
-
-        document.getElementById("email").innerText = email;
-        document.getElementById("username").innerText = email.split("@")[0];
-        document.getElementById("credits").innerText = creditData.lifetime
-          ? "Unlimited"
-          : `${creditData.credits} messages`;
-        document.getElementById("lifetime").innerText = creditData.lifetime ? "Yes ✅" : "No";
-
-        // 🔹 After profile basics, load subscription block
-        await loadSubscriptionPanel(token);
-
-      } catch (err) {
-        console.error("Profile error:", err);
-        alert("Could not load your profile.");
-      }
-    }
-
-    // 🔹 Subscription panel logic
-    async function loadSubscriptionPanel(token) {
       const target = document.getElementById('subscription-panel');
-      if (!target) return;
-
       const labelMap = {
         free: 'Free',
         plus: 'Plus (£5/mo)',
@@ -143,7 +65,7 @@
         try { return new Date(d).toLocaleString(); } catch { return d || ''; }
       }
 
-      target.innerHTML = 'Loading subscription...';
+      target.innerHTML = 'Loading...';
       try {
         const r = await fetch('/api/me/subscription', {
           headers: { 'Authorization': 'Bearer ' + token }
@@ -203,7 +125,7 @@
               const data = await rr.json();
               if (!rr.ok) throw new Error(data?.error || 'Cancel failed');
               alert('Cancellation scheduled. You keep access until the period end.');
-              loadSubscriptionPanel(token);
+              loadSubscription();
             } catch (e) {
               alert(e.message || 'Failed to cancel');
               btn.disabled = false;
@@ -212,17 +134,11 @@
         }
       } catch (e) {
         target.innerHTML = `<div style="color:#b91c1c">Could not load subscription.</div>`;
-        console.warn('Subscription panel error:', e);
+        console.warn('Subscription error:', e);
       }
     }
 
-    function logout() {
-      localStorage.removeItem("token");
-      localStorage.removeItem("cachedMessages"); // ✅ extra cleanup
-      window.location.href = "/login.html";
-    }
-
-    loadProfile();
+    loadSubscription();
   </script>
 </body>
 </html>
