@@ -26,6 +26,7 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
+app.options("*", cors());
 
 app.get("/health", (_req, res) => res.json({ ok: true }));
 
