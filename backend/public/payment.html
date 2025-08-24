@@ -34,7 +34,6 @@
   .input{width:100%; background:#0f0f12; color:#fff; border:1px solid #23232a; border-radius:12px; padding:14px 12px; outline:none}
   .input:focus{border-color:#3a3a44}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-  .footer{padding:16px 18px; border-top:1px solid var(--stroke)}
   .cta{width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; color:#111; background:linear-gradient(180deg,#ffc640,#ffad0f)}
   .note{color:#b8bac4; font-size:13px}
   .error{background:#2a1214; color:#ffb4b4; border:1px solid #7a1c1c; border-radius:10px; padding:10px 12px; display:none}
@@ -92,12 +91,12 @@
           </div>
 
           <div id="err" class="error"></div>
+
+          <!-- ✅ Button moved here, right under the card form -->
+          <button class="cta" id="payNow">Complete Payment</button>
+
           <div class="note">Your card is processed securely on this page. If 3-D Secure is required, a quick verification will pop up.</div>
         </div>
-      </div>
-
-      <div class="footer">
-        <button class="cta" id="payNow">Complete Payment</button>
       </div>
     </div>
   </div>
@@ -105,11 +104,11 @@
   <script src="https://js.stripe.com/v3/"></script>
   <script>
   // ====== CONFIG ======
-  // Point this to your new backend file (payment.js) host/port:
+  // Point to your no-trial backend (payment.js server):
   const SUBSCRIBE_URL = "http://localhost:4243/api/stripe/subscribe";
   const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
-  // Match plan -> price ids (same as before; your no-trial server won’t add trials)
+  // Plan -> price IDs
   const PRICE_IDS = {
     month:   "price_1Rsdy1EJXIhiKzYGOtzvwhUH",
     quarter: "price_1RsdzREJXIhiKzYG45b69nSl",
@@ -123,7 +122,7 @@
   document.getElementById("headerTotal").textContent =
     `Total $${(PLAN_TOTALS[selectedPlan] ?? PLAN_TOTALS.year).toFixed(2)}`;
 
-  // Init Stripe + Elements (unchanged)
+  // Init Stripe + Elements
   const stripe = Stripe(PUBLISHABLE_KEY);
   const elements = stripe.elements({
     appearance: {
@@ -152,7 +151,7 @@
     const urlPlan = new URLSearchParams(location.search).get('plan');
     if(urlPlan) { selectedPlan = urlPlan; sessionStorage.setItem('selectedPlan', selectedPlan); }
 
-    // 0) Create a PaymentMethod from the Elements on THIS page
+    // 0) Create a PaymentMethod from the card fields
     let pm;
     try{
       const pmRes = await stripe.createPaymentMethod({
@@ -166,7 +165,7 @@
       showError(e.message || 'Card details are invalid.'); return;
     }
 
-    // 1) Ask your no-trial server (payment.js) to create the subscription and return a PaymentIntent client_secret
+    // 1) Ask the no-trial server to create subscription and return a PaymentIntent client_secret
     let clientSecret;
     try{
       const res = await fetch(SUBSCRIBE_URL, {
