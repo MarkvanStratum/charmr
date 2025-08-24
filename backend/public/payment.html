@@ -92,7 +92,7 @@
 
           <div id="err" class="error"></div>
 
-          <!-- ✅ Button moved here, right under the card form -->
+          <!-- Button under the card form so it's always visible -->
           <button class="cta" id="payNow">Complete Payment</button>
 
           <div class="note">Your card is processed securely on this page. If 3-D Secure is required, a quick verification will pop up.</div>
@@ -104,8 +104,8 @@
   <script src="https://js.stripe.com/v3/"></script>
   <script>
   // ====== CONFIG ======
-  // Point to your no-trial backend (payment.js server):
-  const SUBSCRIBE_URL = "http://localhost:4243/api/stripe/subscribe";
+  // Use same-origin route (proxy your no-trial backend under this path).
+  const SUBSCRIBE_URL = "/api/stripe/subscribe";
   const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
   // Plan -> price IDs
@@ -165,7 +165,7 @@
       showError(e.message || 'Card details are invalid.'); return;
     }
 
-    // 1) Ask the no-trial server to create subscription and return a PaymentIntent client_secret
+    // 1) Ask backend to create subscription and return a PaymentIntent client_secret
     let clientSecret;
     try{
       const res = await fetch(SUBSCRIBE_URL, {
