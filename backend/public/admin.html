@@ -294,8 +294,10 @@
         selectConversation(list[0].key);
       }
 
-      const totalUnread = list.reduce((a,c)=>a+c.unread,0);
-      document.title = totalUnread ? `(${totalUnread}) Operator Console` : 'Operator Console';
+     // show total unread across ALL chats in the browser tab (not just the filtered view)
+const totalUnreadAll = [...store.byKey.values()].reduce((a,c)=>a+c.unread,0);
+document.title = totalUnreadAll ? `(${totalUnreadAll}) Operator Console` : 'Operator Console';
+
     }
 
     // ----- Chat -----
