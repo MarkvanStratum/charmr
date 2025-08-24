@@ -74,7 +74,7 @@
         const sub = await r.json();
 
         const tierName = labelMap[sub.tier] || sub.tier || 'Free';
-        const isPaid = sub.tier && sub.tier !== 'free' && sub.status !== 'inactive';
+        const isPaid = !!(sub.tier && sub.tier !== 'free' && sub.status !== 'inactive');
         const willCancel = !!sub.cancelAtPeriodEnd;
 
         let html = `
@@ -88,7 +88,7 @@
 
         if (isPaid && !willCancel) {
           html += `
-            <button id="cancelSubBtn" style="
+            <button id="cancelSubBtn" type="button" style="
               margin-top:10px;padding:10px 16px;border:0;border-radius:6px;
               background:#6a3fb5;color:#fff;cursor:pointer">
               Cancel subscription
@@ -100,9 +100,21 @@
         } else if (isPaid && willCancel) {
           html += `<div style="margin-top:10px;color:#b91c1c">
             Cancellation scheduled at period end.
-          </div>`;
+          </div>
+          <!-- Reactivate when cancel is scheduled -->
+          <button id="reactivateSubBtn" type="button" style="
+            margin-top:10px;padding:10px 16px;border:0;border-radius:6px;
+            background:#6a3fb5;color:#fff;cursor:pointer">
+            Keep subscription (undo cancel)
+          </button>`;
         } else {
-          html += `<div style="margin-top:10px;color:#6b7280">No active subscription.</div>`;
+          html += `<div style="margin-top:10px;color:#6b7280">No active subscription.</div>
+          <!-- Reactivate when fully canceled/inactive -->
+          <button id="reactivateSubBtn" type="button" style="
+            margin-top:10px;padding:10px 16px;border:0;border-radius:6px;
+            background:#6a3fb5;color:#fff;cursor:pointer">
+            Reactivate subscription
+          </button>`;
         }
 
         html += `</div>`;
@@ -129,6 +141,31 @@
             } catch (e) {
               alert(e.message || 'Failed to cancel');
               btn.disabled = false;
+            }
+          };
+        }
+
+        // Reactivate (undo scheduled cancel OR create a new sub server-side)
+        const reactBtn = document.getElementById('reactivateSubBtn');
+        if (reactBtn) {
+          reactBtn.onclick = async () => {
+            reactBtn.disabled = true;
+            try {
+              const rr = await fetch('/api/stripe/reactivate', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': 'Bearer ' + token
+                },
+                body: JSON.stringify({})
+              });
+              const data = await rr.json().catch(()=> ({}));
+              if (!rr.ok) throw new Error(data?.error || 'Reactivate failed');
+              alert('Subscription reactivated.');
+              loadSubscription();
+            } catch (e) {
+              alert(e.message || 'Failed to reactivate');
+              reactBtn.disabled = false;
             }
           };
         }
