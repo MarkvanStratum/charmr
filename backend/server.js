@@ -3553,6 +3553,62 @@ app.post("/api/stripe/cancel", authenticateToken, async (req, res) => {
   }
 });
 
+// 3) Reactivate a subscription that was set to cancel at period end
+app.post("/api/stripe/reactivate", authenticateToken, async (req, res) => {
+  try {
+    const row = await getUserSubscription(pool, req.user.id);
+    const subId = row?.stripe_subscription_id;
+    if (!subId) {
+      return res.status(400).json({ error: "No active subscription to reactivate" });
+    }
+
+    // Fetch latest from Stripe to verify it’s only scheduled to cancel
+    const current = await stripe.subscriptions.retrieve(subId);
+
+    // If it's already canceled, we can't reactivate this object (must create a new sub)
+    if (current.status === "canceled") {
+      return res.status(409).json({ error: "Subscription already canceled; create a new subscription" });
+    }
+
+    // If there is no scheduled cancellation, nothing to do
+    if (!current.cancel_at_period_end) {
+      return res.json({
+        ok: true,
+        status: current.status,
+        cancel_at_period_end: false,
+        current_period_end: current.current_period_end
+          ? new Date(current.current_period_end * 1000).toISOString()
+          : null,
+      });
+    }
+
+    // Clear the scheduled cancellation
+    const updated = await stripe.subscriptions.update(subId, {
+      cancel_at_period_end: false,
+    });
+
+    // Mirror Stripe state into DB so UI updates instantly
+    await upsertSubscription(pool, {
+      userId: req.user.id,
+      stripeCustomerId: row.stripe_customer_id,
+      stripeSubscription: updated,
+    });
+
+    res.json({
+      ok: true,
+      status: updated.status,
+      cancel_at_period_end: updated.cancel_at_period_end,
+      current_period_end: updated.current_period_end
+        ? new Date(updated.current_period_end * 1000).toISOString()
+        : null,
+    });
+  } catch (e) {
+    console.error("Subscription reactivate error:", e);
+    res.status(500).json({ error: "Failed to reactivate subscription" });
+  }
+});
+
+
 // 🔹 NEW: protected USER routes (gift / photo / contact sharing)
 // These mirror your existing operator sends but enforce plan features.
 // Frontend can call these; operator endpoints remain unchanged.
