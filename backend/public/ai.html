@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Charmr.xyz — AI Girlfriend Funnel (Replica)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0e0f;
+    --card:#151518;
+    --text:#fff;
+    --muted:#b7b9c0;
+    --accent:#f4a005;
+    --accent-2:#ffa800;
+    --accent-3:#ffbd3a;
+    --success:#13c47f;
+    --danger:#ef4444;
+    --radius:16px;
+    --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .app{
+    max-width:480px;
+    margin:0 auto;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* Top app bar */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px;
+    background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));
+    backdrop-filter:saturate(120%) blur(8px);
+  }
+  .brand{
+    display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
+  }
+  .brand .logo{
+    width:22px; height:22px; display:grid; place-items:center;
+    color:#6ee7b7; background:#2a2a2e; border-radius:8px;
+    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);
+  }
+  .back{
+    display:flex; align-items:center; gap:8px; color:#d7d7dc; cursor:pointer;
+    visibility:hidden;
+  }
+  .back.show{visibility:visible}
+  .back svg{width:18px; height:18px; opacity:.9}
+
+  /* Progress */
+  .progress{
+    display:flex; gap:6px; padding:8px 16px 0; margin-bottom:8px;
+  }
+  .dot{
+    flex:1; height:4px; border-radius:999px; background:#2b2b30; overflow:hidden;
+  }
+  .dot > span{
+    display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent-3));
+    border-radius:inherit; transition:width .35s ease;
+  }
+
+  /* Sections */
+  .section{
+    padding:8px 16px 24px;
+    display:none;
+    animation:fade .22s ease;
+  }
+  .section.active{display:block}
+  @keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+
+  .title{
+    margin:8px 0 8px; font-weight:800; font-size:28px; line-height:1.15;
+    text-align:left;
+  }
+  .subtitle{color:#d9dbe2; opacity:.92; margin:0 0 14px; font-weight:600}
+
+  /* Cards with videos */
+  .grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+  .card{
+    position:relative; border-radius:18px; overflow:hidden; background:#0b0b0d; box-shadow:var(--ring); cursor:pointer;
+  }
+  .card video,.hero video{width:100%; height:100%; object-fit:cover; display:block}
+  .card::after{
+    content:""; position:absolute; inset:0;
+    background:linear-gradient(to top,rgba(0,0,0,.65) 12%,rgba(0,0,0,0) 65%);
+    pointer-events:none;
+  }
+  .label{
+    position:absolute; left:50%; bottom:10px; transform:translateX(-50%);
+    background:#111114; color:#fff; border-radius:999px; padding:10px 16px;
+    font-weight:700; font-size:15px; box-shadow:0 2px 14px rgba(0,0,0,.45), inset 0 0 0 1.5px rgba(255,255,255,.08);
+  }
+
+  /* Landing hero */
+  .hero{
+    aspect-ratio:9/13; width:100%; border-radius:20px; overflow:hidden; box-shadow:var(--ring);
+    position:relative; background:#0b0b0d;
+  }
+  .hero .cta{
+    position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+  }
+
+  /* Buttons */
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    padding:14px 22px; border:none; border-radius:14px; font-weight:800; cursor:pointer;
+    color:#111; background:linear-gradient(180deg,#ffc640,#ffad0f); box-shadow:0 8px 22px rgba(255,174,15,.28);
+  }
+  .btn:active{transform:translateY(1px)}
+  .btn.secondary{
+    background:#1a1a1e; color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08);
+  }
+  .btn.full{width:100%}
+
+  /* Prompt (single video + Yes/No) */
+  .prompt{
+    display:flex; flex-direction:column; gap:16px;
+  }
+  .prompt .stage{
+    position:relative; border-radius:20px; overflow:hidden; box-shadow:var(--ring);
+    background:#0b0b0d; aspect-ratio:9/13;
+  }
+  .prompt .btnrow{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+
+  /* Premium page */
+  .premium-head{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:10px 16px 0;
+  }
+  .chip{
+    display:inline-flex; align-items:center; gap:8px;
+    background:#1a1a1f; color:#fff; padding:10px 14px; border-radius:12px;
+    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);
+  }
+  .chip .timer{font-weight:800; color:#ffcc58}
+  .claim{padding:10px 14px; border-radius:12px; background:linear-gradient(180deg,#ffc640,#ffad0f); color:#111; font-weight:800}
+  .prem-hero{margin:10px 16px 16px}
+  .benefits{
+    margin:16px; background:transparent;
+  }
+  .benefits h3{margin:0 0 8px; font-size:28px; font-weight:800; color:#ffb429}
+  .ul{list-style:none; margin:0; padding:0}
+  .ul li{display:flex; gap:10px; align-items:center; padding:10px 0; color:#e7e7ea; font-weight:600}
+  .ul li:before{content:"✔"; color:#ffc640}
+
+  .plans{display:flex; flex-direction:column; gap:14px; margin:14px 16px 28px}
+  .plan{
+    background:#141419; border-radius:18px; padding:14px; box-shadow:var(--ring); position:relative; cursor:pointer;
+  }
+  .plan .tag{position:absolute; top:12px; left:12px; background:#1f1f25; color:#ffda7a; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06)}
+  .plan .row{display:flex; align-items:center; justify-content:space-between; gap:12px}
+  .plan .price{display:flex; align-items:baseline; gap:6px; font-weight:800}
+  .plan .price .num{font-size:34px}
+  .plan .struck{color:#80808a; text-decoration:line-through; font-size:12px}
+  .plan.pop{outline:2px solid #ffb429; box-shadow:0 0 0 3px rgba(255,180,41,.15);}
+  .plan.selected{outline:2px solid #ffd159; box-shadow:0 0 0 3px rgba(255,209,89,.15);}
+
+  .most-pop{
+    margin:8px 0 -2px; text-align:center; font-weight:800; color:#111; background:linear-gradient(180deg,#ffc640,#ffad0f); border-radius:12px; padding:10px 12px;
+  }
+
+  /* Layout helpers */
+  .spacer{height:10px}
+  .center{text-align:center}
+  .mt8{margin-top:8px}
+  .mt16{margin-top:16px}
+  .mt24{margin-top:24px}
+  .hidden{display:none !important}
+
+  /* Desktop preview tweaks */
+  @media (min-width:520px){
+    body{background:radial-gradient(1000px 600px at 50% -100px,#1b1b1f,transparent), var(--bg)}
+    .app{margin:20px auto}
+    .topbar{border-radius:16px 16px 0 0}
+  }
+</style>
+</head>
+<body>
+  <div class="app">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="brand">
+        <span class="logo">💎</span>
+        <span>Charmr.xyz</span>
+      </div>
+      <div class="back" id="backBtn" aria-label="Go back">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Back</span>
+      </div>
+    </div>
+
+    <!-- Progress dots -->
+    <div class="progress" id="progress"></div>
+
+    <!-- Sections -->
+    <!-- Landing -->
+    <section class="section active" id="landing">
+      <h1 class="title">Create your own ✨ AI Girlfriend ✨</h1>
+      <div class="hero">
+        <video src="https://get-honey.co/assets/video-1-DflUtSb_.mp4" autoplay muted loop playsinline></video>
+        <div class="cta">
+          <button class="btn" id="startBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 12h18M12 3l9 9-9 9" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Create
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Question sections are injected here -->
+    <section class="section" id="questionContainer"></section>
+
+    <!-- Prompt (single video + yes/no) -->
+    <section class="section" id="promptContainer"></section>
+
+    <!-- Premium -->
+    <section class="section" id="premium">
+      <div class="premium-head">
+        <div class="chip"><span>Premium</span> <span class="timer" id="timer">10:00</span></div>
+        <button class="claim">Claim discount</button>
+      </div>
+
+      <div class="prem-hero">
+        <h2 class="title center">Your AI girl is ready!</h2>
+        <p class="subtitle center">Get access to everything she can do for you right now</p>
+        <div class="hero">
+          <video src="https://get-honey.co/assets/video-1-DB8MYB9Q.mp4" autoplay muted loop playsinline></video>
+        </div>
+      </div>
+
+      <div class="benefits">
+        <h3>Premium Benefits</h3>
+        <ul class="ul">
+          <li>Extremely Spicy Content</li>
+          <li>Unlimited Uncensored Chats</li>
+          <li>Generate Photos</li>
+          <li>Create More Girlfriends</li>
+          <li>Content Privacy</li>
+        </ul>
+      </div>
+
+      <div class="center subtitle mt16">Get <b>Exclusive Discount</b> Only Today!<br><small>Up to <b>70%</b> off for first subscription</small></div>
+
+      <div class="plans" id="plans">
+        <div class="plan" data-plan="month">
+          <div class="tag">50% OFF</div>
+          <div class="row">
+            <div>
+              <div style="font-weight:800">1 month</div>
+              <div class="struck">39.99 → 19.99</div>
+            </div>
+            <div class="price"><span class="num">0.66</span><span>USD<br><small>per day</small></span></div>
+          </div>
+        </div>
+
+        <div class="plan pop selected" data-plan="year">
+          <div class="tag">70% OFF</div>
+          <div class="row">
+            <div>
+              <div style="font-weight:800">12 months</div>
+              <div class="struck">399.99 → 119.99</div>
+            </div>
+            <div class="price"><span class="num">0.33</span><span>USD<br><small>per day</small></span></div>
+          </div>
+          <div class="most-pop">MOST POPULAR</div>
+        </div>
+
+        <div class="plan" data-plan="quarter">
+          <div class="tag">60% OFF</div>
+          <div class="row">
+            <div>
+              <div style="font-weight:800">3 months</div>
+              <div class="struck">99.99 → 39.99</div>
+            </div>
+            <div class="price"><span class="num">0.49</span><span>USD<br><small>per day</small></span></div>
+          </div>
+        </div>
+
+        <button class="btn full mt8" id="continuePremium">Continue</button>
+        <button class="btn secondary full mt8" id="maybeLater">Maybe later</button>
+      </div>
+    </section>
+
+    <div class="spacer"></div>
+  </div>
+
+<script>
+/* -------------------- Data -------------------- */
+const steps = [
+  // Q1
+  {
+    type:'two',
+    title:'How old would you like your AI Girlfriend to be?',
+    options:[
+      {label:'Younger', video:'https://get-honey.co/assets/video-1-AYhWxmJn.mp4', value:'younger'},
+      {label:'Older',   video:'https://get-honey.co/assets/video-2-OEqd2y_j.mp4', value:'older'}
+    ]
+  },
+  // Q2
+  {
+    type:'two',
+    title:'Which physique do you prefer?',
+    options:[
+      {label:'Skinny',      video:'https://get-honey.co/assets/video-1-BSDGg6ZK.mp4', value:'skinny'},
+      {label:'Voluptuous',  video:'https://get-honey.co/assets/video-2-g0FTYSha.mp4', value:'voluptuous'}
+    ]
+  },
+  // Q3
+  {
+    type:'two',
+    title:'Which vibe should your girl have?',
+    options:[
+      {label:'Innocent',    video:'https://get-honey.co/assets/video-1-BIHbewqR.mp4', value:'innocent'},
+      {label:'Experienced', video:'https://get-honey.co/assets/video-2-DNSZ5-3O.mp4', value:'experienced'}
+    ]
+  },
+  // Q4
+  {
+    type:'two',
+    title:'What attitude does she have?',
+    options:[
+      {label:'Sweet', video:'https://get-honey.co/assets/video-1-BwEHoo1r.mp4', value:'sweet'},
+      {label:'Kinky', video:'https://get-honey.co/assets/video-2-DasfjEJZ.mp4', value:'kinky'}
+    ]
+  },
+  // Q5
+  {
+    type:'two',
+    title:'How do you want your AI girl to behave?',
+    options:[
+      {label:'In control', video:'https://get-honey.co/assets/video-1-DtwnEUJS.mp4', value:'control'},
+      {label:'Obedient',   video:'https://get-honey.co/assets/video-2-CvayMnZV.mp4', value:'obedient'}
+    ]
+  },
+  // Q6
+  {
+    type:'two',
+    title:'Do you want NSFW content to be part of your experience?',
+    options:[
+      {label:'NSFW enabled', video:'https://get-honey.co/assets/video-1-CWFcKdtk.mp4', value:'nsfw_on'},
+      {label:'NSFW off',     video:'https://get-honey.co/assets/video-2-CSgtzbF3.mp4', value:'nsfw_off'}
+    ]
+  },
+  // Q7
+  {
+    type:'two',
+    title:'Where are you spending time together?',
+    options:[
+      {label:'In bed',  video:'https://get-honey.co/assets/video-1-l3-B_NGc.mp4', value:'in_bed'},
+      {label:'Outside', video:'https://get-honey.co/assets/video-2-CU2j5i97.mp4', value:'outside'}
+    ]
+  },
+  // Q8 (prompt)
+  {
+    type:'prompt',
+    title:'Would you like to receive spicy photos?',
+    video:'https://get-honey.co/assets/video-1-t1ShKju6.mp4',
+    left:{label:'No', value:'no_spicy'},
+    right:{label:'Yes', value:'yes_spicy'}
+  },
+  // Q9 (prompt)
+  {
+    type:'prompt',
+    title:'Would you like to receive voice messages?',
+    video:'https://get-honey.co/assets/video-modal-2-C4iVEysS.mp4',
+    left:{label:'No', value:'no_voice'},
+    right:{label:'Yes', value:'yes_voice'}
+  },
+  // Q10 (prompt)
+  {
+    type:'prompt',
+    title:'Would you like to receive special videos?',
+    video:'https://get-honey.co/assets/video-modal-2-C4iVEysS.mp4',
+    left:{label:'No', value:'no_special'},
+    right:{label:'Yes', value:'yes_special'}
+  },
+];
+
+const answers = {};
+let stepIndex = -1; // -1 = landing
+
+/* -------------------- Elements -------------------- */
+const landing = document.getElementById('landing');
+const qWrap   = document.getElementById('questionContainer');
+const pWrap   = document.getElementById('promptContainer');
+const premium = document.getElementById('premium');
+const startBtn= document.getElementById('startBtn');
+const backBtn = document.getElementById('backBtn');
+const progress= document.getElementById('progress');
+const timerEl = document.getElementById('timer');
+
+/* -------------------- Progress Dots -------------------- */
+function renderProgress(){
+  progress.innerHTML='';
+  const total = steps.length;
+  const containerVisible = stepIndex >= 0 && stepIndex < total;
+  progress.style.display = containerVisible ? 'flex':'none';
+  if(!containerVisible) return;
+
+  for(let i=0;i<total;i++){
+    const d = document.createElement('div');
+    d.className='dot';
+    const span = document.createElement('span');
+    const pct = (i <= stepIndex) ? 100 : 0;
+    span.style.width = pct+'%';
+    d.appendChild(span);
+    progress.appendChild(d);
+  }
+}
+
+/* -------------------- Navigation -------------------- */
+function show(section){
+  [landing,qWrap,pWrap,premium].forEach(s=>s.classList.remove('active'));
+  section.classList.add('active');
+  backBtn.classList.toggle('show', stepIndex>=0 && stepIndex<steps.length);
+  renderProgress();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function next(){
+  stepIndex++;
+  if(stepIndex === 0){ renderQuestion(); return; }
+  if(stepIndex > 0 && stepIndex < steps.length){ renderCurrentStep(); return; }
+  if(stepIndex >= steps.length){ show(premium); startTimer(); }
+}
+function prev(){
+  if(stepIndex <= -1) return;
+  stepIndex--;
+  if(stepIndex === -1){ show(landing); return; }
+  renderCurrentStep();
+}
+
+backBtn.addEventListener('click', prev);
+startBtn.addEventListener('click', ()=>{ stepIndex = 0; renderQuestion(); });
+
+/* -------------------- Renderers -------------------- */
+function renderCurrentStep(){
+  const s = steps[stepIndex];
+  if(s.type === 'two') renderQuestion();
+  else renderPrompt();
+}
+
+function renderQuestion(){
+  const s = steps[stepIndex];
+  qWrap.innerHTML = `
+    <h2 class="title">${s.title}</h2>
+    <div class="grid-2" role="listbox" aria-label="${s.title}">
+      ${s.options.map((o,i)=>`
+        <div class="card" role="option" tabindex="0" data-value="${o.value}">
+          <video src="${o.video}" autoplay muted loop playsinline></video>
+          <div class="label">${o.label}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  qWrap.querySelectorAll('.card').forEach((el,idx)=>{
+    el.addEventListener('click', ()=>{
+      const opt = s.options[idx];
+      answers['step_'+stepIndex] = opt.value;
+      next();
+    });
+    el.addEventListener('keyup',(ev)=>{ if(ev.key==='Enter' || ev.key===' '){ el.click(); }});
+  });
+  show(qWrap);
+}
+
+function renderPrompt(){
+  const s = steps[stepIndex];
+  pWrap.innerHTML = `
+    <h2 class="title">${s.title}</h2>
+    <div class="prompt">
+      <div class="stage">
+        <video src="${s.video}" autoplay muted loop playsinline></video>
+      </div>
+      <div class="btnrow">
+        <button class="btn secondary" id="leftBtn">${s.left.label}</button>
+        <button class="btn" id="rightBtn">${s.right.label}</button>
+      </div>
+    </div>
+  `;
+  pWrap.querySelector('#leftBtn').addEventListener('click', ()=>{ answers['step_'+stepIndex] = s.left.value; next(); });
+  pWrap.querySelector('#rightBtn').addEventListener('click', ()=>{ answers['step_'+stepIndex] = s.right.value; next(); });
+  show(pWrap);
+}
+
+/* -------------------- Premium: plan selection + redirect -------------------- */
+const plansEl = document.getElementById('plans');
+const continueBtn = document.getElementById('continuePremium');
+const maybeLaterBtn = document.getElementById('maybeLater');
+
+let selectedPlan = 'year'; // default
+function applySelection(){
+  plansEl.querySelectorAll('.plan').forEach(card=>{
+    card.classList.toggle('selected', card.dataset.plan === selectedPlan);
+  });
+}
+plansEl.querySelectorAll('.plan').forEach(card=>{
+  card.addEventListener('click', ()=>{
+    selectedPlan = card.dataset.plan || 'year';
+    applySelection();
+  });
+});
+applySelection();
+
+continueBtn.addEventListener('click', ()=>{
+  sessionStorage.setItem('selectedPlan', selectedPlan || 'year');
+  window.location.href = '/payment.html'; // ✅ redirect to payment page
+});
+
+maybeLaterBtn.addEventListener('click', ()=> history.back());
+
+/* -------------------- Premium Timer -------------------- */
+let timerId, remaining = 10*60;
+function startTimer(){
+  clearInterval(timerId);
+  remaining = 10*60;
+  updateTimer();
+  timerId = setInterval(()=>{
+    remaining = Math.max(0, remaining-1);
+    updateTimer();
+    if(remaining===0) clearInterval(timerId);
+  },1000);
+}
+function updateTimer(){
+  const m = String(Math.floor(remaining/60)).padStart(2,'0');
+  const s = String(remaining%60).padStart(2,'0');
+  timerEl.textContent = `${m}:${s}`;
+}
+
+/* -------------------- Kickoff -------------------- */
+renderProgress();
+</script>
+</body>
+</html>

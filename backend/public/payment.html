@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0e0f; --panel:#111114; --block:#15151a; --text:#fff; --muted:#c8cad2;
+    --stroke:rgba(255,255,255,.08); --accent:#ffb62c; --accent2:#ffad0f;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:#0a0a0b; color:var(--text)}
+  .wrap{min-height:100%; display:flex; align-items:center; justify-content:center; padding:24px}
+  .sheet{width:min(980px,96vw); height:min(90vh,780px); background:#111114; border-radius:16px; display:flex; flex-direction:column; box-shadow:0 24px 80px rgba(0,0,0,.6)}
+  .header{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--stroke)}
+  .header h1{margin:0; font-size:22px}
+  .header .total{color:#e8e9ee; font-weight:700}
+  .closeX{cursor:pointer; opacity:.85}
+  .body{flex:1; overflow:auto; padding:22px}
+  .stack{max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:18px}
+  .block{background:#15151a; border-radius:16px; padding:18px; box-shadow:0 0 0 1px var(--stroke)}
+  .block h3{margin:0 0 12px; font-size:18px}
+  .btn-apple,.btn-gpay{display:flex; align-items:center; justify-content:center; font-weight:800; border-radius:12px; padding:14px 16px}
+  .btn-apple{background:#fff; color:#000}
+  .btn-gpay{background:#f1f2f4; color:#111}
+  .divider{height:10px}
+  .brands{display:flex; align-items:center; gap:10px; margin-bottom:8px}
+  .right-note{margin-left:auto; opacity:.9}
+  .stripe{color:#635bff; font-weight:800}
+  .label{font-weight:600; font-size:14px; color:#e2e3ea; margin:8px 0 6px}
+  .input{width:100%; background:#0f0f12; color:#fff; border:1px solid #23232a; border-radius:12px; padding:14px 12px; outline:none}
+  .input:focus{border-color:#3a3a44}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .footer{padding:16px 18px; border-top:1px solid var(--stroke)}
+  .cta{width:100%; padding:14px; border:none; border-radius:12px; font-weight:800; color:#111; background:linear-gradient(180deg,#ffc640,#ffad0f)}
+  .note{color:#b8bac4; font-size:13px}
+  .error{background:#2a1214; color:#ffb4b4; border:1px solid #7a1c1c; border-radius:10px; padding:10px 12px; display:none}
+  .hidden{display:none}
+  .el{background:#0f0f12; border:1px solid #23232a; border-radius:12px; padding:14px 12px}
+  .el-focus{border-color:#3a3a44}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="coTitle">
+      <div class="header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="closeX" onclick="history.back()">✕</span>
+          <h1 id="coTitle">Checkout</h1>
+        </div>
+        <div class="total" id="headerTotal">Total $119.99</div>
+      </div>
+
+      <div class="body">
+        <div class="stack">
+          <div class="block">
+            <h3>Fast Payments</h3>
+            <div class="btn-apple">&nbsp;Pay</div>
+            <div class="divider"></div>
+            <div class="btn-gpay">G&nbsp;Pay&nbsp;&nbsp;|&nbsp;&nbsp;VISA •••• 2899</div>
+          </div>
+
+          <div class="block">
+            <h3>Credit card</h3>
+            <div class="brands">
+              <img alt="visa" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" style="height:18px;filter:invert(1) brightness(2)">
+              <img alt="mc" src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Mastercard-logo.png" style="height:18px">
+              <img alt="amex" src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo_%282018%29.svg" style="height:18px">
+              <img alt="disc" src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Discover_Card_logo.svg" style="height:18px">
+              <span class="right-note">Secured by <span class="stripe">stripe</span></span>
+            </div>
+
+            <div class="label">Card number</div>
+            <div id="card-number" class="el"></div>
+
+            <div class="grid2">
+              <div>
+                <div class="label">Expiration date</div>
+                <div id="card-expiry" class="el"></div>
+              </div>
+              <div>
+                <div class="label">Security code</div>
+                <div id="card-cvc" class="el"></div>
+              </div>
+            </div>
+
+            <div class="label">Email (Your login)</div>
+            <input class="input" id="emailInput" placeholder="useremail@mail.com" autocomplete="email">
+          </div>
+
+          <div id="err" class="error"></div>
+          <div class="note">Your card is processed securely on this page. If 3‑D Secure is required, a quick verification will pop up.</div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <button class="cta" id="payNow">Complete Payment</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://js.stripe.com/v3/"></script>
+  <script>
+  // ====== CONFIG ======
+  const CREATE_SUB_URL = "/create-subscription"; // <- change to your server URL if different
+  const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+  const PLAN_TOTALS = { month:19.99, quarter:39.99, year:119.99 };
+
+  // Selected plan from previous page (fallback to 'year')
+  let selectedPlan = sessionStorage.getItem("selectedPlan") || "year";
+  document.getElementById("headerTotal").textContent = `Total $${(PLAN_TOTALS[selectedPlan] ?? PLAN_TOTALS.year).toFixed(2)}`;
+
+  // Init Stripe + Elements
+  const stripe = Stripe(PUBLISHABLE_KEY);
+  const elements = stripe.elements({
+    appearance: {
+      theme: 'night',
+      variables: { colorText:'#fff', colorBackground:'#0f0f12', colorPrimary:'#ffad0f', colorIcon:'#c9ccd6' }
+    }
+  });
+  const style = { classes: { focus: 'el-focus' } };
+
+  const cardNumber = elements.create('cardNumber', style);
+  const cardExpiry = elements.create('cardExpiry', style);
+  const cardCvc    = elements.create('cardCvc', style);
+  cardNumber.mount('#card-number'); cardExpiry.mount('#card-expiry'); cardCvc.mount('#card-cvc');
+
+  const $err = document.getElementById('err');
+  function showError(msg){ $err.textContent = msg; $err.style.display = 'block'; }
+  function clearError(){ $err.style.display='none'; $err.textContent=''; }
+
+  document.getElementById('payNow').addEventListener('click', async ()=>{
+    clearError();
+    const email = (document.getElementById('emailInput').value || '').trim();
+    if(!email){ showError('Please enter your email.'); return; }
+
+    // Optional: allow ?plan= override
+    const urlPlan = new URLSearchParams(location.search).get('plan');
+    if(urlPlan) { selectedPlan = urlPlan; sessionStorage.setItem('selectedPlan', selectedPlan); }
+
+    // 1) Create subscription on your server using the selected plan
+    let clientSecret;
+    try{
+      const res = await fetch(CREATE_SUB_URL, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ plan: selectedPlan, email })
+      });
+      const data = await res.json();
+      if(!res.ok){ throw new Error(data?.error?.message || 'Server error creating subscription'); }
+      clientSecret = data.clientSecret;
+    }catch(e){
+      showError(e.message); return;
+    }
+
+    // 2) Confirm payment ON THIS PAGE
+    const {paymentIntent, error} = await stripe.confirmCardPayment(clientSecret, {
+      payment_method: { card: cardNumber, billing_details: { email } }
+    });
+
+    if(error){ showError(error.message || 'Payment could not be completed.'); return; }
+    if(paymentIntent && paymentIntent.status === 'succeeded'){
+      window.location.href = 'thankyou2.html';
+    }else{
+      showError('Payment not completed. Status: ' + (paymentIntent?.status || 'unknown'));
+    }
+  });
+  </script>
+</body>
+</html>
