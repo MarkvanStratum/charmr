@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Thank You | Charmr</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 2rem 3rem;
+      text-align: center;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #7c3aed;
+      margin-bottom: 1rem;
+    }
+    p {
+      font-size: 1.1rem;
+      margin-bottom: 2rem;
+    }
+    a.button {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: #7c3aed;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    a.button:hover {
+      background-color: #5b21b6;
+    }
+  </style>
+</head>
+<body>
+<!-- Load GoAffPro (same as you have now) -->
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+<!-- ====== SALES POSTBACK GATE ====== -->
+<script>
+(function(){
+  const CONFIG = {
+    mode: "percent",      // "percent" | "oneInN" | "dailyCap"
+    percent: 100,          // used if mode="percent"  -> e.g., 80 = 80% of sales posted
+    oneInN: 5,            // used if mode="oneInN"   -> e.g., 5 = 1 out of every 5 sales
+    dailyCap: 100,        // used if mode="dailyCap" -> e.g., 100 sales/day
+    ns: "gaffpro_gate"
+  };
+
+  function todayKey(ns){ 
+    const ds = new Date().toISOString().slice(0,10);
+    return `${ns}:count:${ds}`;
+  }
+  function getCount(ns){
+    const k = todayKey(ns);
+    return parseInt(localStorage.getItem(k) || "0", 10);
+  }
+  function incCount(ns){
+    localStorage.setItem(todayKey(ns), String(getCount(ns)+1));
+  }
+  function cryptoRandom(){
+    if (window.crypto && crypto.getRandomValues) {
+      const a = new Uint32Array(1);
+      crypto.getRandomValues(a);
+      return a[0] / 0xFFFFFFFF;
+    }
+    return Math.random();
+  }
+  function shouldPost(){
+    switch(CONFIG.mode){
+      case "percent":
+        return cryptoRandom() < (Math.max(0, Math.min(100, CONFIG.percent))/100);
+      case "oneInN": {
+        const n = Math.max(1, parseInt(CONFIG.oneInN||1,10));
+        const k = `${CONFIG.ns}:oneInN:counter`;
+        const c = parseInt(localStorage.getItem(k)||"0",10)+1;
+        localStorage.setItem(k, String(c));
+        return (c % n) === 0;
+      }
+      case "dailyCap":
+        return getCount(CONFIG.ns) < Math.max(0, parseInt(CONFIG.dailyCap||0,10));
+      default:
+        return true;
+    }
+  }
+  (function patchWhenReady(){
+    if (typeof window.goaffproTrackConversion === "function") {
+      if (window.__goaffproTrackConversionOriginal) return;
+      const original = window.goaffproTrackConversion;
+      window.__goaffproTrackConversionOriginal = original;
+      window.goaffproTrackConversion = function(payload){
+        if (shouldPost()){
+          if (CONFIG.mode === "dailyCap") incCount(CONFIG.ns);
+          return original.apply(this, arguments);
+        } else {
+          console.log("[GoAffPro Gate] Skipped posting this sale per policy:", CONFIG);
+        }
+      };
+      console.log("[GoAffPro Gate] Pixel patched with policy:", CONFIG);
+    } else {
+      setTimeout(patchWhenReady, 120);
+    }
+  })();
+})();
+</script>
+<!-- ====== END SALES POSTBACK GATE ====== -->
+
+<div class="container">
+  <h1>Thank You for Your Purchase!</h1>
+  <p>Your payment was successful. You're now part of Charmr ✨</p>
+  <a href="profiles.html" class="button">Go to Your Profile</a>
+</div>
+
+<script type="text/javascript">
+  // ---- helpers ----
+  function uniqueOrderId() {
+    const ts = Date.now();
+    const rand = Math.random().toString(16).slice(2, 6);
+    return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
+  }
+
+  // GEO-BASED AMOUNT: US/GB/AU/NZ => $30, others => $20
+  async function resolveGeoAmount() {
+    const preferred = ["US","GB","AU","NZ"];
+    let code = "";
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2500);
+      const resp = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+      clearTimeout(timer);
+      if (resp.ok) {
+        const data = await resp.json();
+        code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
+      }
+    } catch(e) { /* default below */ }
+    return preferred.includes(code) ? 9 : 2;
+  }
+
+  // prevent double-fire on reload/back
+  if (!sessionStorage.getItem('gaffpro_converted')) {
+    (async function () {
+      const saleAmount = await resolveGeoAmount();
+
+      window.goaffpro_order = {
+        number: uniqueOrderId(),
+        total: saleAmount,
+        currency: "USD"
+      };
+
+      (function fire(){
+        if (typeof window.goaffproTrackConversion === "function") {
+          console.log("GoAffPro: firing conversion", window.goaffpro_order);
+          window.goaffproTrackConversion(window.goaffpro_order);
+          sessionStorage.setItem('gaffpro_converted', '1');
+        } else {
+          setTimeout(fire, 150);
+        }
+      })();
+    })();
+  } else {
+    console.log("GoAffPro: conversion already fired in this session");
+  }
+</script>
+
+</body>
+</html>
