@@ -74,7 +74,7 @@
         const sub = await r.json();
 
         const tierName = labelMap[sub.tier] || sub.tier || 'Free';
-        const isPaid = sub.tier && sub.tier !== 'free' && sub.status !== 'inactive';
+        const isPaid = !!(sub.tier && sub.tier !== 'free' && sub.status !== 'inactive');
         const willCancel = !!sub.cancelAtPeriodEnd;
 
         let html = `
@@ -88,7 +88,7 @@
 
         if (isPaid && !willCancel) {
           html += `
-            <button id="cancelSubBtn" style="
+            <button id="cancelSubBtn" type="button" style="
               margin-top:10px;padding:10px 16px;border:0;border-radius:6px;
               background:#6a3fb5;color:#fff;cursor:pointer">
               Cancel subscription
@@ -101,14 +101,16 @@
           html += `<div style="margin-top:10px;color:#b91c1c">
             Cancellation scheduled at period end.
           </div>
-          <button id="reactivateSubBtn" style="
+          <!-- Reactivate when cancel is scheduled -->
+          <button id="reactivateSubBtn" type="button" style="
             margin-top:10px;padding:10px 16px;border:0;border-radius:6px;
             background:#6a3fb5;color:#fff;cursor:pointer">
             Keep subscription (undo cancel)
           </button>`;
         } else {
           html += `<div style="margin-top:10px;color:#6b7280">No active subscription.</div>
-          <button id="reactivateSubBtn" style="
+          <!-- Reactivate when fully canceled/inactive -->
+          <button id="reactivateSubBtn" type="button" style="
             margin-top:10px;padding:10px 16px;border:0;border-radius:6px;
             background:#6a3fb5;color:#fff;cursor:pointer">
             Reactivate subscription
@@ -143,7 +145,7 @@
           };
         }
 
-        // NEW: Reactivate (undo cancel or start same plan again)
+        // Reactivate (undo scheduled cancel OR create a new sub server-side)
         const reactBtn = document.getElementById('reactivateSubBtn');
         if (reactBtn) {
           reactBtn.onclick = async () => {
@@ -155,9 +157,7 @@
                   'Content-Type': 'application/json',
                   'Authorization': 'Bearer ' + token
                 },
-                // Let the server decide whether to undo a scheduled cancel
-                // or create a new subscription on the same plan.
-                body: JSON.stringify({}) 
+                body: JSON.stringify({})
               });
               const data = await rr.json().catch(()=> ({}));
               if (!rr.ok) throw new Error(data?.error || 'Reactivate failed');
