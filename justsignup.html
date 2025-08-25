@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Charmr.xyz — Sign up</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0e0f;
+    --card:#151518;
+    --text:#fff;
+    --muted:#b7b9c0;
+    --accent:#ffcc58;
+    --accent-2:#ffd159;
+    --accent-3:#ffb429;
+    --success:#13c47f;
+    --danger:#ef4444;
+    --radius:16px;
+    --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
+
+    /* ⬇️ Adjust these to change video sizes */
+    --heroW: 280px;     /* signup page video width */
+    --payHeroW: 300px;  /* plans page video width */
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .app{
+    max-width:980px;
+    margin:0 auto;
+    min-height:100%;
+    display:flex;
+    flex-direction:column;
+    padding:12px 16px 24px;
+  }
+
+  /* Top bar */
+  .topbar{
+    position:sticky; top:0; z-index:40;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 12px;
+    background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));
+    backdrop-filter:saturate(120%) blur(8px);
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;}
+  .brand .logo{width:22px; height:22px; display:grid; place-items:center; color:#6ee7b7; background:#2a2a2e; border-radius:8px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);}
+
+  /* Sections */
+  .section{display:none}
+  .section.active{display:block}
+
+  /* ---------- SIGNUP STEP ---------- */
+  #signup .hero-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; margin:12px 0 18px;}
+  #signup .hero-title{margin:0; font-weight:800; font-size:30px; line-height:1.15; text-align:center;}
+  #signup .hero-sub{margin:2px 0 0; color:#d9dbe2; opacity:.95; font-weight:600; text-align:center;}
+  #signup .hero-video{
+    width:var(--heroW); aspect-ratio:9/13; border-radius:18px; overflow:hidden;
+    box-shadow:var(--ring); background:#0b0b0d; margin:6px auto 0;
+  }
+  #signup .hero-video video{width:100%; height:100%; object-fit:cover; object-position:center top; display:block}
+
+  #signup .card{
+    background:#151518; border-radius:18px; padding:16px; box-shadow:var(--ring); max-width:620px; margin:0 auto;
+  }
+  #signup .title{margin:0 0 6px; font-size:28px; font-weight:800; text-align:center;}  /* centered */
+  #signup .subtitle{color:#d9dbe2; opacity:.92; margin:0 0 14px; font-weight:600; text-align:center;} /* centered */
+
+  #signup form{display:grid; gap:12px}
+  #signup label{font-weight:700}
+  #signup input{
+    background:#1a1a1f; color:#fff; padding:12px 14px; border-radius:12px; border:1px solid #2a2a31;
+    outline:none;
+  }
+  #signup input:focus{border-color:#3a3a41; box-shadow:0 0 0 2px rgba(255,255,255,.06)}
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:10px;
+    padding:14px 22px; border:none; border-radius:14px; font-weight:800; cursor:pointer;
+    color:#111; background:linear-gradient(180deg,#ffd76b,#ffb429); box-shadow:0 8px 22px rgba(255,174,15,.28);
+  }
+  .btn.secondary{background:#1a1a1f; color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08);}
+  .btn.full{width:100%}
+
+  #signup .hint{color:#cfcfd6; text-align:center; margin-top:8px}
+
+  /* ---------- PLANS STEP ---------- */
+  #premium .bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 16px; background:#1a1a1f; border-radius:14px; box-shadow:var(--ring); margin-bottom:18px;
+  }
+  #premium .pill{background:#2a2a31; color:#fff; padding:10px 14px; border-radius:999px; font-weight:800; display:inline-flex; gap:8px; align-items:center}
+  #timer{color:var(--accent)}
+
+  .offer-grid{display:grid; grid-template-columns:1fr; gap:18px}
+  @media (min-width:900px){ .offer-grid{grid-template-columns: 1fr 1.2fr;} }
+
+  .offer-media{
+    background:#0b0b0d; border-radius:18px; box-shadow:var(--ring); overflow:hidden;
+    width:100%; max-width:var(--payHeroW); margin:0 auto;
+    aspect-ratio:9/13;
+  }
+  .offer-media video{width:100%; height:100%; object-fit:cover; object-position:center top; display:block}
+
+  .offer-right{display:flex; flex-direction:column; gap:14px}
+
+  .headline{font-size:44px; font-weight:800; margin:0}
+  .headline .em{color:#fff; text-shadow:0 0 0 rgba(0,0,0,0); background:linear-gradient(180deg,#fff,#fff); -webkit-background-clip:text; background-clip:text}
+  .subhead{color:#cfcfd6; font-weight:700; margin:6px 0 12px}
+
+  .card{
+    background:#151518; border-radius:18px; box-shadow:var(--ring); overflow:hidden;
+    border:1px solid #26262b;
+  }
+  .plan{
+    padding:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border-top:1px solid #232329;
+  }
+  .plan:first-child{border-top:none}
+  .plan.badge{outline:2px solid var(--accent-3); box-shadow:0 0 0 3px rgba(255,180,41,.15);}
+  .plan .left{display:flex; flex-direction:column; gap:6px}
+  .tag{display:inline-flex; align-items:center; gap:8px; background:#1f1f25; color:#ffda7a; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;}
+  .strike{color:#80808a; text-decoration:line-through; font-size:12px}
+  .pname{font-weight:800}
+  .pprice{display:flex; align-items:baseline; gap:8px; font-weight:800; font-size:34px}
+  .perday{font-size:13px; color:#d0d2d9}
+  .most-pop{display:block; text-align:center; font-weight:900; padding:10px 12px; background:linear-gradient(180deg,#ffd76b,#ffb429); color:#111}
+
+  .cta-wrap{display:flex; flex-direction:column; gap:10px; margin-top:6px}
+  .row-btns{display:flex; flex-direction:column; gap:10px}
+  @media (min-width:640px){ .row-btns{flex-direction:row} }
+  .btn-xl{font-size:16px; padding:16px 22px}
+
+  .trust{display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center; color:#cfcfd6; font-weight:600}
+  .trust .dot{width:6px; height:6px; background:#2a2a31; border-radius:999px; display:inline-block}
+
+  .center{text-align:center}
+</style>
+
+<!-- GA measurement tag -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-17486667499"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  /* Keep both configs as requested */
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
+</head>
+<body>
+  <div class="app">
+    <!-- Top bar -->
+    <div class="topbar">
+      <div class="brand">
+        <span class="logo">💎</span>
+        <span>Charmr.xyz</span>
+      </div>
+      <div></div>
+    </div>
+
+    <!-- SIGNUP (Step 1) -->
+    <section id="signup" class="section active">
+      <div class="hero-wrap">
+        <h1 class="hero-title">YOUR PERFECT AI GIRLFRIEND</h1>
+        <p class="hero-sub">Create your account to continue</p>
+        <div class="hero-video">
+          <video src="https://www.charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="title">Create your account</h2>
+        <p class="subtitle">Sign up to continue to your plan selection.</p>
+
+        <form id="signup-form">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@email.com" />
+
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required placeholder="Create a password" />
+
+          <button type="submit" class="btn full">Sign Up</button>
+        </form>
+
+        <p class="hint">Already have an account? <a href="login.html" style="color:#ffd159;text-decoration:none;">Log in here</a></p>
+      </div>
+    </section>
+
+    <!-- PLANS (Step 2) -->
+    <section id="premium" class="section">
+      <div class="bar">
+        <span class="pill">Limited offer</span>
+        <span class="pill">⏱ <span id="timer">09:59</span></span>
+        <a class="btn" href="#plans">CLAIM DISCOUNT</a>
+      </div>
+
+      <div class="offer-grid">
+        <!-- Left: video -->
+        <div class="offer-media">
+          <video src="https://charmr.xyz/video2.mp4" autoplay muted loop playsinline></video>
+        </div>
+
+        <!-- Right: headline + plans -->
+        <div class="offer-right">
+          <h2 class="headline">She’s <span class="em">all yours</span> now!</h2>
+          <div class="subhead">Unlock her hottest content & live calls</div>
+
+          <div class="card" id="plans">
+            <!-- plan rows inserted by JS -->
+          </div>
+
+          <div class="cta-wrap">
+            <div class="row-btns">
+              <button id="continueBtn" class="btn btn-xl full">UNLOCK HER NOW — <span id="perDayBadge">Only £0.33/day</span></button>
+              <button id="maybeLater" class="btn secondary btn-xl full">Maybe later</button>
+            </div>
+            <div class="center">
+              <div class="trust">
+                <span>🔒 3670 girlfriends claimed today</span>
+                <span class="dot"></span><span>Secure Payment</span>
+                <span class="dot"></span><span>100% Discreet Billing</span>
+                <span class="dot"></span><span>Cancel Anytime</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Optional helper (kept if you already use it elsewhere) -->
+  <script src="./signup.js"></script>
+
+  <script>
+    /* ---------- SIGNUP: intercept & then show plans ---------- */
+    const signupForm = document.getElementById('signup-form');
+    signupForm.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const email = (document.getElementById('email').value || '').trim();
+      const password = document.getElementById('password').value;
+      if(!email || !password){ alert('Please enter your email and password.'); return; }
+
+      try{
+        const res = await fetch('/api/register', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json().catch(()=> ({}));
+        if(!res.ok){ alert(data?.error || 'Registration failed.'); return; }
+        if (data.token) { try { localStorage.setItem('token', data.token); } catch{} }
+      }catch(e){
+        /* If your API is offline, still let the flow continue for now */
+      }
+      // swap views
+      document.getElementById('signup').classList.remove('active');
+      document.getElementById('premium').classList.add('active');
+      startTimer();
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+
+    /* ---------- Plans ---------- */
+    const planData = [
+      {
+        key:'month',
+        label:'1 month',
+        old:'£39.99',
+        now:19.99,
+        days:30,
+        sale:'50% OFF',
+        popular:false
+      },
+      {
+        key:'quarter',
+        label:'3 months',
+        old:'£79.99',
+        now:44.00,       // 👈 your £44 plan
+        days:90,
+        sale:'SAVE BIG',
+        popular:true     // mark as most popular
+      },
+      {
+        key:'year',
+        label:'12 months',
+        old:'£479.88',
+        now:119.88,
+        days:365,
+        sale:'75% OFF',
+        popular:false
+      }
+    ];
+
+    const plansWrap = document.getElementById('plans');
+    let selectedKey = 'quarter';
+
+    function formatMoney(v){ return '£' + (Math.round(v*100)/100).toFixed(2); }
+    function perDayText(p){ return formatMoney(p.now / p.days) + ' per day'; }
+
+    function renderPlans(){
+      plansWrap.innerHTML = '';
+      planData.forEach(p=>{
+        const row = document.createElement('div');
+        row.className = 'plan' + (p.key===selectedKey ? ' badge':'');
+        row.dataset.plan = p.key;
+
+        row.innerHTML = `
+          <div class="left">
+            <span class="tag">${p.sale}</span>
+            <div class="pname">${p.label}</div>
+            <div class="strike">${p.old}</div>
+          </div>
+          <div class="right">
+            <div class="pprice">${formatMoney(p.now)}</div>
+            <div class="perday">${perDayText(p)}</div>
+          </div>
+        `;
+        row.addEventListener('click', ()=>{ selectedKey = p.key; renderPlans(); syncPerDayBadge(); });
+        plansWrap.appendChild(row);
+
+        if (p.popular){
+          const mp = document.createElement('div');
+          mp.className = 'most-pop';
+          mp.textContent = 'MOST POPULAR';
+          plansWrap.appendChild(mp);
+        }
+      });
+    }
+
+    function syncPerDayBadge(){
+      const chosen = planData.find(p=>p.key===selectedKey) || planData[0];
+      document.getElementById('perDayBadge').textContent = `Only ${formatMoney(chosen.now/ chosen.days)}/day`;
+    }
+
+    renderPlans(); syncPerDayBadge();
+
+    document.getElementById('continueBtn').addEventListener('click', ()=>{
+      const chosen = planData.find(p=>p.key===selectedKey);
+      try {
+        sessionStorage.setItem('selectedPlan', chosen?.key || 'quarter');
+        sessionStorage.setItem('selectedPrice', String(chosen?.now ?? ''));
+      } catch {}
+      window.location.href = '/payment.html';
+    });
+    document.getElementById('maybeLater').addEventListener('click', ()=> window.location.href = '/profiles.html');
+
+    /* ---------- Timer ---------- */
+    let remaining = 10*60, tId;
+    function startTimer(){
+      clearInterval(tId);
+      remaining = 10*60;
+      tId = setInterval(()=>{
+        remaining = Math.max(0, remaining-1);
+        const m = String(Math.floor(remaining/60)).padStart(2,'0');
+        const s = String(remaining%60).padStart(2,'0');
+        document.getElementById('timer').textContent = `${m}:${s}`;
+        if(!remaining) clearInterval(tId);
+      },1000);
+    }
+  </script>
+
+  <!-- GoAffPro (must be on every page) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</body>
+</html>
