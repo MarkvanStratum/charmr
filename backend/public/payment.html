@@ -121,9 +121,6 @@
                 <div id="card-cvc" class="el"></div>
               </div>
             </div>
-
-            <div class="label">Email (Your login)</div>
-            <input class="input" id="emailInput" placeholder="useremail@mail.com" autocomplete="email">
           </div>
 
           <div id="err" class="error"></div>
@@ -195,7 +192,7 @@
     country: guessCountry(),
     currency: 'gbp',
     total: { label: 'Charmr.xyz', amount: amountMinor },
-    requestPayerEmail: true
+    requestPayerEmail: false
   });
 
   const prButton = elements.create('paymentRequestButton', {
@@ -229,8 +226,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId: PRICE_IDS[selectedPlan] || PRICE_IDS.year,
-          paymentMethodId: ev.paymentMethod.id,
-          email: ev.payerEmail || (document.getElementById('emailInput').value || '').trim()
+          paymentMethodId: ev.paymentMethod.id
         })
       });
 
@@ -296,8 +292,6 @@
 
   document.getElementById('payNow').addEventListener('click', async ()=>{
     clearError();
-    const email = (document.getElementById('emailInput').value || '').trim();
-    if(!email){ showError('Please enter your email.'); return; }
 
     const urlPlan = new URLSearchParams(location.search).get('plan');
     if(urlPlan) { selectedPlan = urlPlan; sessionStorage.setItem('selectedPlan', selectedPlan); }
@@ -309,8 +303,7 @@
     try{
       const pmRes = await stripe.createPaymentMethod({
         type:'card',
-        card: cardNumber,
-        billing_details: { email }
+        card: cardNumber
       });
       if(pmRes.error) throw pmRes.error;
       pm = pmRes.paymentMethod;
@@ -326,8 +319,7 @@
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({
           priceId: PRICE_IDS[selectedPlan] || PRICE_IDS.year,
-          paymentMethodId: pm.id,
-          email
+          paymentMethodId: pm.id
         })
       });
 
