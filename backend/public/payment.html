@@ -84,7 +84,6 @@
           <span class="closeX" onclick="history.back()">✕</span>
           <h1 id="coTitle">Checkout</h1>
         </div>
-        <div class="total" id="headerTotal">Total £44.00</div>
       </div>
 
       <div class="body">
@@ -161,8 +160,6 @@
   const PLAN_TOTALS = { month:20, quarter:44, year:120 };
 
   let selectedPlan = sessionStorage.getItem("selectedPlan") || "quarter";
-  document.getElementById("headerTotal").textContent =
-    `Total £${(PLAN_TOTALS[selectedPlan] ?? PLAN_TOTALS.quarter).toFixed(2)}`;
 
   // Init Stripe + Elements
   const stripe = Stripe(PUBLISHABLE_KEY);
