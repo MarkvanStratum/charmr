@@ -71,7 +71,7 @@
           <span class="closeX" onclick="history.back()">✕</span>
           <h1 id="coTitle">Checkout</h1>
         </div>
-        <div class="total" id="headerTotal">Total $119.99</div>
+        <div class="total" id="headerTotal">Total £44.00</div>
       </div>
 
       <div class="body">
@@ -140,17 +140,17 @@
 
   // Plan -> price IDs
   const PRICE_IDS = {
-    month:   "price_1Rsdy1EJXIhiKzYGOtzvwhUH",
-    quarter: "price_1RsdzREJXIhiKzYG45b69nSl",
-    year:    "price_1Rt6NcEJXIhiKzYGMsEZFd8f"
+    month:   "price_1Rzdp0EJXIhiKzYGlVxHGH7W",
+    quarter: "price_1RzdrwEJXIhiKzYGdWE0hxhU",
+    year:    "price_1RzdpXEJXIhiKzYGOyrmUiQU"
   };
 
-  const PLAN_TOTALS = { month:19.99, quarter:39.99, year:119.99 };
+  const PLAN_TOTALS = { month:20, quarter:44, year:120 };
 
-  // Selected plan from previous page (fallback to 'year')
-  let selectedPlan = sessionStorage.getItem("selectedPlan") || "year";
+  // Selected plan from previous page (fallback to 'quarter')
+  let selectedPlan = sessionStorage.getItem("selectedPlan") || "quarter";
   document.getElementById("headerTotal").textContent =
-    `Total $${(PLAN_TOTALS[selectedPlan] ?? PLAN_TOTALS.year).toFixed(2)}`;
+    `Total £${(PLAN_TOTALS[selectedPlan] ?? PLAN_TOTALS.quarter).toFixed(2)}`;
 
   // Init Stripe + Elements
   const stripe = Stripe(PUBLISHABLE_KEY);

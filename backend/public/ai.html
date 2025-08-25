@@ -266,7 +266,7 @@
           </div>
         </div>
 
-        <div class="plan pop selected" data-plan="year">
+        <div class="plan" data-plan="year">
           <div class="tag">70% OFF</div>
           <div class="row">
             <div>
@@ -275,10 +275,9 @@
             </div>
             <div class="price"><span class="num">0.33</span><span>USD<br><small>per day</small></span></div>
           </div>
-          <div class="most-pop">MOST POPULAR</div>
         </div>
 
-        <div class="plan" data-plan="quarter">
+        <div class="plan pop selected" data-plan="quarter">
           <div class="tag">60% OFF</div>
           <div class="row">
             <div>
@@ -287,6 +286,7 @@
             </div>
             <div class="price"><span class="num">0.49</span><span>USD<br><small>per day</small></span></div>
           </div>
+          <div class="most-pop">MOST POPULAR</div>
         </div>
 
         <button class="btn full mt8" id="continuePremium">Continue</button>
@@ -501,7 +501,7 @@ const plansEl = document.getElementById('plans');
 const continueBtn = document.getElementById('continuePremium');
 const maybeLaterBtn = document.getElementById('maybeLater');
 
-let selectedPlan = 'year'; // default
+let selectedPlan = 'quarter'; // default (3 months)
 function applySelection(){
   plansEl.querySelectorAll('.plan').forEach(card=>{
     card.classList.toggle('selected', card.dataset.plan === selectedPlan);
