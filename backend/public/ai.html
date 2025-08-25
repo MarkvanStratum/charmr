@@ -109,6 +109,9 @@
     aspect-ratio:9/13; width:100%; border-radius:20px; overflow:hidden; box-shadow:var(--ring);
     position:relative; background:#0b0b0d;
   }
+  /* ⬇️ Make the landing page hero smaller */
+  #landing .hero{ width:85%; max-width:320px; margin:0 auto; }
+
   .hero .cta{
     position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
   }
@@ -214,7 +217,7 @@
     <section class="section active" id="landing">
       <h1 class="title">Create your own ✨ AI Girlfriend ✨</h1>
       <div class="hero">
-        <video src="https://get-honey.co/assets/video-1-DflUtSb_.mp4" autoplay muted loop playsinline></video>
+        <video src="https://charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
         <div class="cta">
           <button class="btn" id="startBtn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 12h18M12 3l9 9-9 9" stroke="#111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -262,7 +265,7 @@
         <h2 class="title center">Your AI girl is ready!</h2>
         <p class="subtitle center">Get access to everything she can do for you right now</p>
         <div class="hero">
-          <video src="https://get-honey.co/assets/video-1-DB8MYB9Q.mp4" autoplay muted loop playsinline></video>
+          <video src="https://charmr.xyz/video18.mp4" autoplay muted loop playsinline></video>
         </div>
       </div>
 
@@ -333,8 +336,8 @@ const steps = [
     type:'two',
     title:'How old would you like your AI Girlfriend to be?',
     options:[
-      {label:'Younger', video:'https://get-honey.co/assets/video-1-AYhWxmJn.mp4', value:'younger'},
-      {label:'Older',   video:'https://get-honey.co/assets/video-2-OEqd2y_j.mp4', value:'older'}
+      {label:'Younger', video:'https://charmr.xyz/video2.mp4', value:'younger'},
+      {label:'Older',   video:'https://charmr.xyz/video3.mp4', value:'older'}
     ]
   },
   // Q2
@@ -342,8 +345,8 @@ const steps = [
     type:'two',
     title:'Which physique do you prefer?',
     options:[
-      {label:'Skinny',      video:'https://get-honey.co/assets/video-1-BSDGg6ZK.mp4', value:'skinny'},
-      {label:'Voluptuous',  video:'https://get-honey.co/assets/video-2-g0FTYSha.mp4', value:'voluptuous'}
+      {label:'Skinny',      video:'https://charmr.xyz/video4.mp4', value:'skinny'},
+      {label:'Voluptuous',  video:'https://charmr.xyz/video5.mp4', value:'voluptuous'}
     ]
   },
   // Q3
@@ -351,8 +354,8 @@ const steps = [
     type:'two',
     title:'Which vibe should your girl have?',
     options:[
-      {label:'Innocent',    video:'https://get-honey.co/assets/video-1-BIHbewqR.mp4', value:'innocent'},
-      {label:'Experienced', video:'https://get-honey.co/assets/video-2-DNSZ5-3O.mp4', value:'experienced'}
+      {label:'Innocent',    video:'https://charmr.xyz/video6.mp4', value:'innocent'},
+      {label:'Experienced', video:'https://charmr.xyz/video7.mp4', value:'experienced'}
     ]
   },
   // Q4
@@ -360,8 +363,8 @@ const steps = [
     type:'two',
     title:'What attitude does she have?',
     options:[
-      {label:'Sweet', video:'https://get-honey.co/assets/video-1-BwEHoo1r.mp4', value:'sweet'},
-      {label:'Kinky', video:'https://get-honey.co/assets/video-2-DasfjEJZ.mp4', value:'kinky'}
+      {label:'Sweet', video:'https://charmr.xyz/video8.mp4', value:'sweet'},
+      {label:'Kinky', video:'https://charmr.xyz/video9.mp4', value:'kinky'}
     ]
   },
   // Q5
@@ -369,8 +372,8 @@ const steps = [
     type:'two',
     title:'How do you want your AI girl to behave?',
     options:[
-      {label:'In control', video:'https://get-honey.co/assets/video-1-DtwnEUJS.mp4', value:'control'},
-      {label:'Obedient',   video:'https://get-honey.co/assets/video-2-CvayMnZV.mp4', value:'obedient'}
+      {label:'In control', video:'https://charmr.xyz/video10.mp4', value:'control'},
+      {label:'Obedient',   video:'https://charmr.xyz/video11.mp4', value:'obedient'}
     ]
   },
   // Q6
@@ -378,8 +381,8 @@ const steps = [
     type:'two',
     title:'Do you want NSFW content to be part of your experience?',
     options:[
-      {label:'NSFW enabled', video:'https://get-honey.co/assets/video-1-CWFcKdtk.mp4', value:'nsfw_on'},
-      {label:'NSFW off',     video:'https://get-honey.co/assets/video-2-CSgtzbF3.mp4', value:'nsfw_off'}
+      {label:'NSFW enabled', video:'https://charmr.xyz/video12.mp4', value:'nsfw_on'},
+      {label:'NSFW off',     video:'https://charmr.xyz/video13.mp4', value:'nsfw_off'}
     ]
   },
   // Q7
@@ -387,15 +390,15 @@ const steps = [
     type:'two',
     title:'Where are you spending time together?',
     options:[
-      {label:'In bed',  video:'https://get-honey.co/assets/video-1-l3-B_NGc.mp4', value:'in_bed'},
-      {label:'Outside', video:'https://get-honey.co/assets/video-2-CU2j5i97.mp4', value:'outside'}
+      {label:'In bed',  video:'https://charmr.xyz/video14.mp4', value:'in_bed'},
+      {label:'Outside', video:'https://charmr.xyz/video15.mp4', value:'outside'}
     ]
   },
   // Q8 (prompt)
   {
     type:'prompt',
     title:'Would you like to receive spicy photos?',
-    video:'https://get-honey.co/assets/video-1-t1ShKju6.mp4',
+    video:'https://charmr.xyz/video16.mp4',
     left:{label:'No', value:'no_spicy'},
     right:{label:'Yes', value:'yes_spicy'}
   },
@@ -403,7 +406,7 @@ const steps = [
   {
     type:'prompt',
     title:'Would you like to receive voice messages?',
-    video:'https://get-honey.co/assets/video-modal-2-C4iVEysS.mp4',
+    video:'https://charmr.xyz/video17.mp4',
     left:{label:'No', value:'no_voice'},
     right:{label:'Yes', value:'yes_voice'}
   },
