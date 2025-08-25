@@ -109,6 +109,10 @@
               <span class="right-note">Secured by <span class="stripe">stripe</span></span>
             </div>
 
+            <!-- New: Cardholder name -->
+            <div class="label">Name on card</div>
+            <input class="input" id="nameInput" placeholder="Full name" autocomplete="cc-name">
+
             <div class="label">Card number</div>
             <div id="card-number" class="el"></div>
 
@@ -193,7 +197,8 @@
     country: guessCountry(),
     currency: 'gbp',
     total: { label: 'Charmr.xyz', amount: amountMinor },
-    requestPayerEmail: false
+    requestPayerEmail: false,
+    requestPayerName: true  // also ask wallet for a name when available
   });
 
   const prButton = elements.create('paymentRequestButton', {
@@ -222,12 +227,15 @@
 
   paymentRequest.on('paymentmethod', async (ev) => {
     try {
+      const name = (document.getElementById('nameInput')?.value || '').trim();
+
       const res = await fetch(SUBSCRIBE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           priceId: PRICE_IDS[selectedPlan] || PRICE_IDS.year,
-          paymentMethodId: ev.paymentMethod.id
+          paymentMethodId: ev.paymentMethod.id,
+          name // forward to backend so it can set Customer/PM name
         })
       });
 
@@ -302,9 +310,12 @@
 
     let pm;
     try{
+      const name = (document.getElementById('nameInput')?.value || '').trim();
+
       const pmRes = await stripe.createPaymentMethod({
         type:'card',
-        card: cardNumber
+        card: cardNumber,
+        billing_details: { name }
       });
       if(pmRes.error) throw pmRes.error;
       pm = pmRes.paymentMethod;
@@ -315,12 +326,15 @@
 
     let clientSecret;
     try{
+      const name = (document.getElementById('nameInput')?.value || '').trim();
+
       const res = await fetch(SUBSCRIBE_URL, {
         method:'POST',
         headers:{ 'Content-Type':'application/json' },
         body: JSON.stringify({
           priceId: PRICE_IDS[selectedPlan] || PRICE_IDS.year,
-          paymentMethodId: pm.id
+          paymentMethodId: pm.id,
+          name
         })
       });
 
