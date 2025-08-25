@@ -902,10 +902,11 @@
           console.warn("AI drip failed:", e);
         }
       }
-      const baseMs = 12 * 60 * 1000;
-      const jitter = () => Math.floor(Math.random()*120000) - 60000;
-      AI_DRIP_TIMER = setInterval(tick, baseMs + jitter());
-      window.addEventListener('beforeunload', ()=>{ if (AI_DRIP_TIMER) clearInterval(AI_DRIP_TIMER); });
+      const baseMs = 2 * 60 * 1000;                  // 2 minutes
+const jitter = () => Math.floor(Math.random()*15000); // 0..+15s (never earlier than 2:00)
+AI_DRIP_TIMER = setInterval(tick, baseMs + jitter());
+
+window.addEventListener('beforeunload', ()=>{ if (AI_DRIP_TIMER) clearInterval(AI_DRIP_TIMER); });
     }
 
     // boot
