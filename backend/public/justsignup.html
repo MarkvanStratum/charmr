@@ -19,7 +19,7 @@
     --radius:16px;
     --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
 
-    /* ⬇️ Adjust these to change video sizes */
+    /* ⬇️ your current video sizes (left unchanged) */
     --heroW: 150px;     /* signup page video width */
     --payHeroW: 300px;  /* plans page video width */
   }
@@ -70,8 +70,8 @@
   #signup .card{
     background:#151518; border-radius:18px; padding:16px; box-shadow:var(--ring); max-width:620px; margin:0 auto;
   }
-  #signup .title{margin:0 0 6px; font-size:28px; font-weight:800; text-align:center;}  /* centered */
-  #signup .subtitle{color:#d9dbe2; opacity:.92; margin:0 0 14px; font-weight:600; text-align:center;} /* centered */
+  #signup .title{margin:0 0 6px; font-size:28px; font-weight:800; text-align:center;}
+  #signup .subtitle{color:#d9dbe2; opacity:.92; margin:0 0 14px; font-weight:600; text-align:center;}
 
   #signup form{display:grid; gap:12px}
   #signup label{font-weight:700}
@@ -128,8 +128,12 @@
   .tag{display:inline-flex; align-items:center; gap:8px; background:#1f1f25; color:#ffda7a; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;}
   .strike{color:#80808a; text-decoration:line-through; font-size:12px}
   .pname{font-weight:800}
-  .pprice{display:flex; align-items:baseline; gap:8px; font-weight:800; font-size:34px}
-  .perday{font-size:13px; color:#d0d2d9}
+
+  /* ⬇️ Daily price is BIG; total is small */
+  .pprice{display:flex; align-items:baseline; gap:8px; font-weight:900; font-size:34px}
+  .perday-label{font-size:14px; color:#d0d2d9}
+  .total{font-size:13px; color:#cfcfd6; text-align:right}
+
   .most-pop{display:block; text-align:center; font-weight:900; padding:10px 12px; background:linear-gradient(180deg,#ffd76b,#ffb429); color:#111}
 
   .cta-wrap{display:flex; flex-direction:column; gap:10px; margin-top:6px}
@@ -149,7 +153,6 @@
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  /* Keep both configs as requested */
   gtag('config', 'G-FDQ6REQWS8');
 </script>
 </head>
@@ -266,13 +269,13 @@
       window.scrollTo({top:0,behavior:'smooth'});
     });
 
-    /* ---------- Plans ---------- */
+    /* ---------- Plans (RESTORED) ---------- */
     const planData = [
       {
         key:'month',
         label:'1 month',
         old:'£39.99',
-        now:0.67/day,
+        price:19.99,           // total charge
         days:30,
         sale:'50% OFF',
         popular:false
@@ -281,16 +284,16 @@
         key:'quarter',
         label:'3 months',
         old:'£79.99',
-        now:0.49/day,       // 👈 your £44 plan
+        price:44.00,           // total charge
         days:90,
         sale:'SAVE BIG',
-        popular:true     // mark as most popular
+        popular:true           // MOST POPULAR
       },
       {
         key:'year',
         label:'12 months',
         old:'£479.88',
-        now:0.33/day,
+        price:119.88,          // total charge
         days:365,
         sale:'75% OFF',
         popular:false
@@ -301,14 +304,14 @@
     let selectedKey = 'quarter';
 
     function formatMoney(v){ return '£' + (Math.round(v*100)/100).toFixed(2); }
-    function perDayText(p){ return formatMoney(p.now / p.days) + ' per day'; }
 
     function renderPlans(){
       plansWrap.innerHTML = '';
       planData.forEach(p=>{
+        const perDay = p.price / p.days;
+
         const row = document.createElement('div');
         row.className = 'plan' + (p.key===selectedKey ? ' badge':'');
-        row.dataset.plan = p.key;
 
         row.innerHTML = `
           <div class="left">
@@ -316,12 +319,20 @@
             <div class="pname">${p.label}</div>
             <div class="strike">${p.old}</div>
           </div>
-          <div class="right">
-            <div class="pprice">${formatMoney(p.now)}</div>
-            <div class="perday">${perDayText(p)}</div>
+          <div class="right" style="text-align:right">
+            <div class="pprice">
+              <span>${formatMoney(perDay)}</span>
+              <span class="perday-label">per day</span>
+            </div>
+            <div class="total">${formatMoney(p.price)} total</div>
           </div>
         `;
-        row.addEventListener('click', ()=>{ selectedKey = p.key; renderPlans(); syncPerDayBadge(); });
+
+        row.addEventListener('click', ()=>{
+          selectedKey = p.key;
+          renderPlans();
+          syncPerDayBadge();
+        });
         plansWrap.appendChild(row);
 
         if (p.popular){
@@ -335,16 +346,18 @@
 
     function syncPerDayBadge(){
       const chosen = planData.find(p=>p.key===selectedKey) || planData[0];
-      document.getElementById('perDayBadge').textContent = `Only ${formatMoney(chosen.now/ chosen.days)}/day`;
+      const perDay = chosen.price / chosen.days;
+      document.getElementById('perDayBadge').textContent = `Only ${formatMoney(perDay)}/day`;
     }
 
-    renderPlans(); syncPerDayBadge();
+    renderPlans();
+    syncPerDayBadge();
 
     document.getElementById('continueBtn').addEventListener('click', ()=>{
       const chosen = planData.find(p=>p.key===selectedKey);
       try {
         sessionStorage.setItem('selectedPlan', chosen?.key || 'quarter');
-        sessionStorage.setItem('selectedPrice', String(chosen?.now ?? ''));
+        sessionStorage.setItem('selectedPrice', String(chosen?.price ?? ''));
       } catch {}
       window.location.href = '/payment.html';
     });
