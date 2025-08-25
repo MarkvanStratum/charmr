@@ -23,8 +23,19 @@
   .stack{max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:18px}
   .block{background:#15151a; border-radius:16px; padding:18px; box-shadow:0 0 0 1px var(--stroke)}
   .block h3{margin:0 0 12px; font-size:18px}
+
+  /* Mount target for Stripe PRB (unstyled) */
+  #gpay-button{ display:block; height:44px; }
+
+  /* Branded fallback only shown if PRB not available */
+  .gpay-fallback{
+    display:none; width:100%; height:44px;
+    border-radius:12px; border:1px solid #2b2b2f; background:#000;
+    align-items:center; justify-content:center; gap:8px;
+  }
+  .gpay-fallback img{ height:18px; display:block }
+
   .btn-gpay{display:flex; align-items:center; justify-content:center; font-weight:800; border-radius:12px; padding:14px 16px}
-  /* Google Pay official look */
   .btn-gpay{
     background:#000; color:#fff; border:1px solid #2b2b2f;
     padding:10px 16px; border-radius:12px; height:44px;
@@ -80,14 +91,18 @@
         <div class="stack">
           <div class="block">
             <h3>Fast Payments</h3>
-            <!-- Mount point for real Google Pay / Payment Request Button -->
-            <div class="btn-gpay" aria-label="Google Pay" id="gpay-button"></div>
+            <!-- Real Stripe PRB mount point -->
+            <div id="gpay-button" aria-label="Google Pay"></div>
+            <!-- Branded fallback (shown only if PRB unavailable) -->
+            <button id="gpay-fallback" type="button" class="gpay-fallback" aria-disabled="true">
+              <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay" />
+            </button>
           </div>
 
           <div class="block">
             <h3>Credit card</h3>
             <div class="brands">
-              <img alt="visa" src="https://charmr.xyz/public/logos/visa.pnd" style="height:18px">
+              <img alt="visa" src="https://charmr.xyz/public/logos/visa.png" style="height:18px">
               <img alt="mc"   src="https://charmr.xyz/public/logos/mastercard.png" style="height:18px">
               <img alt="amex" src="https://charmr.xyz/public/logos/amex.png" style="height:18px">
               <span class="right-note">Secured by <span class="stripe">stripe</span></span>
@@ -189,11 +204,21 @@
   });
 
   paymentRequest.canMakePayment().then(result => {
+    const mount = document.getElementById('gpay-button');
+    const fallback = document.getElementById('gpay-fallback');
+
     if (result) {
       prButton.mount('#gpay-button');
+      if (fallback) fallback.style.display = 'none';
+      if (mount) mount.style.display = 'block';
     } else {
-      const el = document.getElementById('gpay-button');
-      if (el) el.style.display = 'none';
+      if (mount) mount.style.display = 'none';
+      if (fallback) {
+        fallback.style.display = 'flex';
+        fallback.addEventListener('click', () => {
+          alert("Google Pay isn't available on this device or browser right now. Please use your card below.");
+        }, { once:true });
+      }
     }
   });
 
