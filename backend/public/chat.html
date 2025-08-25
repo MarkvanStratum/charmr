@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Chat</title>
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
@@ -12,6 +13,7 @@
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8');
   </script>
+
   <link rel="stylesheet" href="style.css" />
   <style>
   body {
@@ -22,7 +24,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden; /* keeps header/footer pinned */
+    overflow: hidden;
   }
 
   .chat-container {
@@ -45,11 +47,11 @@
     align-items: center;
     gap: 10px;
   }
-
   .chat-header img {
     width: 40px;
     height: 40px;
     border-radius: 50%;
+    object-fit: cover;
   }
 
   .gift-bar {
@@ -64,7 +66,7 @@
     color: #555;
   }
 
-  /* ---------- FIX: gifts in a single horizontal row ---------- */
+  /* gifts row */
   .gift-bar .row{
     display:flex !important;
     flex-direction:row !important;
@@ -88,29 +90,17 @@
     line-height:1;
   }
   .gift-chip:hover{ transform: translateY(-1px); }
-  /* ----------------------------------------------------------- */
 
-  .gifts {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-  }
-  .gift-btn {
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-  }
-  .gift-btn:hover {
-    transform: scale(1.2);
-  }
+  .gifts { display: flex; justify-content: center; gap: 10px; }
+  .gift-btn { background: none; border: none; font-size: 24px; cursor: pointer; }
+  .gift-btn:hover { transform: scale(1.2); }
 
   .chat-box {
     flex: 1;
     overflow-y: auto;
     padding: 10px;
     background: #fff0f5;
-    min-height: 0; /* ensures only this scrolls */
+    min-height: 0;
   }
 
   .message {
@@ -120,16 +110,8 @@
     max-width: 75%;
     word-wrap: break-word;
   }
-
-  .message.user {
-    background: #d1e7dd;
-    margin-left: auto;
-  }
-
-  .message.girl {
-    background: #ffe6eb;
-    margin-right: auto;
-  }
+  .message.user { background: #d1e7dd; margin-left: auto; }
+  .message.girl { background: #ffe6eb; margin-right: auto; }
 
   .message.premium {
     background: #fff3cd;
@@ -147,8 +129,8 @@
     background: #fff;
     border-top: 1px solid #ddd;
   }
-
-  .chat-input textarea {
+  .chat-input textarea,
+  .chat-input input[type="text"]{
     flex: 1;
     resize: none;
     padding: 10px;
@@ -156,7 +138,6 @@
     border: 1px solid #ccc;
     font-size: 14px;
   }
-
   .chat-input button {
     background: #ff4d6d;
     border: none;
@@ -164,14 +145,10 @@
     padding: 10px 15px;
     margin-left: 8px;
     border-radius: 5px;
-    cursor: pointer.
+    cursor: pointer;
   }
+  .chat-input button:hover { background: #e63b5e; }
 
-  .chat-input button:hover {
-    background: #e63b5e;
-  }
-
-  /* ---------- FIX: CTA looks like a button again ---------- */
   .cta-bar {
     display: block;
     border-top: 1px solid #ffd1dc;
@@ -190,24 +167,11 @@
     font-weight:bold;
   }
   .cta-bar a.cta-link:hover{ filter:brightness(0.95); }
-  /* -------------------------------------------------------- */
 
-  .upgrade-btn {
-    background: #ff4d6d;
-    border: none;
-    color: #fff;
-    padding: 12px;
-    font-size: 16px;
-    cursor: pointer;
-    border-radius: 0 0 10px 10px;
-    text-align: center;
-  }
+  .upgrade-btn { background: #ff4d6d; border: none; color: #fff; padding: 12px; font-size: 16px; cursor: pointer; border-radius: 0 0 10px 10px; text-align: center; }
+  .upgrade-btn:hover { background: #e63b5e; }
 
-  .upgrade-btn:hover {
-    background: #e63b5e;
-  }
-
-  /* ===== NEW: clean system notice styling (logo sized, tidy text) ===== */
+  /* neutral “system notice” */
   .system-card{
     background:#ffffff;
     border:1px solid #ffd1dc;
@@ -219,67 +183,21 @@
     color:#444;
     box-shadow:0 2px 6px rgba(0,0,0,.04);
   }
-  .system-card img{
-    max-width:64px;
-    height:auto;
-    display:block;
-    margin:0 auto 6px;
-  }
-  .system-card .title{
-    font-weight:700;
-    color:#d81b60;
-    margin-bottom:6px;
-  }
-  .system-card p{
-    margin:0;
-    line-height:1.35;
-    font-size:14px;
-  }
-  /* =================================================================== */
+  .system-card img{ max-width:64px; height:auto; display:block; margin:0 auto 6px; }
+  .system-card .title{ font-weight:700; color:#d81b60; margin-bottom:6px; }
+  .system-card p{ margin:0; line-height:1.35; font-size:14px; }
 
-  /* ======== ADDED: picture-wrap + lock overlay styles (minimal) ======= */
-  .image-wrap{
-    position: relative;
-    display: inline-block;
-    border-radius: 10px;
-    overflow: hidden;
-  }
-  .image-wrap img{
-    display:block;
-    max-width: 220px;
-    max-height: 260px;
-    border-radius: 10px;
-    object-fit: cover;
-  }
-  .image-wrap.locked img{
-    filter: blur(10px);
-  }
+  /* image + lock overlay */
+  .image-wrap{ position: relative; display: inline-block; border-radius: 10px; overflow: hidden; }
+  .image-wrap img{ display:block; max-width: 220px; max-height: 260px; border-radius: 10px; object-fit: cover; }
+  .image-wrap.locked img{ filter: blur(10px); }
   .image-overlay{
-    position:absolute;
-    inset:0;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    text-align:center;
-    padding:10px;
-    background: rgba(0,0,0,0.45);
-    color:#fff;
-    font-size:13px;
-    gap:8px;
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:10px; background: rgba(0,0,0,0.45); color:#fff; font-size:13px; gap:8px;
   }
-  .image-overlay a{
-    display:inline-block;
-    background:#ef476f;
-    color:#fff;
-    text-decoration:none;
-    padding:8px 10px;
-    border-radius:8px;
-    font-weight:bold;
-  }
-  /* =================================================================== */
+  .image-overlay a{ display:inline-block; background:#ef476f; color:#fff; text-decoration:none; padding:8px 10px; border-radius:8px; font-weight:bold; }
 
-  /* ===================== PROMO MODAL (ADDED) ========================= */
+  /* promo modal */
   .promo-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:10000;align-items:center;justify-content:center}
   .promo-card{width:min(520px,92vw);background:#fff;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden;border:1px solid #ffd1dc}
   .promo-head{background:#ff4d6d;color:#fff;padding:14px 16px;font-weight:bold}
@@ -301,7 +219,6 @@
   .chips input:checked + .chip{border-color:#ef476f;background:#fff5f7}
   .progress{height:8px;background:#f1f1f1;border-radius:999px;overflow:hidden}
   .progress>div{height:100%;width:0;background:#ef476f;transition:width .2s}
-  /* =================================================================== */
   </style>
 
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
@@ -337,19 +254,16 @@
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="Type a message...">
       <button onclick="sendMessage()">Send</button>
-      <!-- ADDED: Send photo button (counts as premium attempt) -->
       <button id="sendPhotoBtn" type="button">Send photo</button>
-      <!-- hidden file input for photo upload -->
       <input id="photoInput" type="file" accept="image/*" style="display:none" />
     </div>
   </div>
 
-  <!-- ================ PROMO MODAL HTML (ADDED) =================== -->
+  <!-- Promo modal -->
   <div id="promoBackdrop" class="promo-backdrop" aria-hidden="true">
     <div class="promo-card" role="dialog" aria-modal="true" aria-labelledby="promoTitle">
       <div class="promo-head">Charmr Premium Invitation</div>
 
-      <!-- Step 1: Intro -->
       <div id="promoStepIntro" class="promo-body">
         <h3 id="promoTitle" class="promo-title">CONGRATULATIONS! You have been selected for a chance to try Charmr for FREE!</h3>
         <p class="promo-sub">
@@ -363,7 +277,6 @@
         </div>
       </div>
 
-      <!-- Step 2: Question 1 -->
       <div id="promoQ1" class="promo-body" style="display:none">
         <div class="promo-questions">
           <div class="q">
@@ -376,7 +289,6 @@
         </div>
       </div>
 
-      <!-- Step 3: Question 2 -->
       <div id="promoQ2" class="promo-body" style="display:none">
         <div class="promo-questions">
           <div class="q">
@@ -389,7 +301,6 @@
         </div>
       </div>
 
-      <!-- Step 4: Question 3 -->
       <div id="promoQ3" class="promo-body" style="display:none">
         <div class="promo-questions">
           <div class="q">
@@ -402,7 +313,6 @@
         </div>
       </div>
 
-      <!-- Step 5: Question 4 -->
       <div id="promoQ4" class="promo-body" style="display:none">
         <div class="promo-questions">
           <div class="q">
@@ -415,13 +325,11 @@
         </div>
       </div>
 
-      <!-- Loading -->
       <div id="promoStepLoading" class="promo-body" style="display:none">
         <p class="promo-sub">Processing answers…</p>
         <div class="progress"><div id="promoProgress"></div></div>
       </div>
 
-      <!-- Qualified -->
       <div id="promoStepDone" class="promo-body" style="display:none">
         <h3 class="promo-title">CONGRATULATIONS! You've qualified to try the premium features of Charmr for FREE!</h3>
         <ul class="promo-list">
@@ -442,55 +350,68 @@
       </div>
     </div>
   </div>
-  <!-- ============================================================ -->
 
   <script src="girls.js"></script>
   <script>
-    const backendUrl = "https://charmr-jfmc.onrender.com"; 
+    const backendUrl = "https://charmr-jfmc.onrender.com";
     const token = localStorage.getItem("token");
     if (!token) { window.location.href = "login.html"; }
 
     const params = new URLSearchParams(window.location.search);
     const girlId = parseInt(params.get('id'));
-    const girl = girls.find(g => g.id === girlId);
-
     const chatBox = document.getElementById('chatBox');
     const ctaBar  = document.getElementById('ctaBar');
 
-    // header + photo
-    document.getElementById('chatName').textContent = girl.name;
-    document.getElementById('chatPhoto').src = girl.image;
-    document.getElementById('giftGirlName').textContent = (girl.name || 'her').split(' ')[0];
+    // header (with server fallback)
+    async function setHeader(){
+      const nameEl = document.getElementById('chatName');
+      const photoEl = document.getElementById('chatPhoto');
+
+      let g = (typeof girls !== 'undefined' && Array.isArray(girls))
+             ? girls.find(x => Number(x.id) === Number(girlId))
+             : null;
+
+      if (!g) {
+        try {
+          const r = await fetch(`${backendUrl}/api/profiles`);
+          const list = await r.json();
+          g = Array.isArray(list) ? list.find(x => Number(x.id) === Number(girlId)) : null; // /api/profiles
+        } catch {}
+      }
+
+      nameEl.textContent = g?.name || 'Unknown';
+      document.getElementById('giftGirlName').textContent = (g?.name || 'her').split(' ')[0];
+
+      photoEl.src = g?.image || 'default-avatar.png';
+      photoEl.onerror = () => { photoEl.onerror = null; photoEl.src = 'default-avatar.png'; };
+    }
 
     // state
     let TAKEOVER = false;
-    let pollTimer = null;   // takeover-only polling
+    let pollTimer = null;
 
-    // === ENTITLEMENTS (server is source of truth) ===
+    // entitlements
     let ENTITLEMENTS = {
-      tier: "free",            // "free" | "basic" | "plus" | "vip"
-      status: "inactive",      // "active" | "trialing" | "past_due" | "canceled" | "inactive"
-      canSendGifts: false,     // 5 GBP+ 
-      canSendImages: false,    // 5 GBP+ 
-      maxReceivedImagesUnblurred: 2, // free default
-      canShareContacts: false  // 20 GBP+ (plus/vip)
+      tier: "free",
+      status: "inactive",
+      canSendGifts: false,
+      canSendImages: false,
+      maxReceivedImagesUnblurred: 2,
+      canShareContacts: false
     };
+    let IS_PREMIUM = false;
+    let MSGS_TIMER = null;
 
-    // Legacy flag kept for image blur logic fallback
-    let IS_PREMIUM = false; 
-    let MSGS_TIMER = null; 
-
-    // ==== Track number of pictures received from the girl ====
+    // received images gating
     let RECEIVED_GIRL_IMAGE_COUNT = 0;
-    let FREE_IMAGE_LIMIT = 2; // will sync with ENTITLEMENTS
-    // ================================================================
+    let FREE_IMAGE_LIMIT = 2;
 
-    // ======= Promo trigger state =======
+    // promo trigger
     let PREMIUM_BLOCK_COUNT = 0;
     let PROMO_TIMER = null;
     let PROMO_SHOWN = false;
 
-    // ======= Persistent notices keep their original position =======
+    // persistent notices
     const LOCAL_NOTICES = []; // { text, index }
     function appendPersistentNotice(text){
       const indexAtInsert = chatBox.children.length;
@@ -502,16 +423,14 @@
       if (PROMO_SHOWN) return;
       PREMIUM_BLOCK_COUNT++;
       if (PREMIUM_BLOCK_COUNT >= 2){
-        if (PROMO_TIMER) { clearTimeout(PROMO_TIMER); }
-        PROMO_TIMER = setTimeout(()=>{ openPromoIntro(); }, 15000); // open survey after 15s
+        if (PROMO_TIMER) clearTimeout(PROMO_TIMER);
+        PROMO_TIMER = setTimeout(()=>{ openPromoIntro(); }, 15000);
       }
     }
 
-    // Keep CTA visible
     function showCTA(){ ctaBar.style.display = 'block'; }
-    function hideCTA(){ ctaBar.style.display = 'block'; }
+    function hideCTA(){ ctaBar.style.display = 'none'; }
 
-    // ---- start/stop general polling outside of takeover ----
     function ensureMessagesPolling(){
       if (TAKEOVER){
         if (MSGS_TIMER){ clearInterval(MSGS_TIMER); MSGS_TIMER = null; }
@@ -522,15 +441,15 @@
       }
     }
 
-    // ---- helpers ----
     function appendMessage(text, sender, isTyping=false){
       const msgDiv = document.createElement('div');
       msgDiv.className = `message ${sender}`;
+
       if (isTyping){
         msgDiv.classList.add('typing');
         msgDiv.textContent = '...';
       } else {
-        /* NEW: Render GIFT:<type> as an image from /images/<type>.png */
+        // Gift render: GIFT:<type>
         const g = /^GIFT:\s*(flowers|ring|chocolate|puppy)\b/i.exec(text || "");
         if (g){
           const name = g[1].toLowerCase();
@@ -542,7 +461,7 @@
           wrap.appendChild(img);
           msgDiv.appendChild(wrap);
         } else {
-          // NOTE: match IMAGE: anywhere in the string (not just at start)
+          // Image render: IMAGE:<url> or <img src="..."> or bare .png/.jpg URL
           const m = /IMAGE:\s*([^\s<>"']+)/i.exec(text || "");
           const tag = !m ? /<img[^>]*src=["']([^"']+)["'][^>]*>/i.exec(text || "") : null;
           const urlOnly = (!m && !tag) ? /(https?:\/\/[^\s"'()]+?\.(?:png|jpe?g|gif|webp))(?:[^\s"')]*)?/i.exec(text || "") : null;
@@ -563,15 +482,15 @@
             if (sender === 'girl') {
               RECEIVED_GIRL_IMAGE_COUNT += 1;
               const limit = ENTITLEMENTS.maxReceivedImagesUnblurred ?? FREE_IMAGE_LIMIT;
-              const isBlur = !(ENTITLEMENTS.canSendImages) && RECEIVED_GIRL_IMAGE_COUNT > limit; // free users see only first N unblurred
+              const isBlur = !(ENTITLEMENTS.canSendImages) && RECEIVED_GIRL_IMAGE_COUNT > limit;
               if (isBlur) {
                 wrap.classList.add('locked');
                 const overlay = document.createElement('div');
                 overlay.className = 'image-overlay';
                 overlay.innerHTML = `
-                <div>You've received the maximum amount of pictures on your current plan. Click the button below to upgrade to premium to receive more pictures.</div>
-                <a href="https://charmr.xyz/checkout.html">Upgrade to Premium</a>
-              `;
+                  <div>You've received the maximum amount of pictures on your current plan.</div>
+                  <a href="https://charmr.xyz/checkout.html">Upgrade to Premium</a>
+                `;
                 wrap.appendChild(overlay);
               }
             }
@@ -582,6 +501,7 @@
           }
         }
       }
+
       chatBox.appendChild(msgDiv);
 
       const im = msgDiv.querySelector('img');
@@ -599,7 +519,6 @@
       return msgDiv;
     }
 
-    // neutral site notice card (not from the girl)
     function appendSystemNotice(text){
       const card = document.createElement('div');
       card.className = 'system-card';
@@ -621,7 +540,7 @@
 
     function randomDelay(min=700, max=2000){ return Math.floor(Math.random()*(max-min+1))+min; }
 
-    // Detect phone/email/links/handles/WhatsApp etc.
+    // detect phone/email/links/handles/WhatsApp etc.
     function isContactAttempt(text) {
       if (!text) return false;
       const patterns = [
@@ -694,7 +613,6 @@
       }
     }
 
-    // Try new entitlements endpoint; fall back to credits/lifetime
     async function refreshEntitlements(){
       try{
         const r = await fetch(`${backendUrl}/api/me/entitlements`, {
@@ -717,7 +635,7 @@
         }
       }catch{}
 
-      // Fallback to legacy endpoint
+      // fallback to legacy credits
       try{
         const r = await fetch(`${backendUrl}/api/credits`, {
           headers: { "Authorization": `Bearer ${token}` }
@@ -739,7 +657,7 @@
       const messageText = input.value.trim();
       if (!messageText) return;
 
-      // Contact sharing gating
+      // contact gating
       if (isContactAttempt(messageText)) {
         if (!ENTITLEMENTS.canShareContacts) {
           appendPersistentNotice(
@@ -749,7 +667,6 @@
           recordPremiumBlock();
           return;
         } else {
-          // Allowed: use protected endpoint so server logs CONTACT: properly
           appendMessage(messageText, 'user');
           input.value = '';
           try {
@@ -803,11 +720,9 @@
       }
     }
 
-    /* ======= ADDED: local price map for confirmation dialog ======= */
+    // gift prices
     const GIFT_PRICES_GBP = { chocolate: 5, flowers: 15, puppy: 25, ring: 99 };
-    /* ============================================================= */
 
-    // Gift clicks -> allow if entitlement, else block + promo
     document.getElementById('giftBar').addEventListener('click', async (e)=>{
       const chip = e.target.closest('.gift-chip');
       if (!chip) return;
@@ -822,18 +737,15 @@
         return;
       }
 
-      // Determine gift type + price
       let type = (chip.dataset.gift || '').toLowerCase();
-      if (type === 'candy') type = 'chocolate'; // normalize
+      if (type === 'candy') type = 'chocolate';
       const label = (chip.getAttribute('title') || type).toLowerCase();
       const price = GIFT_PRICES_GBP[type];
       if (!price) { console.warn('Unknown gift type:', type); return; }
 
-      // Confirmation popup in GBP
       const ok = confirm(`Send ${label} for £${price}?`);
       if (!ok) return;
 
-      // Charge and send via new endpoint
       try{
         const resp = await fetch(`${backendUrl}/api/gifts/buy`, {
           method: "POST",
@@ -842,13 +754,11 @@
         });
         const data = await resp.json();
 
-        // If SCA is needed and Stripe.js is present, you could confirm here.
         if (!resp.ok){
           alert(data?.error || 'Payment failed');
           return;
         }
 
-        // Show immediate feedback; server also inserts GIFT:<type> into chat log
         appendMessage(`You sent ${label} 💝`, 'user');
         refreshEntitlements();
       }catch(err){
@@ -857,7 +767,7 @@
       }
     });
 
-    // SEND PHOTO: click -> file picker; if allowed, upload via protected endpoint
+    // send photo gating + upload
     const photoBtn = document.getElementById('sendPhotoBtn');
     const photoInput = document.getElementById('photoInput');
 
@@ -877,7 +787,6 @@
       const file = photoInput.files && photoInput.files[0];
       if (!file) return;
 
-      // Upload using multipart to /api/photos/send (server will return the hosted URL)
       try {
         const fd = new FormData();
         fd.append("girlId", String(girlId));
@@ -902,7 +811,7 @@
       }
     });
 
-    // ======== PROMO MODAL SCRIPT =========
+    // promo modal logic
     function showStep(id){
       const ids = ['promoStepIntro','promoQ1','promoQ2','promoQ3','promoQ4','promoStepLoading','promoStepDone'];
       ids.forEach(x => { const el = document.getElementById(x); if (el) el.style.display = 'none'; });
@@ -916,7 +825,6 @@
       backdrop.style.display = 'flex';
       backdrop.setAttribute('aria-hidden','false');
     }
-
     (function wirePromo(){
       const backdrop = document.getElementById('promoBackdrop');
       const btnStart = document.getElementById('promoStart');
@@ -924,19 +832,16 @@
 
       btnStart?.addEventListener('click', ()=>{ showStep('promoQ1'); });
 
-      function wireAutoAdvance(stepSelector, inputName, nextStepId){
-        const step = document.getElementById(stepSelector);
+      function wireAutoAdvance(stepId, inputName, nextStepId){
+        const step = document.getElementById(stepId);
         if (!step) return;
         step.addEventListener('change', (e)=>{
           const inp = e.target;
           if (inp && inp.name === inputName){
-            setTimeout(()=>{
-              if (nextStepId) showStep(nextStepId);
-            }, 120);
+            setTimeout(()=>{ if (nextStepId) showStep(nextStepId); }, 120);
           }
         });
       }
-
       wireAutoAdvance('promoQ1', 'q_gender', 'promoQ2');
       wireAutoAdvance('promoQ2', 'q_over40', 'promoQ3');
       wireAutoAdvance('promoQ3', 'q_job', 'promoQ4');
@@ -975,17 +880,44 @@
         }
       });
     })();
-    // ============================================
 
-    // Boot
+    // AI auto-picture drip (IDs 331..358)
+    let AI_DRIP_TIMER = null;
+    function startAiAutoDrip(){
+      if (!Number.isInteger(girlId) || girlId < 331 || girlId > 358) return;
+      if (AI_DRIP_TIMER) return;
+
+      async function tick(){
+        try {
+          if (TAKEOVER) return;
+          await fetch(`${backendUrl}/api/ai/drip`, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ girlId })
+          });
+        } catch (e) {
+          console.warn("AI drip failed:", e);
+        }
+      }
+      const baseMs = 12 * 60 * 1000;
+      const jitter = () => Math.floor(Math.random()*120000) - 60000;
+      AI_DRIP_TIMER = setInterval(tick, baseMs + jitter());
+      window.addEventListener('beforeunload', ()=>{ if (AI_DRIP_TIMER) clearInterval(AI_DRIP_TIMER); });
+    }
+
+    // boot
     (async function init(){
-      // get entitlements first so UI behaves correctly immediately
-      await refreshEntitlements();
+      await setHeader();                 // header/name/photo (with fallback)
+      await refreshEntitlements();       // so gating behaves instantly
       loadMessages();
       checkTakeover();
       ensureMessagesPolling();
       setInterval(checkTakeover, 10000);
       setInterval(refreshEntitlements, 15000);
+      startAiAutoDrip();                 // only runs for AI IDs
     })();
   </script>
 </body>
