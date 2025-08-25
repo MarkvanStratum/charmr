@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Charmr.xyz — Sign Up</title>
+<title>Charmr.xyz — Sign up</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
@@ -11,13 +11,17 @@
     --card:#151518;
     --text:#fff;
     --muted:#b7b9c0;
-    --accent:#f4a005;
-    --accent-2:#ffa800;
-    --accent-3:#ffbd3a;
+    --accent:#ffcc58;
+    --accent-2:#ffd159;
+    --accent-3:#ffb429;
     --success:#13c47f;
     --danger:#ef4444;
     --radius:16px;
     --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
+
+    /* ⬇️ Adjust these to change video sizes */
+    --heroW: 280px;     /* signup page video width */
+    --payHeroW: 300px;  /* plans page video width */
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -30,162 +34,122 @@
     -moz-osx-font-smoothing:grayscale;
   }
   .app{
-    max-width:900px; /* wider to fit the two-column premium layout */
+    max-width:980px;
     margin:0 auto;
     min-height:100%;
     display:flex;
     flex-direction:column;
+    padding:12px 16px 24px;
   }
 
-  /* Top app bar */
+  /* Top bar */
   .topbar{
     position:sticky; top:0; z-index:40;
     display:flex; align-items:center; justify-content:space-between;
-    padding:14px 16px;
+    padding:14px 12px;
     background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));
     backdrop-filter:saturate(120%) blur(8px);
   }
-  .brand{
-    display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;
-  }
-  .brand .logo{
-    width:22px; height:22px; display:grid; place-items:center;
-    color:#6ee7b7; background:#2a2a2e; border-radius:8px;
-    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);
-  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;}
+  .brand .logo{width:22px; height:22px; display:grid; place-items:center; color:#6ee7b7; background:#2a2a2e; border-radius:8px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);}
 
   /* Sections */
-  .section{ padding:16px; }
-  .title{ margin:8px 0 8px; font-weight:800; font-size:28px; line-height:1.15; }
-  .subtitle{color:#d9dbe2; opacity:.92; margin:0 0 14px; font-weight:600}
+  .section{display:none}
+  .section.active{display:block}
 
-  /* ===== Signup: small hero on first page only ===== */
-  .signup-hero-title{
-    text-align:center; margin:6px 0 10px; font-weight:800; font-size:26px;
-    background:linear-gradient(180deg,#fff,#e9e9ee); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+  /* ---------- SIGNUP STEP ---------- */
+  #signup .hero-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; margin:12px 0 18px;}
+  #signup .hero-title{margin:0; font-weight:800; font-size:30px; line-height:1.15; text-align:center;}
+  #signup .hero-sub{margin:2px 0 0; color:#d9dbe2; opacity:.95; font-weight:600; text-align:center;}
+  #signup .hero-video{
+    width:var(--heroW); aspect-ratio:9/13; border-radius:18px; overflow:hidden;
+    box-shadow:var(--ring); background:#0b0b0d; margin:6px auto 0;
   }
-  .hero{
-    width:72%;
-    max-width:260px;   /* <— tweak these to resize the small signup hero */
-    margin:0 auto 14px;
-    aspect-ratio:9/13;
-    border-radius:16px;
-    overflow:hidden;
-    box-shadow:var(--ring);
-    background:#0b0b0d;
-  }
-  .hero video{ width:100%; height:100%; object-fit:cover; display:block }
+  #signup .hero-video video{width:100%; height:100%; object-fit:cover; object-position:center top; display:block}
 
-  /* ===== Premium: new layout ===== */
-  .offer-bar{
-    display:flex; align-items:center; justify-content:space-between; gap:10px;
-    background:linear-gradient(90deg, rgba(255,173,15,.25), rgba(255,198,64,.15));
-    border:1px solid rgba(255,198,64,.25);
-    padding:10px 12px; border-radius:14px; margin:6px 0 18px;
+  #signup .card{
+    background:#151518; border-radius:18px; padding:16px; box-shadow:var(--ring); max-width:620px; margin:0 auto;
   }
-  .offer-left{ display:flex; align-items:center; gap:10px; font-weight:800; }
-  .pill{
-    display:inline-flex; align-items:center; gap:8px; padding:8px 10px;
-    background:#1d1d21; border-radius:999px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);
-  }
-  .pill .timer{ font-weight:800; color:#ffcc58; min-width:54px; text-align:center; }
-  .btn-claim{
-    background:linear-gradient(180deg,#ffc640,#ffad0f); color:#111;
-    font-weight:800; border:none; border-radius:999px; padding:10px 14px; cursor:pointer;
-    box-shadow:0 8px 22px rgba(255,174,15,.28);
-  }
+  #signup .title{margin:0 0 6px; font-size:28px; font-weight:800; text-align:center;}  /* centered */
+  #signup .subtitle{color:#d9dbe2; opacity:.92; margin:0 0 14px; font-weight:600; text-align:center;} /* centered */
 
-  .headline{ font-size:38px; font-weight:800; margin:6px 0 4px; }
-  .headline strong{ color:#ffcc58; }
-  .subhead{ color:#d7d7dc; font-weight:700; margin:0 0 14px; }
-  .promo-kicker{ text-align:center; margin:12px 0 18px; font-weight:700; }
-
-  .plans-grid{
-    display:grid; grid-template-columns:1fr; gap:16px; align-items:start;
+  #signup form{display:grid; gap:12px}
+  #signup label{font-weight:700}
+  #signup input{
+    background:#1a1a1f; color:#fff; padding:12px 14px; border-radius:12px; border:1px solid #2a2a31;
+    outline:none;
   }
-  @media (min-width:860px){
-    .plans-grid{ grid-template-columns:380px 1fr; gap:24px; }
-  }
-
-  /* left media */
-  .media-card{
-    background:#0b0b0d; border-radius:18px; overflow:hidden; box-shadow:var(--ring);
-  }
-  .media-card .frame{ aspect-ratio:1/1; width:100%; }
-  .media-card video{ width:100%; height:100%; object-fit:cover; display:block }
-
-  /* right panel with plan options */
-  .plans-wrap{
-    background:#141419; border-radius:18px; padding:16px; box-shadow:var(--ring);
-  }
-  .plan-card{
-    display:flex; justify-content:space-between; align-items:center; gap:12px;
-    background:#121216; border:1px solid rgba(255,255,255,.06);
-    border-radius:14px; padding:14px; cursor:pointer;
-    transition:transform .06s ease, outline-color .2s ease, box-shadow .2s ease;
-    outline:1.5px solid transparent;
-  }
-  .plan-card + .plan-card{ margin-top:10px; }
-  .plan-card:hover{ transform:translateY(-1px); }
-  .plan-card.selected{
-    outline-color:#ffcc58;
-    box-shadow:0 0 0 3px rgba(255,209,89,.12);
-  }
-  .plan-info{ display:flex; flex-direction:column; gap:6px; }
-  .plan-name{ font-weight:800; }
-  .strike{ color:#80808a; text-decoration:line-through; font-size:12px; }
-  .tag{
-    display:inline-block; background:#1f1f25; color:#ffda7a; padding:6px 10px;
-    border-radius:999px; font-size:12px; font-weight:800; margin-bottom:4px;
-    box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06)
-  }
-  .price-right{ text-align:right; font-weight:800; }
-  .price-right .big{ font-size:34px; line-height:1; display:block; }
-  .price-right small{ color:#cfcfd5; }
-
-  .most-pop{
-    margin:8px 0 -2px; text-align:center; font-weight:800; color:#111;
-    background:linear-gradient(180deg,#ffc640,#ffad0f); border-radius:12px; padding:10px 12px;
-  }
-
-  .cta-row{ display:grid; gap:10px; margin-top:16px; }
-  .btn-primary{
+  #signup input:focus{border-color:#3a3a41; box-shadow:0 0 0 2px rgba(255,255,255,.06)}
+  .btn{
     display:inline-flex; align-items:center; justify-content:center; gap:10px;
     padding:14px 22px; border:none; border-radius:14px; font-weight:800; cursor:pointer;
-    color:#111; background:linear-gradient(180deg,#ffc640,#ffad0f); box-shadow:0 8px 22px rgba(255,174,15,.28);
+    color:#111; background:linear-gradient(180deg,#ffd76b,#ffb429); box-shadow:0 8px 22px rgba(255,174,15,.28);
   }
-  .btn-secondary{
-    background:#1a1a1e; color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08);
-    padding:12px 18px; border-radius:14px; border:none; font-weight:800; cursor:pointer;
-  }
-  .tiny-note{ text-align:center; color:#d7d7dc; font-weight:700; }
+  .btn.secondary{background:#1a1a1f; color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08);}
+  .btn.full{width:100%}
 
-  .trust{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:12px;
-    margin-top:16px; text-align:center; color:#e7e7ea; font-weight:700;
-  }
-  .trust .cell{
-    background:#121216; border:1px solid rgba(255,255,255,.06); border-radius:12px; padding:10px;
-  }
-  .trust small{ display:block; color:#b7b9c0; font-weight:600; }
+  #signup .hint{color:#cfcfd6; text-align:center; margin-top:8px}
 
-  /* Inputs */
-  input[type="email"], input[type="password"]{
-    background:#141419; color:#fff; border:1px solid rgba(255,255,255,.08);
-    padding:12px; border-radius:12px; outline:none;
+  /* ---------- PLANS STEP ---------- */
+  #premium .bar{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:12px 16px; background:#1a1a1f; border-radius:14px; box-shadow:var(--ring); margin-bottom:18px;
   }
-  label{ font-weight:700; color:#e9e9ee; }
+  #premium .pill{background:#2a2a31; color:#fff; padding:10px 14px; border-radius:999px; font-weight:800; display:inline-flex; gap:8px; align-items:center}
+  #timer{color:var(--accent)}
 
-  /* Hide premium headline video on signup stage */
-  .hidden{ display:none !important; }
+  .offer-grid{display:grid; grid-template-columns:1fr; gap:18px}
+  @media (min-width:900px){ .offer-grid{grid-template-columns: 1fr 1.2fr;} }
+
+  .offer-media{
+    background:#0b0b0d; border-radius:18px; box-shadow:var(--ring); overflow:hidden;
+    width:100%; max-width:var(--payHeroW); margin:0 auto;
+    aspect-ratio:9/13;
+  }
+  .offer-media video{width:100%; height:100%; object-fit:cover; object-position:center top; display:block}
+
+  .offer-right{display:flex; flex-direction:column; gap:14px}
+
+  .headline{font-size:44px; font-weight:800; margin:0}
+  .headline .em{color:#fff; text-shadow:0 0 0 rgba(0,0,0,0); background:linear-gradient(180deg,#fff,#fff); -webkit-background-clip:text; background-clip:text}
+  .subhead{color:#cfcfd6; font-weight:700; margin:6px 0 12px}
+
+  .card{
+    background:#151518; border-radius:18px; box-shadow:var(--ring); overflow:hidden;
+    border:1px solid #26262b;
+  }
+  .plan{
+    padding:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    border-top:1px solid #232329;
+  }
+  .plan:first-child{border-top:none}
+  .plan.badge{outline:2px solid var(--accent-3); box-shadow:0 0 0 3px rgba(255,180,41,.15);}
+  .plan .left{display:flex; flex-direction:column; gap:6px}
+  .tag{display:inline-flex; align-items:center; gap:8px; background:#1f1f25; color:#ffda7a; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;}
+  .strike{color:#80808a; text-decoration:line-through; font-size:12px}
+  .pname{font-weight:800}
+  .pprice{display:flex; align-items:baseline; gap:8px; font-weight:800; font-size:34px}
+  .perday{font-size:13px; color:#d0d2d9}
+  .most-pop{display:block; text-align:center; font-weight:900; padding:10px 12px; background:linear-gradient(180deg,#ffd76b,#ffb429); color:#111}
+
+  .cta-wrap{display:flex; flex-direction:column; gap:10px; margin-top:6px}
+  .row-btns{display:flex; flex-direction:column; gap:10px}
+  @media (min-width:640px){ .row-btns{flex-direction:row} }
+  .btn-xl{font-size:16px; padding:16px 22px}
+
+  .trust{display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center; color:#cfcfd6; font-weight:600}
+  .trust .dot{width:6px; height:6px; background:#2a2a31; border-radius:999px; display:inline-block}
+
+  .center{text-align:center}
 </style>
 
-<!-- Google tag (gtag.js) - Analytics -->
+<!-- GA measurement tag -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17486667499"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
+  /* Keep both configs as requested */
   gtag('config', 'G-FDQ6REQWS8');
 </script>
 </head>
@@ -197,198 +161,207 @@
         <span class="logo">💎</span>
         <span>Charmr.xyz</span>
       </div>
+      <div></div>
     </div>
 
-    <!-- ================= SIGN UP (first page) ================= -->
-    <section class="section" id="signup">
-      <h2 class="signup-hero-title">YOUR PERFECT AI GIRLFRIEND</h2>
-      <div class="hero">
-        <video src="https://www.charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
+    <!-- SIGNUP (Step 1) -->
+    <section id="signup" class="section active">
+      <div class="hero-wrap">
+        <h1 class="hero-title">YOUR PERFECT AI GIRLFRIEND</h1>
+        <p class="hero-sub">Create your account to continue</p>
+        <div class="hero-video">
+          <video src="https://www.charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
+        </div>
       </div>
 
-      <h2 class="title">Create your account</h2>
-      <p class="subtitle">Sign up to continue to your plan selection.</p>
+      <div class="card">
+        <h2 class="title">Create your account</h2>
+        <p class="subtitle">Sign up to continue to your plan selection.</p>
 
-      <form id="signup-form" style="display:grid;gap:12px; max-width:460px; margin:0 auto;">
-        <label for="email">Email</label>
-        <input type="email" id="email" name="email" required placeholder="Enter your email" />
+        <form id="signup-form">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@email.com" />
 
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required placeholder="Create a password" />
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required placeholder="Create a password" />
 
-        <button type="submit" class="btn-primary">Sign Up</button>
-      </form>
+          <button type="submit" class="btn full">Sign Up</button>
+        </form>
 
-      <p class="subtitle" style="text-align:center;margin-top:10px;">
-        Already have an account? <a href="login.html" style="color:#ffd159;text-decoration:none;font-weight:800;">Log in</a>
-      </p>
+        <p class="hint">Already have an account? <a href="login.html" style="color:#ffd159;text-decoration:none;">Log in here</a></p>
+      </div>
     </section>
 
-    <!-- ================= PREMIUM (after signup success) ================= -->
-    <section class="section hidden" id="premium">
-      <!-- Offer bar with timer -->
-      <div class="offer-bar">
-        <div class="offer-left">
-          <span class="pill">Limited offer</span>
-          <span class="pill"><span class="timer" id="timer">10:00</span></span>
-        </div>
-        <button class="btn-claim" id="claimBtn">CLAIM DISCOUNT</button>
+    <!-- PLANS (Step 2) -->
+    <section id="premium" class="section">
+      <div class="bar">
+        <span class="pill">Limited offer</span>
+        <span class="pill">⏱ <span id="timer">09:59</span></span>
+        <a class="btn" href="#plans">CLAIM DISCOUNT</a>
       </div>
 
-      <h1 class="headline">She’s <strong>all yours</strong> now!</h1>
-      <p class="subhead">Unlock her hottest content & live calls</p>
-      <p class="promo-kicker">Get <b>Exclusive Discount</b> Only Today!</p>
-
-      <div class="plans-grid">
-        <!-- Left: video/media -->
-        <div class="media-card">
-          <div class="frame">
-            <video src="https://charmr.xyz/video2.mp4" autoplay muted loop playsinline></video>
-          </div>
+      <div class="offer-grid">
+        <!-- Left: video -->
+        <div class="offer-media">
+          <video src="https://charmr.xyz/video2.mp4" autoplay muted loop playsinline></video>
         </div>
 
-        <!-- Right: plan selector -->
-        <div class="plans-wrap">
-          <div class="plan-card" data-plan="month" data-price="19.99" data-perday="0.67">
-            <div class="plan-info">
-              <span class="tag">50% OFF</span>
-              <div class="plan-name">1 month</div>
-              <div class="strike">39.99 → 19.99</div>
-            </div>
-            <div class="price-right">
-              <span class="big">$0.<span data-dec="67">67</span></span>
-              <small>per day</small>
-            </div>
+        <!-- Right: headline + plans -->
+        <div class="offer-right">
+          <h2 class="headline">She’s <span class="em">all yours</span> now!</h2>
+          <div class="subhead">Unlock her hottest content & live calls</div>
+
+          <div class="card" id="plans">
+            <!-- plan rows inserted by JS -->
           </div>
 
-          <div class="plan-card selected" data-plan="year" data-price="119.88" data-perday="0.33" style="margin-top:12px;">
-            <div class="plan-info">
-              <span class="tag">75% OFF</span>
-              <div class="plan-name">12 months</div>
-              <div class="strike">479.88 → 119.88</div>
+          <div class="cta-wrap">
+            <div class="row-btns">
+              <button id="continueBtn" class="btn btn-xl full">UNLOCK HER NOW — <span id="perDayBadge">Only £0.33/day</span></button>
+              <button id="maybeLater" class="btn secondary btn-xl full">Maybe later</button>
             </div>
-            <div class="price-right">
-              <span class="big">$0.<span data-dec="33">33</span></span>
-              <small>per day</small>
+            <div class="center">
+              <div class="trust">
+                <span>🔒 3670 girlfriends claimed today</span>
+                <span class="dot"></span><span>Secure Payment</span>
+                <span class="dot"></span><span>100% Discreet Billing</span>
+                <span class="dot"></span><span>Cancel Anytime</span>
+              </div>
             </div>
-          </div>
-
-          <div class="most-pop">MOST POPULAR</div>
-
-          <div class="cta-row">
-            <button class="btn-primary" id="unlockNowBtn">UNLOCK HER NOW — ONLY $<span id="perDayCta">0.33</span>/day</button>
-            <button class="btn-secondary" id="maybeLater">Maybe later</button>
-            <div class="tiny-note">🔒 3670 girlfriends claimed today</div>
-          </div>
-
-          <div class="trust">
-            <div class="cell">✅ Secure<br><small>Payment</small></div>
-            <div class="cell">🧾 100% Discreet<br><small>Billing</small></div>
-            <div class="cell">🗓️ Cancel<br><small>Anytime</small></div>
           </div>
         </div>
       </div>
     </section>
 
-    <div style="height:20px"></div>
   </div>
 
-  <!-- Existing signup logic (if you have one) -->
+  <!-- Optional helper (kept if you already use it elsewhere) -->
   <script src="./signup.js"></script>
 
   <script>
-    // ======= simple router: show premium after signup =======
-    const signupSection = document.getElementById('signup');
-    const premiumSection = document.getElementById('premium');
-    const timerEl = document.getElementById('timer');
-    const claimBtn = document.getElementById('claimBtn');
-    const unlockBtn = document.getElementById('unlockNowBtn');
-    const maybeLaterBtn = document.getElementById('maybeLater');
-    const perDayCta = document.getElementById('perDayCta');
-
-    // Timer (10 minutes)
-    let timerId, remaining = 10*60;
-    function startTimer(){
-      clearInterval(timerId);
-      remaining = 10*60;
-      updateTimer();
-      timerId = setInterval(()=>{
-        remaining = Math.max(0, remaining-1);
-        updateTimer();
-        if(remaining===0) clearInterval(timerId);
-      }, 1000);
-    }
-    function updateTimer(){
-      const m = String(Math.floor(remaining/60)).padStart(2,'0');
-      const s = String(remaining%60).padStart(2,'0');
-      timerEl.textContent = `${m}:${s}`;
-    }
-
-    // Plan selection
-    let selectedPlan = 'year';
-    function applySelection(){
-      document.querySelectorAll('.plan-card').forEach(card=>{
-        card.classList.toggle('selected', card.dataset.plan === selectedPlan);
-      });
-      const active = document.querySelector('.plan-card.selected');
-      const pd = active ? (active.dataset.perday || '0.33') : '0.33';
-      perDayCta.textContent = Number(pd).toFixed(2);
-    }
-    document.querySelectorAll('.plan-card').forEach(card=>{
-      card.addEventListener('click', ()=>{
-        selectedPlan = card.dataset.plan || 'year';
-        applySelection();
-      });
-    });
-    applySelection();
-
-    // CTA actions
-    function goPay(){
-      try{ sessionStorage.setItem('selectedPlan', selectedPlan); }catch{}
-      window.location.href = '/payment.html';
-    }
-    unlockBtn.addEventListener('click', goPay);
-    claimBtn.addEventListener('click', goPay);
-    maybeLaterBtn.addEventListener('click', ()=> window.location.href = '/profiles.html');
-
-    // Intercept signup form to keep flow on-page
+    /* ---------- SIGNUP: intercept & then show plans ---------- */
     const signupForm = document.getElementById('signup-form');
-    if (signupForm) {
-      signupForm.addEventListener('submit', async (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+    signupForm.addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const email = (document.getElementById('email').value || '').trim();
+      const password = document.getElementById('password').value;
+      if(!email || !password){ alert('Please enter your email and password.'); return; }
 
-        const email = (document.getElementById('email').value || '').trim();
-        const password = document.getElementById('password').value;
+      try{
+        const res = await fetch('/api/register', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json().catch(()=> ({}));
+        if(!res.ok){ alert(data?.error || 'Registration failed.'); return; }
+        if (data.token) { try { localStorage.setItem('token', data.token); } catch{} }
+      }catch(e){
+        /* If your API is offline, still let the flow continue for now */
+      }
+      // swap views
+      document.getElementById('signup').classList.remove('active');
+      document.getElementById('premium').classList.add('active');
+      startTimer();
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
 
-        if (!email || !password) {
-          alert('Please enter your email and password.');
-          return;
+    /* ---------- Plans ---------- */
+    const planData = [
+      {
+        key:'month',
+        label:'1 month',
+        old:'£39.99',
+        now:19.99,
+        days:30,
+        sale:'50% OFF',
+        popular:false
+      },
+      {
+        key:'quarter',
+        label:'3 months',
+        old:'£79.99',
+        now:44.00,       // 👈 your £44 plan
+        days:90,
+        sale:'SAVE BIG',
+        popular:true     // mark as most popular
+      },
+      {
+        key:'year',
+        label:'12 months',
+        old:'£479.88',
+        now:119.88,
+        days:365,
+        sale:'75% OFF',
+        popular:false
+      }
+    ];
+
+    const plansWrap = document.getElementById('plans');
+    let selectedKey = 'quarter';
+
+    function formatMoney(v){ return '£' + (Math.round(v*100)/100).toFixed(2); }
+    function perDayText(p){ return formatMoney(p.now / p.days) + ' per day'; }
+
+    function renderPlans(){
+      plansWrap.innerHTML = '';
+      planData.forEach(p=>{
+        const row = document.createElement('div');
+        row.className = 'plan' + (p.key===selectedKey ? ' badge':'');
+        row.dataset.plan = p.key;
+
+        row.innerHTML = `
+          <div class="left">
+            <span class="tag">${p.sale}</span>
+            <div class="pname">${p.label}</div>
+            <div class="strike">${p.old}</div>
+          </div>
+          <div class="right">
+            <div class="pprice">${formatMoney(p.now)}</div>
+            <div class="perday">${perDayText(p)}</div>
+          </div>
+        `;
+        row.addEventListener('click', ()=>{ selectedKey = p.key; renderPlans(); syncPerDayBadge(); });
+        plansWrap.appendChild(row);
+
+        if (p.popular){
+          const mp = document.createElement('div');
+          mp.className = 'most-pop';
+          mp.textContent = 'MOST POPULAR';
+          plansWrap.appendChild(mp);
         }
+      });
+    }
 
-        try {
-          const res = await fetch('/api/register', {
-            method:'POST',
-            headers:{ 'Content-Type':'application/json' },
-            body: JSON.stringify({ email, password })
-          });
-          const data = await res.json().catch(()=> ({}));
+    function syncPerDayBadge(){
+      const chosen = planData.find(p=>p.key===selectedKey) || planData[0];
+      document.getElementById('perDayBadge').textContent = `Only ${formatMoney(chosen.now/ chosen.days)}/day`;
+    }
 
-          if (!res.ok) {
-            alert(data?.error || 'Registration failed. Please try again.');
-            return;
-          }
+    renderPlans(); syncPerDayBadge();
 
-          if (data.token) { try { localStorage.setItem('token', data.token); } catch {} }
-          // Show premium layout
-          signupSection.classList.add('hidden');
-          premiumSection.classList.remove('hidden');
-          startTimer();
-        } catch (err) {
-          alert('Registration failed. Please try again.');
-        }
-      }, true);
+    document.getElementById('continueBtn').addEventListener('click', ()=>{
+      const chosen = planData.find(p=>p.key===selectedKey);
+      try {
+        sessionStorage.setItem('selectedPlan', chosen?.key || 'quarter');
+        sessionStorage.setItem('selectedPrice', String(chosen?.now ?? ''));
+      } catch {}
+      window.location.href = '/payment.html';
+    });
+    document.getElementById('maybeLater').addEventListener('click', ()=> window.location.href = '/profiles.html');
+
+    /* ---------- Timer ---------- */
+    let remaining = 10*60, tId;
+    function startTimer(){
+      clearInterval(tId);
+      remaining = 10*60;
+      tId = setInterval(()=>{
+        remaining = Math.max(0, remaining-1);
+        const m = String(Math.floor(remaining/60)).padStart(2,'0');
+        const s = String(remaining%60).padStart(2,'0');
+        document.getElementById('timer').textContent = `${m}:${s}`;
+        if(!remaining) clearInterval(tId);
+      },1000);
     }
   </script>
 
