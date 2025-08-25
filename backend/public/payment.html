@@ -23,10 +23,13 @@
   .stack{max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:18px}
   .block{background:#15151a; border-radius:16px; padding:18px; box-shadow:0 0 0 1px var(--stroke)}
   .block h3{margin:0 0 12px; font-size:18px}
-  .btn-apple,.btn-gpay{display:flex; align-items:center; justify-content:center; font-weight:800; border-radius:12px; padding:14px 16px}
-  .btn-apple{background:#fff; color:#000}
-  .btn-gpay{background:#f1f2f4; color:#111}
-  .divider{height:10px}
+  .btn-gpay{display:flex; align-items:center; justify-content:center; font-weight:800; border-radius:12px; padding:14px 16px}
+  /* Google Pay official look */
+  .btn-gpay{
+    background:#000; color:#fff; border:1px solid #2b2b2f;
+    padding:10px 16px; border-radius:12px; height:44px;
+  }
+  .btn-gpay img{height:18px; display:block}
   .brands{display:flex; align-items:center; gap:10px; margin-bottom:8px}
   .right-note{margin-left:auto; opacity:.9}
   .stripe{color:#635bff; font-weight:800}
@@ -41,7 +44,7 @@
   .el{background:#0f0f12; border:1px solid #23232a; border-radius:12px; padding:14px 12px}
   .el-focus{border-color:#3a3a44}
 
-  /* === Loading overlay (same pattern as checkout.html) === */
+  /* Loading overlay */
   .loading-overlay{
     position:fixed; inset:0; background:rgba(255,255,255,.92);
     display:none; align-items:center; justify-content:center; flex-direction:column;
@@ -60,7 +63,6 @@
   }
   @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
   .loading-sub{ font-size:12px; color:#555; margin-top:8px }
-  /* === End loading overlay === */
 </style>
 </head>
 <body>
@@ -78,18 +80,16 @@
         <div class="stack">
           <div class="block">
             <h3>Fast Payments</h3>
-            <div class="btn-apple">&nbsp;Pay</div>
-            <div class="divider"></div>
-            <div class="btn-gpay">G&nbsp;Pay&nbsp;&nbsp;|&nbsp;&nbsp;VISA •••• 2899</div>
+            <!-- Mount point for real Google Pay / Payment Request Button -->
+            <div class="btn-gpay" aria-label="Google Pay" id="gpay-button"></div>
           </div>
 
           <div class="block">
             <h3>Credit card</h3>
             <div class="brands">
-              <img alt="visa" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" style="height:18px;filter:invert(1) brightness(2)">
-              <img alt="mc" src="https://upload.wikimedia.org/wikipedia/commons/0/0e/Mastercard-logo.png" style="height:18px">
-              <img alt="amex" src="https://upload.wikimedia.org/wikipedia/commons/3/30/American_Express_logo_%282018%29.svg" style="height:18px">
-              <img alt="disc" src="https://upload.wikimedia.org/wikipedia/commons/5/5a/Discover_Card_logo.svg" style="height:18px">
+              <img alt="visa" src="https://charmr.xyz/public/logos/visa.pnd" style="height:18px">
+              <img alt="mc"   src="https://charmr.xyz/public/logos/mastercard.png" style="height:18px">
+              <img alt="amex" src="https://charmr.xyz/public/logos/amex.png" style="height:18px">
               <span class="right-note">Secured by <span class="stripe">stripe</span></span>
             </div>
 
@@ -113,7 +113,6 @@
 
           <div id="err" class="error"></div>
 
-          <!-- Button under the card form so it's always visible -->
           <button class="cta" id="payNow">Complete Payment</button>
 
           <div class="note">Your card is processed securely on this page. If 3-D Secure is required, a quick verification will pop up.</div>
@@ -134,20 +133,16 @@
   <script src="https://js.stripe.com/v3/"></script>
   <script>
   // ====== CONFIG ======
-  // Point directly to the no-trial backend on your domain/port (HTTPS).
   const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
   const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
-  // Plan -> price IDs
   const PRICE_IDS = {
     month:   "price_1Rzdp0EJXIhiKzYGlVxHGH7W",
     quarter: "price_1RzdrwEJXIhiKzYGdWE0hxhU",
     year:    "price_1RzdpXEJXIhiKzYGOyrmUiQU"
   };
-
   const PLAN_TOTALS = { month:20, quarter:44, year:120 };
 
-  // Selected plan from previous page (fallback to 'quarter')
   let selectedPlan = sessionStorage.getItem("selectedPlan") || "quarter";
   document.getElementById("headerTotal").textContent =
     `Total £${(PLAN_TOTALS[selectedPlan] ?? PLAN_TOTALS.quarter).toFixed(2)}`;
@@ -167,15 +162,90 @@
   const cardCvc    = elements.create('cardCvc', style);
   cardNumber.mount('#card-number'); cardExpiry.mount('#card-expiry'); cardCvc.mount('#card-cvc');
 
+  /* ---------- Google Pay / Payment Request Button ---------- */
+  function guessCountry() {
+    try {
+      const loc = Intl.DateTimeFormat().resolvedOptions().locale || '';
+      const part = loc.split('-')[1];
+      if (part && part.length === 2) return part.toUpperCase();
+    } catch {}
+    return 'US';
+  }
+
+  const amountMinor = Math.round(
+    (PLAN_TOTALS[selectedPlan] ?? PLAN_TOTALS.quarter) * 100
+  );
+
+  const paymentRequest = stripe.paymentRequest({
+    country: guessCountry(),
+    currency: 'gbp',
+    total: { label: 'Charmr.xyz', amount: amountMinor },
+    requestPayerEmail: true
+  });
+
+  const prButton = elements.create('paymentRequestButton', {
+    paymentRequest,
+    style: { paymentRequestButton: { type: 'buy', theme: 'dark', height: '44px' } }
+  });
+
+  paymentRequest.canMakePayment().then(result => {
+    if (result) {
+      prButton.mount('#gpay-button');
+    } else {
+      const el = document.getElementById('gpay-button');
+      if (el) el.style.display = 'none';
+    }
+  });
+
+  paymentRequest.on('paymentmethod', async (ev) => {
+    try {
+      const res = await fetch(SUBSCRIBE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: PRICE_IDS[selectedPlan] || PRICE_IDS.year,
+          paymentMethodId: ev.paymentMethod.id,
+          email: ev.payerEmail || (document.getElementById('emailInput').value || '').trim()
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.clientSecret) {
+        throw new Error(data?.error || 'Server error creating subscription');
+      }
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        data.clientSecret,
+        { payment_method: ev.paymentMethod.id }
+      );
+
+      if (error) {
+        ev.complete('fail');
+        showError(error.message || 'Payment could not be completed.');
+        return;
+      }
+
+      ev.complete('success');
+      if (paymentIntent && paymentIntent.status === 'succeeded') {
+        window.location.href = 'thankyou2.html';
+      } else {
+        showError('Payment not completed. Status: ' + (paymentIntent?.status || 'unknown'));
+      }
+    } catch (e) {
+      ev.complete('fail');
+      showError(e.message || 'Payment failed.');
+    }
+  });
+  /* ---------- End Google Pay section ---------- */
+
   const $err = document.getElementById('err');
   function showError(msg){ $err.textContent = msg; $err.style.display = 'block'; }
   function clearError(){ $err.style.display='none'; $err.textContent=''; }
 
-  // === Loading helpers (match checkout.html behavior) ===
+  // Loading helpers
   const overlay = document.getElementById('loading-overlay');
   function showLoading(){ overlay && overlay.setAttribute('aria-hidden','false'); }
   function hideLoading(){ overlay && overlay.setAttribute('aria-hidden','true'); }
-  // Watch for new 3DS iframes and hide overlay when the challenge appears
   let baselineIframes = new Set();
   function startThreeDSWatcher(){
     baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
@@ -198,23 +268,18 @@
     });
     observer.observe(document.documentElement, { childList:true, subtree:true });
   }
-  // === End loading helpers ===
 
   document.getElementById('payNow').addEventListener('click', async ()=>{
     clearError();
-
     const email = (document.getElementById('emailInput').value || '').trim();
     if(!email){ showError('Please enter your email.'); return; }
 
-    // Optional ?plan= override
     const urlPlan = new URLSearchParams(location.search).get('plan');
     if(urlPlan) { selectedPlan = urlPlan; sessionStorage.setItem('selectedPlan', selectedPlan); }
 
-    // Show loading while we process + watch for 3DS
     showLoading();
     startThreeDSWatcher();
 
-    // 0) Create a PaymentMethod from the card fields
     let pm;
     try{
       const pmRes = await stripe.createPaymentMethod({
@@ -229,7 +294,6 @@
       showError(e.message || 'Card details are invalid.'); return;
     }
 
-    // 1) Ask backend to create subscription and return a PaymentIntent client_secret
     let clientSecret;
     try{
       const res = await fetch(SUBSCRIBE_URL, {
@@ -257,7 +321,6 @@
       showError(e.message); return;
     }
 
-    // 2) Confirm payment ON THIS PAGE
     const {paymentIntent, error} = await stripe.confirmCardPayment(clientSecret);
     if(error){ hideLoading(); showError(error.message || 'Payment could not be completed.'); return; }
 
