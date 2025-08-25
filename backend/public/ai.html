@@ -232,30 +232,11 @@
       <p class="subtitle">Sign up to continue to your plan selection.</p>
 
       <form id="signup-form" style="display:grid;gap:12px;">
-        <label for="gender">I am a:</label>
-        <select id="gender" name="gender" required>
-          <option value="" disabled selected>Select gender</option>
-          <option value="man">Man</option>
-          <option value="woman">Woman</option>
-          <option value="nonbinary">Non-binary</option>
-        </select>
-
-        <label for="lookingFor">Looking for a:</label>
-        <select id="lookingFor" name="lookingFor" required>
-          <option value="" disabled selected>Select preference</option>
-          <option value="woman">Woman</option>
-          <option value="man">Man</option>
-          <option value="any">Anyone</option>
-        </select>
-
         <label for="email">Email:</label>
         <input type="email" id="email" name="email" required placeholder="Enter your email" />
 
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required placeholder="Create a password" />
-
-        <label for="phone">Phone Number (optional):</label>
-        <input type="tel" id="phone" name="phone" placeholder="Optional" />
 
         <button type="submit" class="btn">Sign Up</button>
       </form>
@@ -439,7 +420,7 @@ let stepIndex = -1; // -1 = landing
 const landing = document.getElementById('landing');
 const qWrap   = document.getElementById('questionContainer');
 const pWrap   = document.getElementById('promptContainer');
-const signup  = document.getElementById('signup');          // 🔹 new
+const signup  = document.getElementById('signup');
 const premium = document.getElementById('premium');
 const startBtn= document.getElementById('startBtn');
 const backBtn = document.getElementById('backBtn');
@@ -478,7 +459,7 @@ function next(){
   stepIndex++;
   if(stepIndex === 0){ renderQuestion(); return; }
   if(stepIndex > 0 && stepIndex < steps.length){ renderCurrentStep(); return; }
-  if(stepIndex >= steps.length){ show(signup); } // 🔹 show Sign Up before Premium
+  if(stepIndex >= steps.length){ show(signup); } // show Sign Up before Premium
 }
 function prev(){
   if(stepIndex <= -1) return;
@@ -561,7 +542,7 @@ applySelection();
 
 continueBtn.addEventListener('click', ()=>{
   sessionStorage.setItem('selectedPlan', selectedPlan || 'year');
-  window.location.href = '/payment.html'; // ✅ redirect to payment page
+  window.location.href = '/payment.html'; // redirect to payment page
 });
 
 maybeLaterBtn.addEventListener('click', ()=> history.back());
@@ -585,13 +566,50 @@ function updateTimer(){
 }
 
 /* -------------------- Sign Up success → show Premium -------------------- */
-// signup.js will dispatch a "signupSuccess" CustomEvent with e.detail = { token, user... }.
-// We capture it here and continue the funnel to plan selection.
 document.addEventListener("signupSuccess", (e) => {
   try { if (e.detail && e.detail.token) localStorage.setItem("token", e.detail.token); } catch {}
   show(premium);
   startTimer();
 });
+
+/* -------------------- Sign Up: intercept & handle locally (no redirect) -------------------- */
+const signupForm = document.getElementById('signup-form');
+if (signupForm) {
+  signupForm.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    if (ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+
+    const email = (document.getElementById('email').value || '').trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+      alert('Please enter your email and password.');
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/register', {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json().catch(()=> ({}));
+
+      if (!res.ok) {
+        alert(data?.error || 'Registration failed. Please try again.');
+        return;
+      }
+
+      if (data.token) { try { localStorage.setItem('token', data.token); } catch {} }
+      document.dispatchEvent(new CustomEvent('signupSuccess', { detail: data }));
+      show(premium);
+      startTimer();
+    } catch (err) {
+      alert('Registration failed. Please try again.');
+    }
+  }, true); // capture-phase to pre-empt any default handler that redirects
+}
 
 /* -------------------- Kickoff -------------------- */
 renderProgress();
