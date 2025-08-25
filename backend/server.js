@@ -258,7 +258,7 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/6.png",
     "description": "just a norty gal lookin 4 sum fun \ud83e\udd74\ud83e\udd42 dnt b shy luv \ud83d\ude0f holla innit \ud83d\udc8b"
   },
-  {
+{
     "id": 7,
     "name": "Ruby Clarke",
     "city": "Newcastle",
@@ -2525,7 +2525,205 @@ const profiles = [
     "city": "Cambridge",
     "image": "https://notadatingsite.online/pics/330.png",
     "description": "bit of a madhead \ud83e\udd2a love a giggle, takeaway n sum company \ud83d\udc40\ud83d\ude06 slide in if u can keep up x"
-  }
+  },
+{
+  "id": 331,
+  "name": "Nova Brooks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/331.png",
+  "description": "virtual tease 💫 here for cheeky banter n late-night giggles lol"
+},
+{
+  "id": 332,
+  "name": "Maya Carter AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/332.png",
+  "description": "sweet but spicy 😇🔥 luv flirty chats n random voice notes x"
+},
+{
+  "id": 333,
+  "name": "Zara Reed AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/333.png",
+  "description": "bit cheeky, bit cute 😉 here for da vibes n playful teasing"
+},
+{
+  "id": 334,
+  "name": "Luna Hayes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/334.png",
+  "description": "night owl 🌙✨ send me ur best lines n see what happens lol"
+},
+{
+  "id": 335,
+  "name": "Aria Collins AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/335.png",
+  "description": "soft voice, bold energy 🎧💋 down for flirty banter n memes"
+},
+{
+  "id": 336,
+  "name": "Riley Bennett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/336.png",
+  "description": "sassy sweetheart 😏💄 prove u can keep up x"
+},
+{
+  "id": 337,
+  "name": "Piper Lewis AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/337.png",
+  "description": "lowkey chaos gremlin 🤪🍟 here for laughs n a lil tease"
+},
+{
+  "id": 338,
+  "name": "Ivy Parker AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/338.png",
+  "description": "green flags only 🌿💚 let’s flirt n talk nonsense lol"
+},
+{
+  "id": 339,
+  "name": "Sienna Ward AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/339.png",
+  "description": "classy menace 💅🏼✨ cheeky compliments welcome x"
+},
+{
+  "id": 340,
+  "name": "Eden Foster AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/340.png",
+  "description": "angel energy w/ devilish jokes 😇😈 slide in polite pls"
+},
+{
+  "id": 341,
+  "name": "Quinn Turner AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/341.png",
+  "description": "fast replies, faster comebacks ⚡️😉 bit flirty, bit funny"
+},
+{
+  "id": 342,
+  "name": "Daisy Morgan AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/342.png",
+  "description": "sunny n a tad naughty 🌼😜 bring snacks n pick-up lines"
+},
+{
+  "id": 343,
+  "name": "Harper Wells AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/343.png",
+  "description": "playful n loyal vibes 🐾💞 let’s trade secrets n smiles"
+},
+{
+  "id": 344,
+  "name": "Freya Knight AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/344.png",
+  "description": "proper flirt w/ a soft spot 🥰✨ keep it cute n cheeky"
+},
+{
+  "id": 345,
+  "name": "Eliza Kelly AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/345.png",
+  "description": "booksmart baddie 📚💋 here for banter n midnight chats"
+},
+{
+  "id": 346,
+  "name": "Chloe James AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/346.png",
+  "description": "sweet chaos w/ good taste 🍫😌 show me ur charm lol"
+},
+{
+  "id": 347,
+  "name": "Keira Scott AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/347.png",
+  "description": "gym? no. flirty texts? yes. 🏃‍♀️💌 come be cute x"
+},
+{
+  "id": 348,
+  "name": "Talia Grant AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/348.png",
+  "description": "bad at goodbyes, great at teasing 😜✨"
+},
+{
+  "id": 349,
+  "name": "Nina Adams AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/349.png",
+  "description": "soft girl energy 🫶🏼💕 craving fun convos n lil chaos"
+},
+{
+  "id": 350,
+  "name": "Lola Howard AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/350.png",
+  "description": "cute troublemaker 😇👉😈 bring ur best flirts"
+},
+{
+  "id": 351,
+  "name": "Willow Price AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/351.png",
+  "description": "cozy vibes n spicy jokes ☕️🔥 surprise me lol"
+},
+{
+  "id": 352,
+  "name": "Ada Gibson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/352.png",
+  "description": "nerdy flirt mode on 👓💖 cute texts = instant reply"
+},
+{
+  "id": 353,
+  "name": "Mila Hart AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/353.png",
+  "description": "heartbreaker lite 💔✨ only if u deserve it x"
+},
+{
+  "id": 354,
+  "name": "Leia Pierce AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/354.png",
+  "description": "space to flirt? always 🚀😉 keep it fun n flirty"
+},
+{
+  "id": 355,
+  "name": "Skye Rhodes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/355.png",
+  "description": "stormy eyes, sunny mood 🌧️☀️ come tease me"
+},
+{
+  "id": 356,
+  "name": "Esme Banks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/356.png",
+  "description": "quiet at first… then chaos 🤭🔥 test me"
+},
+{
+  "id": 357,
+  "name": "Ayla Stone AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/357.png",
+  "description": "soft touch, sharp wit ✨😏 flirty convos only pls"
+},
+{
+  "id": 358,
+  "name": "Jade Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/358.png",
+  "description": "green lights only 💚😘 let’s get a lil cheeky"
+}
+  
+
   
   
   
@@ -3059,6 +3257,120 @@ app.get("/api/operator/feed", authenticateOperator, async (req, res) => {
   } catch (e) {
     console.error("Feed error:", e);
     res.status(500).json({ error: "Failed to fetch feed" });
+  }
+});
+
+// ==== AI Auto-Drip (local pics; non-invasive) ====
+// These IDs are your AI girls (you said 331..358)
+const AI_MIN_ID = 331;
+const AI_MAX_ID = 358;
+
+// Short playful follow-ups after the image
+const FLIRTY_LINES = [
+  "You like that?",
+  "What would you do with this? ;)",
+  "Does that turn you on?",
+  "Want more?",
+  "Be honest… how naughty are you feeling?",
+  "Am I your type?",
+  "Should I send another?",
+  "Tell me how it makes you feel.",
+  "Is this your thing?",
+  "Would you handle me?",
+  "Rate me 1–10… go on.",
+  "I’m teasing you… is it working?"
+];
+
+// Find /public/pics/<girlId> (or /public/pics/ai/<girlId>) and return both
+// an absolute FS path and the web path (served by express.static)
+function resolveAiPicsFolder(girlId) {
+  const publicRoot = path.join(__dirname, "public");
+  const candidates = [
+    path.join(publicRoot, "pics", String(girlId)),       // /public/pics/331
+    path.join(publicRoot, "pics", "ai", String(girlId)), // /public/pics/ai/331
+  ];
+  for (const dir of candidates) {
+    try {
+      if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
+        const webBase = path.relative(publicRoot, dir).split(path.sep).join("/");
+        return { absDir: dir, webBase: `/${webBase}` };
+      }
+    } catch {}
+  }
+  return null;
+}
+
+// Pick a random .png file from a folder (any count is fine)
+function pickRandomPng(absDir) {
+  const files = fs.readdirSync(absDir).filter(f => /\.png$/i.test(f));
+  if (!files.length) return null;
+  return files[Math.floor(Math.random() * files.length)];
+}
+
+/**
+ * POST /api/ai/drip
+ * Body: { girlId }
+ * Inserts:
+ *   1) IMAGE:/pics/<girlId>/<random.png>  (from_user=false)
+ *   2) a short flirty text                 (from_user=false)
+ *
+ * Notes:
+ * - Respects live operator takeover (skips if active)
+ * - Does NOT touch credits, subscription, or premium gating
+ */
+app.post("/api/ai/drip", authenticateToken, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const girlId = Number(req.body?.girlId);
+
+    if (!Number.isInteger(girlId) || girlId < AI_MIN_ID || girlId > AI_MAX_ID) {
+      return res.status(400).json({ error: "girlId must be 331..358" });
+    }
+
+    // If a human operator is live for this chat, do nothing
+    try {
+      const tk = await pool.query(
+        `SELECT 1 FROM operator_overrides
+         WHERE user_id=$1 AND girl_id=$2 AND is_active=true
+         LIMIT 1`,
+        [userId, girlId]
+      );
+      if (tk.rows.length) {
+        return res.json({ ok: false, skipped: "operator_live" });
+      }
+    } catch {}
+
+    const loc = resolveAiPicsFolder(girlId);
+    if (!loc) {
+      return res.status(404).json({
+        error: "Folder not found under /public/pics/{id} or /public/pics/ai/{id}"
+      });
+    }
+
+    const file = pickRandomPng(loc.absDir);
+    if (!file) return res.status(404).json({ error: "No .png files in folder" });
+
+    const url = `${loc.webBase}/${encodeURIComponent(file)}`;
+
+    // 1) Drop an image message as the girl
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3)`,
+      [userId, girlId, `IMAGE:${url}`]
+    );
+
+    // 2) Follow with a flirty one-liner
+    const line = FLIRTY_LINES[Math.floor(Math.random() * FLIRTY_LINES.length)];
+    await pool.query(
+      `INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3)`,
+      [userId, girlId, line]
+    );
+
+    res.json({ ok: true, url, text: line });
+  } catch (e) {
+    console.error("AI drip error:", e);
+    res.status(500).json({ error: "Failed to send auto image" });
   }
 });
 
