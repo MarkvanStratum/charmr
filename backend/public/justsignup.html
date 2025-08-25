@@ -292,28 +292,52 @@
 
     /* ---------- Currency symbol by rough region (symbol only, no conversion) ---------- */
     let CURRENCY = '£';
+
     function pickCurrencyByRegion(country){
       if (!country) return '£';
-      const usd = new Set(['US','CA','AU','NZ']);
-      const eur = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']);
-      if (usd.has(country)) return '$';
-      if (eur.has(country)) return '€';
+      country = String(country).toUpperCase();
+      // $ for US/CA/AU/NZ
+      const USD_SET = new Set(['US','CA','AU','NZ']);
+      // EU member countries (show €)
+      const EU_SET = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']);
+      if (USD_SET.has(country)) return '$';
+      if (EU_SET.has(country)) return '€';
       return '£';
     }
-    (async function detectCurrency(){
+
+    async function detectCountryCode(){
+      // Try a fast, lightweight endpoint first
       try{
-        const ctrl = new AbortController();
-        const t = setTimeout(()=>ctrl.abort(), 2500);
-        const r = await fetch('https://ipapi.co/json/', {signal: ctrl.signal});
-        clearTimeout(t);
-        const j = await r.json().catch(()=>null);
-        CURRENCY = pickCurrencyByRegion(j?.country);
-      }catch{
-        // fallback via browser locale (e.g., en-US)
-        const m = (navigator.language||'').split('-')[1];
-        CURRENCY = pickCurrencyByRegion(m);
-      }
-      renderPlans(); syncPerDayBadge();
+        const ctrl1 = new AbortController();
+        const t1 = setTimeout(()=>ctrl1.abort(), 2000);
+        const r1 = await fetch('https://ipapi.co/country/', {signal: ctrl1.signal});
+        clearTimeout(t1);
+        if (r1.ok) {
+          const cc = (await r1.text()).trim().toUpperCase();
+          if (cc && cc.length === 2) return cc;
+        }
+      }catch{}
+
+      // Fallback to JSON endpoint
+      try{
+        const ctrl2 = new AbortController();
+        const t2 = setTimeout(()=>ctrl2.abort(), 2500);
+        const r2 = await fetch('https://ipapi.co/json/', {signal: ctrl2.signal});
+        clearTimeout(t2);
+        const j = await r2.json().catch(()=>null);
+        if (j && j.country) return String(j.country).toUpperCase();
+      }catch{}
+
+      // Last resort: infer from browser locale (en-US -> US)
+      const loc = (navigator.language || '').split('-')[1];
+      return (loc && loc.length===2) ? loc.toUpperCase() : 'GB';
+    }
+
+    (async function initCurrency(){
+      const cc = await detectCountryCode();
+      CURRENCY = pickCurrencyByRegion(cc);
+      renderPlans(); 
+      syncPerDayBadge();
     })();
 
     /* ---------- Plans ---------- */
@@ -376,8 +400,9 @@
       document.getElementById('perDayBadge').textContent = `Only ${formatMoney(perDay)}/day`;
     }
 
-    // initial render (will re-render after currency detection too)
-    renderPlans(); syncPerDayBadge();
+    // initial render (will be re-rendered after currency detection too)
+    renderPlans(); 
+    syncPerDayBadge();
 
     document.getElementById('continueBtn').addEventListener('click', ()=>{
       const chosen = planData.find(p=>p.key===selectedKey);
