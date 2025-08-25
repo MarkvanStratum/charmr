@@ -258,7 +258,7 @@
     <section class="section" id="premium">
       <div class="premium-head">
         <div class="chip"><span>Premium</span> <span class="timer" id="timer">10:00</span></div>
-        <button class="claim">Claim discount</button>
+        <a class="claim" href="/payment.html">Claim discount</a>
       </div>
 
       <div class="prem-hero">
@@ -552,7 +552,7 @@ continueBtn.addEventListener('click', ()=>{
   window.location.href = '/payment.html'; // redirect to payment page
 });
 
-maybeLaterBtn.addEventListener('click', ()=> history.back());
+maybeLaterBtn.addEventListener('click', ()=> window.location.href = '/profiles.html');
 
 /* -------------------- Premium Timer -------------------- */
 let timerId, remaining = 10*60;
