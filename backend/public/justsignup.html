@@ -19,7 +19,7 @@
     --radius:16px;
     --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
 
-    /* ⬇️ your current video sizes (left unchanged) */
+    /* your video sizes (unchanged) */
     --heroW: 150px;     /* signup page video width */
     --payHeroW: 300px;  /* plans page video width */
   }
@@ -33,117 +33,73 @@
     -webkit-font-smoothing:antialiased;
     -moz-osx-font-smoothing:grayscale;
   }
-  .app{
-    max-width:980px;
-    margin:0 auto;
-    min-height:100%;
-    display:flex;
-    flex-direction:column;
-    padding:12px 16px 24px;
-  }
+  .app{max-width:980px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:12px 16px 24px}
 
   /* Top bar */
-  .topbar{
-    position:sticky; top:0; z-index:40;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:14px 12px;
-    background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));
-    backdrop-filter:saturate(120%) blur(8px);
-  }
-  .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px;}
-  .brand .logo{width:22px; height:22px; display:grid; place-items:center; color:#6ee7b7; background:#2a2a2e; border-radius:8px; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06);}
+  .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:14px 12px;background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));backdrop-filter:saturate(120%) blur(8px)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}
+  .brand .logo{width:22px;height:22px;display:grid;place-items:center;color:#6ee7b7;background:#2a2a2e;border-radius:8px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06)}
 
-  /* Sections */
   .section{display:none}
   .section.active{display:block}
 
-  /* ---------- SIGNUP STEP ---------- */
-  #signup .hero-wrap{display:flex; flex-direction:column; align-items:center; gap:10px; margin:12px 0 18px;}
-  #signup .hero-title{margin:0; font-weight:800; font-size:30px; line-height:1.15; text-align:center;}
-  #signup .hero-sub{margin:2px 0 0; color:#d9dbe2; opacity:.95; font-weight:600; text-align:center;}
-  #signup .hero-video{
-    width:var(--heroW); aspect-ratio:9/13; border-radius:18px; overflow:hidden;
-    box-shadow:var(--ring); background:#0b0b0d; margin:6px auto 0;
-  }
-  #signup .hero-video video{width:100%; height:100%; object-fit:cover; object-position:center top; display:block}
+  /* ---------- SIGNUP ---------- */
+  #signup .hero-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:12px 0 18px}
+  #signup .hero-title{margin:0;font-weight:800;font-size:30px;line-height:1.15;text-align:center}
+  #signup .hero-sub{margin:2px 0 0;color:#d9dbe2;opacity:.95;font-weight:600;text-align:center}
+  #signup .hero-video{width:var(--heroW);aspect-ratio:9/13;border-radius:18px;overflow:hidden;box-shadow:var(--ring);background:#0b0b0d;margin:6px auto 0}
+  #signup .hero-video video{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 
-  #signup .card{
-    background:#151518; border-radius:18px; padding:16px; box-shadow:var(--ring); max-width:620px; margin:0 auto;
-  }
-  #signup .title{margin:0 0 6px; font-size:28px; font-weight:800; text-align:center;}
-  #signup .subtitle{color:#d9dbe2; opacity:.92; margin:0 0 14px; font-weight:600; text-align:center;}
-
-  #signup form{display:grid; gap:12px}
+  #signup .card{background:#151518;border-radius:18px;padding:16px;box-shadow:var(--ring);max-width:620px;margin:0 auto}
+  #signup .title{margin:0 0 6px;font-size:28px;font-weight:800;text-align:center}
+  #signup .subtitle{color:#d9dbe2;opacity:.92;margin:0 0 14px;font-weight:600;text-align:center}
+  #signup form{display:grid;gap:12px}
   #signup label{font-weight:700}
-  #signup input{
-    background:#1a1a1f; color:#fff; padding:12px 14px; border-radius:12px; border:1px solid #2a2a31;
-    outline:none;
-  }
-  #signup input:focus{border-color:#3a3a41; box-shadow:0 0 0 2px rgba(255,255,255,.06)}
-  .btn{
-    display:inline-flex; align-items:center; justify-content:center; gap:10px;
-    padding:14px 22px; border:none; border-radius:14px; font-weight:800; cursor:pointer;
-    color:#111; background:linear-gradient(180deg,#ffd76b,#ffb429); box-shadow:0 8px 22px rgba(255,174,15,.28);
-  }
-  .btn.secondary{background:#1a1a1f; color:#fff; box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08);}
+  #signup input{background:#1a1a1f;color:#fff;padding:12px 14px;border-radius:12px;border:1px solid #2a2a31;outline:none}
+  #signup input:focus{border-color:#3a3a41;box-shadow:0 0 0 2px rgba(255,255,255,.06)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#111;background:linear-gradient(180deg,#ffd76b,#ffb429);box-shadow:0 8px 22px rgba(255,174,15,.28)}
+  .btn.secondary{background:#1a1a1f;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08)}
   .btn.full{width:100%}
+  #signup .hint{color:#cfcfd6;text-align:center;margin-top:8px}
 
-  #signup .hint{color:#cfcfd6; text-align:center; margin-top:8px}
-
-  /* ---------- PLANS STEP ---------- */
-  #premium .bar{
-    display:flex; align-items:center; justify-content:space-between; gap:12px;
-    padding:12px 16px; background:#1a1a1f; border-radius:14px; box-shadow:var(--ring); margin-bottom:18px;
-  }
-  #premium .pill{background:#2a2a31; color:#fff; padding:10px 14px; border-radius:999px; font-weight:800; display:inline-flex; gap:8px; align-items:center}
+  /* ---------- PLANS ---------- */
+  #premium .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1a1a1f;border-radius:14px;box-shadow:var(--ring);margin-bottom:18px}
+  #premium .pill{background:#2a2a31;color:#fff;padding:10px 14px;border-radius:999px;font-weight:800;display:inline-flex;gap:8px;align-items:center}
   #timer{color:var(--accent)}
 
-  .offer-grid{display:grid; grid-template-columns:1fr; gap:18px}
-  @media (min-width:900px){ .offer-grid{grid-template-columns: 1fr 1.2fr;} }
+  .offer-grid{display:grid;grid-template-columns:1fr;gap:18px}
+  @media (min-width:900px){.offer-grid{grid-template-columns:1fr 1.2fr}}
 
-  .offer-media{
-    background:#0b0b0d; border-radius:18px; box-shadow:var(--ring); overflow:hidden;
-    width:100%; max-width:var(--payHeroW); margin:0 auto;
-    aspect-ratio:9/13;
-  }
-  .offer-media video{width:100%; height:100%; object-fit:cover; object-position:center top; display:block}
+  .offer-media{background:#0b0b0d;border-radius:18px;box-shadow:var(--ring);overflow:hidden;width:100%;max-width:var(--payHeroW);margin:0 auto;aspect-ratio:9/13}
+  .offer-media video{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
 
-  .offer-right{display:flex; flex-direction:column; gap:14px}
+  .offer-right{display:flex;flex-direction:column;gap:14px}
+  .headline{font-size:44px;font-weight:800;margin:0}
+  .headline .em{color:#fff;background:linear-gradient(180deg,#fff,#fff);-webkit-background-clip:text;background-clip:text}
+  .subhead{color:#cfcfd6;font-weight:700;margin:6px 0 12px}
 
-  .headline{font-size:44px; font-weight:800; margin:0}
-  .headline .em{color:#fff; text-shadow:0 0 0 rgba(0,0,0,0); background:linear-gradient(180deg,#fff,#fff); -webkit-background-clip:text; background-clip:text}
-  .subhead{color:#cfcfd6; font-weight:700; margin:6px 0 12px}
-
-  .card{
-    background:#151518; border-radius:18px; box-shadow:var(--ring); overflow:hidden;
-    border:1px solid #26262b;
-  }
-  .plan{
-    padding:16px; display:flex; align-items:center; justify-content:space-between; gap:12px;
-    border-top:1px solid #232329;
-  }
+  .card{background:#151518;border-radius:18px;box-shadow:var(--ring);overflow:hidden;border:1px solid #26262b}
+  .plan{padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #232329}
   .plan:first-child{border-top:none}
-  .plan.badge{outline:2px solid var(--accent-3); box-shadow:0 0 0 3px rgba(255,180,41,.15);}
-  .plan .left{display:flex; flex-direction:column; gap:6px}
-  .tag{display:inline-flex; align-items:center; gap:8px; background:#1f1f25; color:#ffda7a; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:800;}
-  .strike{color:#80808a; text-decoration:line-through; font-size:12px}
-  .pname{font-weight:800}
+  .plan.badge{outline:2px solid var(--accent-3);box-shadow:0 0 0 3px rgba(255,180,41,.15)}
+  .plan .left{display:flex;flex-direction:column;gap:4px}
+  .tag{display:inline-flex;align-items:center;gap:8px;background:#1f1f25;color:#ffda7a;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}
+  .strike{color:#80808a;text-decoration:line-through;font-size:12px}
+  .micro{font-size:11px;color:#aeb1b9}       /* tiny monthly price */
 
-  /* ⬇️ Daily price is BIG; total is small */
-  .pprice{display:flex; align-items:baseline; gap:8px; font-weight:900; font-size:34px}
-  .perday-label{font-size:14px; color:#d0d2d9}
-  .total{font-size:13px; color:#cfcfd6; text-align:right}
+  /* Big per-day price on right */
+  .pprice{display:flex;align-items:baseline;gap:8px;font-weight:900;font-size:34px}
+  .perday-label{font-size:14px;color:#d0d2d9}
 
-  .most-pop{display:block; text-align:center; font-weight:900; padding:10px 12px; background:linear-gradient(180deg,#ffd76b,#ffb429); color:#111}
+  .most-pop{display:block;text-align:center;font-weight:900;padding:10px 12px;background:linear-gradient(180deg,#ffd76b,#ffb429);color:#111}
 
-  .cta-wrap{display:flex; flex-direction:column; gap:10px; margin-top:6px}
-  .row-btns{display:flex; flex-direction:column; gap:10px}
-  @media (min-width:640px){ .row-btns{flex-direction:row} }
-  .btn-xl{font-size:16px; padding:16px 22px}
+  .cta-wrap{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .row-btns{display:flex;flex-direction:column;gap:10px}
+  @media (min-width:640px){.row-btns{flex-direction:row}}
+  .btn-xl{font-size:16px;padding:16px 22px}
 
-  .trust{display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center; color:#cfcfd6; font-weight:600}
-  .trust .dot{width:6px; height:6px; background:#2a2a31; border-radius:999px; display:inline-block}
-
+  .trust{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center;color:#cfcfd6;font-weight:600}
+  .trust .dot{width:6px;height:6px;background:#2a2a31;border-radius:999px;display:inline-block}
   .center{text-align:center}
 </style>
 
@@ -158,16 +114,12 @@
 </head>
 <body>
   <div class="app">
-    <!-- Top bar -->
     <div class="topbar">
-      <div class="brand">
-        <span class="logo">💎</span>
-        <span>Charmr.xyz</span>
-      </div>
+      <div class="brand"><span class="logo">💎</span><span>Charmr.xyz</span></div>
       <div></div>
     </div>
 
-    <!-- SIGNUP (Step 1) -->
+    <!-- SIGNUP -->
     <section id="signup" class="section active">
       <div class="hero-wrap">
         <h1 class="hero-title">YOUR PERFECT AI GIRLFRIEND</h1>
@@ -184,10 +136,8 @@
         <form id="signup-form">
           <label for="email">Email</label>
           <input id="email" name="email" type="email" required placeholder="you@email.com" />
-
           <label for="password">Password</label>
           <input id="password" name="password" type="password" required placeholder="Create a password" />
-
           <button type="submit" class="btn full">Sign Up</button>
         </form>
 
@@ -195,7 +145,7 @@
       </div>
     </section>
 
-    <!-- PLANS (Step 2) -->
+    <!-- PLANS -->
     <section id="premium" class="section">
       <div class="bar">
         <span class="pill">Limited offer</span>
@@ -204,19 +154,15 @@
       </div>
 
       <div class="offer-grid">
-        <!-- Left: video -->
         <div class="offer-media">
           <video src="https://charmr.xyz/video2.mp4" autoplay muted loop playsinline></video>
         </div>
 
-        <!-- Right: headline + plans -->
         <div class="offer-right">
           <h2 class="headline">She’s <span class="em">all yours</span> now!</h2>
-          <div class="subhead">Unlock her hottest content & live calls</div>
+          <div class="subhead">Unlock these massive discounts only available today!</div>
 
-          <div class="card" id="plans">
-            <!-- plan rows inserted by JS -->
-          </div>
+          <div class="card" id="plans"><!-- rows injected --></div>
 
           <div class="cta-wrap">
             <div class="row-btns">
@@ -235,80 +181,75 @@
         </div>
       </div>
     </section>
-
   </div>
 
-  <!-- Optional helper (kept if you already use it elsewhere) -->
+  <!-- Optional helper -->
   <script src="./signup.js"></script>
 
   <script>
-    /* ---------- SIGNUP: intercept & then show plans ---------- */
-    const signupForm = document.getElementById('signup-form');
-    signupForm.addEventListener('submit', async (ev)=>{
+    /* ---------- SIGNUP → show plans ---------- */
+    document.getElementById('signup-form').addEventListener('submit', async (ev)=>{
       ev.preventDefault();
       const email = (document.getElementById('email').value || '').trim();
       const password = document.getElementById('password').value;
       if(!email || !password){ alert('Please enter your email and password.'); return; }
-
       try{
-        const res = await fetch('/api/register', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json' },
-          body: JSON.stringify({ email, password })
-        });
+        const res = await fetch('/api/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
         const data = await res.json().catch(()=> ({}));
         if(!res.ok){ alert(data?.error || 'Registration failed.'); return; }
         if (data.token) { try { localStorage.setItem('token', data.token); } catch{} }
-      }catch(e){
-        /* If your API is offline, still let the flow continue for now */
-      }
-      // swap views
+      }catch(e){ /* allow flow even if API down */ }
       document.getElementById('signup').classList.remove('active');
       document.getElementById('premium').classList.add('active');
       startTimer();
       window.scrollTo({top:0,behavior:'smooth'});
     });
 
-    /* ---------- Plans (RESTORED) ---------- */
+    /* ---------- Currency detection (symbol only; no conversion) ---------- */
+    let CURRENCY_SYMBOL = '£'; // default
+    const USD_SET = new Set(['US','CA','AU','NZ']);
+    const EU_SET = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']); // EU-27
+    function symbolFor(countryCode){
+      if (USD_SET.has(countryCode)) return '$';
+      if (EU_SET.has(countryCode))  return '€';
+      if (countryCode === 'GB')     return '£';
+      return '£';
+    }
+    async function detectCurrency(){
+      try{
+        const r = await fetch('https://ipapi.co/json/');
+        if (r.ok){
+          const j = await r.json();
+          const cc = (j && j.country) ? j.country.toUpperCase() : '';
+          return symbolFor(cc);
+        }
+      }catch{}
+      // Fallback to browser locale region
+      try{
+        const parts = (navigator.language || '').split('-');
+        const region = (parts[1] || '').toUpperCase();
+        if (region) return symbolFor(region);
+      }catch{}
+      return '£';
+    }
+
+    /* ---------- Plans (numbers unchanged) ---------- */
     const planData = [
-      {
-        key:'month',
-        label:'1 month',
-        old:'£39.99',
-        price:19.99,           // total charge
-        days:30,
-        sale:'50% OFF',
-        popular:false
-      },
-      {
-        key:'quarter',
-        label:'3 months',
-        old:'£79.99',
-        price:44.00,           // total charge
-        days:90,
-        sale:'SAVE BIG',
-        popular:true           // MOST POPULAR
-      },
-      {
-        key:'year',
-        label:'12 months',
-        old:'£479.88',
-        price:119.88,          // total charge
-        days:365,
-        sale:'75% OFF',
-        popular:false
-      }
+      { key:'month',   label:'1 month',  oldPrice:39.99, price:19.99,  months:1,  days:30,  sale:'50% OFF', popular:false },
+      { key:'quarter', label:'3 months', oldPrice:79.99, price:44.00,  months:3,  days:90,  sale:'SAVE BIG', popular:true  },
+      { key:'year',    label:'12 months',oldPrice:479.88,price:119.88, months:12, days:365, sale:'75% OFF', popular:false }
     ];
 
     const plansWrap = document.getElementById('plans');
     let selectedKey = 'quarter';
 
-    function formatMoney(v){ return '£' + (Math.round(v*100)/100).toFixed(2); }
+    function formatMoney(v){ return CURRENCY_SYMBOL + (Math.round(v*100)/100).toFixed(2); }
 
     function renderPlans(){
       plansWrap.innerHTML = '';
       planData.forEach(p=>{
         const perDay = p.price / p.days;
+        const perMonth = p.price / p.months;
 
         const row = document.createElement('div');
         row.className = 'plan' + (p.key===selectedKey ? ' badge':'');
@@ -317,14 +258,14 @@
           <div class="left">
             <span class="tag">${p.sale}</span>
             <div class="pname">${p.label}</div>
-            <div class="strike">${p.old}</div>
+            <div class="strike">${formatMoney(p.oldPrice)}</div>
+            <div class="micro">≈ ${formatMoney(perMonth)}/mo</div>
           </div>
           <div class="right" style="text-align:right">
             <div class="pprice">
               <span>${formatMoney(perDay)}</span>
               <span class="perday-label">per day</span>
             </div>
-            <div class="total">${formatMoney(p.price)} total</div>
           </div>
         `;
 
@@ -350,8 +291,15 @@
       document.getElementById('perDayBadge').textContent = `Only ${formatMoney(perDay)}/day`;
     }
 
-    renderPlans();
-    syncPerDayBadge();
+    // initial render with default symbol, then re-render after geo lookup
+    renderPlans(); syncPerDayBadge();
+    detectCurrency().then(sym=>{
+      if (sym && sym !== CURRENCY_SYMBOL){
+        CURRENCY_SYMBOL = sym;
+        renderPlans();
+        syncPerDayBadge();
+      }
+    });
 
     document.getElementById('continueBtn').addEventListener('click', ()=>{
       const chosen = planData.find(p=>p.key===selectedKey);
