@@ -226,6 +226,46 @@
     <!-- Prompt (single video + yes/no) -->
     <section class="section" id="promptContainer"></section>
 
+    <!-- 🔹 Sign Up (inserted before Premium) -->
+    <section class="section" id="signup">
+      <h2 class="title">Create your account</h2>
+      <p class="subtitle">Sign up to continue to your plan selection.</p>
+
+      <form id="signup-form" style="display:grid;gap:12px;">
+        <label for="gender">I am a:</label>
+        <select id="gender" name="gender" required>
+          <option value="" disabled selected>Select gender</option>
+          <option value="man">Man</option>
+          <option value="woman">Woman</option>
+          <option value="nonbinary">Non-binary</option>
+        </select>
+
+        <label for="lookingFor">Looking for a:</label>
+        <select id="lookingFor" name="lookingFor" required>
+          <option value="" disabled selected>Select preference</option>
+          <option value="woman">Woman</option>
+          <option value="man">Man</option>
+          <option value="any">Anyone</option>
+        </select>
+
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required placeholder="Enter your email" />
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required placeholder="Create a password" />
+
+        <label for="phone">Phone Number (optional):</label>
+        <input type="tel" id="phone" name="phone" placeholder="Optional" />
+
+        <button type="submit" class="btn">Sign Up</button>
+      </form>
+
+      <p class="center mt8">
+        Already have an account?
+        <a href="login.html" style="color:#ffd159;text-decoration:none;">Log in here</a>
+      </p>
+    </section>
+
     <!-- Premium -->
     <section class="section" id="premium">
       <div class="premium-head">
@@ -296,6 +336,9 @@
 
     <div class="spacer"></div>
   </div>
+
+<!-- Bring in the existing signup logic -->
+<script src="./signup.js"></script>
 
 <script>
 /* -------------------- Data -------------------- */
@@ -396,6 +439,7 @@ let stepIndex = -1; // -1 = landing
 const landing = document.getElementById('landing');
 const qWrap   = document.getElementById('questionContainer');
 const pWrap   = document.getElementById('promptContainer');
+const signup  = document.getElementById('signup');          // 🔹 new
 const premium = document.getElementById('premium');
 const startBtn= document.getElementById('startBtn');
 const backBtn = document.getElementById('backBtn');
@@ -423,7 +467,7 @@ function renderProgress(){
 
 /* -------------------- Navigation -------------------- */
 function show(section){
-  [landing,qWrap,pWrap,premium].forEach(s=>s.classList.remove('active'));
+  [landing,qWrap,pWrap,signup,premium].forEach(s=>s.classList.remove('active'));
   section.classList.add('active');
   backBtn.classList.toggle('show', stepIndex>=0 && stepIndex<steps.length);
   renderProgress();
@@ -434,7 +478,7 @@ function next(){
   stepIndex++;
   if(stepIndex === 0){ renderQuestion(); return; }
   if(stepIndex > 0 && stepIndex < steps.length){ renderCurrentStep(); return; }
-  if(stepIndex >= steps.length){ show(premium); startTimer(); }
+  if(stepIndex >= steps.length){ show(signup); } // 🔹 show Sign Up before Premium
 }
 function prev(){
   if(stepIndex <= -1) return;
@@ -539,6 +583,15 @@ function updateTimer(){
   const s = String(remaining%60).padStart(2,'0');
   timerEl.textContent = `${m}:${s}`;
 }
+
+/* -------------------- Sign Up success → show Premium -------------------- */
+// signup.js will dispatch a "signupSuccess" CustomEvent with e.detail = { token, user... }.
+// We capture it here and continue the funnel to plan selection.
+document.addEventListener("signupSuccess", (e) => {
+  try { if (e.detail && e.detail.token) localStorage.setItem("token", e.detail.token); } catch {}
+  show(premium);
+  startTimer();
+});
 
 /* -------------------- Kickoff -------------------- */
 renderProgress();
