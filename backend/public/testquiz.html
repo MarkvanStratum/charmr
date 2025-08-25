@@ -212,7 +212,7 @@
     <section id="premium" class="section">
       <div class="bar">
         <span class="pill">Limited offer</span>
-        <span class="pill">⏱ <span id="timer">09:59</span></span>
+        <span class="pill">⏱ <span id="timer">03:59</span></span>
         <a class="btn" href="#plans">CLAIM DISCOUNT</a>
       </div>
 
@@ -312,9 +312,9 @@
     document.getElementById('maybeLater').addEventListener('click',()=> window.location.href='/profiles.html');
 
     /* Plans timer */
-    let remaining=10*60, tId;
+    let remaining=4*60, tId;
     function startTimer(){
-      clearInterval(tId); remaining=10*60;
+      clearInterval(tId); remaining=4*60;
       tId=setInterval(()=>{
         remaining=Math.max(0,remaining-1);
         const m=String(Math.floor(remaining/60)).padStart(2,'0');
