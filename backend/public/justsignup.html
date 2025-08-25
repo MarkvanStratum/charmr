@@ -20,8 +20,8 @@
     --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
 
     /* ⬇️ Adjust these to change video sizes */
-    --heroW: 280px;     /* signup page video width */
-    --payHeroW: 300px;  /* plans page video width */
+    --heroW: 150px;     /* signup page video width */
+    --payHeroW: 150px;  /* plans page video width */
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -272,7 +272,7 @@
         key:'month',
         label:'1 month',
         old:'£39.99',
-        now:19.99,
+        now:0.67/day,
         days:30,
         sale:'50% OFF',
         popular:false
@@ -281,7 +281,7 @@
         key:'quarter',
         label:'3 months',
         old:'£79.99',
-        now:44.00,       // 👈 your £44 plan
+        now:0.49/day,       // 👈 your £44 plan
         days:90,
         sale:'SAVE BIG',
         popular:true     // mark as most popular
@@ -290,7 +290,7 @@
         key:'year',
         label:'12 months',
         old:'£479.88',
-        now:119.88,
+        now:0.33/day,
         days:365,
         sale:'75% OFF',
         popular:false
