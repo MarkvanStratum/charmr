@@ -241,7 +241,7 @@
 
           <div class="cta-wrap">
             <div class="row-btns">
-              <button id="continueBtn" class="btn btn-xl full">UNLOCK HER NOW — <span id="perDayBadge">Only £0.33/day</span></button>
+              <button id="continueBtn" class="btn btn-xl full">UNLOCK HER NOW — <span id="perDayBadge">Only $0.33/day</span></button>
               <button id="maybeLater" class="btn secondary btn-xl full">Maybe later</button>
             </div>
             <div class="center">
@@ -290,23 +290,20 @@
       window.scrollTo({top:0,behavior:'smooth'});
     });
 
-    /* ---------- Currency symbol by rough region (symbol only, no conversion) ---------- */
-    let CURRENCY = '£';
+    /* ---------- Currency symbol (default $) ---------- */
+    let CURRENCY = '$';
 
     function pickCurrencyByRegion(country){
-      if (!country) return '£';
+      if (!country) return '$';
       country = String(country).toUpperCase();
-      // $ for US/CA/AU/NZ
       const USD_SET = new Set(['US','CA','AU','NZ']);
-      // EU member countries (show €)
-      const EU_SET = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']);
+      const EU_SET  = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']);
       if (USD_SET.has(country)) return '$';
       if (EU_SET.has(country)) return '€';
-      return '£';
+      return '$'; /* default to $ */
     }
 
     async function detectCountryCode(){
-      // Try a fast, lightweight endpoint first
       try{
         const ctrl1 = new AbortController();
         const t1 = setTimeout(()=>ctrl1.abort(), 2000);
@@ -318,7 +315,6 @@
         }
       }catch{}
 
-      // Fallback to JSON endpoint
       try{
         const ctrl2 = new AbortController();
         const t2 = setTimeout(()=>ctrl2.abort(), 2500);
@@ -328,9 +324,8 @@
         if (j && j.country) return String(j.country).toUpperCase();
       }catch{}
 
-      // Last resort: infer from browser locale (en-US -> US)
       const loc = (navigator.language || '').split('-')[1];
-      return (loc && loc.length===2) ? loc.toUpperCase() : 'GB';
+      return (loc && loc.length===2) ? loc.toUpperCase() : 'US';
     }
 
     (async function initCurrency(){
