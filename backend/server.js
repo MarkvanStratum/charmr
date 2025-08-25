@@ -3220,6 +3220,63 @@ async function getOrCreateStripeCustomer(userId) {
   return customer.id;
 }
 
+// --- NO-TRIAL PUBLIC SUBSCRIBE ENDPOINT (for payment.html only) ---
+// If you already have app.use(cors()) and app.use(express.json()), keep them.
+// Reply to CORS preflights for this route:
+app.options('/api/stripe/subscribe-notrial', cors());
+
+// Public route: NO auth, NO trial.
+// Body: { priceId, paymentMethodId, email }
+// Returns: { clientSecret, subscriptionId, status }
+app.post('/api/stripe/subscribe-notrial', async (req, res) => {
+  try {
+    const { priceId, paymentMethodId, email } = req.body || {};
+    if (!priceId) return res.status(400).json({ error: 'Missing priceId' });
+    if (!paymentMethodId) return res.status(400).json({ error: 'Missing paymentMethodId' });
+
+    // 1) Create a customer (simple create; you can dedupe by email later if you like)
+    const customer = await stripe.customers.create({
+      email: email || undefined,
+    });
+
+    // 2) Attach PM and set default
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    });
+
+    // 3) Create subscription with NO TRIAL and get a PaymentIntent immediately
+    const subscription = await stripe.subscriptions.create({
+      customer: customer.id,
+      items: [{ price: priceId }],
+      payment_behavior: 'default_incomplete',
+      payment_settings: { save_default_payment_method: 'on_subscription' },
+      trial_end: 'now', // <— force-disable any price/client trial
+      expand: ['latest_invoice.payment_intent'],
+    });
+
+    const latest = subscription.latest_invoice;
+    const pi = typeof latest?.payment_intent === 'string' ? null : latest?.payment_intent;
+    const clientSecret = pi?.client_secret;
+
+    if (!clientSecret) {
+      return res.status(400).json({
+        error: 'Subscription created but no PaymentIntent client_secret was returned.',
+      });
+    }
+
+    res.json({
+      clientSecret,
+      subscriptionId: subscription.id,
+      status: subscription.status,
+    });
+  } catch (err) {
+    console.error('subscribe-notrial error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
 // 1) Create a SetupIntent so you can collect card on your own checkout.html (Elements)
 app.post('/api/stripe/setup-intent', authenticateToken, async (req, res) => {
   try {
