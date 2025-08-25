@@ -66,6 +66,21 @@
       text-shadow: none; /* remove old shadow for cleaner look */
     }
 
+    /* TOP JUMP BUTTON */
+    .ai-jump{
+      margin-top:10px;
+      padding:10px 14px;
+      border:none;
+      border-radius:12px;
+      background: linear-gradient(180deg, var(--primary), var(--primary-600));
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(214,27,90,.18);
+    }
+    .ai-jump:hover{ filter:brightness(1.07); }
+    .ai-jump:active{ transform: translateY(1px); }
+
     /* Credits chip */
     #credit-info{
       position: sticky;
@@ -176,6 +191,20 @@
       header{ padding: 20px 16px; }
       .profile-container{ gap:16px; padding:16px; }
     }
+
+    /* ===== Added for divider + title ===== */
+    .grid-full { grid-column: 1 / -1; }
+    .section-break hr {
+      border: 0;
+      border-top: 1px dashed #e6b3c5;
+      margin: 8px 0 6px;
+    }
+    .section-title {
+      font-weight: 800;
+      color: var(--primary-600);
+      margin-bottom: 6px;
+    }
+    /* ==================================== */
   </style>
 
   
@@ -205,6 +234,8 @@
   <!-- Your header kept, just restyled via CSS above -->
   <header>
     <h1>Singles near you!</h1>
+    <!-- NEW: Jump button -->
+    <button id="jumpToAi" class="ai-jump">CHAT WITH AI GIRLS!</button>
   </header>
 
   <div class="profile-container" id="profileContainer">
@@ -223,25 +254,57 @@
         return;
       }
 
+      // Scroll-to-AI button
+      const jumpBtn = document.getElementById('jumpToAi');
+      jumpBtn.addEventListener('click', ()=>{
+        const el = document.getElementById('ai-section');
+        if (el){
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
       async function loadProfiles() {
           const res = await fetch(`${backendUrl}/api/profiles`);
           const profiles = await res.json();
           const container = document.getElementById("profileContainer");
           container.innerHTML = "";
-          profiles.forEach(profile => {
-              const card = document.createElement("div");
-              card.className = "profile-card";
-              card.innerHTML = `
-                  <img src="${profile.image}" alt="${profile.name}">
-                  <h3>${profile.name}</h3>
-                  <p>City: ${profile.city}</p>
-                  <div class="btn-group">
-                    <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
-                    <button onclick="window.location.href='profile.html?id=${profile.id}'">View Profile</button>
-                  </div>
-              `;
-              container.appendChild(card);
-          });
+
+          // --- Render non-AI first (<=330), then divider + title, then AI (>=331)
+          const realGirls = profiles.filter(p => Number(p.id) <= 330);
+          const aiGirls   = profiles.filter(p => Number(p.id) >= 331);
+
+          function renderCard(profile){
+            const card = document.createElement("div");
+            card.className = "profile-card";
+            card.innerHTML = `
+                <img src="${profile.image}" alt="${profile.name}">
+                <h3>${profile.name}</h3>
+                <p>City: ${profile.city}</p>
+                <div class="btn-group">
+                  <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
+                  <button onclick="window.location.href='profile.html?id=${profile.id}'">View Profile</button>
+                </div>
+            `;
+            return card;
+          }
+
+          realGirls.forEach(p => container.appendChild(renderCard(p)));
+
+          if (aiGirls.length){
+            const divider = document.createElement("div");
+            divider.className = "section-break grid-full";
+            divider.id = "ai-section";                 // <-- anchor target
+            divider.innerHTML = `<hr><div class="section-title"><strong>AI girls</strong></div>`;
+            container.appendChild(divider);
+
+            aiGirls.forEach(p => container.appendChild(renderCard(p)));
+
+            // make sure the button is visible only if we actually have AI girls
+            jumpBtn.style.display = 'inline-block';
+          } else {
+            jumpBtn.style.display = 'none';
+          }
+
           return profiles;
       }
 
