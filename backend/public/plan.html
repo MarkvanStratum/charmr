@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Charmr.xyz — Select Your Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0e0f; --card:#151518; --text:#fff; --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
+    --accent:#ffcc58; --accent-2:#ffd159; --accent-3:#ffb429; --payHeroW:300px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .app{max-width:980px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:12px 16px 24px}
+
+  /* Top bar */
+  .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:14px 12px;background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));backdrop-filter:saturate(120%) blur(8px)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+  .logo{width:22px;height:22px;display:grid;place-items:center;color:#6ee7b7;background:#2a2a2e;border-radius:8px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06)}
+
+  /* Plans layout */
+  #premium .bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;background:#1a1a1f;border-radius:14px;box-shadow:var(--ring);margin-bottom:18px}
+  #premium .pill{background:#2a2a31;color:#fff;padding:10px 14px;border-radius:999px;font-weight:800;display:inline-flex;gap:8px;align-items:center}
+  #timer{color:var(--accent)}
+  .offer-grid{display:grid;grid-template-columns:1fr;gap:18px}
+  @media (min-width:900px){.offer-grid{grid-template-columns:1fr 1.2fr}}
+  .offer-media{background:#0b0b0d;border-radius:18px;box-shadow:var(--ring);overflow:hidden;width:100%;max-width:var(--payHeroW);margin:0 auto;aspect-ratio:9/13}
+  .offer-media video{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+  .offer-right{display:flex;flex-direction:column;gap:14px}
+  .headline{font-size:44px;font-weight:800;margin:0}
+  .headline .em{color:#fff;background:linear-gradient(180deg,#fff,#fff);-webkit-background-clip:text;background-clip:text}
+  .subhead{color:#cfcfd6;font-weight:700;margin:6px 0 12px}
+
+  .card{background:#151518;border-radius:18px;box-shadow:var(--ring);overflow:hidden;border:1px solid #26262b}
+
+  /* plan rows */
+  .plan{position:relative;padding:16px;display:flex;align-items:center;justify-content:space-between;gap:12px;border-top:1px solid #232329;cursor:pointer;transition:box-shadow .15s ease,transform .15s ease,background-color .15s ease,outline-color .15s ease}
+  .plan:first-child{border-top:none}
+  .plan:hover{background:#18181c}
+  .plan.selected{outline:2px solid var(--accent-2);box-shadow:0 0 0 3px rgba(255,209,89,.25),0 10px 30px rgba(0,0,0,.45);background:linear-gradient(180deg,#1a1a1f,#141418);transform:translateY(-1px)}
+  .plan .sel{display:none;position:absolute;right:12px;top:12px;width:28px;height:28px;border-radius:999px;background:linear-gradient(180deg,#ffd76b,#ffb429);color:#111;font-weight:900;line-height:28px;text-align:center;box-shadow:0 6px 16px rgba(255,180,41,.35)}
+  .plan.selected .sel{display:block}
+
+  .left{display:flex;flex-direction:column;gap:6px}
+  .tag{display:inline-flex;align-items:center;gap:8px;background:#1f1f25;color:#ffda7a;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800}
+  .strike{color:#80808a;text-decoration:line-through;font-size:12px}
+  .pname{font-weight:800}
+  .micro{color:#9ea1aa;font-size:11px}
+
+  .pprice{display:flex;align-items:baseline;gap:8px;font-weight:800;font-size:34px}
+  .perday-label{font-size:13px;color:#d0d2d9}
+
+  .most-pop{display:block;text-align:center;font-weight:900;padding:10px 12px;background:linear-gradient(180deg,#ffd76b,#ffb429);color:#111}
+
+  .cta-wrap{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  .row-btns{display:flex;flex-direction:column;gap:10px}
+  @media (min-width:640px){.row-btns{flex-direction:row}}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#111;background:linear-gradient(180deg,#ffd76b,#ffb429);box-shadow:0 8px 22px rgba(255,174,15,.28)}
+  .btn.secondary{background:#1a1a1f;color:#fff;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.08)}
+  .btn-xl{font-size:16px;padding:16px 22px}
+  .center{text-align:center}
+  .trust{display:flex;gap:16px;flex-wrap:wrap;align-items:center;justify-content:center;color:#cfcfd6;font-weight:600}
+  .trust .dot{width:6px;height:6px;background:#2a2a31;border-radius:999px;display:inline-block}
+</style>
+
+<!-- Google tag -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-17486667499"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand"><span class="logo">💎</span><span>Charmr.xyz</span></div>
+      <div></div>
+    </div>
+
+    <!-- PLANS -->
+    <section id="premium" class="section active">
+      <div class="bar">
+        <span class="pill">Limited offer</span>
+        <span class="pill">⏱ <span id="timer">04:00</span></span>
+        <a class="btn" href="#plans">CLAIM DISCOUNT</a>
+      </div>
+
+      <div class="offer-grid">
+        <div class="offer-media"><video src="https://charmr.xyz/video2.mp4" autoplay muted loop playsinline></video></div>
+        <div class="offer-right">
+          <h2 class="headline">You <span class="em">Have</span> Qualified!</h2>
+          <div class="subhead">Only today: you qualified for a one time discount, choose your discount here:</div>
+
+          <div class="card" id="plans"></div>
+
+          <div class="cta-wrap">
+            <div class="row-btns">
+              <button id="continueBtn" class="btn btn-xl full">GET THIS ONE TIME DEAL — <span id="perDayBadge">Only $0.33/day</span></button>
+              <button id="maybeLater" class="btn secondary btn-xl full">Maybe later</button>
+            </div>
+            <div class="center">
+              <div class="trust">
+                <span>🔒 3670 girlfriends claimed today</span>
+                <span class="dot"></span><span>Secure Payment</span>
+                <span class="dot"></span><span>100% Discreet Billing</span>
+                <span class="dot"></span><span>Cancel Anytime</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  /* Currency (default $; $ for US/CA/AU/NZ, € for EU) */
+  let CURRENCY = '$';
+  function pickCurrencyByRegion(country){
+    if(!country) return '$';
+    country = String(country).toUpperCase();
+    const USD_SET = new Set(['US','CA','AU','NZ']);
+    const EU_SET  = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']);
+    if (USD_SET.has(country)) return '$';
+    if (EU_SET.has(country)) return '€';
+    return '$';
+  }
+  async function detectCountryCode(){
+    try{
+      const c1=new AbortController(); const t1=setTimeout(()=>c1.abort(),2000);
+      const r1=await fetch('https://ipapi.co/country/',{signal:c1.signal}); clearTimeout(t1);
+      if(r1.ok){ const cc=(await r1.text()).trim().toUpperCase(); if(cc && cc.length===2) return cc; }
+    }catch{}
+    try{
+      const c2=new AbortController(); const t2=setTimeout(()=>c2.abort(),2500);
+      const r2=await fetch('https://ipapi.co/json/',{signal:c2.signal}); clearTimeout(t2);
+      const j=await r2.json().catch(()=>null); if(j&&j.country) return String(j.country).toUpperCase();
+    }catch{}
+    const loc=(navigator.language||'').split('-')[1];
+    return (loc&&loc.length===2)?loc.toUpperCase():'US';
+  }
+
+  /* Plans */
+  const planData = [
+    { key:'month',   label:'1 month',   oldPrice:39.99, totalPrice:19.99,  days:30,  sale:'50% OFF', popular:false },
+    { key:'quarter', label:'3 months',  oldPrice:79.99, totalPrice:44.00,  days:90,  sale:'SAVE BIG', popular:true  },
+    { key:'year',    label:'12 months', oldPrice:479.88,totalPrice:119.88, days:365, sale:'75% OFF', popular:false }
+  ];
+
+  const plansWrap = document.getElementById('plans');
+  let selectedKey = 'quarter';
+
+  function formatMoney(v){ return CURRENCY + (Math.round(v*100)/100).toFixed(2); }
+
+  function renderPlans(){
+    plansWrap.innerHTML = '';
+    planData.forEach(p=>{
+      const perDay = p.totalPrice / p.days;
+      const perMonth = p.totalPrice / (p.days/30);
+
+      const row = document.createElement('div');
+      row.className = 'plan' + (p.key===selectedKey ? ' selected' : '');
+      row.dataset.plan = p.key;
+      row.setAttribute('role','button');
+      row.setAttribute('tabindex','0');
+
+      row.innerHTML = `
+        <div class="sel">✓</div>
+        <div class="left">
+          <span class="tag">${p.sale}</span>
+          <div class="pname">${p.label}</div>
+          <div class="strike">${formatMoney(p.oldPrice)}</div>
+          <div class="micro">≈ ${formatMoney(perMonth)}/mo</div>
+        </div>
+        <div class="right" style="text-align:right">
+          <div class="pprice"><span>${formatMoney(perDay)}</span><span class="perday-label">per day</span></div>
+        </div>
+      `;
+
+      row.addEventListener('click', ()=>{ selectedKey = p.key; renderPlans(); syncPerDayBadge(); });
+      row.addEventListener('keyup', (e)=>{ if(e.key==='Enter' || e.key===' ') row.click(); });
+
+      plansWrap.appendChild(row);
+
+      if (p.popular){
+        const mp = document.createElement('div');
+        mp.className = 'most-pop';
+        mp.textContent = 'MOST POPULAR';
+        plansWrap.appendChild(mp);
+      }
+    });
+  }
+
+  function syncPerDayBadge(){
+    const chosen = planData.find(p=>p.key===selectedKey) || planData[0];
+    const perDay = chosen.totalPrice / chosen.days;
+    document.getElementById('perDayBadge').textContent = `Only ${formatMoney(perDay)}/day`;
+  }
+
+  // Timer (starts at 04:00)
+  let remaining = 4*60, tId;
+  function startTimer(){
+    clearInterval(tId);
+    remaining = 4*60;
+    const render = () => {
+      const m = String(Math.floor(remaining/60)).padStart(2,'0');
+      const s = String(remaining%60).padStart(2,'0');
+      document.getElementById('timer').textContent = `${m}:${s}`;
+    };
+    render();
+    tId = setInterval(()=>{
+      remaining = Math.max(0, remaining-1);
+      render();
+      if(!remaining) clearInterval(tId);
+    }, 1000);
+  }
+
+  // Continue / Maybe later
+  document.getElementById('continueBtn').addEventListener('click', ()=>{
+    const chosen = planData.find(p=>p.key===selectedKey);
+    try {
+      sessionStorage.setItem('selectedPlan', chosen?.key || 'quarter');
+      sessionStorage.setItem('selectedPrice', String(chosen?.totalPrice ?? ''));
+    } catch {}
+    window.location.href = '/payment.html';
+  });
+  document.getElementById('maybeLater').addEventListener('click', ()=> window.location.href='/profiles.html');
+
+  // Init
+  (async function init(){
+    startTimer();
+    const cc = await detectCountryCode();
+    CURRENCY = pickCurrencyByRegion(cc);
+    renderPlans();
+    syncPerDayBadge();
+  })();
+</script>
+
+<!-- GoAffPro loader (unchanged) -->
+<script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+<!-- GoAffPro registration pixel ($0) — fires on page load (guarded so it won't double-fire if already sent) -->
+<script>
+  (function(){
+    if (sessionStorage.getItem('gaffpro_reg_fired')) return;
+    function fire(){
+      if (typeof window.goaffproTrackConversion === "function"){
+        window.goaffpro_order = {
+          number: 'REG-' + Date.now(),
+          total: 0,            // $0 revenue to track registration
+          currency: 'USD'
+        };
+        window.goaffproTrackConversion(window.goaffpro_order);
+        sessionStorage.setItem('gaffpro_reg_fired', '1');
+        console.log('GoAffPro registration pixel fired ($0).');
+      } else {
+        setTimeout(fire, 120);
+      }
+    }
+    fire();
+  })();
+</script>
+</body>
+</html>

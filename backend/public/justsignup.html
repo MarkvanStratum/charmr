@@ -89,7 +89,7 @@
         const data=await res.json().catch(()=>({}));
         if(res.ok && data?.token){ try{ localStorage.setItem('token',data.token);}catch{} }
       }catch(e){ /* continue regardless */ }
-      window.location.href='testquiz.html';
+      window.location.href='plan.html';
     });
   </script>
 
