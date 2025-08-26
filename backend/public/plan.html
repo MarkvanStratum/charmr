@@ -25,13 +25,14 @@
   #premium .pill{background:#2a2a31;color:#fff;padding:10px 14px;border-radius:999px;font-weight:800;display:inline-flex;gap:8px;align-items:center}
   #timer{color:var(--accent)}
   .offer-grid{display:grid;grid-template-columns:1fr;gap:18px}
-  @media (min-width:900px){.offer-grid{grid-template-columns:1fr 1.2fr}}
+  @media (min-width:900px){.offer-grid{grid-template-columns:1fr 1.2fr; align-items:stretch;}}
   .offer-media{background:#0b0b0d;border-radius:18px;box-shadow:var(--ring);overflow:hidden;width:100%;max-width:var(--payHeroW);margin:0 auto;aspect-ratio:9/13}
   .offer-media video{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
   .offer-right{display:flex;flex-direction:column;gap:14px}
-  .headline{font-size:44px;font-weight:800;margin:0}
-  .headline .em{color:#fff;background:linear-gradient(180deg,#fff,#fff);-webkit-background-clip:text;background-clip:text}
+  .headline{font-size:44px;font-weight:800;margin:0;color:#ff69b4} /* headline now pink */
+  .subline{font-size:18px;color:#f1f1f1;font-weight:600;margin:4px 0 10px} /* new subline */
   .subhead{color:#cfcfd6;font-weight:700;margin:6px 0 12px}
+  .subhead .pink{color:#ff69b4;font-weight:800} /* pink only for highlighted words */
 
   .card{background:#151518;border-radius:18px;box-shadow:var(--ring);overflow:hidden;border:1px solid #26262b}
 
@@ -52,9 +53,15 @@
   .pprice{display:flex;align-items:baseline;gap:8px;font-weight:800;font-size:34px}
   .perday-label{font-size:13px;color:#d0d2d9}
 
+  /* big 0 / small cents */
+  .big-zero{font-size:48px;line-height:1}
+  .small-cents{font-size:14px;vertical-align:super}
+
   .most-pop{display:block;text-align:center;font-weight:900;padding:10px 12px;background:linear-gradient(180deg,#ffd76b,#ffb429);color:#111}
 
   .cta-wrap{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+  @media (min-width:900px){ .cta-wrap{margin-top:auto;} } /* push CTA to bottom on desktop */
+
   .row-btns{display:flex;flex-direction:column;gap:10px}
   @media (min-width:640px){.row-btns{flex-direction:row}}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#111;background:linear-gradient(180deg,#ffd76b,#ffb429);box-shadow:0 8px 22px rgba(255,174,15,.28)}
@@ -90,16 +97,17 @@
       </div>
 
       <div class="offer-grid">
-        <div class="offer-media"><video src="https://charmr.xyz/video2.mp4" autoplay muted loop playsinline></video></div>
+        <div class="offer-media"><video src="https://charmr.xyz/video1.mp4" autoplay muted loop playsinline></video></div>
         <div class="offer-right">
-          <h2 class="headline">You <span class="em">Have</span> Qualified!</h2>
-          <div class="subhead">Only today: you qualified for a one time discount, choose your discount here:</div>
+          <h2 class="headline">She's <span class="em">All Yours</span> Now!</h2>
+          <div class="subline">Unlock her hottest pictures and hot chats...</div>
+          <div class="subhead">Get <span class="pink">EXCLUSIVE DISCOUNT</span> only today!</div>
 
           <div class="card" id="plans"></div>
 
           <div class="cta-wrap">
             <div class="row-btns">
-              <button id="continueBtn" class="btn btn-xl full">GET THIS ONE TIME DEAL — <span id="perDayBadge">Only $0.33/day</span></button>
+              <button id="continueBtn" class="btn btn-xl full">UNLOCK HER NOW — <span id="perDayBadge">Only $0.33/day</span></button>
               <button id="maybeLater" class="btn secondary btn-xl full">Maybe later</button>
             </div>
             <div class="center">
@@ -160,6 +168,8 @@
     planData.forEach(p=>{
       const perDay = p.totalPrice / p.days;
       const perMonth = p.totalPrice / (p.days/30);
+      const perDayStr = formatMoney(perDay);
+      const [dollars, cents] = perDayStr.replace(CURRENCY,'').split('.');
 
       const row = document.createElement('div');
       row.className = 'plan' + (p.key===selectedKey ? ' selected' : '');
@@ -176,7 +186,10 @@
           <div class="micro">≈ ${formatMoney(perMonth)}/mo</div>
         </div>
         <div class="right" style="text-align:right">
-          <div class="pprice"><span>${formatMoney(perDay)}</span><span class="perday-label">per day</span></div>
+          <div class="pprice">
+            <span>${CURRENCY}<span class="big-zero">${dollars}</span><span class="small-cents">.${cents}</span></span>
+            <span class="perday-label">per day</span>
+          </div>
         </div>
       `;
 
@@ -199,6 +212,20 @@
     const perDay = chosen.totalPrice / chosen.days;
     document.getElementById('perDayBadge').textContent = `Only ${formatMoney(perDay)}/day`;
   }
+
+  // Align right-column bottom CTA with bottom of video on desktop
+  function syncHeights(){
+    const media = document.querySelector('.offer-media');
+    const right = document.querySelector('.offer-right');
+    if (!media || !right) return;
+    if (window.matchMedia('(min-width: 900px)').matches){
+      right.style.minHeight = media.offsetHeight + 'px';
+    } else {
+      right.style.minHeight = '';
+    }
+  }
+  let _rh_t;
+  function onResize(){ clearTimeout(_rh_t); _rh_t = setTimeout(syncHeights, 120); }
 
   // Timer (starts at 04:00)
   let remaining = 4*60, tId;
@@ -236,13 +263,21 @@
     CURRENCY = pickCurrencyByRegion(cc);
     renderPlans();
     syncPerDayBadge();
+
+    syncHeights();
+    window.addEventListener('resize', onResize);
+    const vid = document.querySelector('.offer-media video');
+    if (vid){
+      vid.addEventListener('loadedmetadata', syncHeights, { once:true });
+      vid.addEventListener('loadeddata', syncHeights, { once:true });
+    }
   })();
 </script>
 
 <!-- GoAffPro loader (unchanged) -->
 <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-<!-- GoAffPro registration pixel ($0) — fires on page load (guarded so it won't double-fire if already sent) -->
+<!-- GoAffPro registration pixel ($0) -->
 <script>
   (function(){
     if (sessionStorage.getItem('gaffpro_reg_fired')) return;
@@ -250,7 +285,7 @@
       if (typeof window.goaffproTrackConversion === "function"){
         window.goaffpro_order = {
           number: 'REG-' + Date.now(),
-          total: 0,            // $0 revenue to track registration
+          total: 0,
           currency: 'USD'
         };
         window.goaffproTrackConversion(window.goaffpro_order);
