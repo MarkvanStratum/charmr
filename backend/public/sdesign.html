@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Charmr.xyz — Premium Offer</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://js.stripe.com/v3"></script>
+
+<style>
+  :root{
+    --bg:#151016;
+    --panel:#201a22;
+    --panel-2:#241e28;
+    --text:#fff;
+    --muted:#cfc7d3;
+    --ink:#f7f7fb;
+    --accent:#ff5cc8;
+    --cta1:#8b5cf6;
+    --cta2:#ff4dd2;
+    --chip:#ff7a3d;
+    --ring:0 0 0 1px rgba(255,255,255,.06) inset, 0 16px 40px rgba(0,0,0,.45);
+    --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:radial-gradient(1200px 800px at 50% -200px,#2a2030,transparent), var(--bg);
+    color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  }
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px 40px}
+  .bar{
+    position:sticky; top:0; z-index:20; padding:10px 14px; backdrop-filter:saturate(120%) blur(8px);
+    background:linear-gradient(90deg,#8b5cf6,#e052ff,#ff7ad1 60%); border-radius:0 0 18px 18px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .pillrow{display:flex; gap:10px; align-items:center}
+  .pill{
+    background:rgba(255,255,255,.12); color:#fff; padding:8px 12px; border-radius:999px; font-weight:800;
+    display:inline-flex; gap:8px; align-items:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);
+  }
+  .btn-claim{
+    border:none; border-radius:12px; padding:10px 16px; font-weight:900; cursor:pointer; color:#111;
+    background:linear-gradient(180deg,#ffd76b,#ffb429); box-shadow:0 10px 28px rgba(255,180,41,.35);
+  }
+
+  .hero-grid{display:grid; grid-template-columns:1fr; gap:18px; margin-top:18px}
+  @media (min-width:960px){ .hero-grid{grid-template-columns:1.05fr 1.2fr} }
+
+  .headline{font-size:56px; line-height:1.02; font-weight:900; color:#ff69b4; margin:18px 0 8px}
+  .subline{font-size:20px; color:#efe7f6; font-weight:700; margin-bottom:14px}
+  .accentline{font-size:22px; color:#ffd9ec; font-weight:900; margin:10px 0 4px}
+  .accentline .em{color:#ff9ad8}
+
+  .media{
+    border-radius:22px; overflow:hidden; background:#0d0b12; box-shadow:var(--ring); aspect-ratio:4/5;
+  }
+  .media img,.media video{width:100%; height:100%; object-fit:cover; display:block}
+
+  .plans{ display:flex; flex-direction:column; gap:16px }
+  .card{
+    background:linear-gradient(180deg,#1e1821,#18141b); border-radius:22px; box-shadow:var(--ring);
+    border:1px solid rgba(255,255,255,.06); overflow:hidden;
+  }
+  .plan{
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:18px;
+    border-top:1px solid rgba(255,255,255,.06); cursor:pointer; transition:.12s;
+    background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,0));
+  }
+  .plan:first-child{border-top:none}
+  .plan:hover{ background:rgba(255,255,255,.04) }
+  .plan.selected{ outline:2px solid #a56cff; box-shadow:0 0 0 3px rgba(165,108,255,.18) }
+
+  .p-left{display:flex; flex-direction:column; gap:6px}
+  .tag{display:inline-flex; align-items:center; gap:8px; background:#2b2430; color:#ffd08a; padding:6px 10px; border-radius:999px; font-weight:900; font-size:12px}
+  .title{font-weight:900; font-size:22px}
+  .strike{color:#8b8491; text-decoration:line-through; font-weight:700; font-size:13px}
+
+  .p-right{text-align:right; display:flex; align-items:center; gap:14px}
+  .perday{display:flex; align-items:baseline; gap:8px; font-weight:900}
+  .perday .dollar{font-size:46px}
+  .perday small{font-size:12px; color:#ddd}
+
+  .most-pop{background:linear-gradient(180deg,#ff9b59,#ff6f3d); color:#111; font-weight:900; text-align:center; padding:6px 10px}
+  .footer-cta{ position:sticky; bottom:0; z-index:10; padding:16px; background:linear-gradient(180deg,transparent,rgba(0,0,0,.5)) }
+  .cta{
+    width:100%; border:none; border-radius:16px; padding:16px 22px; font-weight:900; cursor:pointer;
+    color:#fff; background:linear-gradient(90deg,var(--cta1),var(--cta2)); box-shadow:0 18px 48px rgba(255,86,210,.35);
+  }
+  .badges{display:flex; gap:16px; align-items:center; justify-content:center; color:#e7deef; font-weight:700; margin-top:8px}
+  .badges .dot{width:6px; height:6px; background:#2f2736; border-radius:999px}
+
+  .perks{ margin:30px 0 10px }
+  .perks h3{ text-align:center; font-size:28px; color:#ff9ad8; margin:6px 0 16px; font-weight:900 }
+  .perkgrid{ display:grid; grid-template-columns:1fr; gap:14px }
+  @media (min-width:900px){ .perkgrid{ grid-template-columns:repeat(3, 1fr) } }
+  .perk{ background:linear-gradient(180deg,#221b25,#19141c); border:1px solid rgba(255,255,255,.06);
+         border-radius:16px; padding:16px; box-shadow:var(--ring); font-weight:800; color:#efe7f6 }
+
+  .free-badge{ font-size:26px; font-weight:900; color:#ff69b4 }
+  .verify-badge{
+    margin-top:4px; display:inline-block; padding:4px 10px; font-size:11px; font-weight:800; text-transform:uppercase;
+    background:linear-gradient(180deg,#2c3e50,#1c2833); color:#a8c8ff; border-radius:6px; letter-spacing:.5px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+
+  .modal{
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:50;
+    background:rgba(10,8,12,.6); backdrop-filter:blur(4px);
+  }
+  .modal[aria-hidden="false"]{ display:flex }
+  .sheet{
+    width:min(760px, 94vw); max-height:86vh; overflow:auto;
+    background:linear-gradient(180deg,#231b27,#1a141d); border:1px solid rgba(255,255,255,.08);
+    border-radius:22px; box-shadow:0 26px 80px rgba(0,0,0,.6); color:#fff; padding:18px;
+  }
+  .sheet h4{ margin:6px 0 10px; font-size:24px; font-weight:900 }
+  .row{ display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap }
+  .payfast{ display:grid; gap:12px }
+  .stripe-wrap{ margin:8px 0 6px }
+  #payment-request-button{ margin-bottom:8px }
+  .input{ width:100%; padding:12px; border:1px solid rgba(255,255,255,.14); border-radius:12px; background:#141018; color:#fff }
+  .submit{ width:100%; margin-top:10px; padding:14px; font-weight:900; border:none; border-radius:12px; color:#111; cursor:pointer;
+           background:linear-gradient(180deg,#ffd76b,#ffb429) }
+  .x{ position:absolute; right:14px; top:14px; background:#2c2430; border:none; color:#fff; border-radius:10px; padding:6px 10px; cursor:pointer }
+  .microcopy{ color:#c9c1cf; font-size:12px; margin-top:8px }
+  .summary{ background:#1c1520; border:1px solid rgba(255,255,255,.08); border-radius:12px; padding:12px; margin:10px 0 2px; }
+  .error{ background:#4b1622; border:1px solid #ff9aa7; color:#ffe6ea; border-radius:10px; padding:8px; display:none; margin-top:8px }
+  .error[aria-hidden="false"]{ display:block }
+</style>
+</head>
+<body>
+
+<!-- GoAffPro loader (top of page) -->
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <div class="bar">
+    <div class="pillrow">
+      <span class="pill">Limited offer</span>
+      <span class="pill"><span id="mm">19</span> : <span id="ss">59</span></span>
+    </div>
+    <button class="btn-claim" id="claimBtn">CLAIM DISCOUNT</button>
+  </div>
+
+  <div class="wrap">
+    <h1 class="headline">She's all yours now!</h1>
+    <div class="subline">Unlock her hottest content & live calls</div>
+    <div class="accentline">Get <span class="em">Exclusive Discount</span> Only Today!</div>
+
+    <div class="hero-grid">
+      <div class="media">
+        <video src="https://charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
+      </div>
+
+      <div class="plans">
+        <div class="card" id="plansCard"></div>
+        <div class="footer-cta">
+          <button class="cta" id="unlockBtn">UNLOCK HER NOW — <span id="perDayBadge">Only $0.33/day</span></button>
+          <div class="badges">
+            <span>🔒 Secure Payment</span><span class="dot"></span>
+            <span>🧾 100% Discreet Billing</span><span class="dot"></span>
+            <span>❌ Cancel Anytime</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="perks">
+      <h3>Premium <strong>Perks</strong></h3>
+      <div class="perkgrid">
+        <div class="perk">Create <strong>Unlimited</strong> AI Girlfriends</div>
+        <div class="perk">Unlock <strong>1-ON-1</strong> Calls</div>
+        <div class="perk"><strong>200 FREE</strong> Tokens Monthly</div>
+        <div class="perk">Exclusive <strong>Discounts</strong> on Tokens</div>
+        <div class="perk">Access Exclusive <strong>Private Content</strong></div>
+        <div class="perk">Priority <strong>Support</strong></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Payment Modal -->
+  <div class="modal" id="payModal" aria-hidden="true">
+    <div class="sheet">
+      <button class="x" id="closeModal">✕</button>
+      <h4>Order Summary</h4>
+      <div class="summary">Plan: <strong id="summaryPlan">12 months subscription</strong></div>
+
+      <div class="row">
+        <div style="flex:1; min-width:260px">
+          <div class="payfast">
+            <div id="payment-request-button"></div>
+
+            <div class="stripe-wrap">
+              <label style="font-weight:800; margin:6px 0 6px; display:block">Pay With Card</label>
+              <div id="card-element" class="input"></div>
+            </div>
+
+            <!-- Name field stays and is sent to Stripe -->
+            <input id="cardholder-name" class="input" placeholder="Name on Card" autocomplete="cc-name"/>
+
+            <div id="err" class="error" aria-hidden="true"></div>
+            <button id="paySubmit" class="submit">Continue</button>
+            <div class="microcopy">Once you click the “Continue” button, you confirm you are 18+ and you agree to our Terms and Privacy Policy.</div>
+          </div>
+        </div>
+
+        <!-- Right column now shows PER-DAY, not total -->
+        <div style="flex:1; min-width:260px">
+          <div class="summary">
+            <div style="font-weight:800; margin-bottom:6px">PRICE PER DAY</div>
+            <div id="summaryPerDay" style="font-weight:900; font-size:20px">$0.33 USD / day</div>
+            <div class="microcopy" id="summaryFine">Billed according to the selected plan. Cancel anytime.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ------------------ Config (replace with your live keys & price IDs) ------------------ */
+  const STRIPE_PUBLISHABLE_KEY = "pk_live_xxxxxxxxxxxxxxxxxxxxxxxxx"; // <-- replace
+  const PRICE = {
+    month:   "price_month_xxx",
+    quarter: "price_quarter_xxx",
+    year:    "price_year_xxx"
+  };
+  const RETURN_URL = "https://www.charmr.xyz/thankyou.html";
+
+  /* ------------------ Currency helper ------------------ */
+  let CURRENCY = '$';
+  (async function autoCurrency(){
+    try{
+      const res = await fetch("https://ipapi.co/country/");
+      const cc = res.ok ? (await res.text()).trim().toUpperCase() : "US";
+      const EURO = new Set(["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"]);
+      CURRENCY = (cc==="US"||cc==="CA"||cc==="AU"||cc==="NZ") ? "$" : EURO.has(cc) ? "€" : "$";
+    }catch{}
+    renderPlans(); syncPerDayBadge();
+  })();
+
+  /* ------------------ Plans UI ------------------ */
+  const plansWrap   = document.getElementById("plansCard");
+  const perDayBadge = document.getElementById("perDayBadge");
+  const unlockBtn   = document.getElementById("unlockBtn");
+  const claimBtn    = document.getElementById("claimBtn");
+  let selected = "free";
+
+  const PLAN_DATA = [
+    {key:"free",    label:"FREE",     sale:"", strike:null, total:0, days:1, free:true},
+    {key:"month",   label:"1 month",  sale:"50% off",  strike:39.99, total:19.99, days:30},
+    {key:"year",    label:"12 month", sale:"75% off",  strike:479.88, total:119.88, days:365, popular:true},
+    {key:"quarter", label:"3 month",  sale:"60% off",  strike:119.97, total:47.97, days:90}
+  ];
+
+  function money(v){ return CURRENCY + (Math.round(v*100)/100).toFixed(2); }
+
+  function planRow(p){
+    const perDay = (p.total||0)/(p.days||1);
+    const [d, c="00"] = (perDay).toFixed(2).split(".");
+    const row = document.createElement("div");
+    row.className = "plan"+(selected===p.key ? " selected" : "");
+    row.dataset.plan = p.key;
+
+    const leftHTML = p.free
+      ? `
+        <div class="pname"><span class="free-badge">FREE</span></div>
+        <div class="micro">for 1 day</div>
+        <div class="verify-badge">AFTER AGE VERIFICATION</div>
+      `
+      : `
+        ${p.sale?`<span class="tag">${p.sale}</span>`:""}
+        <div class="title">${p.label}</div>
+        ${p.strike?`<div class="strike">${money(p.strike)} → ${money(p.total)}</div>`:""}
+      `;
+
+    row.innerHTML = `
+      <div class="p-left">${leftHTML}</div>
+      <div class="p-right">
+        <div class="perday">
+          <span>${CURRENCY}<span class="dollar">${d}</span>.${c}</span>
+          <small>per day</small>
+        </div>
+      </div>
+    `;
+    row.addEventListener("click", ()=>{ selected=p.key; renderPlans(); syncPerDayBadge(); syncModalRight(); });
+    return row;
+  }
+
+  function renderPlans(){
+    plansWrap.innerHTML = "";
+    PLAN_DATA.forEach(p=>{
+      plansWrap.appendChild(planRow(p));
+      if (p.popular){
+        const mp = document.createElement("div");
+        mp.className = "most-pop";
+        mp.textContent = "MOST POPULAR";
+        plansWrap.appendChild(mp);
+      }
+    });
+  }
+
+  function currentPlan(){ return PLAN_DATA.find(x=>x.key===selected) || PLAN_DATA[0]; }
+
+  function perDayString(p){
+    const perDay = (p.total||0)/(p.days||1);
+    return `${money(perDay)} ${CURRENCY==='€'?'EUR':'USD'} / day`;
+  }
+
+  function syncPerDayBadge(){
+    const p = currentPlan();
+    const perDay = (p.total||0)/(p.days||1);
+    perDayBadge.textContent = p.free ? "Free today" : `Only ${money(perDay)}/day`;
+  }
+
+  /* Timer */
+  (function timer(n=20*60){
+    const mm=document.getElementById("mm"), ss=document.getElementById("ss");
+    const t=setInterval(()=>{
+      n=Math.max(0,n-1);
+      const m=String(Math.floor(n/60)).padStart(2,"0");
+      const s=String(n%60).padStart(2,"0");
+      mm.textContent=m; ss.textContent=s;
+      if(!n) clearInterval(t);
+    },1000);
+  })();
+
+  claimBtn.addEventListener("click", ()=> unlockBtn.scrollIntoView({behavior:"smooth", block:"center"}));
+
+  /* ------------------ Modal + Stripe ------------------ */
+  const modal        = document.getElementById("payModal");
+  const closeModal   = document.getElementById("closeModal");
+  const summaryPlan  = document.getElementById("summaryPlan");
+  const summaryPerDay= document.getElementById("summaryPerDay");
+  const errBox       = document.getElementById("err");
+
+  function syncModalRight(){
+    const p = currentPlan();
+    summaryPlan.textContent = p.free ? "FREE — 1 day" : `${p.label} subscription`;
+    document.getElementById("summaryPerDay").textContent = p.free ? `${money(0)} ${CURRENCY==='€'?'EUR':'USD'} / day` : perDayString(p);
+  }
+
+  function openModal(){ syncModalRight(); modal.setAttribute("aria-hidden","false"); }
+  function closePayModal(){ modal.setAttribute("aria-hidden","true"); }
+  closeModal.addEventListener("click", closePayModal);
+
+  unlockBtn.addEventListener("click", ()=>{
+    if (selected === "free"){
+      window.location.href = "verification-black.html";
+      return;
+    }
+    openModal();
+  });
+
+  /* Stripe setup */
+  const stripe   = Stripe(STRIPE_PUBLISHABLE_KEY);
+  const elements = stripe.elements({ appearance: { theme: "night" }});
+  const card     = elements.create("card", { hidePostalCode:false, style:{ base:{ color:"#fff" }}} );
+  card.mount("#card-element");
+
+  // Payment Request (Apple/Google Pay)
+  const pr = stripe.paymentRequest({
+    country: "US",
+    currency: (CURRENCY==='€'?'eur':'usd'),
+    total: { label: "Charmr Premium", amount: 0 },
+    requestPayerName: true,
+    requestPayerEmail: true
+  });
+
+  (async () => {
+    const result = await pr.canMakePayment();
+    if (result) {
+      const prButton = elements.create("paymentRequestButton", { paymentRequest: pr, style:{ paymentRequestButton:{ type:"default" }}});
+      prButton.mount("#payment-request-button");
+    } else {
+      document.getElementById("payment-request-button").style.display = "none";
+    }
+  })();
+
+  function updatePaymentRequestTotal(){
+    const p = currentPlan();
+    const amount = Math.round((p.total||0) * 100);
+    try { pr.update({ total: { label: "Charmr Premium", amount } }); } catch{}
+  }
+
+  async function fetchJSON(url, options = {}) {
+    const r = await fetch(url, {
+      ...options,
+      headers: {
+        Accept: "application/json",
+        ...(options.body ? {"Content-Type":"application/json"} : {}),
+        ...(options.headers || {})
+      }
+    });
+    const txt = await r.text();
+    let data; try{ data = txt ? JSON.parse(txt) : {}; }catch{ data = { error: txt || `HTTP ${r.status}`}; }
+    if (!r.ok) throw new Error(data?.error || `Request failed (${r.status})`);
+    return data;
+  }
+
+  // Elements (card) submit – includes NAME in billing_details and to backend
+  document.getElementById("paySubmit").addEventListener("click", async ()=>{
+    errBox.setAttribute("aria-hidden","true");
+    document.getElementById("paySubmit").disabled = true;
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Please sign in again.");
+
+      const si = await fetchJSON("/api/stripe/setup-intent", { method:"POST", headers:{ "Authorization": `Bearer ${token}` }});
+      const name = (document.getElementById("cardholder-name").value||"").trim();
+
+      const { setupIntent, error } = await stripe.confirmCardSetup(si.clientSecret, {
+        payment_method: { card, billing_details: { name } }   // <-- NAME goes to Stripe
+      });
+      if (error) throw new Error(error.message);
+
+      const priceId = PRICE[selected];
+      if (!priceId) throw new Error("Missing price mapping for selected plan.");
+      const sub = await fetchJSON("/api/stripe/subscribe", {
+        method:"POST",
+        headers:{ "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ priceId, paymentMethodId: setupIntent.payment_method, cardholderName: name }) // <-- NAME to backend
+      });
+
+      const returnUrl = `${RETURN_URL}?priceId=${encodeURIComponent(priceId)}`;
+      if (sub.clientSecret) {
+        const { error: payErr } = await stripe.confirmCardPayment(sub.clientSecret, { return_url: returnUrl });
+        if (payErr) throw new Error(payErr.message || "Payment confirmation failed.");
+      } else {
+        window.location.href = returnUrl;
+      }
+      window.location.href = returnUrl;
+    } catch (e) {
+      errBox.textContent = e.message || "Something went wrong. Try again.";
+      errBox.setAttribute("aria-hidden","false");
+      document.getElementById("paySubmit").disabled = false;
+      return;
+    }
+  });
+
+  // Update Payment Request total when modal opens
+  const modalEl = document.getElementById("payModal");
+  new MutationObserver(()=>{
+    if (modalEl.getAttribute("aria-hidden")==="false"){ updatePaymentRequestTotal(); }
+  }).observe(modalEl, { attributes:true });
+
+  // Payment Request flow – passes payerName to backend
+  pr.on("paymentmethod", async (ev) => {
+    try{
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Please sign in again.");
+      const priceId = PRICE[selected];
+
+      const sub = await fetchJSON("/api/stripe/subscribe", {
+        method:"POST",
+        headers:{ "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ priceId, paymentMethodId: ev.paymentMethod.id, cardholderName: ev.payerName||"" }) // <-- NAME to backend
+      });
+
+      if (sub.clientSecret) {
+        const { error } = await stripe.confirmCardPayment(sub.clientSecret, { payment_method: ev.paymentMethod.id });
+        if (error) { ev.complete("fail"); throw new Error(error.message); }
+      }
+      ev.complete("success");
+      window.location.href = `${RETURN_URL}?priceId=${encodeURIComponent(priceId)}`;
+    }catch(err){
+      ev.complete("fail");
+      errBox.textContent = err.message || "Payment failed. Try again.";
+      errBox.setAttribute("aria-hidden","false");
+    }
+  });
+</script>
+
+<!-- GoAffPro conversion pixel ($0 postback on first landing) -->
+<script>
+  if (!sessionStorage.getItem('gaffpro_converted_zero')) {
+    (function fireZero() {
+      window.goaffpro_order = {
+        number: `ORD-${Date.now()}-${Math.random().toString(16).slice(2,6)}`,
+        total: 0,
+        currency: "USD"
+      };
+      (function waitAndSend(){
+        if (typeof window.goaffproTrackConversion === "function") {
+          try {
+            window.goaffproTrackConversion(window.goaffpro_order);
+            sessionStorage.setItem('gaffpro_converted_zero', '1');
+            console.log("GoAffPro $0 conversion posted.");
+          } catch(e) {
+            setTimeout(waitAndSend, 150);
+          }
+        } else {
+          setTimeout(waitAndSend, 150);
+        }
+      })();
+    })();
+  }
+</script>
+
+</body>
+</html>
