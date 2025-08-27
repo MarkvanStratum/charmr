@@ -4,9 +4,15 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Charmr.xyz — Select Your Plan</title>
+
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
 <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 <style>
@@ -71,7 +77,6 @@
   .trust{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;color:#cfcfd6;font-weight:600}
   .trust .dot{width:6px;height:6px;background:#2a2a31;border-radius:999px;display:inline-block}
 
-  /* Free plan visuals */
   .free-badge{font-size:28px;line-height:1;font-weight:900;letter-spacing:.3px;color:#ff69b4}
   .free-sub{font-size:13px;color:#cfcfd6;opacity:.95}
   .verify-badge{margin-top:4px;display:inline-block;padding:4px 10px;font-size:11px;font-weight:800;text-transform:uppercase;
@@ -80,46 +85,50 @@
 </style>
 </head>
 <body>
-  <div class="app">
-    <div class="topbar">
-      <div class="brand"><span class="logo">💎</span><span>Charmr.xyz</span></div>
-      <div></div>
+
+<!-- GoAffPro loader (must be present early on the page) -->
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+<div class="app">
+  <div class="topbar">
+    <div class="brand"><span class="logo">💎</span><span>Charmr.xyz</span></div>
+    <div></div>
+  </div>
+
+  <section id="premium" class="section active">
+    <div class="bar">
+      <span class="pill">Limited offer</span>
+      <span class="pill">⏱ <span id="timer">04:00</span></span>
+      <a class="btn" href="#plans">CLAIM DISCOUNT</a>
     </div>
 
-    <section id="premium" class="section active">
-      <div class="bar">
-        <span class="pill">Limited offer</span>
-        <span class="pill">⏱ <span id="timer">04:00</span></span>
-        <a class="btn" href="#plans">CLAIM DISCOUNT</a>
-      </div>
+    <div class="offer-grid">
+      <div class="offer-media"><video src="https://charmr.xyz/video1.mp4" autoplay muted loop playsinline></video></div>
+      <div class="offer-right">
+        <h2 class="headline">She's <span class="em">All Yours</span> Now!</h2>
+        <div class="subline">Unlock her hottest pictures and hot chats...</div>
+        <div class="subhead">Get <span class="pink">EXCLUSIVE DISCOUNT</span> only today!</div>
 
-      <div class="offer-grid">
-        <div class="offer-media"><video src="https://charmr.xyz/video1.mp4" autoplay muted loop playsinline></video></div>
-        <div class="offer-right">
-          <h2 class="headline">She's <span class="em">All Yours</span> Now!</h2>
-          <div class="subline">Unlock her hottest pictures and hot chats...</div>
-          <div class="subhead">Get <span class="pink">EXCLUSIVE DISCOUNT</span> only today!</div>
+        <div class="card" id="plans"></div>
 
-          <div class="card" id="plans"></div>
-
-          <div class="cta-wrap">
-            <div class="row-btns">
-              <button id="continueBtn" class="btn btn-xl full">UNLOCK HER NOW — <span id="perDayBadge">Only $0.33/day</span></button>
-              <button id="maybeLater" class="btn secondary btn-xl full">Maybe later</button>
-            </div>
-            <div class="center">
-              <div class="trust">
-                <span>🔒 3670 girlfriends claimed today</span>
-                <span class="dot"></span><span>Secure Payment</span>
-                <span class="dot"></span><span>100% Discreet Billing</span>
-                <span class="dot"></span><span>Cancel Anytime</span>
-              </div>
+        <div class="cta-wrap">
+          <div class="row-btns">
+            <button id="continueBtn" class="btn btn-xl full">UNLOCK HER NOW — <span id="perDayBadge">Only $0.33/day</span></button>
+            <button id="maybeLater" class="btn secondary btn-xl full">Maybe later</button>
+          </div>
+          <div class="center">
+            <div class="trust">
+              <span>🔒 3670 girlfriends claimed today</span>
+              <span class="dot"></span><span>Secure Payment</span>
+              <span class="dot"></span><span>100% Discreet Billing</span>
+              <span class="dot"></span><span>Cancel Anytime</span>
             </div>
           </div>
         </div>
       </div>
-    </section>
-  </div>
+    </div>
+  </section>
+</div>
 
 <script>
   let CURRENCY = '$';
@@ -208,5 +217,41 @@
 
   (async function init(){const cc=await detectCountryCode();CURRENCY=pickCurrencyByRegion(cc);renderPlans();syncPerDayBadge();})();
 </script>
+
+<!-- ====================== GoAffPro conversion pixel (POST BACK $0) ====================== -->
+<script>
+  // Simple unique order id
+  function uniqueOrderId() {
+    const ts = Date.now();
+    const rand = Math.random().toString(16).slice(2, 6);
+    return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
+  }
+
+  // Prevent duplicate fires in-session
+  if (!sessionStorage.getItem('gaffpro_converted')) {
+    (function fireGoAffProZero(){
+      // Set total to 0 to post back $0 revenue
+      window.goaffpro_order = {
+        number: uniqueOrderId(),
+        total: 0,
+        currency: "USD"
+      };
+
+      (function tryFire(){
+        if (typeof window.goaffproTrackConversion === "function") {
+          console.log("GoAffPro: firing $0 conversion", window.goaffpro_order);
+          window.goaffproTrackConversion(window.goaffpro_order);
+          sessionStorage.setItem('gaffpro_converted', '1');
+        } else {
+          setTimeout(tryFire, 150);
+        }
+      })();
+    })();
+  } else {
+    console.log("GoAffPro: conversion already fired in this session");
+  }
+</script>
+<!-- ================================================================================ -->
+
 </body>
 </html>
