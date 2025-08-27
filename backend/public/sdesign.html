@@ -205,7 +205,7 @@
           </div>
         </div>
 
-        <!-- Right column now shows PER-DAY, not total -->
+        <!-- Right column shows PER-DAY, not total -->
         <div style="flex:1; min-width:260px">
           <div class="summary">
             <div style="font-weight:800; margin-bottom:6px">PRICE PER DAY</div>
@@ -218,13 +218,16 @@
   </div>
 
 <script>
-  /* ------------------ Config (replace with your live keys & price IDs) ------------------ */
-  const STRIPE_PUBLISHABLE_KEY = "pk_live_xxxxxxxxxxxxxxxxxxxxxxxxx"; // <-- replace
+  /* ------------------ LIVE Stripe publishable key ------------------ */
+  const STRIPE_PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+
+  /* Map your LIVE price IDs here */
   const PRICE = {
-    month:   "price_month_xxx",
-    quarter: "price_quarter_xxx",
-    year:    "price_year_xxx"
+    month:   "price_month_live_xxx",   // <-- replace
+    quarter: "price_quarter_live_xxx", // <-- replace
+    year:    "price_year_live_xxx"     // <-- replace
   };
+
   const RETURN_URL = "https://www.charmr.xyz/thankyou.html";
 
   /* ------------------ Currency helper ------------------ */
@@ -236,7 +239,7 @@
       const EURO = new Set(["AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE"]);
       CURRENCY = (cc==="US"||cc==="CA"||cc==="AU"||cc==="NZ") ? "$" : EURO.has(cc) ? "€" : "$";
     }catch{}
-    renderPlans(); syncPerDayBadge();
+    renderPlans(); syncPerDayBadge(); syncModalRight();
   })();
 
   /* ------------------ Plans UI ------------------ */
@@ -337,7 +340,7 @@
   function syncModalRight(){
     const p = currentPlan();
     summaryPlan.textContent = p.free ? "FREE — 1 day" : `${p.label} subscription`;
-    document.getElementById("summaryPerDay").textContent = p.free ? `${money(0)} ${CURRENCY==='€'?'EUR':'USD'} / day` : perDayString(p);
+    summaryPerDay.textContent = p.free ? `${money(0)} ${CURRENCY==='€'?'EUR':'USD'} / day` : perDayString(p);
   }
 
   function openModal(){ syncModalRight(); modal.setAttribute("aria-hidden","false"); }
@@ -362,17 +365,21 @@
   const pr = stripe.paymentRequest({
     country: "US",
     currency: (CURRENCY==='€'?'eur':'usd'),
-    total: { label: "Charmr Premium", amount: 0 },
+    total: { label: "Charmr Premium", amount: 0 }, // updated when modal opens
     requestPayerName: true,
     requestPayerEmail: true
   });
 
   (async () => {
-    const result = await pr.canMakePayment();
-    if (result) {
-      const prButton = elements.create("paymentRequestButton", { paymentRequest: pr, style:{ paymentRequestButton:{ type:"default" }}});
-      prButton.mount("#payment-request-button");
-    } else {
+    try{
+      const result = await pr.canMakePayment();
+      if (result) {
+        const prButton = elements.create("paymentRequestButton", { paymentRequest: pr, style:{ paymentRequestButton:{ type:"default" } }});
+        prButton.mount("#payment-request-button");
+      } else {
+        document.getElementById("payment-request-button").style.display = "none";
+      }
+    }catch(e){
       document.getElementById("payment-request-button").style.display = "none";
     }
   })();
