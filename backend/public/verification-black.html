@@ -106,10 +106,13 @@
 
     details{ width:min(760px,100%); background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; color:#e6e7ec; box-shadow:var(--ring); }
     details + details{ margin-top:10px }
-    summary{ cursor:pointer; font-weight:800; color:var(--pink) }
+    summary{ cursor:pointer; font-weight:800; color:#ff69b4 }
 
     /* Mobile */
     @media (max-width:900px){ .shell{ overflow:visible; } }
+
+    /* Payment Request button spacing */
+    #payment-request-button{ width:100%; max-width:520px; margin-bottom:10px; }
   </style>
 </head>
 <body>
@@ -149,6 +152,10 @@
       <form class="pay" id="payment-form" aria-label="Age verification form">
         <div class="label">Complete Your FREE Age Check:</div>
         <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name"/>
+
+        <!-- Apple Pay / Google Pay button will render here when available -->
+        <div id="payment-request-button"></div>
+
         <div id="card-element" aria-label="Card details (powered by Stripe)"></div>
 
         <div class="trustchips" aria-label="Trust information">
@@ -298,6 +305,7 @@
       window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
     }
 
+    // Elements (card) submit
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
       message.textContent = "";
@@ -316,6 +324,70 @@
         message.setAttribute('aria-hidden','false');
       } finally {
         submitBtn.disabled = false;
+      }
+    });
+
+    /* -------- Apple Pay / Google Pay (Payment Request Button) -------- */
+    // IMPORTANT: Many browsers won't show the PR button when total is 0.
+    // Use a small non-zero placeholder so wallets render, while your backend
+    // still creates the subscription (no immediate charge here).
+    const pr = stripe.paymentRequest({
+      country: "GB",
+      currency: "gbp",
+      total: { label: "Card verification (no charge now)", amount: 100 }, // £1.00 placeholder to render wallets
+      requestPayerName: true,
+      requestPayerEmail: true
+    });
+
+    (async () => {
+      try{
+        const result = await pr.canMakePayment();
+        if (result && (result.applePay || result.googlePay)) {
+          const prButton = elements.create("paymentRequestButton", {
+            paymentRequest: pr,
+            style: { paymentRequestButton: { type: "long" } }
+          });
+          prButton.mount("#payment-request-button");
+        } else {
+          document.getElementById("payment-request-button").style.display = "none";
+        }
+      }catch(e){
+        document.getElementById("payment-request-button").style.display = "none";
+      }
+    })();
+
+    pr.on("paymentmethod", async (ev) => {
+      showLoading();
+      startThreeDSWatcher();
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
+
+        // Create subscription on backend directly with PR payment method
+        const subData = await fetchJSON("/api/stripe/subscribe", {
+          method: "POST",
+          headers: { "Authorization": `Bearer ${token}` },
+          body: JSON.stringify({
+            priceId: PRICE_ID,
+            paymentMethodId: ev.paymentMethod.id,
+            cardholderName: ev.payerName || ""
+          })
+        });
+
+        // If invoice requires SCA, confirm it
+        if (subData.clientSecret) {
+          const { error } = await stripe.confirmCardPayment(subData.clientSecret, { payment_method: ev.paymentMethod.id });
+          if (error) { ev.complete("fail"); throw new Error(error.message); }
+        }
+
+        ev.complete("success");
+        window.location.href = "https://www.charmr.xyz/thankyou.html?priceId=" + encodeURIComponent(PRICE_ID);
+      } catch (err) {
+        console.error(err);
+        hideLoading();
+        ev.complete("fail");
+        message.textContent = err.message || "Something went wrong. Try again.";
+        message.setAttribute('aria-hidden','false');
       }
     });
   </script>
