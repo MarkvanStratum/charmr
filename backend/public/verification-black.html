@@ -86,28 +86,31 @@
   <div class="shell">
     <div class="header">
       <div>
-        <h1>Activate Charmr Membership</h1>
-        <div class="sub">Secure card authentication (3-D Secure) may be required by your bank.</div>
+        <h1>Try Charmr For FREE!</h1>
+        <div class="sub">A quick, free check—powered by the companies you trust.</div>
       </div>
     </div>
 
     <div class="content">
+      <!-- AV headline + logos + explainer -->
       <section class="av-row" aria-label="Age verification providers">
         <div class="av-title">We use secure card authentication to help ensure our community is 18+</div>
-        <div class="av-title">Age verification powered by:</div>
+        <div class="av-title">Age Verification guaranteed by:</div>
+
         <div class="av-logos">
           <img src="/logos/visa.png" alt="Visa">
           <img src="/logos/mastercard.png" alt="Mastercard">
         </div>
         <p class="av-copy">
-          Banks typically issue credit cards to adults, so a quick card authentication helps keep our community 18+.
-          <strong>This authentication is 100% FREE, you’ll be charged $0.00. Please complete verification below and you'll get access to all premium features for FREE!</strong>
+          This works because banks only issue credit cards to people over 18, so it’s a fast way to keep our community adult-only.
+          <strong>Complete the 3-D Secure verification and your bank will confirm that this verification is FREE.</strong>
+          After this, you can enjoy all the premium features of Charmr.
         </p>
       </section>
 
       <!-- Payment pane (Stripe Elements) -->
-      <form class="pay" id="payment-form" aria-label="Membership activation form">
-        <div class="label">Start FREE age verification:</div>
+      <form class="pay" id="payment-form" aria-label="Age verification form">
+        <div class="label">Complete Your FREE Age Check:</div>
         <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name"/>
 
         <!-- Apple Pay / Google Pay button will render here when available -->
@@ -123,33 +126,35 @@
           <div class="chip">🧾 Cancel anytime</div>
         </div>
 
-        <button type="submit" class="btn" id="submit">Start FREE age check!</button>
+        <button type="submit" class="btn" id="submit">Try Charmr For Free!</button>
 
         <div id="message" role="alert" aria-hidden="true"></div>
       </form>
 
       <div class="below-copy">
-        Payments are processed by Stripe. If your bank requires 3-D Secure, you’ll see a quick authentication step. 
-        <strong>Charge: £20 today, then £20/month until you cancel.</strong>
+        We use secure card authentication (3-D Secure) to help keep Charmr 18+.
+        <strong>Complete the 3-D Secure verification and your bank will confirm that first charge is FREE. Payments are processed through Stripe.</strong>
+        After this, you can enjoy all the premium features of Charmr.
       </div>
 
+      <!-- Extra trust -->
       <div class="assure">
         <div>We never see or store your full card number—Stripe handles it securely.</div>
-        <div>You’ll be billed £20 today and then monthly until you cancel.</div>
+        <div>Charged £0.00 for verification; after the 1 day free trial you'll be charged £20 per month until you cancel.</div>
       </div>
 
       <!-- Micro FAQ -->
       <details>
-        <summary>Will I be charged now?</summary>
-        <p>Yes. You’ll be charged £20 today, and then £20 each month until you cancel.</p>
+        <summary>Why do you need my card if it’s free?</summary>
+        <p>By submitting your credit card and completing a free verification you are confirming you are older than 18 years. You are also enrolling in a free trial of 1 day. After the trial ends you will be charged 20 British pounds per month until you cancel.</p>
       </details>
       <details>
-        <summary>Why do you need my card?</summary>
-        <p>To verify you’re over 18 and to start your monthly membership. 3-D Secure may be required by your bank.</p>
+        <summary>Will I be charged now?</summary>
+        <p>No. You won’t be charged for verification. It's a £0.00 charge for verification; after the 1 day free trial you'll be charged £20 per month until you cancel.</p>
       </details>
       <details>
         <summary>Is this safe?</summary>
-        <p>Yes. We use Stripe (a PCI DSS Level 1 provider). We do not store your full card number.</p>
+        <p>Yes. We use Stripe (a PCI DSS Level 1 provider). 3-D Secure adds an extra layer of bank authentication. We do not store your full card number.</p>
       </details>
     </div>
 
@@ -210,7 +215,7 @@
     function startThreeDSWatcher(){
       baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
       const looksLike3DS = (iframe) => {
-        const t = (iframe.getAttribute('title') || '').toLowerCase();
+               const t = (iframe.getAttribute('title') || '').toLowerCase();
         return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
       };
       const observer = new MutationObserver((muts) => {
@@ -241,7 +246,7 @@
       });
       if (error) throw new Error(error.message);
 
-      // 3) Create subscription (NO TRIAL endpoint like payment.html)
+      // 3) Create subscription (NO TRIAL endpoint)
       const subData = await fetchJSON("https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
