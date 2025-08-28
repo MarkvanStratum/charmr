@@ -217,14 +217,15 @@
   </div>
 
   <script>
-    // Stripe
-    const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
-    const elements = stripe.elements();
-    const card = elements.create("card", { hidePostalCode: false });
-    card.mount("#card-element");
+  // Stripe
+  const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
+  const elements = stripe.elements();
+  const card = elements.create("card", { hidePostalCode: false });
+  card.mount("#card-element");
 
-    // £20 plan with free trial
-    const PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+  // Use the price ID with no free trial
+  const PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+
 
     const form = document.getElementById("payment-form");
     const message = document.getElementById("message");
