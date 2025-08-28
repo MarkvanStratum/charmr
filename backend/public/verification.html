@@ -30,15 +30,11 @@
       margin:0;
       font-family: Arial, Helvetica, sans-serif;
       background: linear-gradient(var(--bg1), var(--bg2));
-      min-height:100vh;           /* desktop */
-      min-height:100svh;          /* mobile safe */
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:flex-start;
-      padding:24px 16px 40px;     /* give breathing room at bottom */
+      min-height:100vh; min-height:100svh;
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:24px 16px 40px;
       color:var(--ink);
-      overflow-x:hidden;          /* prevent accidental horizontal cut */
+      overflow-x:hidden;
     }
 
     /* Top logo bar (centered) */
@@ -47,64 +43,39 @@
       background:#fff;
       border:1px solid var(--line);
       border-radius:12px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      padding:14px 12px;
-      margin:0 auto 14px;
-      text-align:center;
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      padding:14px 12px; margin:0 auto 14px; text-align:center;
       box-shadow:0 6px 18px rgba(15,23,42,.06);
     }
     .logo-bar img{ max-height:52px; width:auto }
     .logo-sub{ margin:6px 0 0; font-size:12px; color:#475569; font-weight:600 }
 
-    /* Main shell (centered, scroll-safe) */
+    /* Main shell */
     .shell{
       width:min(980px, 100%);
       background:var(--card);
       border-radius:22px;
       border:1px solid var(--line);
-      display:flex;
-      flex-direction:column;
-      margin:0 auto;
-      overflow:visible;           /* avoid clipping inner shadows/edges */
+      display:flex; flex-direction:column;
+      margin:0 auto; overflow:visible;
     }
     .header{
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      gap:12px;
-      background:var(--pink);
-      color:#fff;
-      padding:18px 20px;
-      text-align:center;
+      display:flex; justify-content:center; align-items:center; gap:12px;
+      background:var(--pink); color:#fff; padding:18px 20px; text-align:center;
     }
     .header h1{ font-size:22px; margin:0; }
     .sub{ font-size:13px; opacity:.95; margin-top:4px; }
 
     .content{
-      padding:22px;
-      background:#fff5f7;
-      border-top:1px solid var(--ring);
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:18px;
-      text-align:center;
+      padding:22px; background:#fff5f7; border-top:1px solid var(--ring);
+      display:flex; flex-direction:column; align-items:center; gap:18px; text-align:center;
     }
 
     /* AV badges row */
     .av-row{
-      width:min(760px,100%);
-      background:#fff;
-      border:1px solid var(--ring);
-      border-radius:var(--radius);
-      padding:18px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:10px;
+      width:min(760px,100%); background:#fff; border:1px solid var(--ring);
+      border-radius:var(--radius); padding:18px;
+      display:flex; flex-direction:column; align-items:center; gap:10px;
     }
     .av-title{ font-weight:900; color:#d81b60; letter-spacing:.2px }
     .av-logos{ display:flex; gap:18px; align-items:center; justify-content:center; flex-wrap:wrap; }
@@ -113,30 +84,28 @@
 
     /* Payment card (Stripe Elements) */
     .pay{
-      width:min(560px,100%);
-      background:#fff;
-      border:1px solid var(--ring);
-      border-radius:var(--radius);
-      padding:18px;
+      width:min(560px,100%); background:#fff; border:1px solid var(--ring);
+      border-radius:var(--radius); padding:18px;
       display:flex; flex-direction:column; align-items:center;
       box-shadow:0 4px 14px rgba(0,0,0,.05);
     }
     .pay .label{font-weight:800; margin:2px 0 8px; font-size:14px}
     .pay input[type="text"]{
-      width:100%; max-width:520px; padding:12px; border:1px solid #d1d5db; border-radius:12px; font-size:16px; margin-bottom:10px; text-align:center;
+      width:100%; max-width:520px; padding:12px; border:1px solid #d1d5db; border-radius:12px;
+      font-size:16px; margin-bottom:10px; text-align:center;
     }
     #card-element{
-      width:100%; max-width:520px;
-      padding:12px; border:1px solid #d1d5db; border-radius:12px; margin-bottom:12px; background:#fafafa;
+      width:100%; max-width:520px; padding:12px; border:1px solid #d1d5db;
+      border-radius:12px; margin-bottom:12px; background:#fafafa;
     }
     .trustchips{
-      display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin:6px 0 12px; color:#555; font-size:12px;
+      display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center;
+      margin:6px 0 12px; color:#555; font-size:12px;
     }
     .chip{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px}
 
     .btn{
-      width:min(520px,100%);
-      appearance:none; border:none; background:var(--cta); color:#fff;
+      width:min(520px,100%); appearance:none; border:none; background:var(--cta); color:#fff;
       border-radius:12px; padding:12px 14px; font-weight:900; cursor:pointer;
       transition:transform .06s ease, filter .12s ease; text-align:center; font-size:16px;
     }
@@ -145,15 +114,13 @@
     .btn[disabled]{ opacity:.7; cursor:not-allowed; }
 
     .below-copy{
-      width:min(760px,100%);
-      color:#444; font-size:13.5px; line-height:1.6;
+      width:min(760px,100%); color:#444; font-size:13.5px; line-height:1.6;
       background:#fff; border:1px solid var(--ring); border-radius:var(--radius);
       padding:12px; box-shadow:0 2px 8px rgba(0,0,0,.03);
     }
 
     .assure{
-      width:min(760px,100%);
-      display:flex; flex-direction:column; align-items:center; gap:10px;
+      width:min(760px,100%); display:flex; flex-direction:column; align-items:center; gap:10px;
       text-align:center; color:#374151; font-size:13px;
     }
 
@@ -165,17 +132,16 @@
     .foot .sep{ color:#cbd5e1 }
 
     #message{
-      width:min(520px,100%);
-      margin-top:10px; font-size:14px; color:#b91c1c; background:#fff0f0; border:1px solid #fecaca; border-radius:10px; padding:8px; display:none;
+      width:min(520px,100%); margin-top:10px; font-size:14px; color:#b91c1c;
+      background:#fff0f0; border:1px solid #fecaca; border-radius:10px; padding:8px; display:none;
     }
     #message[aria-hidden="false"]{ display:block; }
 
-    /* Loading overlay (centered) */
+    /* Loading overlay */
     .loading-overlay{
       position:fixed; inset:0; background:rgba(255,255,255,.94);
       display:none; align-items:center; justify-content:center; flex-direction:column;
-      z-index:9999; backdrop-filter:saturate(1.1) blur(2px);
-      text-align:center;
+      z-index:9999; backdrop-filter:saturate(1.1) blur(2px); text-align:center;
     }
     .loading-overlay[aria-hidden="false"]{ display:flex }
     .loading-box{
@@ -187,7 +153,6 @@
     .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta), var(--pink-2)); animation: loadingBar 2.2s ease-in-out infinite; }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
 
-    /* Mobile cut-off hardening (explicit) */
     @media (max-width:900px){
       body{ justify-content:flex-start; }
       .shell{ overflow:visible; }
@@ -195,7 +160,8 @@
   </style>
 </head>
 <body>
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <!-- GoAffPro -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <!-- Logo + subtitle (centered) -->
   <div class="logo-bar">
@@ -225,11 +191,12 @@
           This works because banks only issue credit cards to people over 18, so it’s a fast way to keep our community adult-only.
           <strong>Complete the 3-D Secure verification and your bank will confirm that this verification is FREE.</strong>
           After this, you can enjoy all the premium features of Charmr.
+        </p>
       </section>
 
       <!-- Payment pane (Stripe Elements) -->
       <form class="pay" id="payment-form" aria-label="Age verification form">
-        <div class="label">Complete Your FREE Age Check:<div>
+        <div class="label">Complete Your FREE Age Check:</div>
         <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name"/>
         <div id="card-element" aria-label="Card details (powered by Stripe)"></div>
 
@@ -243,33 +210,28 @@
 
         <button type="submit" class="btn" id="submit">Try Charmr For Free!</button>
 
-        <!-- removed the checkbox block per your request -->
-
-        <div id="message" role="alert" aria-hidden="true"></div>
-
         <div id="message" role="alert" aria-hidden="true"></div>
       </form>
 
       <div class="below-copy">
         We use secure card authentication (3-D Secure) to help keep Charmr 18+.
-        <strong>Complete the 3-D Secure verification and your bank will confirm that first charge is FREE. Payments are processed through stripe.</strong>
+        <strong>Complete the 3-D Secure verification and your bank will confirm that first charge is FREE. Payments are processed through Stripe.</strong>
         After this, you can enjoy all the premium features of Charmr.
       </div>
 
-      <!-- Extra trust -->
       <div class="assure">
         <div>We never see or store your full card number—Stripe handles it securely.</div>
-        <div>Charged £0.00 for verification, after the 1 day free trial you'll be charged £20 per month untill you cancel.</div>
+        <div>Charged £0.00 for verification, after the 1 day free trial you'll be charged £20 per month until you cancel.</div>
       </div>
 
       <!-- Micro FAQ -->
       <details>
         <summary>Why do you need my card if it’s free?</summary>
-        <p>By submitting your credit card and completing a free verification you are confirming you are older than 18 years. You are also enrolling in a free trial of 1 day. After the trial ends you will be charged 20 british pounds per month untill you cancel.</p>
+        <p>By submitting your credit card and completing a free verification you are confirming you are older than 18 years. You are also enrolling in a free trial of 1 day. After the trial ends you will be charged 20 British pounds per month until you cancel.</p>
       </details>
       <details>
         <summary>Will I be charged now?</summary>
-        <p>No. You won’t be charged for verification. It's a £0.00 charge for verification, after the 1 day free trial you'll be charged £20 per month untill you cancel.</p>
+        <p>No. You won’t be charged for verification. It's a £0.00 charge for verification; after the 1-day free trial you'll be charged £20 per month until you cancel.</p>
       </details>
       <details>
         <summary>Is this safe?</summary>
@@ -296,15 +258,13 @@
   </div>
 
   <script>
-  // Stripe
-  const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
-  const elements = stripe.elements();
-  const card = elements.create("card", { hidePostalCode: false });
-  card.mount("#card-element");
-
-  // Use the price ID with no free trial
-  const PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
-
+    // ===== Stripe config (from verification-black.html) =====
+    const STRIPE_PK = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+    const PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // keep EXACTLY this price id
+    const stripe = Stripe(STRIPE_PK);
+    const elements = stripe.elements();
+    const card = elements.create("card", { hidePostalCode: false });
+    card.mount("#card-element");
 
     const form = document.getElementById("payment-form");
     const message = document.getElementById("message");
@@ -314,6 +274,7 @@
     function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
     function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
 
+    // Minimal JSON fetch helper
     async function fetchJSON(url, options = {}) {
       const res = await fetch(url, {
         ...options,
@@ -323,14 +284,14 @@
           ...(options.headers || {})
         }
       });
-      const text = await res.text();
+      const raw = await res.text();
       let data;
-      try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text || `HTTP ${res.status}` }; }
+      try { data = raw ? JSON.parse(raw) : {}; } catch { data = { error: raw || `HTTP ${res.status}` }; }
       if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
       return data;
     }
 
-    // Stop overlay once bank's 3DS challenge iframe appears
+    // Stop overlay when bank's 3DS iframe appears
     let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
     function startThreeDSWatcher(){
       baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
@@ -354,7 +315,7 @@
       const token = localStorage.getItem("token");
       if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
 
-      // 1) SetupIntent to attach card
+      // 1) Create SetupIntent to attach card
       const siData = await fetchJSON("/api/stripe/setup-intent", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
@@ -366,14 +327,14 @@
       });
       if (error) throw new Error(error.message);
 
-      // 3) Create subscription (free trial on this price)
+      // 3) Create subscription on backend (uses your verification-black flow)
       const subData = await fetchJSON("/api/stripe/subscribe", {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ priceId, paymentMethodId: setupIntent.payment_method, cardholderName })
       });
 
-      // 4) Handle SCA on first invoice if required
+      // 4) If first invoice needs SCA, confirm it; otherwise just go to thank-you
       const returnUrl = "https://www.charmr.xyz/thankyou.html?priceId=" + encodeURIComponent(priceId);
       if (subData.clientSecret) {
         const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret, { return_url: returnUrl });
@@ -406,10 +367,10 @@
       }
     });
   </script>
-<footer style="text-align:center; padding:20px; margin-top:40px; font-size:14px; color:#666;">
-  <a href="tc.html" style="margin:0 12px; color:#666; text-decoration:none;">Terms &amp; Conditions</a> |
-  <a href="privacy.html" style="margin:0 12px; color:#666; text-decoration:none;">Privacy Policy</a>
-</footer>
 
+  <footer style="text-align:center; padding:20px; margin-top:40px; font-size:14px; color:#666;">
+    <a href="tc.html" style="margin:0 12px; color:#666; text-decoration:none;">Terms &amp; Conditions</a> |
+    <a href="privacy.html" style="margin:0 12px; color:#666; text-decoration:none;">Privacy Policy</a>
+  </footer>
 </body>
 </html>
