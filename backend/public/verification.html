@@ -311,12 +311,17 @@
       observer.observe(document.documentElement, { childList:true, subtree:true });
     }
 
+    // ---- NEW: point to Render backend (absolute URLs) ----
+    const API_BASE = "https://charmr-jfmc.onrender.com/api/stripe";
+    const SETUP_INTENT_URL = `${API_BASE}/setup-intent`;
+    const SUBSCRIBE_URL = `${API_BASE}/subscribe`;
+
     async function startVerification(priceId, cardholderName) {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
 
       // 1) Create SetupIntent to attach card
-      const siData = await fetchJSON("/api/stripe/setup-intent", {
+      const siData = await fetchJSON(SETUP_INTENT_URL, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` }
       });
@@ -328,7 +333,7 @@
       if (error) throw new Error(error.message);
 
       // 3) Create subscription on backend (uses your verification-black flow)
-      const subData = await fetchJSON("/api/stripe/subscribe", {
+      const subData = await fetchJSON(SUBSCRIBE_URL, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}` },
         body: JSON.stringify({ priceId, paymentMethodId: setupIntent.payment_method, cardholderName })

@@ -289,7 +289,8 @@
   paymentRequest.on('paymentmethod', async (ev) => {
     try {
       showLoading(); startThreeDSWatcher();
-      const name = (document.getElementById('nameInput')?.value || '').trim();
+      const name = (document.getElementById('nameInput')?.value || ev.payerName || '').trim();
+
 
       const res = await fetch(SUBSCRIBE_URL, {
         method: 'POST',
