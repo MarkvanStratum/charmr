@@ -1,205 +1,100 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Swipey Sign Up</title>
-<!-- Google tag (gtag.js) -->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sign up lead</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0e0f; --card:#151518; --text:#fff; --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
+    --heroW:150px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .app{max-width:980px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:12px 16px 24px}
+  .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:14px 12px;background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));backdrop-filter:saturate(120%) blur(8px)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+  .logo{width:22px;height:22px;display:grid;place-items:center;color:#6ee7b7;background:#2a2a2e;border-radius:8px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06)}
+  .hero-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:12px 0 18px}
+  .hero-title{margin:0;font-weight:800;font-size:30px;line-height:1.15;text-align:center;color:#ff69b4} /* pink hero title */
+  .hero-sub{margin:2px 0 0;color:#d9dbe2;opacity:.95;font-weight:600;text-align:center}
+  .hero-video{width:var(--heroW);aspect-ratio:9/13;border-radius:18px;overflow:hidden;box-shadow:var(--ring);background:#0b0b0d;margin:6px auto 0}
+  .hero-video video{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+  .card{background:#151518;border-radius:18px;padding:16px;box-shadow:var(--ring);max-width:620px;margin:0 auto}
+  .title{margin:0 0 6px;font-size:28px;font-weight:800;text-align:center}
+  .subtitle{color:#d9dbe2;opacity:.92;margin:0 0 14px;font-weight:600;text-align:center}
+  .subtitle .pink{color:#ff69b4;font-weight:800} /* pink for highlighted text */
+  form{display:grid;gap:12px}
+  label{font-weight:700}
+  input{background:#1a1a1f;color:#fff;padding:12px 14px;border-radius:12px;border:1px solid #2a2a31;outline:none}
+  input:focus{border-color:#3a3a41;box-shadow:0 0 0 2px rgba(255,255,255,.06)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#111;background:linear-gradient(180deg,#ffd76b,#ffb429);box-shadow:0 8px 22px rgba(255,174,15,.28)}
+  .btn.full{width:100%}
+  .hint{color:#cfcfd6;text-align:center;margin-top:8px}
+</style>
+
+<!-- Google tag -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17486667499"></script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --glass:#ffffff22;
-      --glass-ring: rgba(255,255,255,.35);
-      --bg-dark:#0d0b10;
-      --muted:#d9d7df;
-      --pink:#ff69b4;
-      --btn1:#7a5cff;
-      --btn2:#ff48c4;
-      --white:#fff;
-      --radius:24px;
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-      background:var(--bg-dark);
-      color:var(--white);
-      overflow:hidden;
-    }
-
-    .bg{
-      position:fixed; inset:0; z-index:-2; overflow:hidden;
-    }
-    .bg video{
-      width:100%; height:100%; object-fit:cover;
-      filter:blur(4px) saturate(1.05) brightness(.9);
-      transform:scale(1.04);
-    }
-    .grain{
-      position:fixed; inset:0; z-index:-1;
-      pointer-events:none;
-      background:radial-gradient(1200px 800px at 50% -120px, rgba(255,105,180,.15), transparent 60%);
-    }
-
-    .wrap{
-      min-height:100%;
-      display:grid;
-      place-items:center;
-      padding:18px;
-    }
-    .card{
-      width:min(760px, 94vw);
-      background:linear-gradient(180deg, rgba(0,0,0,.45), rgba(0,0,0,.35));
-      border-radius:var(--radius);
-      border:1px solid rgba(255,255,255,.18);
-      box-shadow:0 24px 80px rgba(0,0,0,.55);
-      backdrop-filter:saturate(120%) blur(14px);
-      padding:26px 26px 28px;
-    }
-
-    .title{
-      font-weight:900; font-size:44px; line-height:1.08;
-      text-align:center; margin:6px 0 6px;
-    }
-    .sub{
-      text-align:center; color:var(--muted); font-weight:700; margin:0 0 18px;
-    }
-    .sub a{ color:var(--pink); text-decoration:none; font-weight:900 }
-
-    .divider{
-      height:1px; background:linear-gradient(90deg, transparent, rgba(255,255,255,.18), transparent);
-      margin:14px 0 18px;
-    }
-
-    form{ display:grid; gap:12px; }
-    .label{ font-weight:800; font-size:14px; color:#eee }
-    .input{
-      width:100%; padding:16px 16px; border-radius:16px;
-      border:1px solid rgba(255,255,255,.25); background:rgba(255,255,255,.06);
-      color:#fff; font-size:16px;
-    }
-    .input::placeholder{ color:#d5d2db }
-
-    .cta{
-      background:linear-gradient(90deg, var(--btn1), var(--btn2));
-      border:none; color:#fff; font-weight:900; border-radius:16px; padding:16px; cursor:pointer;
-      box-shadow:0 18px 48px rgba(255,72,196,.28); font-size:16px;
-    }
-    .cta:active{ transform:translateY(1px) }
-
-    .msg{
-      margin-top:8px; font-size:14px; font-weight:700; text-align:center;
-      display:none;
-    }
-    .msg[aria-hidden="false"]{ display:block }
-    .msg.error{ color:#ffd1d1 }
-    .msg.ok{ color:#c0ffd9 }
-
-    @media (max-width:520px){
-      .title{ font-size:34px }
-    }
-  </style>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
 </head>
 <body>
-
- <!-- Affiliate loader -->
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-  <div class="bg">
-    <video src="https://charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
-  </div>
-  <div class="grain"></div>
-
-  <div class="wrap">
-    <div class="card">
-      <h1 class="title">Let’s bring your<br/>matches to life…</h1>
-      <p class="sub">
-        We’ve saved <a href="#" tabindex="-1">544 AI girls</a> based on your exact preferences.
-      </p>
-
-      <div class="divider"></div>
-
-      <!-- SIGNUP FORM -->
-      <form id="signup-form" autocomplete="on">
-        <!-- Hidden defaults preserved for compatibility with your backend -->
-        <input type="hidden" name="gender" id="gender" value="man"/>
-        <input type="hidden" name="lookingFor" id="lookingFor" value="woman"/>
-        <input type="hidden" name="phone" id="phone" value=""/>
-
-        <input class="input" type="email" id="email" name="email" placeholder="Email" required autocomplete="email"/>
-        <input class="input" type="password" id="password" name="password" placeholder="Password" required autocomplete="new-password"/>
-
-        <button id="submitBtn" type="submit" class="cta">UNLOCK MY MATCHES</button>
-        <div id="msg" class="msg" aria-hidden="true"></div>
-      </form>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand"><span class="logo">💎</span><span>Charmr.xyz</span></div><div></div>
     </div>
+
+    <section id="signup">
+      <div class="hero-wrap">
+        <h1 class="hero-title">Let’s bring your matches to life…</h1>
+        <p class="hero-sub">Enter your email to unlock them and start your journey.</p>
+        <div class="hero-video">
+          <video src="https://www.charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="title">Create your account</h2>
+        <p class="subtitle">We’ve saved <span class="pink">700 AI girls</span> based on your exact preferences.</p>
+        <form id="signup-form">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@email.com" />
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required placeholder="Create a password" />
+          <button type="submit" class="btn full">Unlock My Matches</button>
+        </form>
+        <p class="hint">Already have an account? <a href="login.html" style="color:#ffd159;text-decoration:none;">Log in here</a></p>
+      </div>
+    </section>
   </div>
 
-  <!-- Inline register logic: on success go straight to sdesign.html -->
   <script>
-    (function () {
-      const form = document.getElementById('signup-form');
-      const btn  = document.getElementById('submitBtn');
-      const msg  = document.getElementById('msg');
-
-      function showMessage(text, ok=false){
-        msg.textContent = text || '';
-        msg.className = 'msg ' + (ok ? 'ok' : 'error');
-        msg.setAttribute('aria-hidden', text ? 'false' : 'true');
-      }
-
-      form.addEventListener('submit', async (ev) => {
-        ev.preventDefault();
-
-        const email = (document.getElementById('email').value || '').trim();
-        const password = document.getElementById('password').value;
-
-        if (!email || !password) {
-          showMessage('Please enter your email and password.', false);
-          return;
-        }
-
-        btn.disabled = true;
-        showMessage('Creating your account…', true);
-
-        try {
-          const res = await fetch('/api/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
-          });
-
-          const data = await res.json().catch(() => ({}));
-
-          if (!res.ok) {
-            showMessage(data?.error || 'Registration failed. Please try again.');
-            btn.disabled = false;
-            return;
-          }
-
-          // Store token if provided
-          try {
-            if (data.token) localStorage.setItem('token', data.token);
-            // Some parts of your app may still look for this key name:
-            if (data.token) localStorage.setItem('authToken', data.token);
-          } catch {}
-
-          // Optional: fire the same event your old pages used
-          try { document.dispatchEvent(new CustomEvent('signupSuccess', { detail: data })); } catch {}
-
-          // Redirect straight to sdesign.html (no login hop)
-          window.location.replace('sdesign.html');
-
-        } catch (err) {
-          console.error(err);
-          showMessage('Registration failed. Please try again.');
-          btn.disabled = false;
-        }
-      }, { capture: true }); // run before any late-bound handlers (just in case)
-    })();
+    // Submit -> register (best-effort) -> go to quiz.html
+    document.getElementById('signup-form').addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const email=(document.getElementById('email').value||'').trim();
+      const password=document.getElementById('password').value;
+      if(!email||!password){ alert('Please enter your email and password.'); return; }
+      try{
+        const res=await fetch('/api/register',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({email,password})
+        });
+        const data=await res.json().catch(()=>({}));
+        if(res.ok && data?.token){ try{ localStorage.setItem('token',data.token);}catch{} }
+      }catch(e){ /* continue regardless */ }
+      window.location.href='quiz-black.html';
+    });
   </script>
+
+  <!-- GoAffPro -->
+  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </body>
 </html>
