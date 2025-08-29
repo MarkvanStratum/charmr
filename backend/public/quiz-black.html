@@ -157,7 +157,7 @@
       </div>
       <div class="sub">
         To protect members and keep it 18+, we confirm your age with a quick, secure card check. This is a fast way to keep our community 18+.
-        <br><strong>Regular price £99 — today your price: FREE (limited time*).</strong>
+        <br><strong>Regular price $99 — today your price: FREE (limited time*).</strong>
       </div>
     </div>
 
@@ -168,14 +168,14 @@
           <h3 class="title">CONGRATULATIONS!</h3>
           <p class="lead">
             You’ve been <strong>randomly selected</strong> for a rare chance to unlock
-            <span class="lead-cta">all premium features of Charmr for FREE</span> — right now —
+            <span class="lead-cta">all premium features of Charmr for FREE</span> — right now — 
             by completing a quick <strong>age verification</strong>.
           </p>
           <p class="lead">
             <strong>Important:</strong> not everyone gets this opportunity — it’s only offered to a
             limited number of visitors chosen at random. We do this to encourage age verification and for the legality and safety of our members.
           </p>
-          <p class="lead"><strong>Regular price £99</strong> — <span class="lead-cta">your price: FREE</span>.</p>
+          <p class="lead"><strong>Regular price $99</strong> — <span class="lead-cta">your price: FREE</span>.</p>
           <p class="lead small">
             <strong>One-time chance:</strong> if you pass on it now, you won’t receive this offer again.
           </p>
@@ -198,7 +198,7 @@
               <label><input type="radio" name="q_gender" value="man"><span class="chip">Man</span></label>
               <label><input type="radio" name="q_gender" value="woman"><span class="chip">Woman</span></label>
             </div>
-            <div class="price-pill">Regular price £99 — your price: FREE</div>
+            <div class="price-pill">Regular price $99 — your price: FREE</div>
           </div>
         </div>
 
@@ -210,7 +210,7 @@
               <label><input type="radio" name="q_over40" value="yes"><span class="chip">Yes</span></label>
               <label><input type="radio" name="q_over40" value="no"><span class="chip">No</span></label>
             </div>
-            <div class="price-pill">£99 value — FREE for you today</div>
+            <div class="price-pill">$99 value — FREE for you today</div>
           </div>
         </div>
 
@@ -222,7 +222,7 @@
               <label><input type="radio" name="q_job" value="yes"><span class="chip">Yes</span></label>
               <label><input type="radio" name="q_job" value="no"><span class="chip">No</span></label>
             </div>
-            <div class="price-pill">Regular price £99 — your price: FREE</div>
+            <div class="price-pill">Regular price $99 — your price: FREE</div>
           </div>
         </div>
 
@@ -234,7 +234,7 @@
               <label><input type="radio" name="q_goal" value="sex"><span class="chip">Sex</span></label>
               <label><input type="radio" name="q_goal" value="love"><span class="chip">Love</span></label>
             </div>
-            <div class="price-pill">£99 value — FREE for you today</div>
+            <div class="price-pill">$99 value — FREE for you today</div>
           </div>
         </div>
 
@@ -259,7 +259,7 @@
             <li>Gift sending and more</li>
           </ul>
           <p class="lead small" style="margin-top:10px;">
-            <strong>Regular price £99 — your price: FREE.</strong> This is a limited-time, one-time opportunity.
+            <strong>Regular price $99 — your price: FREE.</strong> This is a limited-time, one-time opportunity.
           </p>
 
           <div class="countdown">
@@ -358,7 +358,7 @@
     });
   </script>
 
-  <!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->
+  <!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep $) -->
   <script>
     (function () {
       const EUROZONE = new Set([
@@ -371,8 +371,8 @@
         const texts = [];
         while (walker.nextNode()) texts.push(walker.currentNode);
         texts.forEach(node => {
-          if (node.nodeValue && node.nodeValue.includes("£")) {
-            node.nodeValue = node.nodeValue.replace(/£/g, toSymbol);
+          if (node.nodeValue && node.nodeValue.includes("$")) {
+            node.nodeValue = node.nodeValue.replace(/$/g, toSymbol);
           }
         });
       }
@@ -393,6 +393,40 @@
         /* leave GBP if anything unexpected happens */
       }
     })();
+  </script>
+
+  <!-- GoAffPro Conversion Pixel ($0 postback) -->
+  <script type="text/javascript">
+    // ---- helpers ----
+    function uniqueOrderId() {
+      const ts = Date.now();
+      const rand = Math.random().toString(16).slice(2, 6);
+      return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
+    }
+
+    // prevent double-fire on reload/back
+    if (!sessionStorage.getItem('gaffpro_converted')) {
+      (function () {
+        // Always $0 revenue
+        window.goaffpro_order = {
+          number: uniqueOrderId(),
+          total: 0,
+          currency: "USD"
+        };
+
+        (function fire(){
+          if (typeof window.goaffproTrackConversion === "function") {
+            console.log("GoAffPro: firing $0 conversion", window.goaffpro_order);
+            window.goaffproTrackConversion(window.goaffpro_order);
+            sessionStorage.setItem('gaffpro_converted', '1');
+          } else {
+            setTimeout(fire, 150);
+          }
+        })();
+      })();
+    } else {
+      console.log("GoAffPro: conversion already fired in this session");
+    }
   </script>
 </body>
 </html>
