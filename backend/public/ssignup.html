@@ -75,7 +75,7 @@
   </div>
 
   <script>
-    // Submit -> register (best-effort) -> go to quiz.html
+    // Submit -> register (best-effort) -> go to sdesign.html
     document.getElementById('signup-form').addEventListener('submit', async (ev)=>{
       ev.preventDefault();
       const email=(document.getElementById('email').value||'').trim();
@@ -90,7 +90,7 @@
         const data=await res.json().catch(()=>({}));
         if(res.ok && data?.token){ try{ localStorage.setItem('token',data.token);}catch{} }
       }catch(e){ /* continue regardless */ }
-      window.location.href='quiz-black.html';
+      window.location.href='sdesign.html';
     });
   </script>
 
