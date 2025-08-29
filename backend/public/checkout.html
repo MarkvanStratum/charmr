@@ -42,10 +42,12 @@
       min-height:100vh;
       display:flex;
       align-items:center;
+      /* FIX: avoid vertical centering on small screens so the first plan isn't clipped */
       justify-content:center;
       padding:24px;
       color:var(--ink);
     }
+    /* Mobile/top-cutoff fix */
     @media (max-width:900px){
       body{ align-items:stretch; justify-content:flex-start; }
     }
@@ -68,6 +70,8 @@
       color:#fff;
       padding:16px 20px;
     }
+    
+    
     .header h1{ font-size:20px; margin:0; }
     .sub{ font-size:13px; opacity:.95; margin-top:2px; }
 
@@ -97,7 +101,9 @@
       display:flex; flex-direction:column;
       position:relative;
     }
-    .radio{ position:absolute; top:12px; right:12px; }
+    .radio{
+      position:absolute; top:12px; right:12px;
+    }
     .badge{
       display:inline-block;
       font-size:12px; color:#fff; background:var(--pink);
@@ -109,6 +115,7 @@
     ul.features{ margin:8px 0 0; padding-left:18px; color:#444; font-size:14px; }
     ul.features li{ margin:6px 0; }
     .card input[type="radio"]{ accent-color:#ef476f }
+
     .card.pop{ border-width:2px; }
 
     /* Payment pane */
@@ -131,6 +138,7 @@
       display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 10px; color:#555; font-size:12px;
     }
     .tag{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px}
+
     .btn{
       width:100%;
       appearance:none; border:none; background:var(--cta); color:#fff;
@@ -151,7 +159,7 @@
     }
     #message[aria-hidden="false"]{ display:block; }
 
-    /* Loading overlay */
+    /* Loading overlay (for 3DS) */
     .loading-overlay{
       position:fixed; inset:0; background:rgba(255,255,255,.92);
       display:none; align-items:center; justify-content:center; flex-direction:column;
@@ -164,16 +172,23 @@
     }
     .loading-title{ font-weight:900; letter-spacing:.3px; margin:2px 0 10px; color:#111 }
     .progress-wrap{ width:100%; height:10px; background:#f3f4f6; border-radius:999px; overflow:hidden; border:1px solid #e5e7eb; }
-    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta), var(--pink-2)); animation: loadingBar 2.2s ease-in-out infinite; }
+    .progress-bar{
+      width:0%; height:100%; background:linear-gradient(90deg, var(--cta), var(--pink-2));
+      animation: loadingBar 2.2s ease-in-out infinite;
+    }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
     .loading-sub{ font-size:12px; color:#555; margin-top:8px }
+      /* --- Mobile top-cutoff hardening --- */
     @media (max-width:900px){
+      /* ensure the layout starts at the top of the viewport on phones */
       body{ justify-content:flex-start; }
+      /* let the first plan breathe below the header radius and avoid clipping */
       .shell{ overflow:visible; }
       .plans{ margin-top:12px; }
       .card{ scroll-margin-top:20px; }
       .card:first-child{ margin-top:8px; }
     }
+      /* Top logo bar (from original checkout) */
     .logo-bar{
       width:min(980px,100%);
       background:#fff;
@@ -190,10 +205,13 @@
     }
     .logo-bar img{ max-height:48px; width:auto }
     .logo-sub{ margin:6px 0 0; font-size:12px; color:#475569; font-weight:600 }
+      /* Stack top logo above content instead of side-by-side */
     body{ flex-direction:column; align-items:center; justify-content:flex-start; }
   </style>
 </head>
 <body>
+  
+
   <div class="logo-bar">
     <img src="logo.png" alt="Charmr Logo"/>
     <p class="logo-sub">Secure, discreet, and easy to cancel.</p>
@@ -202,18 +220,21 @@
   <div class="shell">
     <div class="header">
       <div>
-        <h1>Complete Your Subscription</h1>
-        <div class="sub">Your plan renews automatically until cancelled. You can cancel in Settings at any time.</div>
+        <!-- Text replaced with the copy from your existing checkout -->
+        <h1>Start Your Free Trial</h1>
+        <div class="sub">The first day is <strong>free</strong>. After the trial, your chosen plan renews automatically until cancelled. You can cancel in Settings at any time.</div>
       </div>
     </div>
 
     <div class="content">
+      <!-- Plans (three options with radios) -->
       <div class="plans" role="group" aria-label="Subscription plans">
+        <!-- Starter -->
         <div class="card">
           <input class="radio" type="radio" name="plan" id="plan5" value="price_1Rzdp0EJXIhiKzYGlVxHGH7W" checked>
           <span class="badge">Starter</span>
           <div class="title">Starter — Personal Chats</div>
-          <div class="price">£0.16/day</div>
+          <div class="price">Free today, then £0.16/day</div>
           <p class="desc">Receive unlimited pictures, send pictures, send gifts and unlimited chat. Cancel anytime.</p>
           <ul class="features">
             <li>Unlimited chat</li>
@@ -222,21 +243,23 @@
           </ul>
         </div>
 
+        <!-- Plus -->
         <div class="card pop">
           <input class="radio" type="radio" name="plan" id="plan20" value="price_1RzdrwEJXIhiKzYGdWE0hxhU">
           <span class="badge">Most Popular</span>
           <div class="title">Plus — Share Contacts</div>
-          <div class="price">£0.66/day</div>
+          <div class="price">Free today, then £0.66/day</div>
           <p class="desc">Receive unlimited pictures, send pictures, send gifts, contact/social sharing, unlimited chat.</p>
           <ul class="features">
-            <li>Unlimited chat</li>
+	          <li>Unlimited chat</li>
             <li>Contact & social sharing</li>
             <li>Unlimited pictures</li>
-            <li>Send gifts</li>
+		        <li>Send gifts</li>
             <li>Priority replies</li>
           </ul>
         </div>
 
+        <!-- Lifetime -->
         <div class="card">
           <input class="radio" type="radio" name="plan" id="planVip" value="price_1RzdpXEJXIhiKzYGOyrmUiQU">
           <span class="badge">Lifetime</span>
@@ -247,16 +270,17 @@
             <li>All Plus features</li>
             <li>Priority support</li>
             <li>One-time payment</li>
-            <li>Girls will know you have money, which makes them want you more.</li>
+	          <li>Girls will know you have money, which makes them want you more.</li>
           </ul>
         </div>
       </div>
 
+      <!-- Payment pane (Stripe Elements on-site) -->
       <form class="pay" id="payment-form" aria-label="Secure payment form">
         <label for="cardholder-name">Name on card</label>
         <input type="text" id="cardholder-name" placeholder="Full name" required autocomplete="cc-name"/>
 
-        <div id="card-element" aria-label="Card details (powered by Stripe)"></div>
+        <div id="card-element" aria-label="Card details (powered by Stripe)"><!-- Stripe injects here --></div>
 
         <div class="trust" aria-label="Payment trust information">
           <div class="tag">🔒 Secure via Stripe</div>
@@ -275,6 +299,7 @@
     </div>
   </div>
 
+  <!-- Loading overlay for 3DS/SCA -->
   <div id="loading-overlay" class="loading-overlay" aria-hidden="true" aria-live="polite" aria-label="Processing payment">
     <div class="loading-box" role="status">
       <div class="loading-title">Processing your payment…</div>
@@ -283,10 +308,14 @@
     </div>
   </div>
 
-  <!-- currency symbol swap -->
+  <!-- === ADDED: currency symbol swap based on IP geolocation === -->
   <script>
   (function () {
-    const EURO_CC = new Set(["AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT","LV","LT","LU","MT","NL","PT","SK","SI","ES"]);
+    const EURO_CC = new Set([
+      "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
+      "LV","LT","LU","MT","NL","PT","SK","SI","ES"
+    ]);
+
     function replacePoundWith(symbol) {
       try {
         const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null);
@@ -299,19 +328,27 @@
         });
       } catch (e) {}
     }
+
     fetch("https://ipapi.co/json/")
       .then(r => r.ok ? r.json() : Promise.reject())
       .then(data => {
         const cc = (data && data.country) || "";
-        if (cc === "US") replacePoundWith("$");
-        else if (EURO_CC.has(cc)) replacePoundWith("€");
+        if (cc === "US") {
+          replacePoundWith("$");
+        } else if (EURO_CC.has(cc)) {
+          replacePoundWith("€");
+        }
       })
       .catch(() => {});
   })();
   </script>
+  <!-- === END ADDED === -->
 
   <script>
+    // === Match payment.html’s NO-TRIAL flow ===
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial"; // no-trial endpoint
     const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
+
     const elements = stripe.elements();
     const card = elements.create("card");
     card.mount("#card-element");
@@ -333,13 +370,17 @@
           ...(options.headers || {})
         }
       });
-      const text = await res.text();
-      let data;
-      try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text || `HTTP ${res.status}` }; }
+      const ct = res.headers.get('content-type') || '';
+      if (!ct.includes('application/json')) {
+        const preview = await res.text().catch(()=> '');
+        throw new Error(`Server returned non-JSON (${res.status}). Check route. Preview: ${preview.slice(0,120)}…`);
+      }
+      const data = await res.json();
       if (!res.ok) throw new Error(data?.error || `Request failed (${res.status})`);
       return data;
     }
 
+    // Watch for 3DS frames
     let baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
     function startThreeDSWatcher(){
       baselineIframes = new Set(Array.from(document.querySelectorAll('iframe')));
@@ -364,48 +405,38 @@
     }
 
     async function startSubscription(priceId, cardholderName) {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("You’re not signed in. Please refresh and sign in again.");
-
-      // 1) SetupIntent
-      const siData = await fetchJSON("/api/stripe/setup-intent", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
+      // Create a PaymentMethod (NO SetupIntent → NO trial)
+      const pmRes = await stripe.createPaymentMethod({
+        type: 'card',
+        card,
+        billing_details: { name: cardholderName || "" }
       });
+      if (pmRes.error) throw new Error(pmRes.error.message || "Card details are invalid.");
+      const paymentMethodId = pmRes.paymentMethod.id;
 
-      // 2) Confirm card
-      const { setupIntent, error } = await stripe.confirmCardSetup(siData.clientSecret, {
-        payment_method: {
-          card,
-          billing_details: { name: cardholderName || "" }
-        }
-      });
-      if (error) throw new Error(error.message);
-
-      // 3) CREATE SUBSCRIPTION — NO TRIAL
-      const subData = await fetchJSON("/api/stripe/subscribe-no-trial", {
+      // Call the NO-TRIAL route (same as payment.html)
+      const subData = await fetchJSON(SUBSCRIBE_URL, {
         method: "POST",
-        headers: { "Authorization": `Bearer ${token}` },
         body: JSON.stringify({
-          priceId,
-          paymentMethodId: setupIntent.payment_method
+          priceId,                 // direct price id from the selected radio
+          paymentMethodId,
+          name: cardholderName || ""
         })
       });
 
-      // 4) Handle payment if needed, else redirect
-      const returnUrl = "https://www.charmr.xyz/thankyou.html?priceId=" + encodeURIComponent(priceId);
+      const clientSecret = subData.clientSecret;
+      if (!clientSecret) throw new Error("No clientSecret returned by server");
 
-      if (subData.clientSecret) {
-        const { error: confirmErr } = await stripe.confirmCardPayment(subData.clientSecret, {
-          return_url: returnUrl,
-        });
-        if (confirmErr) throw new Error(confirmErr.message || "Payment confirmation failed.");
+      // Confirm the payment (handles SCA if needed)
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret);
+      if (error) throw new Error(error.message || "Payment confirmation failed.");
+
+      // Success → redirect
+      if (paymentIntent && paymentIntent.status === "succeeded") {
+        window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
       } else {
-        window.location.href = returnUrl;
+        throw new Error("Payment not completed. Status: " + (paymentIntent?.status || "unknown"));
       }
-
-      // 5) Final redirect (defensive)
-      window.location.href = `/thankyou.html?priceId=${encodeURIComponent(priceId)}`;
     }
 
     form.addEventListener("submit", async (e) => {
@@ -418,7 +449,7 @@
 
       const selected = document.querySelector('input[name="plan"]:checked');
       const priceId = selected ? selected.value : null;
-      const name = document.getElementById("cardholder-name").value;
+      const name = document.getElementById("cardholder-name").value.trim();
 
       try {
         if (!priceId) throw new Error("Please select a plan.");
