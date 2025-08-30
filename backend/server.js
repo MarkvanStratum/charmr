@@ -414,8 +414,11 @@ app.post("/api/register", async (req, res) => {
   [email, hashedPassword, gender, lookingFor, phone]
 );
 
-await sendWelcomeEmail(email);
-
+// 🔸 Fire-and-forget welcome email; DO NOT block signup
+(async () => {
+  try { await sendWelcomeEmail(email); }
+  catch (e) { console.warn("Welcome email failed (non-blocking):", e?.message || e); }
+})();
 
 // Get the new user's ID
 const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
@@ -426,13 +429,14 @@ const token = jwt.sign(
   { expiresIn: "7d" }
 );
 
+// Non-blocking Brevo sync
 upsertBrevoContact({
   email,
   attributes: { SOURCE: 'signup' } // optional, helps segmenting in Brevo
-});
+}).catch(e => console.warn("Brevo contact upsert failed:", e?.message || e));
 
-res.json({ token });
-
+// 🔸 Redirect to login page after successful registration
+return res.status(201).json({ ok: true, redirect: "/login.html" });
 
   } catch (err) {
     console.error("Register error:", err);
@@ -457,8 +461,8 @@ app.post("/api/request-password-reset", async (req, res) => {
       [resetToken, expires, email]
     );
 
-    const resetLink = `https://charmr.xyz/reset-password.html?token=${resetToken}`;
-    await sendPasswordResetEmail(email, resetLink);
+    // Pass TOKEN to mailer (it will construct the link)
+    await sendPasswordResetEmail(email, resetToken);
 
     res.json({ message: "Reset link sent if the email is registered." });
   } catch (err) {
