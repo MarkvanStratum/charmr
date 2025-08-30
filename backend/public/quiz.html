@@ -143,7 +143,7 @@
       <div class="sub">
         To protect members and keep it 18+, we confirm your age with a quick,
         secure card check. This is a fast way to keep our community 18+.
-        <br><strong>Regular price £99 — today your price: FREE (limited time*).</strong>
+        <br><strong>Regular price $99 — today your price: $2.50 (limited time*).</strong>
       </div>
     </div>
 
@@ -155,14 +155,13 @@
           <h3 class="title">CONGRATULATIONS!</h3>
           <p class="lead">
             You’ve been <strong>randomly selected</strong> for a rare chance to unlock
-            <span class="lead-cta">all premium features of Charmr for FREE</span> — right now —
-            by completing a quick <strong>age verification</strong>.
+            <span class="lead-cta">all premium features of Charmr at a 97.5% discount!</span>
           </p>
           <p class="lead">
             <strong>Important:</strong> not everyone gets this opportunity — it’s only offered to a
             limited number of visitors chosen at random. We do this to encourage age verification and for the legality and safety of our members.
           </p>
-          <p class="lead"><strong>Regular price £99</strong> — <span class="lead-cta">your price: FREE</span>.</p>
+          <p class="lead"><strong>Regular price $99</strong> — <span class="lead-cta">your price: $2.50</span>.</p>
           <p class="lead small">
             <strong>One-time chance:</strong> if you pass on it now, you won’t receive this offer again.
           </p>
@@ -245,7 +244,7 @@
             <li>Gift sending and more</li>
           </ul>
           <p class="lead small" style="margin-top:10px;">
-            <strong>Regular price £99 — your price: FREE.</strong> This is a limited-time, one-time opportunity.
+            <strong>Regular price $99 — your price: $2.50.</strong> This is a limited-time, one-time opportunity.
           </p>
 
           <div class="countdown">
@@ -345,41 +344,51 @@
     });
   </script>
 
-  <!-- Currency symbol swap (US → $, Eurozone → €, otherwise keep £) -->
+  <!-- Currency symbol swap ($ / £ / € based on IP) -->
   <script>
     (function () {
-      // ISO country codes for eurozone members
       const EUROZONE = new Set([
         "AT","BE","HR","CY","EE","FI","FR","DE","GR","IE","IT",
         "LV","LT","LU","MT","NL","PT","SK","SI","ES"
       ]);
 
-      function replacePoundSymbols(root, toSymbol) {
+      function symbolFor(cc) {
+        if (cc === "US") return "$";
+        if (cc === "GB" || cc === "UK") return "£";
+        if (EUROZONE.has(cc)) return "€";
+        return "£"; // default stays as written content (pounds)
+      }
+
+      function swapCurrencySymbols(root, toSymbol) {
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
-        const texts = [];
-        while (walker.nextNode()) texts.push(walker.currentNode);
-        texts.forEach(node => {
-          if (node.nodeValue && node.nodeValue.includes("£")) {
-            node.nodeValue = node.nodeValue.replace(/£/g, toSymbol);
-          }
+        const nodes = [];
+        while (walker.nextNode()) nodes.push(walker.currentNode);
+        nodes.forEach(node => {
+          if (!node.nodeValue) return;
+          // Replace any existing currency symbol with the chosen one
+          node.nodeValue = node.nodeValue.replace(/[$£€]/g, toSymbol);
         });
       }
 
-      try {
-        fetch("https://ipapi.co/country/")
-          .then(r => r.ok ? r.text() : Promise.reject())
-          .then(cc => {
-            cc = (cc || "").trim().toUpperCase();
-            if (cc === "US") {
-              replacePoundSymbols(document.body, "$");
-            } else if (EUROZONE.has(cc)) {
-              replacePoundSymbols(document.body, "€");
-            }
-          })
-          .catch(() => { /* leave GBP on failure */ });
-      } catch (_) {
-        /* leave GBP if anything unexpected happens */
+      function applyFor(countryCode) {
+        const sym = symbolFor(countryCode);
+        swapCurrencySymbols(document.body, sym);
       }
+
+      // Try IP first
+      fetch("https://ipapi.co/json/")
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => applyFor(((data && (data.country || data.country_code)) || "GB").toUpperCase()))
+        .catch(() => {
+          // Fallback to locale-based inference
+          try {
+            const loc = (Intl.DateTimeFormat().resolvedOptions().locale || "en-GB");
+            const cc = (loc.split("-")[1] || "GB").toUpperCase();
+            applyFor(cc);
+          } catch {
+            // If all else fails, leave as-is (GBP written content)
+          }
+        });
     })();
   </script>
 </body>
