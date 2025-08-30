@@ -3542,14 +3542,15 @@ app.options('/api/stripe/subscribe-notrial', cors());
 // Returns: { clientSecret, subscriptionId, status }
 app.post('/api/stripe/subscribe-notrial', async (req, res) => {
   try {
-    const { priceId, paymentMethodId, email } = req.body || {};
+    const { priceId, paymentMethodId, email, name } = req.body || {};
     if (!priceId) return res.status(400).json({ error: 'Missing priceId' });
     if (!paymentMethodId) return res.status(400).json({ error: 'Missing paymentMethodId' });
 
-    // 1) Create a customer (simple create; you can dedupe by email later if you like)
+     // 1) Create a customer (store email and, if provided, name)
     const customer = await stripe.customers.create({
       email: email || undefined,
-    });
+     name:  (name && name.trim()) || undefined
+   });
 
     // 2) Attach PM and set default
     await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
