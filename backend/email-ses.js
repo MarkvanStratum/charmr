@@ -5,7 +5,9 @@ const ses = new SESClient({ region: process.env.AWS_REGION || "eu-west-1" });
 const FROM = process.env.SES_FROM || "no-reply@charmr.xyz";
 
 function sanitizeHtml(str = "") {
-  return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  return String(str).replace(/[&<>"']/g, m =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m])
+  );
 }
 
 export async function sendRawEmail({ to, subject, html }) {
@@ -32,7 +34,9 @@ export async function sendWelcomeEmail(toEmail, toName = "there") {
   });
 }
 
-export async function sendPasswordResetEmail(toEmail, resetLink) {
+// 🔹 FIXED: now expects (toEmail, resetToken) to match server.js
+export async function sendPasswordResetEmail(toEmail, resetToken) {
+  const resetLink = `https://charmr.xyz/reset-password.html?token=${encodeURIComponent(resetToken)}`;
   return sendRawEmail({
     to: toEmail,
     subject: "Reset Your Charmr Password",
