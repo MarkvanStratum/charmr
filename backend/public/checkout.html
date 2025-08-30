@@ -232,7 +232,7 @@
 
   document.getElementById('continueBtn').addEventListener('click',()=>{
     const chosen=planData.find(p=>p.key===selectedKey);
-    if(chosen.key==='free'){window.location.href='verification-black.html';}
+    if(chosen.key==='free'){window.location.href='verification.html';}
     else{window.location.href='payment.html';}
   });
   document.getElementById('maybeLater').addEventListener('click',()=>window.location.href='profiles.html');
