@@ -86,7 +86,7 @@
 </head>
 <body>
 
-<!-- GoAffPro loader (must be present early on the page) -->
+<!-- GoAffPro loader (keep this so the next page can track) -->
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
 <div class="app">
@@ -135,9 +135,9 @@
   function pickCurrencyByRegion(country){
     if(!country) return '$';
     country = String(country).toUpperCase();
-    const USD_SET = new Set(['US','CA','AU','NZ']);
     const EU_SET  = new Set(['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE']);
-    if (USD_SET.has(country)) return '$';
+    if (country === 'US') return '$';
+    if (country === 'GB' || country === 'UK') return '£';
     if (EU_SET.has(country)) return '€';
     return '$';
   }
@@ -166,14 +166,14 @@
       const [dollars, cents] = perDayStr.replace(CURRENCY,'').split('.');
 
       const row=document.createElement('div');
-      row.className='plan'+(p.key===selectedKey?' selected':'');
+      row.className='plan'+(p.key===selectedKey?' selected':'' );
       row.dataset.plan=p.key;
 
       let leftHTML='';
       if(p.key==='free'){
         leftHTML=`
-          <div class="pname"><span class="free-badge">FREE</span></div>
-          <div class="micro free-sub">for 1 day</div>
+          <div class="pname"><span class="free-badge">BEST VALUE</span></div>
+          <div class="micro free-sub">Lifetime access!</div>
           <div class="verify-badge">AFTER AGE VERIFICATION</div>
         `;
       }else{
@@ -185,14 +185,33 @@
         `;
       }
 
-      row.innerHTML=`
-        <div class="sel">✓</div>
-        <div class="left">${leftHTML}</div>
-        <div class="right" style="text-align:right">
+      /* RIGHT SIDE:
+         - FREE plan shows fixed "2.50 Lifetime!" using active currency symbol
+         - Other plans show computed per-day price
+      */
+      let rightHTML='';
+      if(p.key==='free'){
+        const freeD = '2', freeC = '50';
+        rightHTML = `
+          <div class="pprice">
+            <span>${CURRENCY}<span class="big-zero">${freeD}</span><span class="small-cents">.${freeC}</span></span>
+            <span class="perday-label">Lifetime!</span>
+          </div>
+        `;
+      } else {
+        rightHTML = `
           <div class="pprice">
             <span>${CURRENCY}<span class="big-zero">${dollars||'0'}</span><span class="small-cents">.${cents||'00'}</span></span>
             <span class="perday-label">per day</span>
           </div>
+        `;
+      }
+
+      row.innerHTML=`
+        <div class="sel">✓</div>
+        <div class="left">${leftHTML}</div>
+        <div class="right" style="text-align:right">
+          ${rightHTML}
         </div>
       `;
       row.onclick=()=>{selectedKey=p.key;renderPlans();syncPerDayBadge();};
@@ -204,8 +223,9 @@
   function syncPerDayBadge(){
     const chosen=planData.find(p=>p.key===selectedKey)||planData[0];
     const perDay=(chosen.totalPrice||0)/(chosen.days||1);
-    document.getElementById('perDayBadge').textContent=
-      chosen.key==='free'?'Free today':'Only '+formatMoney(perDay)+'/day';
+    // When the $2.50 plan (key 'free') is selected, show "2.50 Lifetime!"
+    document.getElementById('perDayBadge').textContent =
+      chosen.key==='free' ? (formatMoney(2.50) + ' Lifetime!') : ('Only ' + formatMoney(perDay) + '/day');
   }
 
   document.getElementById('continueBtn').addEventListener('click',()=>{
@@ -215,25 +235,13 @@
   });
   document.getElementById('maybeLater').addEventListener('click',()=>window.location.href='profiles.html');
 
-  (async function init(){const cc=await detectCountryCode();CURRENCY=pickCurrencyByRegion(cc);renderPlans();syncPerDayBadge();})();
+  (async function init(){
+    const cc=await detectCountryCode();
+    CURRENCY=pickCurrencyByRegion(cc);
+    renderPlans();
+    syncPerDayBadge();
+  })();
 </script>
-
-
-      (function tryFire(){
-        if (typeof window.goaffproTrackConversion === "function") {
-          console.log("GoAffPro: firing $0 conversion", window.goaffpro_order);
-          window.goaffproTrackConversion(window.goaffpro_order);
-          sessionStorage.setItem('gaffpro_converted', '1');
-        } else {
-          setTimeout(tryFire, 150);
-        }
-      })();
-    })();
-  } else {
-    console.log("GoAffPro: conversion already fired in this session");
-  }
-</script>
-<!-- ================================================================================ -->
 
 </body>
 </html>
