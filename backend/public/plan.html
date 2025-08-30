@@ -218,24 +218,6 @@
   (async function init(){const cc=await detectCountryCode();CURRENCY=pickCurrencyByRegion(cc);renderPlans();syncPerDayBadge();})();
 </script>
 
-<!-- ====================== GoAffPro conversion pixel (POST BACK $0) ====================== -->
-<script>
-  // Simple unique order id
-  function uniqueOrderId() {
-    const ts = Date.now();
-    const rand = Math.random().toString(16).slice(2, 6);
-    return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
-  }
-
-  // Prevent duplicate fires in-session
-  if (!sessionStorage.getItem('gaffpro_converted')) {
-    (function fireGoAffProZero(){
-      // Set total to 0 to post back $0 revenue
-      window.goaffpro_order = {
-        number: uniqueOrderId(),
-        total: 0,
-        currency: "USD"
-      };
 
       (function tryFire(){
         if (typeof window.goaffproTrackConversion === "function") {
