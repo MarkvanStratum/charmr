@@ -120,6 +120,9 @@
             <!-- New: Cardholder name -->
             <div class="label">Name on card</div>
             <input class="input" id="nameInput" placeholder="Full name" autocomplete="cc-name">
+            <!-- New: Email -->
+            <div class="label">Email</div>
+            <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email">
 
             <div class="label">Card number</div>
             <div id="card-number" class="el"></div>
@@ -203,7 +206,7 @@
     country: guessCountry(),
     currency: 'gbp',
     total: { label: 'Charmr.xyz', amount: amountMinor },
-    requestPayerEmail: false,
+    requestPayerEmail: true,
     requestPayerName: true  // also ask wallet for a name when available
   });
 
@@ -233,7 +236,8 @@
 
   paymentRequest.on('paymentmethod', async (ev) => {
     try {
-      const name = (document.getElementById('nameInput')?.value || '').trim();
+      const name  = (document.getElementById('nameInput')?.value || '').trim() || (ev.payerName || '');
+      const email = (document.getElementById('emailInput')?.value || '').trim() || (ev.payerEmail || '');
 
       const res = await fetch(SUBSCRIBE_URL, {
         method: 'POST',
@@ -241,7 +245,8 @@
         body: JSON.stringify({
           priceId: PRICE_IDS[selectedPlan] || PRICE_IDS.year,
           paymentMethodId: ev.paymentMethod.id,
-          name // forward to backend so it can set Customer/PM name
+          name, // forward to backend so it can set Customer/PM name
+          email
         })
       });
 
@@ -317,11 +322,12 @@
     let pm;
     try{
       const name = (document.getElementById('nameInput')?.value || '').trim();
+      const email = (document.getElementById('emailInput')?.value || '').trim();
 
       const pmRes = await stripe.createPaymentMethod({
         type:'card',
         card: cardNumber,
-        billing_details: { name }
+        billing_details: { name, email }
       });
       if(pmRes.error) throw pmRes.error;
       pm = pmRes.paymentMethod;
@@ -333,6 +339,7 @@
     let clientSecret;
     try{
       const name = (document.getElementById('nameInput')?.value || '').trim();
+      const email = (document.getElementById('emailInput')?.value || '').trim();
 
       const res = await fetch(SUBSCRIBE_URL, {
         method:'POST',
@@ -340,7 +347,8 @@
         body: JSON.stringify({
           priceId: PRICE_IDS[selectedPlan] || PRICE_IDS.year,
           paymentMethodId: pm.id,
-          name
+          name,
+          email
         })
       });
 

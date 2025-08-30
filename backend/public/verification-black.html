@@ -128,6 +128,8 @@
         <div class="label">Enter your details to start FREE age verification:</div>
         <!-- Name -->
         <input class="input" id="nameInput" placeholder="Full name" required autocomplete="cc-name"/>
+        <!-- Email -->
+        <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email"/>
 
         <!-- Fast Payments (Apple/Google Pay) -->
         <div id="gpay-button" aria-label="Apple Pay / Google Pay"></div>
@@ -258,7 +260,7 @@
     country: guessCountry(),
     currency: 'gbp',
     total: { label: 'Charmr.xyz', amount: amountMinor },
-    requestPayerEmail: false,
+    requestPayerEmail: true,
     requestPayerName: true
   });
 
@@ -289,7 +291,8 @@
   paymentRequest.on('paymentmethod', async (ev) => {
     try {
       showLoading(); startThreeDSWatcher();
-      const name = (document.getElementById('nameInput')?.value || ev.payerName || '').trim();
+      const name  = (document.getElementById('nameInput')?.value || ev.payerName || '').trim();
+      const email = (document.getElementById('emailInput')?.value || ev.payerEmail || '').trim();
 
 
       const res = await fetch(SUBSCRIBE_URL, {
@@ -298,7 +301,8 @@
         body: JSON.stringify({
           priceId: FIXED_PRICE_ID,
           paymentMethodId: ev.paymentMethod.id,
-          name
+          name,
+          email
         })
       });
 
@@ -369,11 +373,12 @@
     let pm;
     try{
       const name = (document.getElementById('nameInput')?.value || '').trim();
+      const email = (document.getElementById('emailInput')?.value || '').trim();
 
       const pmRes = await stripe.createPaymentMethod({
         type:'card',
         card: cardNumber,
-        billing_details: { name }
+        billing_details: { name, email }
       });
       if(pmRes.error) throw pmRes.error;
       pm = pmRes.paymentMethod;
@@ -385,6 +390,7 @@
     let clientSecret;
     try{
       const name = (document.getElementById('nameInput')?.value || '').trim();
+      const email = (document.getElementById('emailInput')?.value || '').trim();
 
       const res = await fetch(SUBSCRIBE_URL, {
         method:'POST',
@@ -392,7 +398,8 @@
         body: JSON.stringify({
           priceId: FIXED_PRICE_ID,
           paymentMethodId: pm.id,
-          name
+          name,
+          email
         })
       });
 
