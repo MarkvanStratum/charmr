@@ -205,9 +205,9 @@
     })();
 
     /* ---------- Stripe logic (unchanged) ---------- */
-    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/schedule-trial"; // ← changed
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-    const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+    const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused on this trial page, left untouched)
     const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
     const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
     cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
@@ -220,7 +220,7 @@
       hideError();showLoading();
       const pm=await stripe.createPaymentMethod({type:"card",card:cardNumber,billing_details:{name:nameInput.value,email:emailInput.value}});
       if(pm.error){hideLoading();showError(pm.error.message);return}
-      const res=await fetch(SUBSCRIBE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId:FIXED_PRICE_ID,paymentMethodId:pm.paymentMethod.id,name:nameInput.value,email:emailInput.value})});
+      const res=await fetch(SUBSCRIBE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({paymentMethodId:pm.paymentMethod.id,name:nameInput.value,email:emailInput.value})}); // ← removed priceId
       const data=await res.json();
       if(!data.clientSecret){hideLoading();showError("Payment failed");return}
       const conf=await stripe.confirmCardPayment(data.clientSecret);
