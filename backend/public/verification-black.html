@@ -5,9 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Verification Black</title>
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-<script>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
@@ -30,7 +35,7 @@
 
     /* Video hero (scaled bigger now) */
     .video-wrap{ position:relative; border-radius:18px; overflow:hidden; border:1px solid #eee; background:#000;
-                 max-width:40%; margin:0 auto; }  /* increased to 30% and centered */
+                 max-width:40%; margin:0 auto; }
     .video-wrap video{ width:100%; height:auto; display:block; }
 
     /* Pricing row */
