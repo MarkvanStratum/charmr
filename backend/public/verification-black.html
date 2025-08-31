@@ -3,7 +3,12 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Unlock your girl at a 97% discount!</title>
+  <title>Verification Black</title>
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+<script>
+
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -204,10 +209,10 @@
         });
     })();
 
-    /* ---------- Stripe logic (unchanged) ---------- */
-    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    /* ---------- Stripe logic (trial schedule) ---------- */
+    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/schedule-trial";
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-    const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+
     const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
     const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
     cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
@@ -216,16 +221,42 @@
     function hideError(){$err.textContent="";$err.style.display="none"}
     function showLoading(){overlay.setAttribute("aria-hidden","false")}
     function hideLoading(){overlay.setAttribute("aria-hidden","true")}
+
     document.getElementById("payNow").onclick=async()=>{
       hideError();showLoading();
-      const pm=await stripe.createPaymentMethod({type:"card",card:cardNumber,billing_details:{name:nameInput.value,email:emailInput.value}});
-      if(pm.error){hideLoading();showError(pm.error.message);return}
-      const res=await fetch(SUBSCRIBE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId:FIXED_PRICE_ID,paymentMethodId:pm.paymentMethod.id,name:nameInput.value,email:emailInput.value})});
-      const data=await res.json();
-      if(!data.clientSecret){hideLoading();showError("Payment failed");return}
-      const conf=await stripe.confirmCardPayment(data.clientSecret);
-      if(conf.error){hideLoading();showError(conf.error.message);return}
-      if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){window.location.href="thankyou2.html"}else{hideLoading();showError("Payment not completed")}
+      try{
+        const pm=await stripe.createPaymentMethod({
+          type:"card",
+          card:cardNumber,
+          billing_details:{name:nameInput.value,email:emailInput.value}
+        });
+        if(pm.error){ throw new Error(pm.error.message); }
+
+        const res=await fetch(SUBSCRIBE_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            paymentMethodId: pm.paymentMethod.id,
+            name: nameInput.value,
+            email: emailInput.value
+          })
+        });
+        const data=await res.json();
+        if(!res.ok){ throw new Error(data.error || "Payment failed"); }
+        if(!data.clientSecret){ throw new Error("Payment failed"); }
+
+        const conf=await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error){ throw new Error(conf.error.message); }
+        if(conf.paymentIntent && conf.paymentIntent.status==="succeeded"){
+          window.location.href="thankyou2.html";
+        }else{
+          throw new Error("Payment not completed");
+        }
+      }catch(err){
+        showError(err.message || "Payment failed");
+      }finally{
+        hideLoading();
+      }
     };
   </script>
 </body>
