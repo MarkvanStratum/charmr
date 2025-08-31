@@ -63,6 +63,10 @@ const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 // 🔹 NEW: operator auth key
 const OPERATOR_KEY = process.env.OPERATOR_KEY || "";
 
+// Prices for the 1-day paid trial flow
+const GBP_TRIAL_PRICE_ID   = process.env.STRIPE_TRIAL_PRICE_ID   || "price_1S1vwtEJXIhiKzYGHB3ZIf9v"; // £2.50 per day (GBP)
+const GBP_MONTHLY_PRICE_ID = process.env.STRIPE_MONTHLY_PRICE_ID || "price_1RsdzREJXIhiKzYG45b69nSl"; // £20 per month (GBP)
+
 // 🔹 NEW: uploads setup (serve at /uploads)
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -2722,6 +2726,7 @@ const profiles = [
   "description": "green lights only 💚😘 let’s get a lil cheeky"
 }
   
+
   
 
 ];
@@ -3629,6 +3634,75 @@ app.post('/api/stripe/subscribe-notrial', async (req, res) => {
     });
   } catch (err) {
     console.error('subscribe-notrial error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+// CORS preflight for the trial route
+app.options('/api/stripe/schedule-trial', cors());
+
+/**
+ * POST /api/stripe/schedule-trial
+ * Body: { paymentMethodId, email?, name? }
+ * Creates a Subscription Schedule:
+ *   Phase 1: 1 day at £2.50 (GBP_TRIAL_PRICE_ID)
+ *   Phase 2: £20/month forever (GBP_MONTHLY_PRICE_ID)
+ * Returns: { scheduleId, subscriptionId, status, clientSecret }
+ */
+app.post('/api/stripe/schedule-trial', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name } = (req.body || {});
+    if (!paymentMethodId) return res.status(400).json({ error: 'Missing paymentMethodId' });
+
+    // 1) Create a customer (optional email/name for your records)
+    const customer = await stripe.customers.create({
+      email: email || undefined,
+      name:  (name && name.trim()) || undefined,
+    });
+
+    // 2) Attach the card and set it as default for invoices
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    });
+
+    // 3) Create a schedule that starts NOW:
+    //    - Phase 1: £2.50 per day, 1 iteration (== 1 day)
+    //    - Phase 2: £20 per month, continues indefinitely
+    const schedule = await stripe.subscriptionSchedules.create({
+      customer: customer.id,
+      start_date: 'now',
+      default_settings: {
+        collection_method: 'charge_automatically',
+        default_payment_method: paymentMethodId,
+      },
+      phases: [
+        {
+          items: [{ price: GBP_TRIAL_PRICE_ID }],
+          iterations: 1,                 // 1 x (1 day)
+          proration_behavior: 'none',
+        },
+        {
+          items: [{ price: GBP_MONTHLY_PRICE_ID }],
+          proration_behavior: 'none',
+        },
+      ],
+      // Surface the initial PaymentIntent so the browser can confirm SCA on-page
+      expand: ['subscription.latest_invoice.payment_intent'],
+    });
+
+    const sub    = schedule.subscription;
+    const latest = sub && sub.latest_invoice;
+    const pi     = (latest && typeof latest.payment_intent !== 'string') ? latest.payment_intent : null;
+
+    res.json({
+      scheduleId: schedule.id,
+      subscriptionId: sub?.id || null,
+      status: sub?.status || schedule.status,
+      clientSecret: pi?.client_secret || null,   // your HTML will call stripe.confirmCardPayment(...)
+    });
+  } catch (err) {
+    console.error('schedule-trial error:', err);
     res.status(400).json({ error: err.message || 'Unknown error' });
   }
 });
