@@ -191,6 +191,11 @@
         <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
       </div>
 
+      <!-- hidden defaults to satisfy /api/register -->
+      <input type="hidden" id="gender" value="nonbinary"/>
+      <input type="hidden" id="lookingFor" value="any"/>
+      <input type="hidden" id="phone" value=""/>
+
       <div class="btn-row">
         <button id="nextBtn" class="btn">Next step →</button>
       </div>
@@ -202,7 +207,7 @@
       <h2 class="title">Secure Payment</h2>
       <p class="sub">Your details are safe — powered by Stripe.</p>
 
-      <!-- --------- WHAT YOU'LL GET (added) --------- -->
+      <!-- --------- WHAT YOU'LL GET --------- -->
       <div class="features" aria-label="Premium features list">
         <h3>What you'll get:</h3>
         <ul>
@@ -213,7 +218,7 @@
           <li>…and much more!</li>
         </ul>
       </div>
-      <!-- ------------------------------------------- -->
+      <!-- ----------------------------------- -->
 
       <div id="gpay-button"></div>
 
@@ -262,14 +267,72 @@
   <script>
     /* ---------- Step navigation ---------- */
     const step1=document.getElementById('step1'),step2=document.getElementById('step2');
-    document.getElementById('nextBtn').onclick=()=>{ 
+    const nameInput=document.getElementById('nameInput');
+    const emailInput=document.getElementById('emailInput');
+
+    // small helper: generate a random password for required backend field
+    function genPwd(len=14){
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*";
+      let out=""; for(let i=0;i<len;i++){ out+=chars[Math.floor(Math.random()*chars.length)] }
+      return out;
+    }
+
+    async function ensureAccount() {
+      const email = emailInput.value.trim();
+      if (!email) { throw new Error("Email required"); }
+
+      // stash so user can log in later if needed
+      const generatedPassword = genPwd();
+      localStorage.setItem("signup_generated_password", generatedPassword);
+
+      const payload = {
+        email,
+        password: generatedPassword,
+        gender: document.getElementById('gender').value || "nonbinary",
+        lookingFor: document.getElementById('lookingFor').value || "any",
+        phone: document.getElementById('phone').value || ""
+      };
+
+      try {
+        const res = await fetch("/api/register", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        // Created → good; Already exists (400) → also fine, continue
+        if (res.status === 201) return true;
+
+        // If user exists, proceed to payment flow anyway
+        const data = await res.json().catch(()=>({}));
+        if (res.status === 400 && data && /exists/i.test(data.error||"")) {
+          return true;
+        }
+
+        // Any other error: surface message but do not crash
+        throw new Error(data?.error || "Could not create account");
+      } catch (e) {
+        // Show a soft inline message and still allow the user to retry
+        alert(e.message || "Problem creating your account. Please try again.");
+        throw e;
+      }
+    }
+
+    document.getElementById('nextBtn').onclick=async()=>{ 
       if(!nameInput.value||!emailInput.value){alert("Please enter your details");return}
+      try {
+        await ensureAccount(); // <-- create account on your Render server
+      } catch {
+        // if creation failed, stop here
+        return;
+      }
       localStorage.setItem("checkout_name",nameInput.value);
       localStorage.setItem("checkout_email",emailInput.value);
       step1.setAttribute("aria-hidden","true");
       step2.setAttribute("aria-hidden","false");
       window.scrollTo({top:0,behavior:'smooth'});
     };
+
     document.getElementById('backBtn').onclick=()=>{ 
       step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
       window.scrollTo({top:0,behavior:'smooth'});
