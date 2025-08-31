@@ -214,8 +214,9 @@
         });
     })();
 
-    /* ---------- Stripe logic (trial schedule) ---------- */
-    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/schedule-trial";
+    /* ---------- Stripe logic (two-step paid trial → monthly) ---------- */
+    const TRIAL_INTENT_URL="https://charmr-jfmc.onrender.com/api/stripe/trial-charge-intent";
+    const START_MONTHLY_URL="https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial";
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
     const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
@@ -230,33 +231,51 @@
     document.getElementById("payNow").onclick=async()=>{
       hideError();showLoading();
       try{
-        const pm=await stripe.createPaymentMethod({
+        // 1) Create a PaymentMethod from Elements
+        const pmRes = await stripe.createPaymentMethod({
           type:"card",
           card:cardNumber,
           billing_details:{name:nameInput.value,email:emailInput.value}
         });
-        if(pm.error){ throw new Error(pm.error.message); }
+        if(pmRes.error){ throw new Error(pmRes.error.message); }
+        const paymentMethodId = pmRes.paymentMethod.id;
 
-        const res=await fetch(SUBSCRIBE_URL,{
+        // 2) Ask server to create the £2.50 PaymentIntent (gets client_secret)
+        const r1 = await fetch(TRIAL_INTENT_URL,{
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify({
-            paymentMethodId: pm.paymentMethod.id,
-            name: nameInput.value,
-            email: emailInput.value
+            paymentMethodId,
+            name:nameInput.value,
+            email:emailInput.value
           })
         });
-        const data=await res.json();
-        if(!res.ok){ throw new Error(data.error || "Payment failed"); }
-        if(!data.clientSecret){ throw new Error("Payment failed"); }
+        const d1 = await r1.json();
+        if(!r1.ok || !d1.clientSecret){ 
+          throw new Error(d1.error || "Payment failed while creating the trial charge."); 
+        }
 
-        const conf=await stripe.confirmCardPayment(data.clientSecret);
+        // 3) Confirm the £2.50 charge (SCA happens here if needed)
+        const conf = await stripe.confirmCardPayment(d1.clientSecret);
         if(conf.error){ throw new Error(conf.error.message); }
-        if(conf.paymentIntent && conf.paymentIntent.status==="succeeded"){
-          window.location.href="thankyou2.html";
-        }else{
+        if(!(conf.paymentIntent && conf.paymentIntent.status==="succeeded")){
           throw new Error("Payment not completed");
         }
+
+        // 4) Start the £20/month subscription with a 1-day trial
+        const r2 = await fetch(START_MONTHLY_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            paymentIntentId: conf.paymentIntent.id
+            // priceIdMonthly optional; server defaults to GBP monthly ID
+          })
+        });
+        const d2 = await r2.json();
+        if(!r2.ok){ throw new Error(d2.error || "Failed to start subscription"); }
+
+        // 5) Success!
+        window.location.href="thankyou2.html";
       }catch(err){
         showError(err.message || "Payment failed");
       }finally{
