@@ -129,6 +129,14 @@
     .promo-was::after{ content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2px; background:linear-gradient(90deg,#c9c9c9,#999); transform:rotate(-6deg);}
     .promo-now{ font-weight:900; color:#0b6b3a; background:#e9f8f0; border:1px solid #b7ecd2; padding:6px 10px; border-radius:10px; font-size:18px;}
     .promo-actions{ display:flex; gap:10px; margin-top:12px; }
+
+    /* (Optional) tiny style for the feature list */
+    .features{
+      background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:12px; margin:10px 0 14px;
+    }
+    .features h3{ margin:0 0 8px; font-size:16px; font-weight:800; color:#222; }
+    .features ul{ margin:0; padding-left:18px; }
+    .features li{ margin:6px 0; }
   </style>
 </head>
 <body>
@@ -193,6 +201,19 @@
     <section id="step2" class="card step" aria-hidden="true">
       <h2 class="title">Secure Payment</h2>
       <p class="sub">Your details are safe — powered by Stripe.</p>
+
+      <!-- --------- WHAT YOU'LL GET (added) --------- -->
+      <div class="features" aria-label="Premium features list">
+        <h3>What you'll get:</h3>
+        <ul>
+          <li>Unlimited messages and meetings</li>
+          <li>Unlimited HD photo sharing</li>
+          <li>Contact and social media sharing</li>
+          <li>Gifting</li>
+          <li>…and much more!</li>
+        </ul>
+      </div>
+      <!-- ------------------------------------------- -->
 
       <div id="gpay-button"></div>
 
