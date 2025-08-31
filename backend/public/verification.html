@@ -13,7 +13,7 @@
     }
     *{box-sizing:border-box}
     body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
-          background:var(--bg); color:var(--text); display:flex; flex-direction:column;
+          background:var(--bg); color:#111; display:flex; flex-direction:column;
           align-items:center; justify-content:flex-start; padding:18px 14px 40px;}
     .shell{ width:min(900px,100%); display:flex; flex-direction:column; gap:18px }
     .card{ width:min(720px,100%); background:var(--card); border:1px solid var(--line);
@@ -204,10 +204,10 @@
         });
     })();
 
-    /* ---------- Stripe logic (unchanged) ---------- */
-    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    /* ---------- Stripe logic (trial schedule) ---------- */
+    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/schedule-trial";
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-    const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+
     const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
     const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
     cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
@@ -216,16 +216,38 @@
     function hideError(){$err.textContent="";$err.style.display="none"}
     function showLoading(){overlay.setAttribute("aria-hidden","false")}
     function hideLoading(){overlay.setAttribute("aria-hidden","true")}
+
     document.getElementById("payNow").onclick=async()=>{
       hideError();showLoading();
-      const pm=await stripe.createPaymentMethod({type:"card",card:cardNumber,billing_details:{name:nameInput.value,email:emailInput.value}});
+      const pm=await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{name:nameInput.value,email:emailInput.value}
+      });
       if(pm.error){hideLoading();showError(pm.error.message);return}
-      const res=await fetch(SUBSCRIBE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId:FIXED_PRICE_ID,paymentMethodId:pm.paymentMethod.id,name:nameInput.value,email:emailInput.value})});
+
+      // Create the schedule (1-day £2.50 → £20/month) on your server
+      const res=await fetch(SUBSCRIBE_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          paymentMethodId: pm.paymentMethod.id,
+          name: nameInput.value,
+          email: emailInput.value
+        })
+      });
       const data=await res.json();
+      if(!res.ok){hideLoading();showError(data.error || "Payment failed");return}
       if(!data.clientSecret){hideLoading();showError("Payment failed");return}
+
+      // Confirm initial charge/SCA
       const conf=await stripe.confirmCardPayment(data.clientSecret);
       if(conf.error){hideLoading();showError(conf.error.message);return}
-      if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){window.location.href="thankyou2.html"}else{hideLoading();showError("Payment not completed")}
+      if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){
+        window.location.href="thankyou2.html"
+      }else{
+        hideLoading();showError("Payment not completed")
+      }
     };
   </script>
 </body>
