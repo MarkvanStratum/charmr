@@ -167,6 +167,18 @@
     let stripe, elements, cardNumberEl, cardExpiryEl, cardCvcEl;
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
+    // Your existing server endpoint & price (kept consistent with your other pages)
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+
+    // UI helpers (loading + error)
+    const overlay = document.getElementById('loading-overlay');
+    const $err = document.getElementById('err');
+    function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
+    function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
+    function showError(m){ $err.textContent = m || 'エラーが発生しました。'; $err.style.display='block'; }
+    function hideError(){ $err.textContent=''; $err.style.display='none'; }
+
     async function ensureAccount(){
       const email = (emailInput.value || '').trim();
       const password = passwordInput.value || '';
@@ -237,6 +249,58 @@
       step1.setAttribute('aria-hidden', 'false');
       step2.setAttribute('aria-hidden', 'true');
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // ---- Pay button handler (adds loading overlay + full Stripe flow)
+    document.getElementById('payNow').onclick = async () => {
+      hideError();
+      showLoading();
+      try {
+        if (!stripe || !cardNumberEl) {
+          mountStripeIfNeeded();
+        }
+
+        // 1) Create a PaymentMethod
+        const pm = await stripe.createPaymentMethod({
+          type: 'card',
+          card: cardNumberEl,
+          billing_details: {
+            name: nameInput.value || '',
+            email: emailInput.value || ''
+          }
+        });
+        if (pm.error) throw new Error(pm.error.message);
+
+        // 2) Ask your server to create a subscription for the fixed price
+        const res = await fetch(SUBSCRIBE_URL, {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            priceId: FIXED_PRICE_ID,
+            paymentMethodId: pm.paymentMethod.id,
+            name: nameInput.value || '',
+            email: emailInput.value || ''
+          })
+        });
+        const data = await res.json().catch(()=> ({}));
+        if (!res.ok || !data.clientSecret) {
+          throw new Error(data.error || '決済の作成に失敗しました。');
+        }
+
+        // 3) Confirm the payment (handles 3DS/SCA as needed)
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
+        if (conf.error) throw new Error(conf.error.message);
+        if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) {
+          throw new Error('支払いが完了しませんでした。');
+        }
+
+        // 4) Success — go to thank you page
+        window.location.href = 'thankyou-iphone.html';
+      } catch (e) {
+        showError(e.message || 'お支払いに失敗しました。');
+      } finally {
+        hideLoading();
+      }
     };
 
     /* ---------- Static Japan-only price text ---------- */
