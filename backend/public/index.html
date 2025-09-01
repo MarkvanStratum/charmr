@@ -137,6 +137,10 @@
     .features h3{ margin:0 0 8px; font-size:16px; font-weight:800; color:#222; }
     .features ul{ margin:0; padding-left:18px; }
     .features li{ margin:6px 0; }
+
+    /* Phone prefix + number layout */
+    .phone-wrap{ display:grid; grid-template-columns:140px 1fr; gap:8px; }
+    @media (max-width:520px){ .phone-wrap{ grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -195,6 +199,11 @@
         <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
         <!-- NEW: Password field (full width, spans both columns) -->
         <input class="input" id="passwordInput" type="password" placeholder="Create a password" autocomplete="new-password" required style="grid-column: 1 / -1;" />
+        <!-- NEW: Phone prefix + number -->
+        <div class="phone-wrap" style="grid-column: 1 / -1;">
+          <select id="phonePrefix" class="input" aria-label="Country calling code"></select>
+          <input id="phoneNumber" class="input" inputmode="tel" placeholder="Phone number" autocomplete="tel-national" />
+        </div>
       </div>
 
       <!-- hidden defaults to satisfy /api/register -->
@@ -314,6 +323,14 @@
 
     document.getElementById('nextBtn').onclick=async()=>{ 
       if(!nameInput.value||!emailInput.value||!passwordInput.value){alert("Please enter your details");return}
+
+      // Assemble phone into hidden field before registration (added)
+      try{
+        const raw = (document.getElementById('phoneNumber')?.value||'').replace(/[^\d]/g,'');
+        const pref = (document.getElementById('phonePrefix')?.value||'+1').trim();
+        document.getElementById('phone').value = raw ? (pref + raw) : "";
+      }catch{}
+
       try {
         await ensureAccount(); // create account on your Render server with email+password
       } catch {
@@ -365,6 +382,310 @@
             const cc = (loc.split('-')[1] || 'US').toUpperCase();
             apply(symbolFor(cc));
           } catch {}
+        });
+    })();
+
+    /* ---------- Phone prefix by IP (ALL countries) ---------- */
+    (function phonePrefixByIP(){
+      const selectEl = document.getElementById('phonePrefix');
+      if(!selectEl) return;
+
+      // Full list of countries (ISO 3166-1 alpha-2) with calling codes.
+      // Source harmonized with ITU-E.164 allocations. Territories included.
+      // Note: Some share codes (e.g., US/CA +1). Duplicates kept with distinct labels.
+      const COUNTRIES = [
+        {cc:'AF',name:'Afghanistan', code:'+93'},
+        {cc:'AL',name:'Albania', code:'+355'},
+        {cc:'DZ',name:'Algeria', code:'+213'},
+        {cc:'AS',name:'American Samoa', code:'+1'},
+        {cc:'AD',name:'Andorra', code:'+376'},
+        {cc:'AO',name:'Angola', code:'+244'},
+        {cc:'AI',name:'Anguilla', code:'+1'},
+        {cc:'AG',name:'Antigua and Barbuda', code:'+1'},
+        {cc:'AR',name:'Argentina', code:'+54'},
+        {cc:'AM',name:'Armenia', code:'+374'},
+        {cc:'AW',name:'Aruba', code:'+297'},
+        {cc:'AU',name:'Australia', code:'+61'},
+        {cc:'AT',name:'Austria', code:'+43'},
+        {cc:'AZ',name:'Azerbaijan', code:'+994'},
+        {cc:'BS',name:'Bahamas', code:'+1'},
+        {cc:'BH',name:'Bahrain', code:'+973'},
+        {cc:'BD',name:'Bangladesh', code:'+880'},
+        {cc:'BB',name:'Barbados', code:'+1'},
+        {cc:'BY',name:'Belarus', code:'+375'},
+        {cc:'BE',name:'Belgium', code:'+32'},
+        {cc:'BZ',name:'Belize', code:'+501'},
+        {cc:'BJ',name:'Benin', code:'+229'},
+        {cc:'BM',name:'Bermuda', code:'+1'},
+        {cc:'BT',name:'Bhutan', code:'+975'},
+        {cc:'BO',name:'Bolivia', code:'+591'},
+        {cc:'BQ',name:'Bonaire, Sint Eustatius and Saba', code:'+599'},
+        {cc:'BA',name:'Bosnia and Herzegovina', code:'+387'},
+        {cc:'BW',name:'Botswana', code:'+267'},
+        {cc:'BR',name:'Brazil', code:'+55'},
+        {cc:'IO',name:'British Indian Ocean Territory', code:'+246'},
+        {cc:'VG',name:'British Virgin Islands', code:'+1'},
+        {cc:'BN',name:'Brunei', code:'+673'},
+        {cc:'BG',name:'Bulgaria', code:'+359'},
+        {cc:'BF',name:'Burkina Faso', code:'+226'},
+        {cc:'BI',name:'Burundi', code:'+257'},
+        {cc:'KH',name:'Cambodia', code:'+855'},
+        {cc:'CM',name:'Cameroon', code:'+237'},
+        {cc:'CA',name:'Canada', code:'+1'},
+        {cc:'CV',name:'Cape Verde', code:'+238'},
+        {cc:'KY',name:'Cayman Islands', code:'+1'},
+        {cc:'CF',name:'Central African Republic', code:'+236'},
+        {cc:'TD',name:'Chad', code:'+235'},
+        {cc:'CL',name:'Chile', code:'+56'},
+        {cc:'CN',name:'China', code:'+86'},
+        {cc:'CX',name:'Christmas Island', code:'+61'},
+        {cc:'CC',name:'Cocos (Keeling) Islands', code:'+61'},
+        {cc:'CO',name:'Colombia', code:'+57'},
+        {cc:'KM',name:'Comoros', code:'+269'},
+        {cc:'CG',name:'Congo', code:'+242'},
+        {cc:'CD',name:'Congo (DRC)', code:'+243'},
+        {cc:'CK',name:'Cook Islands', code:'+682'},
+        {cc:'CR',name:'Costa Rica', code:'+506'},
+        {cc:'CI',name:"Côte d’Ivoire", code:'+225'},
+        {cc:'HR',name:'Croatia', code:'+385'},
+        {cc:'CU',name:'Cuba', code:'+53'},
+        {cc:'CW',name:'Curaçao', code:'+599'},
+        {cc:'CY',name:'Cyprus', code:'+357'},
+        {cc:'CZ',name:'Czechia', code:'+420'},
+        {cc:'DK',name:'Denmark', code:'+45'},
+        {cc:'DJ',name:'Djibouti', code:'+253'},
+        {cc:'DM',name:'Dominica', code:'+1'},
+        {cc:'DO',name:'Dominican Republic', code:'+1'},
+        {cc:'EC',name:'Ecuador', code:'+593'},
+        {cc:'EG',name:'Egypt', code:'+20'},
+        {cc:'SV',name:'El Salvador', code:'+503'},
+        {cc:'GQ',name:'Equatorial Guinea', code:'+240'},
+        {cc:'ER',name:'Eritrea', code:'+291'},
+        {cc:'EE',name:'Estonia', code:'+372'},
+        {cc:'SZ',name:'Eswatini', code:'+268'},
+        {cc:'ET',name:'Ethiopia', code:'+251'},
+        {cc:'FK',name:'Falkland Islands', code:'+500'},
+        {cc:'FO',name:'Faroe Islands', code:'+298'},
+        {cc:'FJ',name:'Fiji', code:'+679'},
+        {cc:'FI',name:'Finland', code:'+358'},
+        {cc:'FR',name:'France', code:'+33'},
+        {cc:'GF',name:'French Guiana', code:'+594'},
+        {cc:'PF',name:'French Polynesia', code:'+689'},
+        {cc:'GA',name:'Gabon', code:'+241'},
+        {cc:'GM',name:'Gambia', code:'+220'},
+        {cc:'GE',name:'Georgia', code:'+995'},
+        {cc:'DE',name:'Germany', code:'+49'},
+        {cc:'GH',name:'Ghana', code:'+233'},
+        {cc:'GI',name:'Gibraltar', code:'+350'},
+        {cc:'GR',name:'Greece', code:'+30'},
+        {cc:'GL',name:'Greenland', code:'+299'},
+        {cc:'GD',name:'Grenada', code:'+1'},
+        {cc:'GP',name:'Guadeloupe', code:'+590'},
+        {cc:'GU',name:'Guam', code:'+1'},
+        {cc:'GT',name:'Guatemala', code:'+502'},
+        {cc:'GG',name:'Guernsey', code:'+44'},
+        {cc:'GN',name:'Guinea', code:'+224'},
+        {cc:'GW',name:'Guinea-Bissau', code:'+245'},
+        {cc:'GY',name:'Guyana', code:'+592'},
+        {cc:'HT',name:'Haiti', code:'+509'},
+        {cc:'HN',name:'Honduras', code:'+504'},
+        {cc:'HK',name:'Hong Kong', code:'+852'},
+        {cc:'HU',name:'Hungary', code:'+36'},
+        {cc:'IS',name:'Iceland', code:'+354'},
+        {cc:'IN',name:'India', code:'+91'},
+        {cc:'ID',name:'Indonesia', code:'+62'},
+        {cc:'IR',name:'Iran', code:'+98'},
+        {cc:'IQ',name:'Iraq', code:'+964'},
+        {cc:'IE',name:'Ireland', code:'+353'},
+        {cc:'IM',name:'Isle of Man', code:'+44'},
+        {cc:'IL',name:'Israel', code:'+972'},
+        {cc:'IT',name:'Italy', code:'+39'},
+        {cc:'JM',name:'Jamaica', code:'+1'},
+        {cc:'JP',name:'Japan', code:'+81'},
+        {cc:'JE',name:'Jersey', code:'+44'},
+        {cc:'JO',name:'Jordan', code:'+962'},
+        {cc:'KZ',name:'Kazakhstan', code:'+7'},
+        {cc:'KE',name:'Kenya', code:'+254'},
+        {cc:'KI',name:'Kiribati', code:'+686'},
+        {cc:'KP',name:'Korea (North)', code:'+850'},
+        {cc:'KR',name:'Korea (South)', code:'+82'},
+        {cc:'KW',name:'Kuwait', code:'+965'},
+        {cc:'KG',name:'Kyrgyzstan', code:'+996'},
+        {cc:'LA',name:'Laos', code:'+856'},
+        {cc:'LV',name:'Latvia', code:'+371'},
+        {cc:'LB',name:'Lebanon', code:'+961'},
+        {cc:'LS',name:'Lesotho', code:'+266'},
+        {cc:'LR',name:'Liberia', code:'+231'},
+        {cc:'LY',name:'Libya', code:'+218'},
+        {cc:'LI',name:'Liechtenstein', code:'+423'},
+        {cc:'LT',name:'Lithuania', code:'+370'},
+        {cc:'LU',name:'Luxembourg', code:'+352'},
+        {cc:'MO',name:'Macao', code:'+853'},
+        {cc:'MG',name:'Madagascar', code:'+261'},
+        {cc:'MW',name:'Malawi', code:'+265'},
+        {cc:'MY',name:'Malaysia', code:'+60'},
+        {cc:'MV',name:'Maldives', code:'+960'},
+        {cc:'ML',name:'Mali', code:'+223'},
+        {cc:'MT',name:'Malta', code:'+356'},
+        {cc:'MH',name:'Marshall Islands', code:'+692'},
+        {cc:'MQ',name:'Martinique', code:'+596'},
+        {cc:'MR',name:'Mauritania', code:'+222'},
+        {cc:'MU',name:'Mauritius', code:'+230'},
+        {cc:'YT',name:'Mayotte', code:'+262'},
+        {cc:'MX',name:'Mexico', code:'+52'},
+        {cc:'FM',name:'Micronesia', code:'+691'},
+        {cc:'MD',name:'Moldova', code:'+373'},
+        {cc:'MC',name:'Monaco', code:'+377'},
+        {cc:'MN',name:'Mongolia', code:'+976'},
+        {cc:'ME',name:'Montenegro', code:'+382'},
+        {cc:'MS',name:'Montserrat', code:'+1'},
+        {cc:'MA',name:'Morocco', code:'+212'},
+        {cc:'MZ',name:'Mozambique', code:'+258'},
+        {cc:'MM',name:'Myanmar', code:'+95'},
+        {cc:'NA',name:'Namibia', code:'+264'},
+        {cc:'NR',name:'Nauru', code:'+674'},
+        {cc:'NP',name:'Nepal', code:'+977'},
+        {cc:'NL',name:'Netherlands', code:'+31'},
+        {cc:'NC',name:'New Caledonia', code:'+687'},
+        {cc:'NZ',name:'New Zealand', code:'+64'},
+        {cc:'NI',name:'Nicaragua', code:'+505'},
+        {cc:'NE',name:'Niger', code:'+227'},
+        {cc:'NG',name:'Nigeria', code:'+234'},
+        {cc:'NU',name:'Niue', code:'+683'},
+        {cc:'NF',name:'Norfolk Island', code:'+672'},
+        {cc:'MP',name:'Northern Mariana Islands', code:'+1'},
+        {cc:'NO',name:'Norway', code:'+47'},
+        {cc:'OM',name:'Oman', code:'+968'},
+        {cc:'PK',name:'Pakistan', code:'+92'},
+        {cc:'PW',name:'Palau', code:'+680'},
+        {cc:'PS',name:'Palestine', code:'+970'},
+        {cc:'PA',name:'Panama', code:'+507'},
+        {cc:'PG',name:'Papua New Guinea', code:'+675'},
+        {cc:'PY',name:'Paraguay', code:'+595'},
+        {cc:'PE',name:'Peru', code:'+51'},
+        {cc:'PH',name:'Philippines', code:'+63'},
+        {cc:'PN',name:'Pitcairn', code:'+64'},
+        {cc:'PL',name:'Poland', code:'+48'},
+        {cc:'PT',name:'Portugal', code:'+351'},
+        {cc:'PR',name:'Puerto Rico', code:'+1'},
+        {cc:'QA',name:'Qatar', code:'+974'},
+        {cc:'RE',name:'Réunion', code:'+262'},
+        {cc:'RO',name:'Romania', code:'+40'},
+        {cc:'RU',name:'Russia', code:'+7'},
+        {cc:'RW',name:'Rwanda', code:'+250'},
+        {cc:'BL',name:'Saint Barthélemy', code:'+590'},
+        {cc:'SH',name:'Saint Helena, Ascension and Tristan da Cunha', code:'+290'},
+        {cc:'KN',name:'Saint Kitts and Nevis', code:'+1'},
+        {cc:'LC',name:'Saint Lucia', code:'+1'},
+        {cc:'MF',name:'Saint Martin (French part)', code:'+590'},
+        {cc:'PM',name:'Saint Pierre and Miquelon', code:'+508'},
+        {cc:'VC',name:'Saint Vincent and the Grenadines', code:'+1'},
+        {cc:'WS',name:'Samoa', code:'+685'},
+        {cc:'SM',name:'San Marino', code:'+378'},
+        {cc:'ST',name:'Sao Tome and Principe', code:'+239'},
+        {cc:'SA',name:'Saudi Arabia', code:'+966'},
+        {cc:'SN',name:'Senegal', code:'+221'},
+        {cc:'RS',name:'Serbia', code:'+381'},
+        {cc:'SC',name:'Seychelles', code:'+248'},
+        {cc:'SL',name:'Sierra Leone', code:'+232'},
+        {cc:'SG',name:'Singapore', code:'+65'},
+        {cc:'SX',name:'Sint Maarten (Dutch part)', code:'+1'},
+        {cc:'SK',name:'Slovakia', code:'+421'},
+        {cc:'SI',name:'Slovenia', code:'+386'},
+        {cc:'SB',name:'Solomon Islands', code:'+677'},
+        {cc:'SO',name:'Somalia', code:'+252'},
+        {cc:'ZA',name:'South Africa', code:'+27'},
+        {cc:'GS',name:'South Georgia & the South Sandwich Islands', code:'+500'},
+        {cc:'SS',name:'South Sudan', code:'+211'},
+        {cc:'ES',name:'Spain', code:'+34'},
+        {cc:'LK',name:'Sri Lanka', code:'+94'},
+        {cc:'SD',name:'Sudan', code:'+249'},
+        {cc:'SR',name:'Suriname', code:'+597'},
+        {cc:'SJ',name:'Svalbard and Jan Mayen', code:'+47'},
+        {cc:'SE',name:'Sweden', code:'+46'},
+        {cc:'CH',name:'Switzerland', code:'+41'},
+        {cc:'SY',name:'Syria', code:'+963'},
+        {cc:'TW',name:'Taiwan', code:'+886'},
+        {cc:'TJ',name:'Tajikistan', code:'+992'},
+        {cc:'TZ',name:'Tanzania', code:'+255'},
+        {cc:'TH',name:'Thailand', code:'+66'},
+        {cc:'TL',name:'Timor-Leste', code:'+670'},
+        {cc:'TG',name:'Togo', code:'+228'},
+        {cc:'TK',name:'Tokelau', code:'+690'},
+        {cc:'TO',name:'Tonga', code:'+676'},
+        {cc:'TT',name:'Trinidad and Tobago', code:'+1'},
+        {cc:'TN',name:'Tunisia', code:'+216'},
+        {cc:'TR',name:'Türkiye', code:'+90'},
+        {cc:'TM',name:'Turkmenistan', code:'+993'},
+        {cc:'TC',name:'Turks and Caicos Islands', code:'+1'},
+        {cc:'TV',name:'Tuvalu', code:'+688'},
+        {cc:'UG',name:'Uganda', code:'+256'},
+        {cc:'UA',name:'Ukraine', code:'+380'},
+        {cc:'AE',name:'United Arab Emirates', code:'+971'},
+        {cc:'GB',name:'United Kingdom', code:'+44'},
+        {cc:'US',name:'United States', code:'+1'},
+        {cc:'UM',name:'U.S. Outlying Islands', code:'+1'},
+        {cc:'UY',name:'Uruguay', code:'+598'},
+        {cc:'UZ',name:'Uzbekistan', code:'+998'},
+        {cc:'VU',name:'Vanuatu', code:'+678'},
+        {cc:'VA',name:'Vatican City', code:'+39'},
+        {cc:'VE',name:'Venezuela', code:'+58'},
+        {cc:'VN',name:'Vietnam', code:'+84'},
+        {cc:'VI',name:'U.S. Virgin Islands', code:'+1'},
+        {cc:'WF',name:'Wallis and Futuna', code:'+681'},
+        {cc:'EH',name:'Western Sahara', code:'+212'},
+        {cc:'YE',name:'Yemen', code:'+967'},
+        {cc:'ZM',name:'Zambia', code:'+260'},
+        {cc:'ZW',name:'Zimbabwe', code:'+263'}
+      ];
+
+      function buildOptions(preferredCC, preferredCalling){
+        selectEl.innerHTML = '';
+        const added = new Set();
+
+        // If API gave an exact calling code, pin it on top
+        if (preferredCalling){
+          const name = (COUNTRIES.find(c=>c.cc===preferredCC)?.name) || 'Your country';
+          const opt = new Option(`${preferredCalling} — ${name}`, preferredCalling, true, true);
+          selectEl.append(opt);
+          added.add(`${preferredCalling}|${name}`);
+        } else if (preferredCC){
+          const item = COUNTRIES.find(c=>c.cc===preferredCC);
+          if (item){
+            const opt = new Option(`${item.code} — ${item.name}`, item.code, true, true);
+            selectEl.append(opt);
+            added.add(`${item.code}|${item.name}`);
+          }
+        }
+
+        // Add the rest (all countries)
+        COUNTRIES.forEach(({code,name})=>{
+          const key = `${code}|${name}`;
+          if (added.has(key)) return;
+          selectEl.append(new Option(`${code} — ${name}`, code));
+          added.add(key);
+        });
+
+        if (!selectEl.value) selectEl.value = '+1';
+      }
+
+      // Seed quickly with US so the UI isn’t empty
+      try { buildOptions('US', null); } catch {}
+
+      // Refine using IP
+      fetch('https://ipapi.co/json/')
+        .then(r=>r.ok?r.json():Promise.reject())
+        .then(data=>{
+          const cc = ((data&&(data.country||data.country_code))||'US').toUpperCase();
+          const calling = (data&&data.country_calling_code)||null;
+          buildOptions(cc, calling);
+        })
+        .catch(()=>{
+          try{
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
+            const cc = (loc.split('-')[1]||'US').toUpperCase();
+            buildOptions(cc, null);
+          }catch{}
         });
     })();
 
