@@ -154,7 +154,80 @@
   <!-- Stripe.js -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    /* unchanged logic — omitted for brevity */
+    /* ---------- Step navigation & account creation (added so Next works) ---------- */
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const nameInput = document.getElementById('nameInput');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const phonePrefix = document.getElementById('phonePrefix');
+    const phoneNumber = document.getElementById('phoneNumber');
+
+    async function ensureAccount(){
+      const email = (emailInput.value || '').trim();
+      const password = passwordInput.value || '';
+      const rawPhone = (phoneNumber.value || '').replace(/[^\d]/g,'');
+      const prefix = (phonePrefix.value || '+81').trim();
+      const phone = rawPhone ? `${prefix}${rawPhone}` : '';
+
+      if(!nameInput.value || !email || !password){
+        alert('氏名・メール・パスワードを入力してください。');
+        throw new Error('Missing required fields');
+      }
+
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ email, password, phone })
+      });
+
+      if(res.status === 201) return true;
+
+      let data = {};
+      try { data = await res.json(); } catch {}
+      if(res.status === 400 && /exists/i.test(data?.error || '')) return true;
+
+      throw new Error(data?.error || 'アカウントを作成できませんでした。');
+    }
+
+    document.getElementById('nextBtn').onclick = async () => {
+      try {
+        await ensureAccount();
+      } catch(e){
+        // error message already surfaced above if needed
+        return;
+      }
+      // persist a couple of fields if you use them later
+      try {
+        localStorage.setItem('checkout_name', nameInput.value || '');
+        localStorage.setItem('checkout_email', emailInput.value || '');
+      } catch {}
+
+      step1.setAttribute('aria-hidden', 'true');
+      step2.setAttribute('aria-hidden', 'false');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    document.getElementById('backBtn').onclick = () => {
+      step1.setAttribute('aria-hidden', 'false');
+      step2.setAttribute('aria-hidden', 'true');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    /* ---------- Static Japan-only price text (already set in HTML) ---------- */
+    (function fixJapanPrice(){
+      const symbol = '¥';
+      const amount = '500';
+      document.querySelectorAll('[data-price]').forEach(el=>{
+        el.textContent = `${symbol}${amount}`;
+      });
+      document.title = `jp iphone`;
+    })();
+
+    /* ---------- (Optional) Stripe mounting: safe no-op if you wire later ---------- */
+    // If you plan to complete payments on step 2, mount Elements here.
+    // Leaving it out won’t break the Next button anymore.
+
   </script>
 </body>
 </html>
