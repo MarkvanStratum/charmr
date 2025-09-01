@@ -154,7 +154,7 @@
   <!-- Stripe.js -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    /* ---------- Step navigation & account creation (added so Next works) ---------- */
+    /* ---------- Step navigation & account creation ---------- */
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
     const nameInput = document.getElementById('nameInput');
@@ -162,6 +162,10 @@
     const passwordInput = document.getElementById('passwordInput');
     const phonePrefix = document.getElementById('phonePrefix');
     const phoneNumber = document.getElementById('phoneNumber');
+
+    // Stripe vars (created on demand when Step 2 is shown)
+    let stripe, elements, cardNumberEl, cardExpiryEl, cardCvcEl;
+    const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
     async function ensureAccount(){
       const email = (emailInput.value || '').trim();
@@ -190,14 +194,31 @@
       throw new Error(data?.error || 'アカウントを作成できませんでした。');
     }
 
+    function mountStripeIfNeeded(){
+      if (stripe) return; // already mounted
+      stripe = Stripe(PUBLISHABLE_KEY);
+      elements = stripe.elements();
+
+      const style = {
+        base: {
+          fontSize: '16px',
+          color: '#111',
+          '::placeholder': { color: '#9aa0a6' }
+        }
+      };
+
+      cardNumberEl = elements.create('cardNumber', { style });
+      cardExpiryEl = elements.create('cardExpiry', { style });
+      cardCvcEl    = elements.create('cardCvc',    { style });
+
+      cardNumberEl.mount('#card-number');
+      cardExpiryEl.mount('#card-expiry');
+      cardCvcEl.mount('#card-cvc');
+    }
+
     document.getElementById('nextBtn').onclick = async () => {
-      try {
-        await ensureAccount();
-      } catch(e){
-        // error message already surfaced above if needed
-        return;
-      }
-      // persist a couple of fields if you use them later
+      try { await ensureAccount(); } catch(e){ return; }
+
       try {
         localStorage.setItem('checkout_name', nameInput.value || '');
         localStorage.setItem('checkout_email', emailInput.value || '');
@@ -205,6 +226,10 @@
 
       step1.setAttribute('aria-hidden', 'true');
       step2.setAttribute('aria-hidden', 'false');
+
+      // Mount Stripe Elements *after* Step 2 becomes visible so sizing is correct
+      mountStripeIfNeeded();
+
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -214,7 +239,7 @@
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    /* ---------- Static Japan-only price text (already set in HTML) ---------- */
+    /* ---------- Static Japan-only price text ---------- */
     (function fixJapanPrice(){
       const symbol = '¥';
       const amount = '500';
@@ -223,11 +248,6 @@
       });
       document.title = `jp iphone`;
     })();
-
-    /* ---------- (Optional) Stripe mounting: safe no-op if you wire later ---------- */
-    // If you plan to complete payments on step 2, mount Elements here.
-    // Leaving it out won’t break the Next button anymore.
-
   </script>
 </body>
 </html>
