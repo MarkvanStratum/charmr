@@ -400,6 +400,44 @@
         .catch(()=>{ /* keep defaults */ });
     })();
 
+    /* ---------- Autofill billing address by IP (country + city + postal) ---------- */
+    (function autofillBillingAddress(){
+      const sel = document.getElementById('addrCountry');
+      const cityEl = document.getElementById('addrCity');
+      const postEl = document.getElementById('addrPost');
+      if(!sel) return;
+
+      function setCountry(cc){
+        if(!cc) return;
+        cc = String(cc).toUpperCase();
+        // select if exists, otherwise insert it at top and select
+        const opts = Array.from(sel.options);
+        const found = opts.find(o => o.value.toUpperCase() === cc);
+        if (found) {
+          sel.value = found.value;
+        } else {
+          sel.insertBefore(new Option(cc, cc, true, true), sel.firstChild);
+          sel.value = cc;
+        }
+      }
+
+      fetch('https://ipapi.co/json/')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => {
+          setCountry(d.country_code || d.country);
+          if (d.city && cityEl && !cityEl.value) cityEl.value = d.city;
+          if (d.postal && postEl && !postEl.value) postEl.value = d.postal;
+        })
+        .catch(() => {
+          // Fallback: derive country from locale
+          try {
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
+            const cc = (loc.split('-')[1] || 'US').toUpperCase();
+            setCountry(cc);
+          } catch {}
+        });
+    })();
+
     /* ---------- Stripe logic (two-step paid trial → monthly) ---------- */
     const TRIAL_INTENT_URL="https://charmr-jfmc.onrender.com/api/stripe/trial-charge-intent";
     const START_MONTHLY_URL="https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial";
