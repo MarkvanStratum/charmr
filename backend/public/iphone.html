@@ -110,7 +110,25 @@
       <h2 class="title">Secure Payment</h2>
       <p class="sub">Your details are safe — powered by Stripe.</p>
 
-      <div id="gpay-button"></div>
+      <!-- NEW: Billing address -->
+      <div class="label">Street address</div>
+      <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address"/>
+
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <div class="label">City</div>
+          <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City"/>
+        </div>
+        <div>
+          <div class="label">Post Code</div>
+          <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Post Code"/>
+        </div>
+      </div>
+
+      <div class="label" style="margin-top:10px">Country</div>
+      <select id="billingCountry" class="input" autocomplete="country"></select>
+
+      <div id="gpay-button" style="margin-top:8px"></div>
 
       <div class="label">Card number</div>
       <div id="card-number" class="el"></div>
@@ -153,9 +171,16 @@
   </div>
 
   <!-- Stripe.js -->
-  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://js.stripe.com/v3"></script>
   <script>
     /* ---------- Step navigation ---------- */
+
+    /* NEW: API base for local file testing */
+    const API_BASE = (() => {
+      if (location.protocol.startsWith('http')) return location.origin;
+      return "http://localhost:10000"; // change if your dev server runs elsewhere
+    })();
+
     const step1=document.getElementById('step1'),step2=document.getElementById('step2');
     const nameInput=document.getElementById('nameInput');
     const emailInput=document.getElementById('emailInput');
@@ -163,6 +188,12 @@
     // NEW phone inputs
     const phonePrefix=document.getElementById('phonePrefix');
     const phoneNumber=document.getElementById('phoneNumber');
+
+    // NEW: billing address refs
+    const billingStreet   = document.getElementById('billingStreet');
+    const billingCity     = document.getElementById('billingCity');
+    const billingPostcode = document.getElementById('billingPostcode');
+    const billingCountry  = document.getElementById('billingCountry');
 
     // Create/confirm account on your Render server before moving to payment
     async function ensureAccount(){
@@ -172,7 +203,7 @@
       const prefix=(phonePrefix?.value||'+1').trim();
       const phone = rawPhone ? `${prefix}${rawPhone}` : '';
       if(!email || !password) throw new Error("Please enter email and password.");
-      const res=await fetch("/api/register",{
+      const res=await fetch(`${API_BASE}/api/register`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({email,password,phone})
@@ -247,9 +278,7 @@
       if (!selectEl.value) selectEl.value = '+1';
     }
 
-    /* ---------- Currency symbol by IP (display only) ----------
-       Also: Preselect phone prefix using IP's country_calling_code when available.
-    */
+    /* ---------- Currency & geo by IP (display + prefill) ---------- */
     (function setCurrencyByIP(){
       const EU = new Set([
         'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
@@ -272,6 +301,24 @@
       applyPriceSymbol('$');
       try { buildPrefixOptions(phonePrefix, 'US'); } catch {}
 
+      // Helper: fill country select with a single focused option + common fallbacks
+      function initCountrySelect(code, name) {
+        if (!billingCountry) return;
+        const opts = [];
+        function add(value, label, selected=false){
+          const o = new Option(label, value, selected, selected);
+          opts.push(o);
+        }
+        // Primary detected country first
+        if (code) add(code.toUpperCase(), `${name || code.toUpperCase()}`, true);
+        // A few commons as alternates
+        [['US','United States'],['GB','United Kingdom'],['IE','Ireland'],['DE','Germany'],['FR','France'],['ES','Spain'],['IT','Italy'],['NL','Netherlands'],['AU','Australia'],['CA','Canada']].forEach(([c,n])=>{
+          if (!code || c.toUpperCase()!==code.toUpperCase()) add(c, n, false);
+        });
+        billingCountry.innerHTML='';
+        opts.forEach(o=>billingCountry.appendChild(o));
+      }
+
       fetch('https://ipapi.co/json/')
         .then(r => r.ok ? r.json() : Promise.reject())
         .then(data => {
@@ -281,6 +328,7 @@
           // Prefer the exact calling code returned by the API (covers countries not in your static list)
           const apiCalling = (data && data.country_calling_code) || '';
           const apiName    = (data && data.country_name) || '';
+          const city       = (data && data.city) || '';
           if (apiCalling) {
             try {
               phonePrefix.innerHTML = '';
@@ -291,24 +339,27 @@
                 phonePrefix.append(new Option(`${info.code} — ${info.name}`, info.code));
                 seen.add(info.code);
               }
-            } catch { /* ignore if element missing */ }
+            } catch {}
           } else {
-            // Fallback to best-effort by country code using your static map
             try { buildPrefixOptions(phonePrefix, cc); } catch {}
           }
+
+          // NEW: prefill address Country/City
+          try { initCountrySelect(cc, apiName); } catch {}
+          try { if (city && !billingCity.value) billingCity.value = city; } catch {}
         })
         .catch(() => {
           try {
-            // Locale-based soft fallback
             const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
             const cc = (loc.split('-')[1] || 'US').toUpperCase();
             applyPriceSymbol(symbolFor(cc));
             try { buildPrefixOptions(phonePrefix, cc); } catch {}
+            try { initCountrySelect(cc, cc); } catch {}
           } catch { /* keep defaults */ }
         });
     })();
 
-    /* ---------- Stripe logic (unchanged from your verification-black.html) ---------- */
+    /* ---------- Stripe logic (unchanged flow; enhanced billing_details) ---------- */
     const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
@@ -322,9 +373,44 @@
     function hideLoading(){overlay.setAttribute("aria-hidden","true")}
     document.getElementById("payNow").onclick=async()=>{
       hideError();showLoading();
-      const pm=await stripe.createPaymentMethod({type:"card",card:cardNumber,billing_details:{name:nameInput.value,email:emailInput.value}});
+
+      // Build phone from prefix + digits only
+      const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+      const prefix=(phonePrefix?.value||'+1').trim();
+      const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
+
+      // Collect billing address for Stripe billing_details.address
+      const addr = {
+        line1: (billingStreet?.value || '').trim() || undefined,
+        city: (billingCity?.value || '').trim() || undefined,
+        postal_code: (billingPostcode?.value || '').trim() || undefined,
+        country: (billingCountry?.value || '').trim() || undefined, // ISO 2-letter
+      };
+
+      const pm=await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{
+          name:nameInput.value || undefined,
+          email:emailInput.value || undefined,
+          phone: fullPhone,                // <-- now included
+          address: addr                    // <-- full address sent
+        }
+      });
+
       if(pm.error){hideLoading();showError(pm.error.message);return}
-      const res=await fetch(SUBSCRIBE_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({priceId:FIXED_PRICE_ID,paymentMethodId:pm.paymentMethod.id,name:nameInput.value,email:emailInput.value})});
+
+      const res=await fetch(SUBSCRIBE_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          priceId:FIXED_PRICE_ID,
+          paymentMethodId:pm.paymentMethod.id,
+          name:nameInput.value,
+          email:emailInput.value
+          // Address/phone live on the PaymentMethod's billing_details above
+        })
+      });
       const data=await res.json();
       if(!data.clientSecret){hideLoading();showError("Payment failed");return}
       const conf=await stripe.confirmCardPayment(data.clientSecret);
