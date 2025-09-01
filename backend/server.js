@@ -3596,10 +3596,27 @@ app.post('/api/stripe/subscribe-notrial', async (req, res) => {
    });
 
     // 2) Attach PM and set default
-    await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
-    await stripe.customers.update(customer.id, {
-      invoice_settings: { default_payment_method: paymentMethodId },
-    });
+await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+await stripe.customers.update(customer.id, {
+  invoice_settings: { default_payment_method: paymentMethodId },
+});
+
+// After attaching PM and setting invoice_settings
+const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+const bd = pm?.billing_details || {};
+await stripe.customers.update(customer.id, {
+  phone: bd.phone || undefined,
+  address: bd.address || undefined, // { line1, city, postal_code, country, ... }
+});
+
+// 3) Create subscription with NO TRIAL and get a PaymentIntent immediately
+const subscription = await stripe.subscriptions.create({
+  customer: customer.id,
+  items: [{ price: priceId }],
+  payment_behavior: 'default_incomplete',
+  // ...
+});
+
 
     // 3) Create subscription with NO TRIAL and get a PaymentIntent immediately
     const subscription = await stripe.subscriptions.create({
