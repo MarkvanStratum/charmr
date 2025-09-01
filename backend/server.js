@@ -1165,15 +1165,6 @@ await stripe.customers.update(customer.id, {
   address: bd.address || undefined, // { line1, city, postal_code, country, ... }
 });
 
-// 3) Create subscription with NO TRIAL and get a PaymentIntent immediately
-const subscription = await stripe.subscriptions.create({
-  customer: customer.id,
-  items: [{ price: priceId }],
-  payment_behavior: 'default_incomplete',
-  // ...
-});
-
-
     // 3) Create subscription with NO TRIAL and get a PaymentIntent immediately
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
