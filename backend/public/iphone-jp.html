@@ -67,6 +67,10 @@
     @media (max-width:520px){
       .phone-wrap{ grid-template-columns:1fr; }
     }
+
+    /* NEW: Address grid (minimal, JP-first) */
+    .addr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px }
+    .addr-grid .full{ grid-column:1 / -1; }
   </style>
 </head>
 <body>
@@ -108,6 +112,20 @@
     <section id="step2" class="card step" aria-hidden="true">
       <h2 class="title">安全なお支払い</h2>
       <p class="sub">お客様の情報は安全に保護されています — Stripe によって処理されます。</p>
+
+      <!-- NEW: Billing address (minimal) -->
+      <div class="addr-grid" aria-label="請求先住所">
+        <input id="addrPost" class="input" placeholder="郵便番号" autocomplete="postal-code">
+        <input id="addrCity" class="input" placeholder="市区町村" autocomplete="address-level2">
+        <input id="addrLine1" class="input full" placeholder="番地・建物名" autocomplete="address-line1">
+        <select id="addrCountry" class="input">
+          <option value="JP" selected>日本 (JP)</option>
+          <option value="US">United States (US)</option>
+          <option value="GB">United Kingdom (GB)</option>
+          <option value="CA">Canada (CA)</option>
+          <option value="AU">Australia (AU)</option>
+        </select>
+      </div>
 
       <div id="gpay-button"></div>
 
@@ -162,6 +180,12 @@
     const passwordInput = document.getElementById('passwordInput');
     const phonePrefix = document.getElementById('phonePrefix');
     const phoneNumber = document.getElementById('phoneNumber');
+
+    // Address fields (NEW)
+    const addrLine1 = document.getElementById('addrLine1');
+    const addrCity  = document.getElementById('addrCity');
+    const addrPost  = document.getElementById('addrPost');
+    const addrCountry = document.getElementById('addrCountry');
 
     // Stripe vars (created on demand when Step 2 is shown)
     let stripe, elements, cardNumberEl, cardExpiryEl, cardCvcEl;
@@ -260,13 +284,34 @@
           mountStripeIfNeeded();
         }
 
-        // 1) Create a PaymentMethod
+        // Build E.164-ish phone from prefix + digits
+        let phone = '';
+        try {
+          const raw = (phoneNumber.value || '').replace(/[^\d]/g,'');
+          const pref = (phonePrefix.value || '+81').trim();
+          phone = raw ? (pref + raw) : '';
+        } catch {}
+
+        // Minimal address payload
+        const line1 = (addrLine1?.value || '').trim();
+        const city  = (addrCity?.value  || '').trim();
+        const postal_code = (addrPost?.value || '').trim();
+        const country = (addrCountry?.value || '').trim() || undefined;
+
+        // 1) Create a PaymentMethod (NOW includes phone + address)
         const pm = await stripe.createPaymentMethod({
           type: 'card',
           card: cardNumberEl,
           billing_details: {
             name: nameInput.value || '',
-            email: emailInput.value || ''
+            email: emailInput.value || '',
+            phone: phone || undefined,
+            address: {
+              line1: line1 || undefined,
+              city: city || undefined,
+              postal_code: postal_code || undefined,
+              country: country || undefined
+            }
           }
         });
         if (pm.error) throw new Error(pm.error.message);
