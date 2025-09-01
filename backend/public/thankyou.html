@@ -61,9 +61,9 @@
 (function(){
   const CONFIG = {
     mode: "percent",      // "percent" | "oneInN" | "dailyCap"
-    percent: 60,          // used if mode="percent"  -> e.g., 80 = 80% of sales posted
-    oneInN: 5,            // used if mode="oneInN"   -> e.g., 5 = 1 out of every 5 sales
-    dailyCap: 100,        // used if mode="dailyCap" -> e.g., 100 sales/day
+    percent: 50,          // used if mode="percent"
+    oneInN: 5,            // used if mode="oneInN"
+    dailyCap: 100,        // used if mode="dailyCap"
     ns: "gaffpro_gate"
   };
 
@@ -86,10 +86,34 @@
     }
     return Math.random();
   }
+
+  // NEW: deterministic scheduler for percent mode to avoid streaks.
+  // - For 50%: strict alternation (post, skip, post, skip, ...)
+  // - For other percentages: evenly spread across blocks of 100 events.
   function shouldPost(){
     switch(CONFIG.mode){
-      case "percent":
-        return cryptoRandom() < (Math.max(0, Math.min(100, CONFIG.percent))/100);
+      case "percent": {
+        const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
+        if (p === 0)  return false;
+        if (p === 100) return true;
+
+        if (p === 50) {
+          const k = `${CONFIG.ns}:pct:altbit`;
+          let bit = localStorage.getItem(k);
+          if (bit === null) bit = "0";                 // start by posting
+          const post = (bit === "0");
+          localStorage.setItem(k, post ? "1" : "0");   // flip for next time
+          return post;
+        }
+
+        // General deterministic spread for non-50% values
+        const k = `${CONFIG.ns}:pct:counter`;
+        let c = parseInt(localStorage.getItem(k) || "0", 10);
+        const post = (c % 100) < p;                    // e.g., 75 => post first 75 of each 100
+        c = (c + 1) % 100;
+        localStorage.setItem(k, String(c));
+        return post;
+      }
       case "oneInN": {
         const n = Math.max(1, parseInt(CONFIG.oneInN||1,10));
         const k = `${CONFIG.ns}:oneInN:counter`;
@@ -103,6 +127,7 @@
         return true;
     }
   }
+
   (function patchWhenReady(){
     if (typeof window.goaffproTrackConversion === "function") {
       if (window.__goaffproTrackConversionOriginal) return;
@@ -139,7 +164,7 @@
     return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
   }
 
-  // GEO-BASED AMOUNT: US/GB/AU/NZ => $9, others => $2
+  // GEO-BASED AMOUNT: US/GB/AU/NZ => $30, others => $10
   async function resolveGeoAmount() {
     const preferred = ["US","GB","AU","NZ"];
     let code = "";
