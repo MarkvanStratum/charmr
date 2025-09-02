@@ -40,6 +40,17 @@
 
     .err{ display:none; background:#3a1820; border:1px solid #803246; color:#ffb1bd; padding:10px; border-radius:10px; font-size:14px; margin-top:10px }
     .err[aria-hidden="false"]{ display:block }
+
+    /* Loading overlay (added) */
+    .loading-overlay{ position:fixed; inset:0; background:rgba(3,6,14,.86);
+      display:none; align-items:center; justify-content:center; z-index:9999; }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{ width:min(92vw,460px); background:#0f131b; border:1px solid #2b3140;
+      border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); padding:20px; text-align:center; color:#cdd6ea }
+    .loading-title{ font-weight:800; margin:2px 0 10px; font-size:18px }
+    .progress-wrap{ width:100%; height:10px; background:#1a2230; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
   </style>
 </head>
 <body>
@@ -99,6 +110,15 @@
     </section>
   </main>
 
+  <!-- Loading overlay (added) -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+      <div class="loading-title">Processing your payment…</div>
+      <div class="progress-wrap"><div class="progress-bar"></div></div>
+      <p class="small" style="margin-top:10px;color:#97a0b3">Please wait, this may take a few seconds.</p>
+    </div>
+  </div>
+
   <script src="https://js.stripe.com/v3"></script>
 <script>
   window.addEventListener('DOMContentLoaded', () => {
@@ -124,6 +144,11 @@
 
     function show(o){ o?.setAttribute('aria-hidden','false'); }
     function hide(o){ o?.setAttribute('aria-hidden','true'); }
+
+    // Loading overlay controls (added)
+    const overlay = document.getElementById('loading-overlay');
+    function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
+    function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
 
     // ===== Country (ISO) + Prefix data =====
     const COUNTRY_CHOICES = {
@@ -262,6 +287,7 @@
     document.getElementById('payNow')?.addEventListener('click', async ()=>{
       if(!stripe){ alert('Payment temporarily unavailable. Please check your connection and try again.'); return; }
       errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
+      showLoading(); // added
 
       const name = document.getElementById('nameInput')?.value.trim();
       const email = document.getElementById('emailInput')?.value.trim();
@@ -302,7 +328,9 @@
         }
       }catch(err){
         if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
+        hideLoading(); // added: hide only on error
       }
+      // Note: Do NOT hide on success; we keep it up until redirect / 3DS completes
     });
   });
 </script>
