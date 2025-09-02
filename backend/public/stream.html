@@ -13,9 +13,7 @@
     body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;}
 
     .strip img{width:100%; height:60px; object-fit:cover; display:block;}
-
     .hero{ max-width:960px; margin:30px auto; padding:0 20px; }
-
     .headline{ font-size:42px; line-height:1.2; font-weight:900; text-transform:uppercase; text-align:center; margin-bottom:20px; }
 
     .notice{ background:var(--panel2); border:1px solid var(--line); border-radius:var(--radius); padding:16px; margin-bottom:20px; text-align:center; }
@@ -36,6 +34,7 @@
     .step{ display:none }
     .step[aria-hidden="false"]{ display:block }
 
+    /* If you want password on same row as phone, remove the next line’s grid-column */
     .phone-wrap{ display:grid; grid-template-columns:140px 1fr; gap:8px; grid-column:1 / -1 }
     @media (max-width:520px){ .phone-wrap{ grid-template-columns:1fr } }
 
@@ -82,7 +81,8 @@
 
         <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address">
         <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City">
-        <input id="billingCountry" class="input" autocomplete="country" placeholder="Country">
+        <!-- CHANGED: country is now a <select> of ISO-2 codes -->
+        <select id="billingCountry" class="select" aria-label="Country (ISO 2-letter)"></select>
         <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Postcode">
 
         <div id="card-number" class="el"></div>
@@ -108,9 +108,14 @@
     const errBox = document.getElementById('err');
     const nextBtn = document.getElementById('nextBtn');
     const backBtn = document.getElementById('backBtn');
+
     const phonePrefix = document.getElementById('phonePrefix');
+    const phoneNumber = document.getElementById('phoneNumber');
+
+    const billingStreet = document.getElementById('billingStreet');
     const billingCity = document.getElementById('billingCity');
-    const billingCountry = document.getElementById('billingCountry');
+    const billingCountry = document.getElementById('billingCountry'); // NOW a <select>
+    const billingPostcode = document.getElementById('billingPostcode');
 
     const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
@@ -120,60 +125,115 @@
     function show(o){ o?.setAttribute('aria-hidden','false'); }
     function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
-    const CALLING_CODES = {
-  US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64',
-  DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32',
-  CH:'+41', AT:'+43', DK:'+45', NO:'+47', SE:'+46', FI:'+358',
-  PT:'+351', PL:'+48', CZ:'+420', HU:'+36', RO:'+40',
-  BR:'+55', MX:'+52', AR:'+54', CL:'+56', CO:'+57', ZA:'+27',
-  IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63',
-  HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972',
-  GE:'+995' // <-- Georgia
-    };
-    const COUNTRY_NAMES = {
-      US:'United States', CA:'Canada', GB:'United Kingdom', IE:'Ireland',
-      AU:'Australia', NZ:'New Zealand', DE:'Germany', FR:'France', ES:'Spain', IT:'Italy',
-      NL:'Netherlands', BE:'Belgium', CH:'Switzerland', AT:'Austria', DK:'Denmark', NO:'Norway',
-      SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia', HU:'Hungary', RO:'Romania',
-      BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia', ZA:'South Africa',
+    // ===== Country (ISO) + Prefix data =====
+    const COUNTRY_CHOICES = {
+      GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland',
+      CA:'Canada', AU:'Australia', NZ:'New Zealand',
+      DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands',
+      BE:'Belgium', CH:'Switzerland', AT:'Austria', DK:'Denmark', NO:'Norway',
+      SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia',
+      HU:'Hungary', RO:'Romania',
+      BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia',
+      ZA:'South Africa',
       IN:'India', SG:'Singapore', MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines',
-      HK:'Hong Kong', JP:'Japan', KR:'South Korea', AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel'
+      HK:'Hong Kong', JP:'Japan', KR:'South Korea',
+      AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel'
     };
-    function populatePrefixOptions(){
-      if(!phonePrefix) return;
-      phonePrefix.innerHTML='';
-      const priority=['US','GB','CA','AU','DE','FR','ES','IT','NL','SE','IN','JP'];
-      const seen=new Set();
-      const add=(cc)=>{ if(seen.has(cc) || !CALLING_CODES[cc]) return; seen.add(cc); const label=`${CALLING_CODES[cc]} — ${COUNTRY_NAMES[cc]||cc}`; phonePrefix.append(new Option(label, CALLING_CODES[cc])); };
+    const CALLING_CODES = {
+      US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64',
+      DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32',
+      CH:'+41', AT:'+43', DK:'+45', NO:'+47', SE:'+46', FI:'+358',
+      PT:'+351', PL:'+48', CZ:'+420', HU:'+36', RO:'+40',
+      BR:'+55', MX:'+52', AR:'+54', CL:'+56', CO:'+57', ZA:'+27',
+      IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63',
+      HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972',
+      GE:'+995'
+    };
+
+    function populateCountrySelect(){
+      billingCountry.innerHTML = '';
+      billingCountry.append(new Option('Select country', '', true, true));
+      const priority = ['GE','US','GB','DE','FR','ES','IT','NL','SE','IN','JP'];
+      const seen = new Set();
+      const add = (code) => {
+        if (seen.has(code) || !COUNTRY_CHOICES[code]) return;
+        seen.add(code);
+        billingCountry.append(new Option(COUNTRY_CHOICES[code], code));
+      };
       priority.forEach(add);
-      Object.keys(CALLING_CODES).sort((a,b)=> (COUNTRY_NAMES[a]||a).localeCompare(COUNTRY_NAMES[b]||b)).forEach(add);
-      if(!phonePrefix.value) phonePrefix.value=CALLING_CODES.US;
+      Object.keys(COUNTRY_CHOICES)
+        .filter(c => !priority.includes(c))
+        .sort((a,b)=>COUNTRY_CHOICES[a].localeCompare(COUNTRY_CHOICES[b]))
+        .forEach(add);
     }
+
+    function populatePrefixOptions(){
+      phonePrefix.innerHTML = '';
+      const priority = ['GE','US','GB','CA','AU','DE','FR','ES','IT','NL','SE','IN','JP'];
+      const seen = new Set();
+      const add = (cc) => {
+        if (seen.has(cc) || !CALLING_CODES[cc]) return;
+        seen.add(cc);
+        const code = CALLING_CODES[cc];
+        const label = `${code} — ${COUNTRY_CHOICES[cc] || cc}`;
+        phonePrefix.append(new Option(label, code));
+      };
+      priority.forEach(add);
+      Object.keys(CALLING_CODES)
+        .filter(cc => !priority.includes(cc))
+        .sort()
+        .forEach(add);
+      if (!phonePrefix.value) phonePrefix.value = CALLING_CODES.US;
+    }
+
+    function setPrefixFromISO(cc){
+      const code = CALLING_CODES[cc];
+      if (!code) return;
+      const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
+      if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code));
+      phonePrefix.value = code;
+    }
+
+    populateCountrySelect();
     populatePrefixOptions();
 
-    // ===== IP Prefill (robust) =====
-    const withTimeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
-    function guessFromLocale(){ const region=(navigator.language||'').split('-')[1]; if(region && CALLING_CODES[region]) return {prefix:CALLING_CODES[region], country:COUNTRY_NAMES[region]||region}; return null; }
+    // ===== IP Prefill (ISO + prefix + city) =====
+    const withTimeout = (ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
+    function guessISO(){ const cc=(navigator.language||'').split('-')[1]; return cc?cc.toUpperCase():null; }
+
     async function hydrateFromIP(){
       try{
         const try1=()=>withTimeout(2000, fetch('https://ipapi.co/json/').then(r=>r.json()));
         const try2=()=>withTimeout(2000, fetch('https://ipwho.is/?fields=city,country,country_code,phone').then(r=>r.json()));
         const try3=()=>withTimeout(2000, fetch('https://ipinfo.io/json').then(r=>r.json()));
         let d=null; try{ d=await try1(); }catch{} if(!d||d.error){ try{ d=await try2(); }catch{} } if(!d||d.error){ try{ d=await try3(); }catch{} }
-        let prefix=null, city=null, country=null, code=null;
-        if(d){ prefix=d.country_calling_code || (d.phone?('+'+String(d.phone)):null); city=d.city||null; country=d.country_name||d.country||null; code=d.country_code||d.countryCode||null; if(!prefix && code && CALLING_CODES[code]) prefix=CALLING_CODES[code]; if(!country && code && COUNTRY_NAMES[code]) country=COUNTRY_NAMES[code]; }
-        if(!prefix){ const guess=guessFromLocale(); if(guess){ prefix=guess.prefix; country=country||guess.country; } }
-        if(prefix && phonePrefix) phonePrefix.value=prefix; if(city && billingCity) billingCity.value=city; if(country && billingCountry) billingCountry.value=country;
-      }catch{ const guess=guessFromLocale(); if(guess && phonePrefix){ phonePrefix.value=guess.prefix; if(billingCountry && !billingCountry.value) billingCountry.value=guess.country; } }
+
+        let iso = (d && (d.country_code || d.countryCode)) ? String(d.country_code || d.countryCode).toUpperCase() : null;
+        const city = d?.city || null;
+        if(!iso) iso = guessISO();
+
+        if(iso && Array.from(billingCountry.options).some(o=>o.value===iso)){ billingCountry.value = iso; }
+        if(iso) setPrefixFromISO(iso);
+        if(city) billingCity.value = city;
+      }catch{
+        const iso = guessISO();
+        if(iso){ billingCountry.value = iso; setPrefixFromISO(iso); }
+      }
     }
     hydrateFromIP();
-    document.getElementById('phoneNumber')?.addEventListener('focus', hydrateFromIP);
+    phoneNumber.addEventListener('focus', hydrateFromIP);
+    billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value)); // keep prefix in sync if user changes country
 
-    // ===== Nav between steps (single handlers) =====
-    nextBtn?.addEventListener('click', async ()=>{ hide(step1); show(step2); try{ await ensureAccount(); }catch(e){ if(errBox){ errBox.textContent='Account setup warning: '+(e.message||'check details'); errBox.setAttribute('aria-hidden','false'); } } });
+    // ===== Step nav =====
+    nextBtn?.addEventListener('click', async ()=>{
+      hide(step1); show(step2);
+      try{ await ensureAccount(); }catch(e){
+        if(errBox){ errBox.textContent = 'Account setup warning: ' + (e.message||'check details'); errBox.setAttribute('aria-hidden','false'); }
+      }
+    });
     backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
-    // ===== Stripe (guarded so page never blanks) =====
+    // ===== Stripe =====
     let stripe, elements, cardNumber, cardExpiry, cardCvc;
     try{
       if(window.Stripe){
@@ -192,7 +252,7 @@
       const email = document.getElementById('emailInput')?.value.trim();
       const password = document.getElementById('passwordInput')?.value;
       const prefix = phonePrefix?.value || '';
-      const raw = (document.getElementById('phoneNumber')?.value || '').replace(/[^0-9]/g,'');
+      const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
       const phone = raw ? (prefix + raw) : '';
       if(!email || !password) throw new Error('Email and password required');
       const r = await fetch(API_BASE + '/api/register',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password, phone }) });
@@ -202,24 +262,47 @@
     document.getElementById('payNow')?.addEventListener('click', async ()=>{
       if(!stripe){ alert('Payment temporarily unavailable. Please check your connection and try again.'); return; }
       errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
+
       const name = document.getElementById('nameInput')?.value.trim();
       const email = document.getElementById('emailInput')?.value.trim();
-      const raw = (document.getElementById('phoneNumber')?.value || '').replace(/[^0-9]/g,'');
+      const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
       const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
+
+      // Stripe requires ISO-2 here:
+      const isoCountry = billingCountry.value || undefined;
+
       const address = {
-        line1: (document.getElementById('billingStreet')?.value||'').trim()||undefined,
-        city: (billingCity?.value||'').trim()||undefined,
-        country: (billingCountry?.value||'').trim()||undefined,
-        postal_code: (document.getElementById('billingPostcode')?.value||'').trim()||undefined
+        line1: (billingStreet?.value||'').trim() || undefined,
+        city: (billingCity?.value||'').trim() || undefined,
+        country: isoCountry, // ISO-2, e.g., "GE"
+        postal_code: (billingPostcode?.value||'').trim() || undefined
       };
+
       try{
-        const pmRes = await stripe.createPaymentMethod({ type:'card', card:cardNumber, billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address } });
+        const pmRes = await stripe.createPaymentMethod({
+          type:'card',
+          card:cardNumber,
+          billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
+        });
         if(pmRes.error) throw new Error(pmRes.error.message);
-        const resp = await fetch(SUBSCRIBE_URL,{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ priceId: FIXED_PRICE_ID, paymentMethodId: pmRes.paymentMethod.id, name, email }) });
-        const data = await resp.json(); if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
-        const conf = await stripe.confirmCardPayment(data.clientSecret); if(conf.error) throw new Error(conf.error.message);
-        if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){ window.location.href='thankyou.html'; } else { throw new Error('Payment not completed'); }
-      }catch(err){ if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); } }
+
+        const resp = await fetch(SUBSCRIBE_URL,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ priceId: FIXED_PRICE_ID, paymentMethodId: pmRes.paymentMethod.id, name, email })
+        });
+        const data = await resp.json();
+        if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
+
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error) throw new Error(conf.error.message);
+        if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
+          window.location.href='thankyou.html';
+        } else {
+          throw new Error('Payment not completed');
+        }
+      }catch(err){
+        if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
+      }
     });
   });
 </script>
