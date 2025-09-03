@@ -62,8 +62,8 @@
     <!-- STEP 2: Payment (two-step: intro charge → start subscription) -->
     <section id="step2" class="card step" aria-hidden="true">
       <h2 class="title">Secure Payment</h2>
-      <p class=\"sub\">Your details are safe — powered by Stripe.<\/p>
-      <p class=\"sub\" style=\"margin-top:-6px;color:#0b6b3a\"><strong>Today's charge:</strong> £20.00 one-time intro payment. Your subscription starts after this succeeds.<\/p>
+      <p class="sub">Your details are safe — powered by Stripe.</p>
+      <p class="sub" style="margin-top:-6px;color:#0b6b3a"><strong>Today's charge:</strong> £20.00 one-time intro payment. Your subscription starts after this succeeds.</p>
 
       <div class="addr-grid" aria-label="Billing address">
         <input id="addr1" class="input full" placeholder="Address line 1" autocomplete="address-line1" required>
@@ -71,7 +71,8 @@
         <input id="region" class="input" placeholder="State / Region" autocomplete="address-level1" required>
         <input id="postal" class="input" placeholder="ZIP / Postal code" autocomplete="postal-code" required>
         <select id="country" class="input" required>
-          <option value="US" selected>United States</option>
+          <option value="" selected disabled>Choose country</option>
+          <option value="US">United States</option>
           <option value="GB">United Kingdom</option>
           <option value="CA">Canada</option>
           <option value="AU">Australia</option>
@@ -86,6 +87,8 @@
           <option value="FI">Finland</option>
           <option value="IT">Italy</option>
           <option value="ES">Spain</option>
+          <option value="GE">Georgia</option><!-- ADDED -->
+          <option value="CO">Colombia</option><!-- common test case -->
         </select>
       </div>
 
@@ -106,7 +109,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class=\"btn\" id=\"payNow\">Pay £20.00 Securely<\/button>
+        <button class="btn" id="payNow">Pay £20.00 Securely</button>
       </div>
 
       <div class="brands">
@@ -140,6 +143,119 @@
     const passwordInput = document.getElementById('passwordInput');
     const phoneInput = document.getElementById('phoneInput');
 
+    // Country & phone helpers
+    const countrySelect = document.getElementById('country');
+    const cityInput = document.getElementById('city');
+    const regionInput = document.getElementById('region');
+    const postalInput = document.getElementById('postal');
+
+    // Minimal dialing code map (we also read from ip API when available)
+    const E164_BY_ISO = {
+      US: '+1', CA: '+1', GB: '+44', IE: '+353', AU: '+61', NZ: '+64',
+      DE: '+49', FR: '+33', NL: '+31', SE: '+46', NO: '+47', DK: '+45',
+      FI: '+358', IT: '+39', ES: '+34', GE: '+995', CO: '+57'
+    };
+
+    let geoLocked = false; // prevents late fallback from overwriting
+    let lastAutoPrefix = null;
+
+    function setCountryOption(iso2, label) {
+      const val = (iso2 || '').toUpperCase();
+      if (!val) return;
+      let opt = [...countrySelect.options].find(o => o.value === val);
+      if (!opt) {
+        opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = label || val;
+        countrySelect.appendChild(opt);
+      }
+      countrySelect.value = val;
+    }
+
+    function maybeSetPhonePrefix(prefix) {
+      if (!prefix) return;
+      const v = phoneInput.value.trim();
+      const looksManual = v && !v.startsWith(lastAutoPrefix || '') && v.replace(/\D/g,'').length > 3;
+      if (looksManual) return; // don't fight the user
+      if (!v || v[0] !== '+') {
+        phoneInput.value = prefix + (v.replace(/^\+/, '') ? (' ' + v.replace(/^\+/, '')) : '');
+      } else if (lastAutoPrefix && v.startsWith(lastAutoPrefix)) {
+        phoneInput.value = prefix + v.slice(lastAutoPrefix.length);
+      }
+      lastAutoPrefix = prefix;
+    }
+
+    countrySelect.addEventListener('change', () => {
+      const iso = countrySelect.value.toUpperCase();
+      const prefix = E164_BY_ISO[iso] || lastAutoPrefix || '';
+      if (prefix) {
+        // only auto-update prefix if user hasn't typed something long themselves
+        const raw = phoneInput.value.trim();
+        if (!raw || raw.replace(/\D/g,'').length <= 3 || (lastAutoPrefix && raw.startsWith(lastAutoPrefix))) {
+          maybeSetPhonePrefix(prefix);
+        }
+      }
+    });
+
+    async function geoFromIpapi() {
+      const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
+      if (!r.ok) throw new Error('ipapi failed');
+      const j = await r.json();
+      return {
+        iso: (j.country || '').toUpperCase(),
+        country: j.country_name || '',
+        city: j.city || '',
+        region: j.region || '',
+        postal: j.postal || '',
+        dial: j.country_calling_code || ''
+      };
+    }
+    async function geoFromIpwho() {
+      const r = await fetch('https://ipwho.is/?fields=country,country_code,region,city,postal,calling_code', { cache: 'no-store' });
+      if (!r.ok) throw new Error('ipwho failed');
+      const j = await r.json();
+      if (j && j.success === false) throw new Error('ipwho bad');
+      return {
+        iso: (j.country_code || '').toUpperCase(),
+        country: j.country || '',
+        city: j.city || '',
+        region: j.region || '',
+        postal: j.postal || '',
+        dial: j.calling_code ? ('+' + String(j.calling_code)) : ''
+      };
+    }
+
+    async function setGeoDefaults() {
+      if (geoLocked) return;
+      try {
+        let g = null;
+        try { g = await geoFromIpapi(); } catch {}
+        if (!g || !g.iso) { try { g = await geoFromIpwho(); } catch {} }
+        if (!g || !g.iso) throw new Error('no geo');
+
+        // Fill UI
+        setCountryOption(g.iso, g.country);
+        if (!cityInput.value && g.city) cityInput.value = g.city;
+        if (!regionInput.value && g.region) regionInput.value = g.region;
+        if (!postalInput.value && g.postal) postalInput.value = g.postal;
+
+        const prefix = g.dial || E164_BY_ISO[g.iso] || '';
+        maybeSetPhonePrefix(prefix);
+
+        geoLocked = true; // lock once set
+      } catch {
+        // fallback: try navigator language -> region (e.g., en-GB)
+        const m = (navigator.language || '').match(/-([A-Z]{2})$/i);
+        const guessIso = m ? m[1].toUpperCase() : '';
+        if (guessIso) {
+          setCountryOption(guessIso);
+          const prefix = E164_BY_ISO[guessIso] || '';
+          maybeSetPhonePrefix(prefix);
+          geoLocked = true;
+        }
+      }
+    }
+
     async function ensureAccount(){
       const email = (emailInput.value||'').trim();
       const password = passwordInput.value||'';
@@ -161,6 +277,8 @@
       localStorage.setItem('checkout_email', emailInput.value);
       step1.setAttribute('aria-hidden','true');
       step2.setAttribute('aria-hidden','false');
+      // Do geo *when* step 2 becomes visible to avoid races with slow networks
+      setGeoDefaults();
       window.scrollTo({top:0,behavior:'smooth'});
     };
     document.getElementById('backBtn').onclick = () => {
@@ -230,8 +348,7 @@
         if (pmRes.error) throw new Error(pmRes.error.message);
         const paymentMethodId = pmRes.paymentMethod.id;
 
-        // 2) Ask server for an intro PaymentIntent (safer than creating Subscription first)
-        //    TIP (server): set payment_method_options.card.request_three_d_secure='any' for small/prepaid/new-device cases.
+        // 2) Ask server for an intro PaymentIntent
         const r1 = await fetch(TRIAL_INTENT_URL,{
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ paymentMethodId, name: nameInput.value, email: emailInput.value, amountMinor: INTRO_AMOUNT_MINOR, currency: INTRO_CURRENCY })
