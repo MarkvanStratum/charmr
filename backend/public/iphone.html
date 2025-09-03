@@ -137,9 +137,9 @@
   <!-- Stripe.js -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    // If you host HTML on a different origin than the Node backend,
-    // set this before the script runs:
-    //   <script>window.API_BASE_FALLBACK = "https://YOUR-SERVICE.onrender.com";</script>
+    // NOTE: If you host the HTML on a different origin than the Node backend,
+    // define window.API_BASE_FALLBACK earlier on the page (in a separate <script> block),
+    // e.g. window.API_BASE_FALLBACK = "https://YOUR-SERVICE.onrender.com";
 
     const API_BASES = [location.origin, (window.API_BASE_FALLBACK || "").replace(/\/$/,"")].filter(Boolean);
     async function apiFetch(path, init){
@@ -147,7 +147,6 @@
       for (const base of API_BASES){
         try{
           const res = await fetch(base + path, init);
-          // if 404 on same-origin, try next base; otherwise return
           if (!res.ok && base === location.origin && API_BASES.length > 1 && res.status === 404) {
             lastErr = new Error("Not found on origin, retrying fallback…");
             continue;
@@ -362,7 +361,7 @@
         if (pmRes.error) throw new Error(pmRes.error.message);
         const paymentMethodId = pmRes.paymentMethod.id;
 
-        // 2) Ask server for the £2.50 trial PaymentIntent (no custom amount here)
+        // 2) Ask server for the £2.50 trial PaymentIntent
         const r1 = await apiFetch(TRIAL_INTENT_PATH, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ paymentMethodId, name: nameInput.value, email: emailInput.value })
