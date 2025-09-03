@@ -442,48 +442,63 @@ async function notifyNewMessage(userId, girlId, senderName) {
 // --- end helpers ---
 
 app.post("/api/register", async (req, res) => {
-  const { email, password, gender, lookingFor, phone } = req.body;
+  let { email, password, gender, lookingFor, phone } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
+  // Normalize
+  email = String(email).trim().toLowerCase();
+  gender = (typeof gender === "string" ? gender.trim() : null) || null;
+  lookingFor = (typeof lookingFor === "string" ? lookingFor.trim() : null) || null;
+  if (typeof phone === "string") {
+    const digits = phone.replace(/[^\d]/g, "");      // keep digits only
+    phone = digits || null;                           // store null if empty
+  } else {
+    phone = null;
+  }
+
   try {
-    const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (userCheck.rows.length > 0) return res.status(400).json({ error: "User already exists" });
+    // Pre-check (still helpful to short-circuit)
+    const userCheck = await pool.query("SELECT 1 FROM users WHERE email = $1", [email]);
+    if (userCheck.rows.length > 0) {
+      return res.status(400).json({ error: "User already exists" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Attempt insert (catch any races/unique violations below)
     await pool.query(
-  `INSERT INTO users (email, password, gender, lookingfor, phone) VALUES ($1, $2, $3, $4, $5)`,
-  [email, hashedPassword, gender, lookingFor, phone]
-);
+      `INSERT INTO users (email, password, gender, lookingfor, phone)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [email, hashedPassword, gender, lookingFor, phone]
+    );
 
-// 🔸 Fire-and-forget welcome email; DO NOT block signup
-(async () => {
-  try { await sendWelcomeEmail(email); }
-  catch (e) { console.warn("Welcome email failed (non-blocking):", e?.message || e); }
-})();
+    // Fire-and-forget welcome email
+    (async () => {
+      try { await sendWelcomeEmail(email); }
+      catch (e) { console.warn("Welcome email failed (non-blocking):", e?.message || e); }
+    })();
 
-// Get the new user's ID
-const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
-const newUser = newUserResult.rows[0];
-const token = jwt.sign(
-  { id: newUser.id, email: newUser.email },
-  SECRET_KEY,
-  { expiresIn: "7d" }
-);
+    // Load new user id (no token returned to client here—preserve your behavior)
+    const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
+    const newUser = newUserResult.rows[0];
 
-// Non-blocking Brevo sync
-upsertBrevoContact({
-  email,
-  attributes: { SOURCE: 'signup' } // optional, helps segmenting in Brevo
-}).catch(e => console.warn("Brevo contact upsert failed:", e?.message || e));
+    // Non-blocking Brevo sync (do not await)
+    upsertBrevoContact({
+      email,
+      attributes: { SOURCE: 'signup' }
+    }).catch(e => console.warn("Brevo contact upsert failed:", e?.message || e));
 
-// 🔸 Redirect to login page after successful registration
-return res.status(201).json({ ok: true, redirect: "/login.html" });
-
+    return res.status(201).json({ ok: true, redirect: "/login.html" });
   } catch (err) {
+    // Turn UNIQUE VIOLATION into a clean 400 instead of 500
+    if (err && (err.code === '23505' || /unique/i.test(err.message))) {
+      return res.status(400).json({ error: "User already exists" });
+    }
     console.error("Register error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 app.post("/api/request-password-reset", async (req, res) => {
   const { email } = req.body;
