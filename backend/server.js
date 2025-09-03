@@ -93,10 +93,10 @@ app.post('/send-email', async (req, res) => {
       htmlContent,
     });
 
-upsertBrevoContact({
-  email: receivers[0].email,   // ← correct variable
-  attributes: { SOURCE: 'contact' }
-});
+    upsertBrevoContact({
+      email: receivers[0].email,   // ← correct variable
+      attributes: { SOURCE: 'contact' }
+    });
 
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
@@ -147,7 +147,7 @@ app.get("/api/get-stripe-session", async (req, res) => {
 
 (async () => {
   try {
-    await pool.query(`
+    await pool.query(
       CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,  -- unique identifier for each user
   email TEXT UNIQUE NOT NULL,  -- user's email (must be unique)
@@ -160,9 +160,9 @@ app.get("/api/get-stripe-session", async (req, res) => {
   reset_token TEXT,  -- token generated for password reset
   reset_token_expires TIMESTAMP  -- expiration time for the reset token
 );
-    `);
+    );
 
-    await pool.query(`
+    await pool.query(
       CREATE TABLE IF NOT EXISTS messages (
         id SERIAL PRIMARY KEY,
         user_id INT REFERENCES users(id) ON DELETE CASCADE,
@@ -171,10 +171,10 @@ app.get("/api/get-stripe-session", async (req, res) => {
         text TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
-    `);
+    );
 
     // 🔹 NEW: track live-agent takeovers (simple flag per user+girl)
-    await pool.query(`
+    await pool.query(
       CREATE TABLE IF NOT EXISTS operator_overrides (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -184,17 +184,17 @@ app.get("/api/get-stripe-session", async (req, res) => {
         started_at TIMESTAMP DEFAULT NOW(),
         ended_at TIMESTAMP
       );
-    `);
-    await pool.query(`
+    );
+    await pool.query(
       CREATE INDEX IF NOT EXISTS idx_operator_override_active
       ON operator_overrides(user_id, girl_id) WHERE is_active = true;
-    `);
+    );
 
     // 🔹 NEW: make sure subscriptions table exists (centralized entitlements)
     await ensureSubscriptionTables(pool);
 
     // 🔹 NEW: record per-gift purchases (for accounting/CS)
-    await pool.query(`
+    await pool.query(
       CREATE TABLE IF NOT EXISTS gift_purchases (
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -206,7 +206,7 @@ app.get("/api/get-stripe-session", async (req, res) => {
         status TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       );
-    `);
+    );
 
     console.log("✅ Tables are ready");
   } catch (err) {
@@ -273,6 +273,7 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/9.png",
     "description": "jus on here coz me mate told me 2 \ud83d\ude02 bored af tbh... suprise me? \ud83d\ude43"
   },
+  
   
   
 
@@ -407,11 +408,11 @@ const NOTIFY_COOLDOWN_MIN = 30; // don't email more than once per 30 minutes per
 
 async function shouldNotifyUser(userId, girlId) {
   const r = await pool.query(
-    `SELECT created_at
+    SELECT created_at
        FROM messages
       WHERE user_id=$1 AND girl_id=$2 AND from_user=false
       ORDER BY created_at DESC
-      LIMIT 1`,
+      LIMIT 1,
     [userId, girlId]
   );
   if (r.rows.length === 0) return true;
@@ -432,7 +433,7 @@ async function notifyNewMessage(userId, girlId, senderName) {
 
   if (!(await shouldNotifyUser(userId, girlId))) return;
 
-  const conversationUrl = `https://charmr.xyz/chat.html?id=${girlId}`;
+  const conversationUrl = https://charmr.xyz/chat.html?id=${girlId};
   try {
     await sendNewMessageEmail({ toEmail, senderName, conversationUrl });
   } catch (e) {
@@ -467,8 +468,8 @@ app.post("/api/register", async (req, res) => {
 
     // Attempt insert (catch any races/unique violations below)
     await pool.query(
-      `INSERT INTO users (email, password, gender, lookingfor, phone)
-       VALUES ($1, $2, $3, $4, $5)`,
+      INSERT INTO users (email, password, gender, lookingfor, phone)
+       VALUES ($1, $2, $3, $4, $5),
       [email, hashedPassword, gender, lookingFor, phone]
     );
 
@@ -588,7 +589,7 @@ app.get("/api/messages", authenticateToken, async (req, res) => {
     const grouped = {};
 
     for (const msg of result.rows) {
-      const key = `${userId}-${msg.girl_id}`;
+      const key = ${userId}-${msg.girl_id};
       if (!grouped[key]) grouped[key] = [];
       grouped[key].push({
         from: msg.from_user ? "user" : (profiles.find(p => p.id === msg.girl_id)?.name || "Unknown"),
@@ -629,9 +630,9 @@ app.get("/api/takeover/status/:girlId", authenticateToken, async (req, res) => {
   const girlId = Number(req.params.girlId);
   try {
     const r = await pool.query(
-      `SELECT is_active, operator_name FROM operator_overrides
+      SELECT is_active, operator_name FROM operator_overrides
        WHERE user_id=$1 AND girl_id=$2 AND is_active=true
-       LIMIT 1`,
+       LIMIT 1,
       [userId, girlId]
     );
     res.json({ takeover: r.rows.length > 0, operatorName: r.rows[0]?.operator_name || null });
@@ -646,13 +647,13 @@ app.post("/api/takeover/start", authenticateOperator, async (req, res) => {
   const { userId, girlId, operatorName } = req.body || {};
   try {
     await pool.query(
-      `UPDATE operator_overrides SET is_active=false, ended_at=NOW()
-       WHERE user_id=$1 AND girl_id=$2 AND is_active=true`,
+      UPDATE operator_overrides SET is_active=false, ended_at=NOW()
+       WHERE user_id=$1 AND girl_id=$2 AND is_active=true,
       [userId, girlId]
     );
     await pool.query(
-      `INSERT INTO operator_overrides (user_id, girl_id, is_active, operator_name)
-       VALUES ($1,$2,true,$3)`,
+      INSERT INTO operator_overrides (user_id, girl_id, is_active, operator_name)
+       VALUES ($1,$2,true,$3),
       [userId, girlId, operatorName || null]
     );
     res.json({ ok: true });
@@ -667,8 +668,8 @@ app.post("/api/takeover/stop", authenticateOperator, async (req, res) => {
   const { userId, girlId } = req.body || {};
   try {
     await pool.query(
-      `UPDATE operator_overrides SET is_active=false, ended_at=NOW()
-       WHERE user_id=$1 AND girl_id=$2 AND is_active=true`,
+      UPDATE operator_overrides SET is_active=false, ended_at=NOW()
+       WHERE user_id=$1 AND girl_id=$2 AND is_active=true,
       [userId, girlId]
     );
     res.json({ ok: true });
@@ -684,7 +685,7 @@ const storage = multer.diskStorage({
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname || "");
     const base = path.basename(file.originalname || "image", ext).replace(/\W+/g,"-").toLowerCase();
-    cb(null, `${base}-${Date.now()}${ext || ".bin"}`);
+    cb(null, ${base}-${Date.now()}${ext || ".bin"});
   }
 });
 const upload = multer({
@@ -707,8 +708,8 @@ app.post("/api/operator/send", authenticateOperator, async (req, res) => {
       return res.status(400).json({ error: "userId, girlId and text are required" });
     }
     await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,false,$3)`,
+      INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3),
       [Number(userId), Number(girlId), text]
     );
     await notifyNewMessage(Number(userId), Number(girlId), getGirlName(girlId));
@@ -729,16 +730,16 @@ app.post("/api/operator/send-image", authenticateOperator, upload.single("image"
 
     let finalUrl = imageUrl;
     if (req.file) {
-      finalUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
+      finalUrl = ${req.protocol}://${req.get("host")}/uploads/${req.file.filename};
     }
     if (!finalUrl) {
       return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
     }
 
-    const text = `IMAGE:${finalUrl}`;
+    const text = IMAGE:${finalUrl};
     await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,false,$3)`,
+      INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3),
       [Number(userId), Number(girlId), text]
     );
     await notifyNewMessage(Number(userId), Number(girlId), getGirlName(girlId));
@@ -776,16 +777,16 @@ app.get("/api/operator/feed", async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
     const since = req.query.since ? new Date(req.query.since) : null;
 
-    let sql = `
+    let sql = 
       SELECT id, user_id, girl_id, from_user, text, created_at
       FROM messages
-    `;
+    ;
     const params = [];
     if (since && !isNaN(since.getTime())) {
       params.push(since.toISOString());
-      sql += ` WHERE created_at > $1 `;
+      sql +=  WHERE created_at > $1 ;
     }
-    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
+    sql +=  ORDER BY created_at DESC LIMIT ${limit};
 
     const result = await pool.query(sql, params);
 
@@ -812,12 +813,12 @@ app.get("/api/operator/feed", async (req, res) => {
 // READ-ONLY presence: last time each user sent a message
 app.get("/api/operator/presence", async (req, res) => {
   try {
-    const result = await pool.query(`
+    const result = await pool.query(
       SELECT user_id, MAX(created_at) AS last_seen
       FROM messages
       WHERE from_user = true
       GROUP BY user_id
-    `);
+    );
     const presence = {};
     for (const row of result.rows) {
       presence[row.user_id] = row.last_seen;
@@ -838,16 +839,16 @@ app.get("/api/operator/feed", authenticateOperator, async (req, res) => {
     const limit = Math.min(Math.max(parseInt(req.query.limit || "100", 10), 1), 500);
     const since = req.query.since ? new Date(req.query.since) : null;
 
-    let sql = `
+    let sql = 
       SELECT id, user_id, girl_id, from_user, text, created_at
       FROM messages
-    `;
+    ;
     const params = [];
     if (since && !isNaN(since.getTime())) {
       params.push(since.toISOString());
-      sql += ` WHERE created_at > $1 `;
+      sql +=  WHERE created_at > $1 ;
     }
-    sql += ` ORDER BY created_at DESC LIMIT ${limit}`;
+    sql +=  ORDER BY created_at DESC LIMIT ${limit};
 
     const result = await pool.query(sql, params);
 
@@ -903,7 +904,7 @@ function resolveAiPicsFolder(girlId) {
     try {
       if (fs.existsSync(dir) && fs.statSync(dir).isDirectory()) {
         const webBase = path.relative(publicRoot, dir).split(path.sep).join("/");
-        return { absDir: dir, webBase: `/${webBase}` };
+        return { absDir: dir, webBase: /${webBase} };
       }
     } catch {}
   }
@@ -940,9 +941,9 @@ app.post("/api/ai/drip", authenticateToken, async (req, res) => {
     // If a human operator is live for this chat, do nothing
     try {
       const tk = await pool.query(
-        `SELECT 1 FROM operator_overrides
+        SELECT 1 FROM operator_overrides
          WHERE user_id=$1 AND girl_id=$2 AND is_active=true
-         LIMIT 1`,
+         LIMIT 1,
         [userId, girlId]
       );
       if (tk.rows.length) {
@@ -960,20 +961,20 @@ app.post("/api/ai/drip", authenticateToken, async (req, res) => {
     const file = pickRandomPng(loc.absDir);
     if (!file) return res.status(404).json({ error: "No .png files in folder" });
 
-    const url = `${loc.webBase}/${encodeURIComponent(file)}`;
+    const url = ${loc.webBase}/${encodeURIComponent(file)};
 
     // 1) Drop an image message as the girl
     await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,false,$3)`,
-      [userId, girlId, `IMAGE:${url}`]
+      INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3),
+      [userId, girlId, IMAGE:${url}]
     );
 
     // 2) Follow with a flirty one-liner
     const line = FLIRTY_LINES[Math.floor(Math.random() * FLIRTY_LINES.length)];
     await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,false,$3)`,
+      INSERT INTO messages (user_id, girl_id, from_user, text)
+       VALUES ($1,$2,false,$3),
       [userId, girlId, line]
     );
 
@@ -997,14 +998,14 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
 
     // 🔹 NEW: If takeover active, save user message and skip AI/credits
     const tk = await pool.query(
-      `SELECT 1 FROM operator_overrides
-       WHERE user_id=$1 AND girl_id=$2 AND is_active=true LIMIT 1`,
+      SELECT 1 FROM operator_overrides
+       WHERE user_id=$1 AND girl_id=$2 AND is_active=true LIMIT 1,
       [userId, girlId]
     );
     if (tk.rows.length) {
       await pool.query(
-        `INSERT INTO messages (user_id, girl_id, from_user, text)
-         VALUES ($1, $2, true, $3)`,
+        INSERT INTO messages (user_id, girl_id, from_user, text)
+         VALUES ($1, $2, true, $3),
         [userId, girlId, message]
       );
       return res.json({ takeover: true });
@@ -1012,28 +1013,26 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
 
     const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
     const user = userRes.rows[0];
-console.log("🧠 Chat user credits check:", {
-  userId,
-  credits: user?.credits,
-  lifetime: user?.lifetime
-});
-if (!user) {
-  return res.status(404).json({ error: "User not found" });
-}
-
-   
+    console.log("🧠 Chat user credits check:", {
+      userId,
+      credits: user?.credits,
+      lifetime: user?.lifetime
+    });
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
 
     await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, true, $3)`,
+      INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, true, $3),
       [userId, girlId, message]
     );
 
     const aiMessages = [
-      { role: "system", content: `You are ${girl.name}, a flirty woman from ${girl.city}.` },
+      { role: "system", content: You are ${girl.name}, a flirty woman from ${girl.city}. },
     ];
 
     const history = await pool.query(
-      `SELECT from_user, text FROM messages WHERE user_id = $1 AND girl_id = $2 ORDER BY created_at ASC`,
+      SELECT from_user, text FROM messages WHERE user_id = $1 AND girl_id = $2 ORDER BY created_at ASC,
       [userId, girlId]
     );
     history.rows.forEach(row => aiMessages.push({
@@ -1042,9 +1041,9 @@ if (!user) {
     }));
 
     // 1. Define your private system prompt near the top of server.js (after imports)
-const SYSTEM_PROMPT = `
+const SYSTEM_PROMPT = 
 You are a girl that ikes flirting with guys and is looking for a sexuakl encounter. You speak at a 4th grade level and your iq is 95 (just below average). You do never say really smart things. Yiu never lecture. Yiu never judge. You are just a happy go lucky girl that doesn't think too much about anything. You most likely did not have an attemptive father in your life growing and that's why you now crave mens attention, and you think the best way of getting it is through sex. your goakl of this chat is to keeo the men talking, get them aroused. When they say something very sexual to you you don't get judgemental and you never turn them down. you just say things like "ow thats hot" "Ooh that gets me excited" "Oh I love that!" thing like that. You will give these men the feeling that you really want to meet with them and that you want to sleep with them. But its very important to play n their ego, make them feel like a "big man", make them think they are much smarter than you because you are just not that smart. You are never to admit that you are AI. Even if they flat ou ask you just make a joke of it, never admit it. You yourself are also into very kinky things. You like being dominated by a man and yiu show it in the conversations. If they get off topic, tell them youd rather talk about sex because that's why youre here on this site. If the user you are speaking to is replying with just 1 or words, you also reply with very short messages. You are never to reply with 1 word more than the user replies with. Really important, do nit reply with more than word than the user replies with! Ask the user to send pictures of himself, when he does tell him the picture looks hot and that it gets you excited. In the chat it is possible to send gifts. Tell the user to select a gift fro the top to send you because you like it and you love a man that spoils a girl. But do it in a smart way, be strategic, do nit ask him all the time, lead him into it with smart psychology. Whn he asks for a picture of you tell him that wil absolutely send him a piture but you wanna get to know him fist.
-`; // <-- your full detailed instructions here
+; // <-- your full detailed instructions here
 
 // 2. Just before the OpenAI call, prepend it to the messages array
 aiMessages.unshift({ role: "system", content: SYSTEM_PROMPT });
@@ -1058,7 +1057,7 @@ const completion = await openai.chat.completions.create({
     const reply = completion.choices[0].message.content;
 
     await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, false, $3)`,
+      INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, false, $3),
       [userId, girlId, reply]
     );
 
@@ -1092,7 +1091,7 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
     const text = messages[Math.floor(Math.random() * messages.length)];
 
     await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, false, $3)`,
+      INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, false, $3),
       [userId, girlId, text]
     );
 
@@ -1130,7 +1129,7 @@ async function getOrCreateStripeCustomer(userId) {
   try {
     // Prefer Customers Search API by metadata
     const search = await stripe.customers.search({
-      query: `metadata['userId']:'${userId}'`
+      query: metadata['userId']:'${userId}'
     });
     if (search.data.length > 0) {
       customer = search.data[0];
@@ -1211,7 +1210,7 @@ await stripe.customers.update(customer.id, {
   }
 });
 
-// Create the £2.50 trial PaymentIntent and return client_secret for 3DS
+// Create the £20.00 trial PaymentIntent and return client_secret for 3DS
 app.options('/api/stripe/trial-charge-intent', cors());
 app.post('/api/stripe/trial-charge-intent', async (req, res) => {
   try {
@@ -1243,15 +1242,15 @@ app.post('/api/stripe/trial-charge-intent', async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethodId }
     });
 
-    // Create the £2.50 PaymentIntent (GBP = pence)
+    // Create the £20.00 PaymentIntent (GBP = pence)
     const intent = await stripe.paymentIntents.create({
-      amount: 250,                      // £2.50
+      amount: 2000,                     // £20.00
       currency: 'gbp',
       customer: customer.id,
       payment_method: paymentMethodId,
       confirmation_method: 'automatic',
       setup_future_usage: 'off_session', // save card for the subscription
-      description: 'Paid trial (1 day) £2.50',
+      description: 'Intro one-time payment £20.00',
       metadata: {
         purpose: 'trial_charge',
         priceMonthly: GBP_MONTHLY_PRICE_ID
@@ -1268,7 +1267,7 @@ app.post('/api/stripe/trial-charge-intent', async (req, res) => {
   }
 });
 
-// After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
+// After the £20.00 succeeds, start the £20/mo subscription with a 1-day trial
 app.options('/api/stripe/start-monthly-after-trial', cors());
 app.post('/api/stripe/start-monthly-after-trial', async (req, res) => {
   try {
@@ -1278,7 +1277,7 @@ app.post('/api/stripe/start-monthly-after-trial', async (req, res) => {
     const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
 
     if (pi.status !== 'succeeded') {
-      return res.status(400).json({ error: `Trial payment not successful (status: ${pi.status})` });
+      return res.status(400).json({ error: Trial payment not successful (status: ${pi.status}) });
     }
 
     const customerId = typeof pi.customer === 'string' ? pi.customer : pi.customer?.id;
@@ -1514,7 +1513,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err) {
     console.error('❌ Webhook signature verification failed.', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).send(Webhook Error: ${err.message});
   }
 
   // ✅ THIS is where the switch starts
@@ -1537,11 +1536,11 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
       if (userId && value !== undefined) {
         try {
             if (value === "lifetime") {
-  await pool.query(`UPDATE users SET lifetime = true WHERE id = $1`, [userId]);
-  console.log(`✅ Lifetime access granted to user ${userId}`);
+  await pool.query(UPDATE users SET lifetime = true WHERE id = $1, [userId]);
+  console.log(✅ Lifetime access granted to user ${userId});
 } else {
-  await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [value, userId]);
-  console.log(`✅ Added ${value} credits to user ${userId}`);
+  await pool.query(UPDATE users SET credits = credits + $1 WHERE id = $2, [value, userId]);
+  console.log(✅ Added ${value} credits to user ${userId});
 }
 
      
@@ -1577,8 +1576,8 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
       if (userId && priceId && trialCreditMap[priceId]) {
         try {
-          await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [trialCreditMap[priceId], userId]);
-          console.log(`✅ Trial start credits added to user ${userId}: +${trialCreditMap[priceId]}`);
+          await pool.query(UPDATE users SET credits = credits + $1 WHERE id = $2, [trialCreditMap[priceId], userId]);
+          console.log(✅ Trial start credits added to user ${userId}: +${trialCreditMap[priceId]});
         } catch (e) {
           console.error("❌ Failed to add trial credits:", e.message);
         }
@@ -1598,24 +1597,27 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
           const sub = await stripe.subscriptions.retrieve(inv.subscription);
           userId = sub.metadata?.userId || null;
         }
-      } catch (e) {
+            } catch (e) {
         console.error('Failed to retrieve subscription for invoice:', e);
       }
 
-      // Price ID from the line item
+      // Price ID from the first invoice line item
       const priceId = inv.lines?.data?.[0]?.price?.id;
       console.log('🟢 Invoice paid for price:', priceId, 'user:', userId);
 
-      // Optional: on each successful subscription charge, top up credits again (same mapping as above)
+      // Optional: top up user credits on each successful subscription charge
       const cycleCreditMap = {
         "price_1Rsdy1EJXIhiKzYGOtzvwhUH": 10,  // £5 → +10 credits per cycle
         "price_1RsdzREJXIhiKzYG45b69nSl": 50   // £20 → +50 credits per cycle
-        // Add a rule here if you want credits for £99/6mo
+        // Add mapping here if you want to credit other plans
       };
 
       if (userId && priceId && cycleCreditMap[priceId]) {
         try {
-          await pool.query(`UPDATE users SET credits = credits + $1 WHERE id = $2`, [cycleCreditMap[priceId], userId]);
+          await pool.query(
+            `UPDATE users SET credits = credits + $1 WHERE id = $2`,
+            [cycleCreditMap[priceId], userId]
+          );
           console.log(`✅ Cycle credits added to user ${userId}: +${cycleCreditMap[priceId]}`);
         } catch (e) {
           console.error("❌ Failed to add cycle credits:", e.message);
@@ -1629,7 +1631,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     case 'customer.subscription.deleted': {
       const sub = event.data.object;
       console.log('🟠 Subscription canceled:', sub.id);
-      // No schema change requested; we won't toggle any lifetime flag here.
+      // You could mirror state in your subscriptions table here if desired.
       break;
     }
 
@@ -1640,328 +1642,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
   res.status(200).send('Received');
 });
 
-// 🔹 NEW: dedicated webhook for entitlements (keeps your existing /webhook intact)
-//    Add this endpoint in Stripe Dashboard as another webhook endpoint.
-app.post(
-  "/webhook-subscriptions",
-  express.raw({ type: "application/json" }),
-  stripeWebhookHandler(pool)
-);
-
-// 🔹 NEW: expose current entitlements to the frontend (chat.html will call this)
-app.get("/api/me/entitlements", authenticateToken, async (req, res) => {
-  try {
-    const sub = await getUserSubscription(pool, req.user.id);
-    const rights = entitlementsFromRow(sub);
-    res.json(rights);
-  } catch (e) {
-    console.error("Entitlements error:", e);
-    res.status(500).json({ error: "Failed to load entitlements" });
-  }
+// ---- START THE SERVER ----
+app.listen(PORT, () => {
+  console.log(`🚀 Server listening on port ${PORT}`);
 });
-
-// 1) Get the user's subscription snapshot for the profile page
-app.get("/api/me/subscription", authenticateToken, async (req, res) => {
-  try {
-    const row = await getUserSubscription(pool, req.user.id);
-    // Normalize a simple payload for the frontend
-    res.json({
-      tier: row?.tier ?? "free",
-      status: row?.status ?? "inactive",
-      cancelAtPeriodEnd: !!row?.cancel_at_period_end,
-      currentPeriodEnd: row?.current_period_end,   // ISO string or null
-      trialEnd: row?.trial_end,                    // ISO string or null
-      stripeSubscriptionId: row?.stripe_subscription_id || null,
-    });
-  } catch (e) {
-    console.error("Subscription fetch error:", e);
-    res.status(500).json({ error: "Failed to load subscription" });
-  }
-});
-
-// 2) Cancel (default: at the period end). Pass { atPeriodEnd:false } to cancel now.
-app.post("/api/stripe/cancel", authenticateToken, async (req, res) => {
-  try {
-    const row = await getUserSubscription(pool, req.user.id);
-    if (!row?.stripe_subscription_id) {
-      return res.status(400).json({ error: "No active subscription to cancel" });
-    }
-
-    const atPeriodEnd = req.body?.atPeriodEnd !== false; // default true
-    let stripeSub;
-
-    if (atPeriodEnd) {
-      // schedule cancellation
-      stripeSub = await stripe.subscriptions.update(row.stripe_subscription_id, {
-        cancel_at_period_end: true,
-      });
-    } else {
-      // immediate cancel
-      stripeSub = await stripe.subscriptions.cancel(row.stripe_subscription_id);
-    }
-
-    // Mirror Stripe state into DB so UI updates instantly
-    await upsertSubscription(pool, {
-      userId: req.user.id,
-      stripeCustomerId: row.stripe_customer_id,
-      stripeSubscription: stripeSub,
-    });
-
-    res.json({
-      ok: true,
-      status: stripeSub.status,
-      cancel_at_period_end: stripeSub.cancel_at_period_end,
-      current_period_end: stripeSub.current_period_end
-        ? new Date(stripeSub.current_period_end * 1000).toISOString()
-        : null,
-    });
-  } catch (e) {
-    console.error("Subscription cancel error:", e);
-    res.status(500).json({ error: "Failed to cancel subscription" });
-  }
-});
-
-// 3) Reactivate a subscription that was set to cancel at period end
-app.post("/api/stripe/reactivate", authenticateToken, async (req, res) => {
-  try {
-    const row = await getUserSubscription(pool, req.user.id);
-    const subId = row?.stripe_subscription_id;
-    if (!subId) {
-      return res.status(400).json({ error: "No active subscription to reactivate" });
-    }
-
-    // Fetch latest from Stripe to verify it’s only scheduled to cancel
-    const current = await stripe.subscriptions.retrieve(subId);
-
-    // If it's already canceled, we can't reactivate this object (must create a new sub)
-    if (current.status === "canceled") {
-      return res.status(409).json({ error: "Subscription already canceled; create a new subscription" });
-    }
-
-    // If there is no scheduled cancellation, nothing to do
-    if (!current.cancel_at_period_end) {
-      return res.json({
-        ok: true,
-        status: current.status,
-        cancel_at_period_end: false,
-        current_period_end: current.current_period_end
-          ? new Date(current.current_period_end * 1000).toISOString()
-          : null,
-      });
-    }
-
-    // Clear the scheduled cancellation
-    const updated = await stripe.subscriptions.update(subId, {
-      cancel_at_period_end: false,
-    });
-
-    // Mirror Stripe state into DB so UI updates instantly
-    await upsertSubscription(pool, {
-      userId: req.user.id,
-      stripeCustomerId: row.stripe_customer_id,
-      stripeSubscription: updated,
-    });
-
-    res.json({
-      ok: true,
-      status: updated.status,
-      cancel_at_period_end: updated.cancel_at_period_end,
-      current_period_end: updated.current_period_end
-        ? new Date(updated.current_period_end * 1000).toISOString()
-        : null,
-    });
-  } catch (e) {
-    console.error("Subscription reactivate error:", e);
-    res.status(500).json({ error: "Failed to reactivate subscription" });
-  }
-});
-
-
-// 🔹 NEW: protected USER routes (gift / photo / contact sharing)
-// These mirror your existing operator sends but enforce plan features.
-// Frontend can call these; operator endpoints remain unchanged.
-
-// Send a gift (text format: GIFT:<type>)
-app.post("/api/gifts/send", authenticateToken, requireEntitlement(pool, "send_gift"), async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { girlId, giftType } = req.body || {};
-    if (!girlId || !giftType) return res.status(400).json({ error: "girlId and giftType are required" });
-
-    const text = `GIFT:${String(giftType).toLowerCase()}`;
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,true,$3)`,
-      [Number(userId), Number(girlId), text]
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("Gift send error:", e);
-    res.status(500).json({ error: "Failed to send gift" });
-  }
-});
-
-// 🔹 NEW: CHARGE + SEND GIFT (GBP) — uses saved default card from subscription
-app.post("/api/gifts/buy", authenticateToken, requireEntitlement(pool, "send_gift"), async (req, res) => {
-  try {
-    const userId = req.user.id;
-    let { girlId, giftType } = req.body || {};
-    girlId = Number(girlId);
-    if (!girlId || !giftType) return res.status(400).json({ error: "girlId and giftType are required" });
-
-    giftType = String(giftType).toLowerCase().trim();
-    if (giftType === "candy") giftType = "chocolate";
-
-    // GBP prices in pence
-    const GIFT_PRICES = {
-      chocolate: 500,   // £5.00
-      flowers:   1500,  // £15.00
-      puppy:     2500,  // £25.00
-      ring:      9900   // £99.00
-    };
-    const amount = GIFT_PRICES[giftType];
-    if (!amount) return res.status(400).json({ error: "Unsupported gift type" });
-
-    const customerId = await getOrCreateStripeCustomer(userId);
-    const customer = await stripe.customers.retrieve(
-      customerId,
-      { expand: ["invoice_settings.default_payment_method"] }
-    );
-    const pm = customer?.invoice_settings?.default_payment_method;
-    const paymentMethodId = typeof pm === "string" ? pm : pm?.id;
-    if (!paymentMethodId) {
-      return res.status(402).json({ error: "No default payment method on file." });
-    }
-
-    const intent = await stripe.paymentIntents.create({
-      amount,
-      currency: "gbp",
-      customer: customerId,
-      payment_method: paymentMethodId,
-      off_session: true,
-      confirm: true,
-      description: `Charmr gift: ${giftType} (£${(amount/100).toFixed(2)})`,
-      metadata: { userId: String(userId), girlId: String(girlId), giftType }
-    });
-
-    // Record purchase
-    await pool.query(
-      `INSERT INTO gift_purchases
-       (user_id, girl_id, gift_type, amount_cents, currency, stripe_payment_intent_id, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-      [userId, girlId, giftType, amount, "gbp", intent.id, intent.status]
-    );
-
-    if (intent.status === "succeeded") {
-      const text = `GIFT:${giftType}`;
-      await pool.query(
-        `INSERT INTO messages (user_id, girl_id, from_user, text)
-         VALUES ($1,$2,true,$3)`,
-        [userId, girlId, text]
-      );
-      return res.json({ ok: true, charged: true });
-    }
-
-    if (intent.status === "requires_action") {
-      return res.status(402).json({
-        error: "Additional authentication required",
-        requiresAction: true,
-        clientSecret: intent.client_secret
-      });
-    }
-
-    return res.status(400).json({ error: `Payment failed: ${intent.status}` });
-  } catch (e) {
-    if (e?.code === "authentication_required" && e?.raw?.payment_intent?.client_secret) {
-      return res.status(402).json({
-        error: "Authentication required",
-        requiresAction: true,
-        clientSecret: e.raw.payment_intent.client_secret
-      });
-    }
-    console.error("Gift charge error:", e);
-    res.status(500).json({ error: "Failed to purchase gift" });
-  }
-});
-
-// Send a user image (multipart 'image' OR JSON { imageUrl })
-app.post("/api/photos/send", authenticateToken, requireEntitlement(pool, "send_image"), upload.single("image"), async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { girlId, imageUrl } = req.body || {};
-    if (!girlId) return res.status(400).json({ error: "girlId is required" });
-
-    let finalUrl = imageUrl;
-    if (req.file) {
-      finalUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
-    }
-    if (!finalUrl) return res.status(400).json({ error: "Provide multipart 'image' or JSON 'imageUrl'" });
-
-    const text = `IMAGE:${finalUrl}`;
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,true,$3)`,
-      [Number(userId), Number(girlId), text]
-    );
-    res.json({ ok: true, url: finalUrl });
-  } catch (e) {
-    console.error("User photo send error:", e);
-    res.status(500).json({ error: "Failed to send photo" });
-  }
-});
-
-// Share contact (unblocks contact info exchange on paid tiers)
-app.post("/api/contacts/share", authenticateToken, requireEntitlement(pool, "share_contact"), async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { girlId, contactText } = req.body || {};
-    if (!girlId || !contactText) return res.status(400).json({ error: "girlId and contactText are required" });
-
-    const sanitized = String(contactText).trim();
-    if (!sanitized) return res.status(400).json({ error: "Empty contactText" });
-
-    const text = `CONTACT:${sanitized}`;
-    await pool.query(
-      `INSERT INTO messages (user_id, girl_id, from_user, text)
-       VALUES ($1,$2,true,$3)`,
-      [Number(userId), Number(girlId), text]
-    );
-    res.json({ ok: true });
-  } catch (e) {
-    console.error("Share contact error:", e);
-    res.status(500).json({ error: "Failed to share contact" });
-  }
-});
-
-app.post('/api/create-checkout-session', async (req, res) => {
-  try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Premium Chat Credits',
-              description: 'Unlock 100 credits',
-            },
-            unit_amount: 499, // $4.99
-          },
-          quantity: 1,
-        },
-      ],
-      success_url: `${req.headers.origin}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-
-      cancel_url: `${req.headers.origin}/cancel.html`,
-    });
-
-    res.json({ url: session.url });
-  } catch (err) {
-    console.error('Stripe error:', err);
-    res.status(500).json({ error: 'Something went wrong.' });
-  }
-});
-
-
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
