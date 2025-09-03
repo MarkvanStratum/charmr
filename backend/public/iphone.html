@@ -12,7 +12,7 @@
     .shell{ width:min(900px,100%); display:flex; flex-direction:column; gap:18px }
     .card{ width:min(720px,100%); background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto }
     .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 12px }
-    .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
+    .sub{ text-align:center; color:#bbb; margin-top:-6px; margin-bottom:16px }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
     .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px }
     .btn{ width:100%; border:none; color:#111; border-radius:12px; padding:12px 16px; font-weight:900; cursor:pointer; font-size:16px; background:linear-gradient(180deg,var(--cta1),var(--cta2)); box-shadow:0 8px 18px rgba(255,174,15,.25) }
@@ -41,7 +41,7 @@
 <body>
   <div class="shell">
 
-    <!-- STEP 1: Account & contact info (build trust) -->
+    <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
       <h1 class="title">Secure your intro offer</h1>
       <p class="sub">Create your account. You can cancel anytime.</p>
@@ -59,11 +59,13 @@
       <p class="trust-text">We’ll never share your contact info. 100% privacy guaranteed.</p>
     </section>
 
-    <!-- STEP 2: Payment (two-step: intro charge → start subscription) -->
+    <!-- STEP 2 -->
     <section id="step2" class="card step" aria-hidden="true">
       <h2 class="title">Secure Payment</h2>
       <p class="sub">Your details are safe — powered by Stripe.</p>
-      <p class="sub" style="margin-top:-6px;color:#0b6b3a"><strong>Today's charge:</strong> £20.00 one-time intro payment. Your subscription starts after this succeeds.</p>
+      <p class="sub" style="margin-top:-6px;color:#0b6b3a">
+        <strong>Today's charge:</strong> £2.50 paid trial. Your monthly plan starts after this succeeds.
+      </p>
 
       <div class="addr-grid" aria-label="Billing address">
         <input id="addr1" class="input full" placeholder="Address line 1" autocomplete="address-line1" required>
@@ -87,8 +89,8 @@
           <option value="FI">Finland</option>
           <option value="IT">Italy</option>
           <option value="ES">Spain</option>
-          <option value="GE">Georgia</option><!-- ADDED -->
-          <option value="CO">Colombia</option><!-- common test case -->
+          <option value="GE">Georgia</option>
+          <option value="CO">Colombia</option>
         </select>
       </div>
 
@@ -109,7 +111,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay £20.00 Securely</button>
+        <button class="btn" id="payNow">Pay £2.50 Securely</button>
       </div>
 
       <div class="brands">
@@ -135,6 +137,27 @@
   <!-- Stripe.js -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
+    // If you host HTML on a different origin than the Node backend,
+    // set this before the script runs:
+    //   <script>window.API_BASE_FALLBACK = "https://YOUR-SERVICE.onrender.com";</script>
+
+    const API_BASES = [location.origin, (window.API_BASE_FALLBACK || "").replace(/\/$/,"")].filter(Boolean);
+    async function apiFetch(path, init){
+      let lastErr;
+      for (const base of API_BASES){
+        try{
+          const res = await fetch(base + path, init);
+          // if 404 on same-origin, try next base; otherwise return
+          if (!res.ok && base === location.origin && API_BASES.length > 1 && res.status === 404) {
+            lastErr = new Error("Not found on origin, retrying fallback…");
+            continue;
+          }
+          return res;
+        }catch(e){ lastErr = e; }
+      }
+      throw lastErr || new Error("Network error");
+    }
+
     // ---------- Step navigation ----------
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
@@ -149,14 +172,13 @@
     const regionInput = document.getElementById('region');
     const postalInput = document.getElementById('postal');
 
-    // Minimal dialing code map (we also read from ip API when available)
     const E164_BY_ISO = {
       US: '+1', CA: '+1', GB: '+44', IE: '+353', AU: '+61', NZ: '+64',
       DE: '+49', FR: '+33', NL: '+31', SE: '+46', NO: '+47', DK: '+45',
       FI: '+358', IT: '+39', ES: '+34', GE: '+995', CO: '+57'
     };
 
-    let geoLocked = false; // prevents late fallback from overwriting
+    let geoLocked = false;
     let lastAutoPrefix = null;
 
     function setCountryOption(iso2, label) {
@@ -176,7 +198,7 @@
       if (!prefix) return;
       const v = phoneInput.value.trim();
       const looksManual = v && !v.startsWith(lastAutoPrefix || '') && v.replace(/\D/g,'').length > 3;
-      if (looksManual) return; // don't fight the user
+      if (looksManual) return;
       if (!v || v[0] !== '+') {
         phoneInput.value = prefix + (v.replace(/^\+/, '') ? (' ' + v.replace(/^\+/, '')) : '');
       } else if (lastAutoPrefix && v.startsWith(lastAutoPrefix)) {
@@ -189,7 +211,6 @@
       const iso = countrySelect.value.toUpperCase();
       const prefix = E164_BY_ISO[iso] || lastAutoPrefix || '';
       if (prefix) {
-        // only auto-update prefix if user hasn't typed something long themselves
         const raw = phoneInput.value.trim();
         if (!raw || raw.replace(/\D/g,'').length <= 3 || (lastAutoPrefix && raw.startsWith(lastAutoPrefix))) {
           maybeSetPhonePrefix(prefix);
@@ -233,7 +254,6 @@
         if (!g || !g.iso) { try { g = await geoFromIpwho(); } catch {} }
         if (!g || !g.iso) throw new Error('no geo');
 
-        // Fill UI
         setCountryOption(g.iso, g.country);
         if (!cityInput.value && g.city) cityInput.value = g.city;
         if (!regionInput.value && g.region) regionInput.value = g.region;
@@ -242,9 +262,8 @@
         const prefix = g.dial || E164_BY_ISO[g.iso] || '';
         maybeSetPhonePrefix(prefix);
 
-        geoLocked = true; // lock once set
+        geoLocked = true;
       } catch {
-        // fallback: try navigator language -> region (e.g., en-GB)
         const m = (navigator.language || '').match(/-([A-Z]{2})$/i);
         const guessIso = m ? m[1].toUpperCase() : '';
         if (guessIso) {
@@ -260,7 +279,7 @@
       const email = (emailInput.value||'').trim();
       const password = passwordInput.value||'';
       if(!email || !password) throw new Error('Please enter email and password.');
-      const res = await fetch('/api/register', {
+      const res = await apiFetch('/api/register', {
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({ email, password, phone: (phoneInput.value||'').trim() })
       });
@@ -277,7 +296,6 @@
       localStorage.setItem('checkout_email', emailInput.value);
       step1.setAttribute('aria-hidden','true');
       step2.setAttribute('aria-hidden','false');
-      // Do geo *when* step 2 becomes visible to avoid races with slow networks
       setGeoDefaults();
       window.scrollTo({top:0,behavior:'smooth'});
     };
@@ -287,14 +305,10 @@
       window.scrollTo({top:0,behavior:'smooth'});
     };
 
-    // ---------- Stripe setup (two-step, safer) ----------
-    const TRIAL_INTENT_URL = '/api/stripe/trial-charge-intent';
-    const START_MONTHLY_URL = '/api/stripe/start-monthly-after-trial';
+    // ---------- Stripe (matches server's £2.50 trial) ----------
+    const TRIAL_INTENT_PATH = '/api/stripe/trial-charge-intent';
+    const START_MONTHLY_PATH = '/api/stripe/start-monthly-after-trial';
     const PUBLISHABLE_KEY = 'pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q';
-
-    // Intro one-time payment config
-    const INTRO_AMOUNT_MINOR = 2000; // £20.00 in minor units
-    const INTRO_CURRENCY = 'gbp';
 
     const stripe = Stripe(PUBLISHABLE_KEY);
     const elements = stripe.elements();
@@ -334,7 +348,7 @@
           country: document.getElementById('country').value.trim()
         };
 
-        // 1) Create PaymentMethod with full billing_details
+        // 1) Create PaymentMethod with full billing_details (helps issuer auth)
         const pmRes = await stripe.createPaymentMethod({
           type:'card',
           card: cardNumber,
@@ -348,10 +362,10 @@
         if (pmRes.error) throw new Error(pmRes.error.message);
         const paymentMethodId = pmRes.paymentMethod.id;
 
-        // 2) Ask server for an intro PaymentIntent
-        const r1 = await fetch(TRIAL_INTENT_URL,{
+        // 2) Ask server for the £2.50 trial PaymentIntent (no custom amount here)
+        const r1 = await apiFetch(TRIAL_INTENT_PATH, {
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ paymentMethodId, name: nameInput.value, email: emailInput.value, amountMinor: INTRO_AMOUNT_MINOR, currency: INTRO_CURRENCY })
+          body: JSON.stringify({ paymentMethodId, name: nameInput.value, email: emailInput.value })
         });
         const d1 = await r1.json();
         if (!r1.ok || !d1.clientSecret) throw new Error(d1.error || 'Failed to create intro charge.');
@@ -361,8 +375,8 @@
         if (conf.error) throw new Error(conf.error.message);
         if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) throw new Error('Payment not completed');
 
-        // 4) Start the monthly subscription now that we have a successful charge
-        const r2 = await fetch(START_MONTHLY_URL,{
+        // 4) Start monthly subscription after success
+        const r2 = await apiFetch(START_MONTHLY_PATH, {
           method:'POST', headers:{'Content-Type':'application/json'},
           body: JSON.stringify({ paymentIntentId: conf.paymentIntent.id })
         });
