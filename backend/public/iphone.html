@@ -360,7 +360,7 @@
     })();
 
     /* ---------- Stripe logic (unchanged flow; enhanced billing_details) ---------- */
-    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
     const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
@@ -400,22 +400,41 @@
 
       if(pm.error){hideLoading();showError(pm.error.message);return}
 
+      // 1) Create the £20 intro charge PaymentIntent
       const res=await fetch(SUBSCRIBE_URL,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({
-          priceId:FIXED_PRICE_ID,
           paymentMethodId:pm.paymentMethod.id,
           name:nameInput.value,
-          email:emailInput.value
-          // Address/phone live on the PaymentMethod's billing_details above
+          email:emailInput.value,
+          phone: fullPhone,
+          address: addr
         })
       });
       const data=await res.json();
+      if(data.error){hideLoading();showError(data.error);return}
       if(!data.clientSecret){hideLoading();showError("Payment failed");return}
+
+      // 2) Confirm the intro charge (handles SCA/3DS)
       const conf=await stripe.confirmCardPayment(data.clientSecret);
       if(conf.error){hideLoading();showError(conf.error.message);return}
-      if(conf.paymentIntent&&conf.paymentIntent.status==="succeeded"){window.location.href="thankyou-iphone.html"}else{hideLoading();showError("Payment not completed")}
+      if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");return}
+
+      // 3) Start the subscription using the successful intro charge
+      const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          paymentIntentId: data.paymentIntentId,
+          priceId: FIXED_PRICE_ID
+        })
+      });
+      const subData = await subRes.json();
+      if(subData.error){hideLoading();showError(subData.error);return}
+
+      // Success
+      window.location.href="thankyou-iphone.html";
     };
   </script>
 </body>
