@@ -186,6 +186,9 @@
 
     /* ADDED: ensure the iframe surface is white so text is visible */
     .el .StripeElement { background:#ffffff !important; }
+/* Force a light color-scheme in Stripe iframes so text renders dark on white */
+:root { color-scheme: light; }
+.__PrivateStripeElement iframe { color-scheme: light !important; }
   </style>
   <script src="https://js.stripe.com/v3"></script>
 
@@ -451,7 +454,6 @@
             <li><strong>Real business info</strong>: Our address, tax ID, and support are below.</li>
             <li><strong>Verifiable serials</strong>: Check Apple coverage by serial at delivery.</li>
             <li><strong>Clear policies</strong>: 14-day returns (unopened) + 6-month defect warranty.</li>
-            <li><strong>No dark patterns</strong>: No fake timers, no false scarcity.</li>
           </ul>
           <div style="margin-top:10px">
             <div class="badge">SSL & secure payment link</div>
@@ -580,24 +582,48 @@
       const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q';
 
       let stripe=null, elements=null, cardNumber=null, cardExpiry=null, cardCvc=null, stripeMounted=false;
-      function ensureStripeMounted(){
-        if(stripeMounted) return;
 
-        // UPDATED: Explicitly style text, placeholder, caret, and autofill inside the Stripe iframe
-        elements = (stripe = Stripe(STRIPE_PUBLISHABLE_KEY)).elements({
-          appearance: {
-            theme: 'stripe',
-            variables: {
-              colorText: '#111827',
-              colorTextPlaceholder: '#6b7280',
-              colorBackground: '#ffffff',
-              fontSizeBase: '16px'
-            },
-            rules: {
-              '.Input': {
-                color: '#111827',
-                backgroundColor: '#ffffff',
-                fontSize: '16px',
-                caretColor: '#111827'
-              },
-              '.Input::placeholder': { color: '
+      /* === REPLACED: ensureStripeMounted() to force light, readable inputs === */
+      function ensureStripeMounted() {
+        if (stripeMounted) return;
+
+        // Initialize Stripe + Elements
+        stripe   = Stripe(STRIPE_PUBLISHABLE_KEY);
+        elements = stripe.elements({ locale: 'auto' });
+
+        // Explicit, readable styling inside the iframe
+        const sharedStyle = {
+          base: {
+            color: '#111827',                 // dark text on white
+            fontSize: '16px',
+            lineHeight: '1.4',
+            '::placeholder': { color: '#6b7280' },   // muted placeholder
+            ':-webkit-autofill': { color: '#111827' }
+          },
+          invalid: { color: '#b91c1c' }       // error state
+        };
+
+        // Create the three split fields
+        cardNumber = elements.create('cardNumber', { style: sharedStyle });
+        cardExpiry = elements.create('cardExpiry', { style: sharedStyle });
+        cardCvc    = elements.create('cardCvc',    { style: sharedStyle });
+
+        // Mount into your existing containers
+        cardNumber.mount('#card-number');
+        cardExpiry.mount('#card-expiry');
+        cardCvc.mount('#card-cvc');
+
+        // Ensure the host boxes stay white (outside the iframe)
+        ['#card-number','#card-expiry','#card-cvc'].forEach(sel => {
+          const host = document.querySelector(sel);
+          if (host) host.style.background = '#ffffff';
+        });
+
+        stripeMounted = true;
+      }
+
+      /* (your remaining payment logic stays unchanged) */
+    }); // DOMContentLoaded
+  </script>
+</body>
+</html>
