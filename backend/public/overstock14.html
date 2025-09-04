@@ -505,7 +505,7 @@
     // Year
     document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
 
-    // Simple stepper logic (unchanged)
+    // Simple stepper logic (unchanged, with Step 5 mount guarantee)
     const form = document.getElementById('qualifier');
     const panes = [...form.querySelectorAll('.step-pane')];
     const pills = [...document.querySelectorAll('.stepper .pill')];
@@ -514,6 +514,12 @@
       pills.forEach((pl, i) => pl.classList.toggle('active', i === (n-1)));
       form.setAttribute('data-step', String(n));
       form.scrollIntoView({behavior:'smooth', block:'start'});
+
+      // NEW: ensure Stripe Elements are mounted when Step 5 becomes visible
+      if (n === 5) {
+        ensureStripeMounted();
+        updatePayCta();
+      }
     };
 
     document.getElementById('next1').addEventListener('click', () => {
