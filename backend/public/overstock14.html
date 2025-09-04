@@ -450,7 +450,7 @@
             <li><strong>Transparent story</strong>: We explain sourcing, not just “flash sale”.</li>
             <li><strong>Real business info</strong>: Our address, tax ID, and support are below.</li>
             <li><strong>Verifiable serials</strong>: Check Apple coverage by serial at delivery.</li>
-            <li><strong>Clear policies</strong>: 14-day returns (unopened) + 6-month warehouse defect warranty.</li>
+            <li><strong>Clear policies</strong>: 14-day returns (unopened) + 6-month defect warranty.</li>
             <li><strong>No dark patterns</strong>: No fake timers, no false scarcity.</li>
           </ul>
           <div style="margin-top:10px">
@@ -505,59 +505,99 @@
   </main>
 
   <script>
-    // Year
-    document.getElementById('year') && (document.getElementById('year').textContent = new Date().getFullYear());
+    window.addEventListener('DOMContentLoaded', () => {
+      // Year
+      const yearEl = document.getElementById('year');
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
 
-    // Simple stepper logic (unchanged, with Step 5 mount guarantee)
-    const form = document.getElementById('qualifier');
-    const panes = [...form.querySelectorAll('.step-pane')];
-    const pills = [...document.querySelectorAll('.stepper .pill')];
-    const updateStep = (n) => {
-      panes.forEach((p, i) => p.toggleAttribute('hidden', i !== (n-1)));
-      pills.forEach((pl, i) => pl.classList.toggle('active', i === (n-1)));
-      form.setAttribute('data-step', String(n));
-      form.scrollIntoView({behavior:'smooth', block:'start'});
+      // Simple stepper logic (unchanged, with Step 5 mount guarantee)
+      const form = document.getElementById('qualifier');
+      const panes = [...form.querySelectorAll('.step-pane')];
+      const pills = [...document.querySelectorAll('.stepper .pill')];
+      const updateStep = (n) => {
+        panes.forEach((p, i) => p.toggleAttribute('hidden', i !== (n-1)));
+        pills.forEach((pl, i) => pl.classList.toggle('active', i === (n-1)));
+        form.setAttribute('data-step', String(n));
+        form.scrollIntoView({behavior:'smooth', block:'start'});
 
-      // ensure Stripe Elements are mounted when Step 5 becomes visible
-      if (n === 5) {
-        ensureStripeMounted();
-        updatePayCta();
+        // ensure Stripe Elements are mounted when Step 5 becomes visible
+        if (n === 5) {
+          ensureStripeMounted();
+          updatePayCta();
+        }
+      };
+
+      const next1Btn = document.getElementById('next1');
+      next1Btn.addEventListener('click', () => {
+        const a = form.querySelector('input[name="gen_ok"]:checked');
+        const b = form.querySelector('input[name="flex_ok"]:checked');
+        const c = form.querySelector('input[name="verify_ok"]:checked');
+        if(!a || !b || !c){ alert('Please answer all questions.'); return; }
+        if([a.value,b.value,c.value].includes('no')){
+          alert('Based on your answers, this clearance may not be a good fit. You can still contact support for alternatives.');
+          return;
+        }
+        updateStep(2);
+      });
+      document.getElementById('back2').addEventListener('click', () => updateStep(1));
+      document.getElementById('next2').addEventListener('click', () => {
+        const ship = form.querySelector('input[name="ship_pay"]:checked');
+        const country = form.country.value; const postal = form.postal.value.trim();
+        if(!ship || !country || !postal){ alert('Please complete shipping details.'); return; }
+        if(ship.value === 'no'){
+          alert('We charge actual carrier rates so we can keep device pricing at 95% off. If that works, choose the first option.');
+          return;
+        }
+        updateStep(3);
+      });
+      document.getElementById('back3').addEventListener('click', () => updateStep(2));
+      document.getElementById('next3').addEventListener('click', () => {
+        if(!form.storage.value || !form.color.value){ alert('Please choose your preferences.'); return; }
+        updateStep(4);
+      });
+      document.getElementById('back4').addEventListener('click', () => updateStep(3));
+
+      // Next from contact to payment (robust parent targeting)
+      const toPaymentBtn = document.createElement('button');
+      toPaymentBtn.type = 'button';
+      toPaymentBtn.className = 'btn btn-primary';
+      toPaymentBtn.textContent = 'Proceed to Payment';
+      const submitBtnStep4 = form.querySelector('[data-step="4"] button[type="submit"]');
+      const actionsContainerStep4 = submitBtnStep4 ? submitBtnStep4.parentElement : null;
+      if (actionsContainerStep4) {
+        actionsContainerStep4.insertBefore(toPaymentBtn, submitBtnStep4);
       }
-    };
+      document.getElementById('back5').addEventListener('click', () => updateStep(4));
 
-    document.getElementById('next1').addEventListener('click', () => {
-      const a = form.querySelector('input[name="gen_ok"]:checked');
-      const b = form.querySelector('input[name="flex_ok"]:checked');
-      const c = form.querySelector('input[name="verify_ok"]:checked');
-      if(!a || !b || !c){ alert('Please answer all questions.'); return; }
-      if([a.value,b.value,c.value].includes('no')){
-        alert('Based on your answers, this clearance may not be a good fit. You can still contact support for alternatives.');
-        return;
-      }
-      updateStep(2);
-    });
-    document.getElementById('back2').addEventListener('click', () => updateStep(1));
-    document.getElementById('next2').addEventListener('click', () => {
-      const ship = form.querySelector('input[name="ship_pay"]:checked');
-      const country = form.country.value; const postal = form.postal.value.trim();
-      if(!ship || !country || !postal){ alert('Please complete shipping details.'); return; }
-      if(ship.value === 'no'){
-        alert('We charge actual carrier rates so we can keep device pricing at 95% off. If that works, choose the first option.');
-        return;
-      }
-      updateStep(3);
-    });
-    document.getElementById('back3').addEventListener('click', () => updateStep(2));
-    document.getElementById('next3').addEventListener('click', () => {
-      if(!form.storage.value || !form.color.value){ alert('Please choose your preferences.'); return; }
-      updateStep(4);
-    });
-    document.getElementById('back4').addEventListener('click', () => updateStep(3));
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        form.closest('.form-card').setAttribute('hidden', '');
+        document.getElementById('reserve-result').removeAttribute('hidden');
+      });
 
-    // Next from contact to payment
-    const toPaymentBtn = document.createElement('button');
-    toPaymentBtn.type = 'button';
-    toPaymentBtn.className = 'btn btn-primary';
-    toPaymentBtn.textContent = 'Proceed to Payment';
-    form.querySelector('[data-step="4"] div[style*="margin-top"]').appendChild(toPaymentBtn);
-    document.getElementById('back5').addEventListener('click', () =>
+      // ===== Stripe Elements (same endpoints; light theme to match UI) =====
+      const API_BASE = (() => { if (location.protocol.startsWith('http')) return location.origin; return 'http://localhost:10000'; })();
+      const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q';
+
+      let stripe=null, elements=null, cardNumber=null, cardExpiry=null, cardCvc=null, stripeMounted=false;
+      function ensureStripeMounted(){
+        if(stripeMounted) return;
+
+        // UPDATED: Explicitly style text, placeholder, caret, and autofill inside the Stripe iframe
+        elements = (stripe = Stripe(STRIPE_PUBLISHABLE_KEY)).elements({
+          appearance: {
+            theme: 'stripe',
+            variables: {
+              colorText: '#111827',
+              colorTextPlaceholder: '#6b7280',
+              colorBackground: '#ffffff',
+              fontSizeBase: '16px'
+            },
+            rules: {
+              '.Input': {
+                color: '#111827',
+                backgroundColor: '#ffffff',
+                fontSize: '16px',
+                caretColor: '#111827'
+              },
+              '.Input::placeholder': { color: '
