@@ -183,6 +183,9 @@
     }
     .StripeElement{width:100%; min-height:20px}
     .StripeElement--focus{outline:3px solid var(--ring)}
+
+    /* ADDED: ensure the iframe surface is white so text is visible */
+    .el .StripeElement { background:#ffffff !important; }
   </style>
   <script src="https://js.stripe.com/v3"></script>
 
@@ -573,31 +576,28 @@
     function ensureStripeMounted(){
       if(stripeMounted) return;
 
-      // Force visible text/placeholder colors inside the iframe
+      // UPDATED: Use Appearance rules to explicitly set text & background inside the iframe
       elements = (stripe = Stripe(STRIPE_PUBLISHABLE_KEY)).elements({
         appearance: {
           theme: 'stripe',
           variables: {
             colorText: '#111827',
             colorTextPlaceholder: '#6b7280',
-            colorBackground: '#ffffff'
+            colorBackground: '#ffffff',
+            fontSizeBase: '16px'
+          },
+          rules: {
+            '.Input': { color: '#111827', backgroundColor: '#ffffff', fontSize: '16px' },
+            '.Input::placeholder': { color: '#6b7280' },
+            '.Block': { backgroundColor: '#ffffff' },
+            '.Tab, .Code': { color: '#111827' }
           }
         }
       });
 
-      const fieldOpts = {
-        style: {
-          base: {
-            color: '#111827',
-            '::placeholder': { color: '#6b7280' },
-            fontSize: '16px'
-          }
-        }
-      };
-
-      cardNumber = elements.create('cardNumber', fieldOpts);
-      cardExpiry = elements.create('cardExpiry', fieldOpts);
-      cardCvc    = elements.create('cardCvc', fieldOpts);
+      cardNumber = elements.create('cardNumber');
+      cardExpiry = elements.create('cardExpiry');
+      cardCvc    = elements.create('cardCvc');
 
       cardNumber.mount('#card-number');
       cardExpiry.mount('#card-expiry');
