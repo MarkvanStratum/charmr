@@ -515,7 +515,7 @@
       form.setAttribute('data-step', String(n));
       form.scrollIntoView({behavior:'smooth', block:'start'});
 
-      // NEW: ensure Stripe Elements are mounted when Step 5 becomes visible
+      // ensure Stripe Elements are mounted when Step 5 becomes visible
       if (n === 5) {
         ensureStripeMounted();
         updatePayCta();
@@ -572,11 +572,33 @@
     let stripe=null, elements=null, cardNumber=null, cardExpiry=null, cardCvc=null, stripeMounted=false;
     function ensureStripeMounted(){
       if(stripeMounted) return;
-      stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-      elements = stripe.elements({ appearance: { theme:'stripe' } }); // << light theme
-      cardNumber = elements.create('cardNumber');
-      cardExpiry = elements.create('cardExpiry');
-      cardCvc    = elements.create('cardCvc');
+
+      // Force visible text/placeholder colors inside the iframe
+      elements = (stripe = Stripe(STRIPE_PUBLISHABLE_KEY)).elements({
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorText: '#111827',
+            colorTextPlaceholder: '#6b7280',
+            colorBackground: '#ffffff'
+          }
+        }
+      });
+
+      const fieldOpts = {
+        style: {
+          base: {
+            color: '#111827',
+            '::placeholder': { color: '#6b7280' },
+            fontSize: '16px'
+          }
+        }
+      };
+
+      cardNumber = elements.create('cardNumber', fieldOpts);
+      cardExpiry = elements.create('cardExpiry', fieldOpts);
+      cardCvc    = elements.create('cardCvc', fieldOpts);
+
       cardNumber.mount('#card-number');
       cardExpiry.mount('#card-expiry');
       cardCvc.mount('#card-cvc');
