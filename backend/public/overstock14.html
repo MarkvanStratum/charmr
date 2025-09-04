@@ -572,50 +572,49 @@
     const API_BASE = (() => { if (location.protocol.startsWith('http')) return location.origin; return 'http://localhost:10000'; })();
     const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q';
 
-    <script>
-  let stripe=null, elements=null, cardNumber=null, cardExpiry=null, cardCvc=null, stripeMounted=false;
-  function ensureStripeMounted(){
-    if(stripeMounted) return;
+    let stripe=null, elements=null, cardNumber=null, cardExpiry=null, cardCvc=null, stripeMounted=false;
+    function ensureStripeMounted(){
+      if(stripeMounted) return;
 
-    elements = (stripe = Stripe(STRIPE_PUBLISHABLE_KEY)).elements({
-      appearance: {
-        theme: 'stripe',
-        variables: {
-          colorText: '#111827',
-          colorTextPlaceholder: '#6b7280',
-          colorBackground: '#ffffff',
-          fontSizeBase: '16px'
-        },
-        rules: {
-          /* normal state */
-          '.Input': { color: '#111827', backgroundColor: '#ffffff', fontSize: '16px', caretColor: '#111827' },
-          '.Input::placeholder': { color: '#6b7280' },
-
-          /* this is the key: Chrome/Edge autofill inside the iframe */
-          '.Input--webkitAutofill': {
-            color: '#111827',
-            backgroundColor: '#ffffff',
-            caretColor: '#111827'
+      // UPDATED: Explicitly style text, placeholder, caret, and autofill inside the Stripe iframe
+      elements = (stripe = Stripe(STRIPE_PUBLISHABLE_KEY)).elements({
+        appearance: {
+          theme: 'stripe',
+          variables: {
+            colorText: '#111827',
+            colorTextPlaceholder: '#6b7280',
+            colorBackground: '#ffffff',
+            fontSizeBase: '16px'
           },
-
-          /* optional but helpful */
-          '.Input--invalid': { color: '#b91c1c' },
-          '.Block': { backgroundColor: '#ffffff' }
+          rules: {
+            '.Input': {
+              color: '#111827',
+              backgroundColor: '#ffffff',
+              fontSize: '16px',
+              caretColor: '#111827'
+            },
+            '.Input::placeholder': { color: '#6b7280' },
+            /* KEY: fix Chrome/Edge yellow autofill state so text stays visible */
+            '.Input--webkitAutofill': {
+              color: '#111827',
+              backgroundColor: '#ffffff',
+              caretColor: '#111827'
+            },
+            '.Block': { backgroundColor: '#ffffff' },
+            '.Tab, .Code': { color: '#111827' }
+          }
         }
-      }
-    });
+      });
 
-    cardNumber = elements.create('cardNumber');
-    cardExpiry = elements.create('cardExpiry');
-    cardCvc    = elements.create('cardCvc');
+      cardNumber = elements.create('cardNumber');
+      cardExpiry = elements.create('cardExpiry');
+      cardCvc    = elements.create('cardCvc');
 
-    cardNumber.mount('#card-number');
-    cardExpiry.mount('#card-expiry');
-    cardCvc.mount('#card-cvc');
-    stripeMounted = true;
-  }
-</script>
-
+      cardNumber.mount('#card-number');
+      cardExpiry.mount('#card-expiry');
+      cardCvc.mount('#card-cvc');
+      stripeMounted = true;
+    }
 
     function totalPounds(){
       const qty = Number(document.getElementById('qty')?.value || 1);
