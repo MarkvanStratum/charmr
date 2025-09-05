@@ -1215,68 +1215,7 @@ await stripe.customers.update(customer.id, {
 app.options('/api/stripe/intro-charge-20', cors());
 
 // £20 intro charge before starting the subscription (public flow, like trial-charge-intent but £20)
-app.post('/api/stripe/intro-charge-20', async (req, res) => {
-  try {
-    const {
-      paymentMethodId,
-      email,
-      name,
-      phone,
-      address // { line1, line2, city, state, postal_code, country }
-    } = req.body || {};
-
-    if (!paymentMethodId || !email) {
-      return res.status(400).json({ error: 'paymentMethodId and email are required' });
-    }
-
-    // Create (or reuse via email if you prefer) a Customer
-    let customer = null;
-    if (email) {
-      const list = await stripe.customers.list({ email, limit: 1 });
-      if (list.data.length) customer = list.data[0];
-    }
-    if (!customer) {
-      customer = await stripe.customers.create({
-        email,
-        name: (name && name.trim()) || undefined,
-        phone: phone || undefined,
-        address: address || undefined
-      });
-    }
-
-    // Attach PM and set default for invoices
-    try {
-      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
-    } catch (e) {
-      if (e?.code !== 'resource_already_exists') throw e;
-    }
-    await stripe.customers.update(customer.id, {
-      invoice_settings: { default_payment_method: paymentMethodId }
-    });
-
-    // Create the £20 PaymentIntent (GBP amounts are in pence)
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: 2000,                 // £20.00
-      currency: 'gbp',
-      customer: customer.id,
-      payment_method: paymentMethodId,
-      confirmation_method: 'automatic',
-      setup_future_usage: 'off_session', // reuse for the subscription
-      description: 'Intro charge before subscription (iPhone flow)',
-      metadata: { purpose: 'intro_charge_20' }
-    });
-
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      customerId: customer.id
-    });
-  } catch (err) {
-    console.error('intro-charge-20 error:', err);
-    res.status(400).json({ error: err.message || 'Unknown error' });
-  }
-});
-
+app.post('/api/stripe/intro-charge-20
 
 // Create the £2.50 trial PaymentIntent and return client_secret for 3DS
 app.options('/api/stripe/trial-charge-intent', cors());
