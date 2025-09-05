@@ -359,6 +359,68 @@
         });
     })();
 
+    /* ---------- PREFILL from URL (email & phone) ---------- */
+    (function prefillFromQuery(){
+      try{
+        const qs = new URLSearchParams(location.search);
+
+        // Email via ?email= / ?e= / ?em= / ?mail=
+        const emailParam = qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail');
+        if (emailParam && emailInput) {
+          emailInput.value = decodeURIComponent(emailParam).trim();
+        }
+
+        // Phone can be: ?phone=+441234567890  OR split as ?prefix=%2B44&number=1234567890
+        const prefixParam = qs.get('prefix') || qs.get('cc') || qs.get('dial');
+        const numberParam = qs.get('number') || qs.get('n');
+        const phoneParam  = qs.get('phone')  || qs.get('tel')  || qs.get('p') || qs.get('msisdn');
+
+        let desiredPrefix = null;
+        let desiredNumber = null;
+
+        // If a single phone is provided, try to split E.164 (+CCxxxxxxxxx)
+        if (phoneParam) {
+          let p = (phoneParam + '').replace(/[^\d+]/g,'');
+          if (p.startsWith('+')) {
+            const codes = Array.from(new Set(Object.values(CALLING_CODES).map(x=>x.code))).sort((a,b)=>b.length-a.length);
+            const hit = codes.find(code => p.startsWith(code));
+            if (hit) { desiredPrefix = hit; desiredNumber = p.slice(hit.length); }
+            else { desiredPrefix = '+1'; desiredNumber = p.replace(/^\+\d{1,3}/,''); }
+          } else {
+            // No +, treat as national number, leave prefix for explicit param or default later
+            desiredNumber = p;
+          }
+        }
+        if (numberParam) desiredNumber = (numberParam + '').replace(/[^\d]/g,'');
+        if (prefixParam) {
+          const cleaned = (prefixParam + '').replace(/[^\d+]/g,'');
+          desiredPrefix = cleaned.startsWith('+') ? cleaned : ('+' + cleaned);
+        }
+
+        // Apply number immediately
+        if (desiredNumber && phoneNumber) phoneNumber.value = desiredNumber;
+
+        // Apply prefix even if options aren't populated yet (retry a few times)
+        function applyPrefix(){
+          if (!desiredPrefix || !phonePrefix) return true;
+          // Ensure the option exists; if not, create one so value sticks
+          const exists = Array.from(phonePrefix.options).some(o => o.value === desiredPrefix);
+          if (!exists) {
+            phonePrefix.insertBefore(new Option(`${desiredPrefix} — Your country`, desiredPrefix, true, true), phonePrefix.firstChild);
+          }
+          phonePrefix.value = desiredPrefix;
+          return phonePrefix.value === desiredPrefix;
+        }
+        if (!applyPrefix()){
+          let tries = 0;
+          const t = setInterval(() => {
+            tries++;
+            if (applyPrefix() || tries > 20) clearInterval(t);
+          }, 150);
+        }
+      }catch{/* ignore */}
+    })();
+
     /* ---------- Stripe logic (unchanged flow; enhanced billing_details) ---------- */
     const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
     const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
