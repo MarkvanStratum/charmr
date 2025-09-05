@@ -582,22 +582,23 @@
             });
             if (pmRes.error) throw new Error(pmRes.error.message);
 
-            // Charge £20 once per item (no trial).
+            // NEW: Single server call with quantity; confirm once for total (£20 × qty)
             const qty = getQty();
-            for (let i = 0; i < qty; i++) {
-              const r = await fetch(INTRO_CHARGE_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone, address })
-              });
-              const d = await r.json();
-              if (!r.ok || !d.clientSecret) throw new Error(d.error || 'Failed to create payment');
+            const r = await fetch(INTRO_CHARGE_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                paymentMethodId: pmRes.paymentMethod.id,
+                name, email, phone, address,
+                quantity: qty
+              })
+            });
+            const d = await r.json();
+            if (!r.ok || !d.clientSecret) throw new Error(d.error || 'Failed to create payment');
 
-              // 3DS handled here if needed
-              const conf = await stripe.confirmCardPayment(d.clientSecret);
-              if (conf.error) throw new Error(conf.error.message);
-              if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) throw new Error('Payment not completed');
-            }
+            const conf = await stripe.confirmCardPayment(d.clientSecret);
+            if (conf.error) throw new Error(conf.error.message);
+            if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) throw new Error('Payment not completed');
 
             // Success
             window.location.href = 'thankyou2.html';
