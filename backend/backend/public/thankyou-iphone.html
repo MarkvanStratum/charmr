@@ -41,96 +41,75 @@
   <!-- Load GoAffPro (same as you have now) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <!-- ====== SALES POSTBACK GATE ====== -->
+  <!-- ====== SALES POSTBACK GATE (40% pattern: post, skip, post, skip, skip) ====== -->
   <script>
   (function(){
     const CONFIG = {
-      mode: "percent",      // "percent" | "oneInN" | "dailyCap"
-      percent: 40,          // used if mode="percent"
-      oneInN: 5,            // used if mode="oneInN"
-      dailyCap: 100,        // used if mode="dailyCap"
+      mode: "percent",     // keep for clarity
+      percent: 40,         // target 40%
       ns: "gaffpro_gate"
     };
 
-    function todayKey(ns){ 
-      const ds = new Date().toISOString().slice(0,10);
-      return `${ns}:count:${ds}`;
-    }
-    function getCount(ns){
-      const k = todayKey(ns);
-      return parseInt(localStorage.getItem(k) || "0", 10);
-    }
-    function incCount(ns){
-      localStorage.setItem(todayKey(ns), String(getCount(ns)+1));
-    }
-    function cryptoRandom(){
-      if (window.crypto && crypto.getRandomValues) {
-        const a = new Uint32Array(1);
-        crypto.getRandomValues(a);
-        return a[0] / 0xFFFFFFFF;
+    // Simple stable 32-bit hash
+    function hash32(str){
+      let h = 0;
+      for (let i = 0; i < str.length; i++) {
+        h = ((h << 5) - h + str.charCodeAt(i)) | 0;
       }
-      return Math.random();
+      return h;
     }
 
-    // NEW: deterministic scheduler for percent mode to avoid streaks.
-    // - For 50%: strict alternation (post, skip, post, skip, ...)
-    // - For other percentages: evenly spread across blocks of 100 events.
-    function shouldPost(){
-      switch(CONFIG.mode){
-        case "percent": {
-          const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
-          if (p === 0)  return false;
-          if (p === 100) return true;
+    // Decide per order ID (stable across devices/browsers/reloads)
+    // Pattern: 5 buckets → post on 0 and 2  => 2/5 = 40%
+    function shouldPost(orderId){
+      const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
+      if (p === 0) return false;
+      if (p === 100) return true;
 
-          if (p === 50) {
-            const k = `${CONFIG.ns}:pct:altbit`;
-            let bit = localStorage.getItem(k);
-            if (bit === null) bit = "0";                 // start by posting
-            const post = (bit === "0");
-            localStorage.setItem(k, post ? "1" : "0");   // flip for next time
-            return post;
-          }
-
-          // General deterministic spread for non-50% values
-          const k = `${CONFIG.ns}:pct:counter`;
-          let c = parseInt(localStorage.getItem(k) || "0", 10);
-          const post = (c % 100) < p;                    // e.g., 75 => post first 75 of each 100
-          c = (c + 1) % 100;
-          localStorage.setItem(k, String(c));
-          return post;
-        }
-        case "oneInN": {
-          const n = Math.max(1, parseInt(CONFIG.oneInN||1,10));
-          const k = `${CONFIG.ns}:oneInN:counter`;
-          const c = parseInt(localStorage.getItem(k)||"0",10)+1;
-          localStorage.setItem(k, String(c));
-          return (c % n) === 0;
-        }
-        case "dailyCap":
-          return getCount(CONFIG.ns) < Math.max(0, parseInt(CONFIG.dailyCap||0,10));
-        default:
-          return true;
-      }
+      // 5-slot cycle based on order ID
+      const id = String(orderId || "NO-ID");
+      const bucket = Math.abs(hash32(id)) % 5; // 0..4
+      return (bucket === 0 || bucket === 2);   // post, skip, post, skip, skip
     }
 
+    // Helper to get an ID from payload/global
+    function getOrderIdFrom(payload){
+      return (payload && (payload.number || payload.order_id || payload.id))
+          || (window.goaffpro_order && window.goaffpro_order.number)
+          || null;
+    }
+
+    // Patch GoAffPro when available; ensure first fire is gated
     (function patchWhenReady(){
       if (typeof window.goaffproTrackConversion === "function") {
         if (window.__goaffproTrackConversionOriginal) return;
         const original = window.goaffproTrackConversion;
         window.__goaffproTrackConversionOriginal = original;
         window.goaffproTrackConversion = function(payload){
-          if (shouldPost()){
-            if (CONFIG.mode === "dailyCap") incCount(CONFIG.ns);
+          const orderId = getOrderIdFrom(payload);
+          if (shouldPost(orderId)) {
             return original.apply(this, arguments);
           } else {
-            console.log("[GoAffPro Gate] Skipped posting this sale per policy:", CONFIG);
+            console.log("[GoAffPro Gate] Skipped posting this sale (40% patterned gate). Order:", orderId);
           }
         };
-        console.log("[GoAffPro Gate] Pixel patched with policy:", CONFIG);
+        console.log("[GoAffPro Gate] Pixel patched with 40% patterned gate (post, skip, post, skip, skip).");
       } else {
         setTimeout(patchWhenReady, 120);
       }
     })();
+
+    // Expose a small helper to wait for patch before firing
+    window.__ensureGaffproPatched = function(cb){
+      (function wait(){
+        if (typeof window.goaffproTrackConversion === "function" &&
+            window.__goaffproTrackConversionOriginal) {
+          cb();
+        } else {
+          setTimeout(wait, 150);
+        }
+      })();
+    };
   })();
   </script>
   <!-- ====== END SALES POSTBACK GATE ====== -->
@@ -175,15 +154,12 @@
           currency: "USD"
         };
 
-        (function fire(){
-          if (typeof window.goaffproTrackConversion === "function") {
-            console.log("GoAffPro: firing conversion", window.goaffpro_order);
-            window.goaffproTrackConversion(window.goaffpro_order);
-            sessionStorage.setItem('gaffpro_converted', '1');
-          } else {
-            setTimeout(fire, 150);
-          }
-        })();
+        // Fire ONLY after the gate is patched so first call is gated
+        __ensureGaffproPatched(function(){
+          console.log("GoAffPro: firing conversion", window.goaffpro_order);
+          window.goaffproTrackConversion(window.goaffpro_order);
+          sessionStorage.setItem('gaffpro_converted', '1');
+        });
       })();
     } else {
       console.log("GoAffPro: conversion already fired in this session");
