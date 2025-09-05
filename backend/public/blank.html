@@ -464,7 +464,7 @@
           const conf = await stripe.confirmCardPayment(data.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
           if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
-            window.location.href='thankyou.html';
+            window.location.href='thankyou-iphone.html';
           } else {
             throw new Error('Payment not completed');
           }
