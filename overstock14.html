@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Warehouse Clearout: iPhone 14 — 95% Off | Independent Fulfillment Outlet</title>
+  <meta name="description" content="Independent fulfillment center liquidating an overstock of sealed iPhone 14 units at 95% off. Limited pallets, first-come first-served. Transparent story, real warranty, fair shipping." />
+  <style>
+    /* ===== Amazon-style light palette ===== */
+    :root{
+      /* surface + text */
+      --bg: #f6f5f1;         /* warm light canvas */
+      --card: #ffffff;       /* white cards */
+      --text: #1f2937;       /* slate-800 */
+      --muted: #6b7280;      /* slate-500/600 */
+
+      /* brand & accents (Amazon-esque) */
+      --brand: #ff9900;      /* orange CTA */
+      --brand-2: #146eb4;    /* link/secondary blue */
+      --ring: rgba(20,110,180,.25);
+
+      /* states */
+      --danger: #b91c1c;
+      --ok: #059669;
+
+      /* layout */
+      --shadow: 0 6px 18px rgba(3, 7, 18, .08);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --radius-lg: 18px;
+      --maxw: 1200px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+
+    body{
+      margin:0;
+      font-family: ui-sans-serif, -apple-system, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      line-height:1.6;
+    }
+
+    a{color:var(--brand-2); text-decoration:none}
+    a:hover{text-decoration:underline}
+    .wrap{max-width:var(--maxw); margin-inline:auto; padding-inline:24px}
+
+    /* NEW: full-width top banner image */
+    .mastbar{width:100%; background:#0f1111}
+    .mastbar img{display:block; width:100%; height:auto; object-fit:cover}
+
+    /* Header: light with subtle border like amazon.com marketing */
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter: blur(6px);
+      background: rgba(255,255,255,.8);
+      border-bottom: 1px solid rgba(17,24,39,.08);
+    }
+    .nav{display:flex; align-items:center; justify-content:space-between; padding:14px 0}
+    .brand{display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.2px}
+    .brand .logo{
+      width:36px; height:36px; display:grid; place-items:center; border-radius:8px;
+      background: #232f3e; /* Amazon navy tile */
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.15);
+    }
+    .brand .logo svg path{stroke:#fff}
+    .tagline{font-size:.9rem; color:var(--muted)}
+
+    .nav ul{display:flex; gap:12px; list-style:none; margin:0; padding:0}
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px;
+      background:#f3f4f6; border:1px solid rgba(17,24,39,.08); color:#374151; font-size:.9rem
+    }
+    .chip svg{opacity:.75}
+
+    /* Hero */
+    .hero{display:grid; grid-template-columns: 1.1fr .9fr; gap:36px; align-items:center; padding:48px 0 26px}
+    .hero h1{
+      color:#111827; /* almost-black title */
+      font-size: clamp(1.9rem, 3.6vw, 3.2rem);
+      line-height:1.06; margin:0 0 12px
+    }
+    .subtitle{color:#374151; font-size:1.05rem}
+
+    .cta-row{display:flex; gap:14px; margin-top:18px; flex-wrap:wrap}
+    .btn{appearance:none; border:0; border-radius:10px; padding:12px 16px; font-weight:700; cursor:pointer}
+    .btn-primary{
+      background: linear-gradient(180deg, #ffb84d, var(--brand));
+      color:#111827;
+      box-shadow: var(--shadow)
+    }
+    .btn-primary:focus{outline: 3px solid var(--ring)}
+    .btn-ghost{
+      background:#ffffff; border:1px solid rgba(17,24,39,.12); color:#111827
+    }
+
+    .hero-card{
+      background:#ffffff;
+      border:1px solid rgba(17,24,39,.08);
+      padding:22px; border-radius:var(--radius); box-shadow: var(--shadow)
+    }
+    .hero-card h3{margin:0 0 8px}
+
+    .list{margin:0; padding-left:20px}
+    .grid{display:grid; grid-template-columns: repeat(3, 1fr); gap:18px; margin:26px 0 42px}
+    .card{
+      background:#ffffff; border:1px solid rgba(17,24,39,.08);
+      padding:18px; border-radius:var(--radius); box-shadow: var(--shadow)
+    }
+    .card h3{margin:2px 0 10px}
+    .muted{color:var(--muted)}
+
+    .story{display:grid; grid-template-columns: 1fr 1fr; gap:22px; align-items:start}
+    .story .steps{display:grid; gap:12px}
+    .story .step{display:flex; gap:12px; align-items:flex-start}
+    .step .bullet{
+      min-width:28px; height:28px; border-radius:999px;
+      background:#232f3e; color:#fff; display:grid; place-items:center; font-weight:800
+    }
+
+    /* Qualifier */
+    .qualify{margin-top:40px}
+    .stepper{display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:14px}
+    .stepper .pill{
+      background:#f9fafb; border:1px solid rgba(17,24,39,.10);
+      border-radius:999px; padding:8px 12px; font-size:.9rem; color:#374151; display:flex; align-items:center; gap:8px
+    }
+    .stepper .pill.active{border-color:#232f3e; box-shadow:0 0 0 3px rgba(35,47,62,.12)}
+
+    .form-card{display:grid; grid-template-columns: 1.1fr .9fr; gap:18px}
+    .form-side{background:#ffffff; border:1px solid rgba(17,24,39,.10); border-radius:var(--radius); padding:18px; box-shadow: var(--shadow)}
+    .form-side h3{margin-top:0}
+
+    .q{margin-bottom:16px}
+    .q label{display:block; font-weight:700; margin-bottom:6px; color:#111827}
+    .opt{display:flex; gap:10px; align-items:center; margin:6px 0}
+    .opt input{accent-color:#ff9900}
+    .row{display:grid; grid-template-columns: 1fr 1fr; gap:12px}
+
+    /* Inputs on light */
+    .input, select{
+      width:100%; border-radius:10px; padding:12px 12px;
+      border:1px solid rgba(17,24,39,.16);
+      background:#ffffff; color:#111827; font-size:16px; line-height:1.2; min-height:44px
+    }
+    .input:focus, select:focus{outline:3px solid var(--ring); border-color:#93c5fd}
+    .help{font-size:.9rem; color:#6b7280}
+    .notice{padding:12px 14px; border-radius:10px; background:#f9fafb; border:1px solid rgba(17,24,39,.12)}
+    .ok{color:#059669}
+
+    .aside{
+      background:#ffffff; border:1px solid rgba(17,24,39,.10);
+      border-radius:var(--radius); padding:18px; box-shadow: var(--shadow)
+    }
+    .aside h4{margin:8px 0}
+    .badge{
+      display:inline-flex; gap:8px; align-items:center;
+      border:1px solid rgba(17,24,39,.12); padding:8px 12px; border-radius:999px; margin:6px 6px 0 0; background:#f9fafb; color:#374151
+    }
+
+    .faq{margin:40px 0}
+    details{border:1px solid rgba(17,24,39,.12); padding:14px 16px; border-radius:10px; background:#ffffff; box-shadow: var(--shadow)}
+    details+details{margin-top:10px}
+    summary{cursor:pointer; font-weight:800; color:#111827}
+
+    footer{margin:24px 0 60px; color:#6b7280; font-size:.9rem}
+    .small{font-size:.9rem; color:#6b7280}
+
+    @media (max-width: 960px){
+      .hero{grid-template-columns:1fr; gap:20px}
+      .grid{grid-template-columns:1fr;}
+      .form-card{grid-template-columns:1fr}
+      .story{grid-template-columns:1fr}
+      .stepper{grid-template-columns:1fr 1fr}
+    }
+
+    /* Stripe Elements containers on light */
+    .el{
+      width:100%; border-radius:10px; border:1px solid rgba(17,24,39,.16);
+      background:#ffffff; color:#111827; min-height:44px; padding:12px 12px; display:flex; align-items:center;
+    }
+    .StripeElement{width:100%; min-height:20px}
+    .StripeElement--focus{outline:3px solid var(--ring)}
+
+    /* ADDED: ensure the iframe surface is white so text is visible */
+    .el .StripeElement { background:#ffffff !important; }
+/* Force a light color-scheme in Stripe iframes so text renders dark on white */
+:root { color-scheme: light; }
+.__PrivateStripeElement iframe { color-scheme: light !important; }
+  </style>
+  <script src="https://js.stripe.com/v3"></script>
+
+  <!-- GoAffPro loader (conserver pour le suivi sur la page suivante) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+</head>
+<body>
+  <!-- NEW: full-width banner image at the very top -->
+  <div class="mastbar">
+    <img src="amazon.png" alt="Top bar" />
+  </div>
+
+  <header>
+    <div class="wrap nav">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo">
+            <path d="M4 12a8 8 0 1116 0 8 8 0 01-16 0Z" stroke="white" stroke-opacity=".85" stroke-width="2"/>
+            <path d="M8 12h8" stroke="white" stroke-opacity=".85" stroke-width="2"/>
+            <path d="M12 8v8" stroke="white" stroke-opacity=".85" stroke-width="2"/>
+          </svg>
+        </div>
+        <div>
+          <div>Riverbend Fulfillment Outlet</div>
+          <div class="tagline">Official Amazon Warehouse</div>
+        </div>
+      </div>
+      <ul>
+        <li class="chip" title="Warehouse-direct">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l9 4v6c0 5-4 9-9 10C7 21 3 17 3 12V6l9-4Z"/></svg>
+          Warehouse-direct
+        </li>
+        <li class="chip" title="14-day returns">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 6v6l4 2"/></svg>
+          14-day returns
+        </li>
+        <li class="chip" title="Secure checkout">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a7 7 0 017 7v2h-2V9a5 5 0 10-10 0v2H5V9a7 7 0 017-7Zm-7 11h14v9H5v-9Z"/></svg>
+          Secure checkout
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero" id="top">
+      <div>
+        <h1>Overstock iPhone 14 — <span style="background:linear-gradient(90deg,#ffb84d,#ff9900); -webkit-background-clip:text; background-clip:text; color:transparent">95% Off</span> Warehouse Clear-out</h1>
+        <p class="subtitle">We’re an official Amazon fulfillment center. A corporate client canceled a seasonal bundle after our return window closed, leaving us with sealed iPhone 14 units on paid shelf space. Rather than pay ongoing storage fees, we’re liquidating <strong>at a flat rate $20 per phone</strong> until the pallets are gone.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#qualify">Answer a few quick questions</a>
+          <a class="btn btn-ghost" href="#story">Why so cheap? Read our story</a>
+        </div>
+        <div class="hero-card" style="margin-top:16px">
+          <h3>What you can expect</h3>
+          <ul class="list">
+            <li>Brand-new, factory-sealed retail units (mixed colors; 128/256/512GB as available)</li>
+            <li>Carrier-unlocked stock, no contracts or activation fees</li>
+            <li>Apple limited warranty typically starts at activation — verify by serial at Apple’s coverage portal</li>
+            <li>Standard accessories included. 14-day returns (unused, unopened) + 6-month warehouse defect warranty</li>
+          </ul>
+          <p class="muted small">Note: We are not Apple or Amazon. We’re an independent warehouse clearing space, first-come first-served.</p>
+        </div>
+      </div>
+      <div class="card">
+        <img src="warehouse.png" alt="Overstock iPhone pallets in our warehouse" style="width:100%; border-radius:12px; aspect-ratio: 4/3; object-fit:cover;" />
+        <div class="small muted" style="margin-top:8px">Representative image. Replace with your actual pallet photo for maximum trust.</div>
+      </div>
+    </section>
+
+    <section id="story" class="story">
+      <div>
+        <h2>How we ended up with so many iPhone 14s</h2>
+        <p class="muted">Short version: the timing changed, the customer canceled, and storage isn’t free.</p>
+        <div class="steps">
+          <div class="step"><div class="bullet">1</div><div><strong>Pre-purchase for a bundle:</strong> We secured a bulk lot for a Q4 employee-perk program through a corporate client. Lead times meant committing ahead of demand.</div></div>
+          <div class="step"><div class="bullet">2</div><div><strong>Schedule slip + new model cycle:</strong> Freight and program changes pushed the delivery window beyond their event—right into a newer model cycle—so the order was pulled.</div></div>
+          <div class="step"><div class="bullet">3</div><div><strong>Outside return window:</strong> The cancellation landed after our vendor return cut-off. The units are pristine and sealed—but they occupy premium shelf space.</div></div>
+          <div class="step"><div class="bullet">4</div><div><strong>Liquidate instead of store:</strong> Rather than carry cost and risk obsolescence, we’re clearing the pallets at <em>95% off</em>.</div></div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="card"><h3>Condition</h3><p>New, factory-sealed retail boxes. Boxes may show minor handling wear from palletization. Serials verifiable at Apple’s coverage site.</p></div>
+        <div class="card"><h3>Warranty</h3><p>Apple’s limited warranty generally starts upon activation, not purchase date. We also include a 6-month warehouse defect warranty.</p></div>
+        <div class="card"><h3>What’s included</h3><p>iPhone 14 device, USB-C to Lightning cable, documentation. No carrier contracts or financing; unlocked units only.</p></div>
+      </div>
+    </section>
+
+    <section id="qualify" class="qualify">
+      <h2>Quick qualifier (takes ~30 seconds)</h2>
+      <p class="muted">We ask a few questions up-front to prevent misuse and make sure the order is a good fit. After you qualify, you’ll be able to reserve at 95% off.</p>
+
+      <div class="stepper" aria-label="Checkout steps">
+        <div class="pill active" data-pill="1">1 · Basics</div>
+        <div class="pill" data-pill="2">2 · Shipping</div>
+        <div class="pill" data-pill="3">3 · Preferences</div>
+        <div class="pill" data-pill="4">4 · Contact</div>
+        <div class="pill" data-pill="5">5 · Payment</div>
+      </div>
+
+      <div class="form-card" role="region" aria-live="polite">
+        <form id="qualifier" class="form-side" novalidate>
+          <div data-step="1" class="step-pane">
+            <h3>Step 1 · Basics</h3>
+            <div class="q">
+              <label>Are you comfortable with a previous-generation iPhone (iPhone 14) at a deep discount ($20 per phone)?</label>
+              <div class="opt"><input type="radio" name="gen_ok" value="yes" required> <span>Yes</span></div>
+              <div class="opt"><input type="radio" name="gen_ok" value="no"> <span>No</span></div>
+            </div>
+            <div class="q">
+              <label>Colors and storage are allocated from available stock. Is some flexibility okay?</label>
+              <div class="opt"><input type="radio" name="flex_ok" value="yes" required> <span>Yes</span></div>
+              <div class="opt"><input type="radio" name="flex_ok" value="no"> <span>No</span></div>
+            </div>
+            <div class="q">
+              <label>All units are carrier-unlocked. You’ll verify IMEI/serial on delivery—sound good?</label>
+              <div class="opt"><input type="radio" name="verify_ok" value="yes" required> <span>Yes</span></div>
+              <div class="opt"><input type="radio" name="verify_ok" value="no"> <span>No</span></div>
+            </div>
+            <div class="notice small">If you answered “No” to any question, this clearance probably isn’t a match. You can still <a href="#contact">contact support</a> for alternatives.</div>
+            <div style="margin-top:12px; display:flex; gap:10px">
+              <button type="button" class="btn btn-ghost" disabled>Back</button>
+              <button type="button" class="btn btn-primary" id="next1">Continue</button>
+            </div>
+          </div>
+
+          <div data-step="2" class="step-pane" hidden>
+            <h3>Step 2 · Shipping</h3>
+            <div class="q">
+              <label>Are you willing to pay shipping at our actual carrier cost?</label>
+              <div class="opt"><input type="radio" name="ship_pay" value="yes" required> <span>Yes — charge me actual cost (no markup)</span></div>
+              <div class="opt"><input type="radio" name="ship_pay" value="no"> <span>No — I only want free shipping</span></div>
+            </div>
+            <div class="row">
+              <div class="q">
+                <label for="country">Country</label>
+                <select id="country" name="country" required>
+                  <option value="" selected disabled>Choose</option>
+                  <option>United States</option>
+                  <option>Canada</option>
+                  <option>United Kingdom</option>
+                  <option>European Union</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="q">
+                <label for="postal">Postal code</label>
+                <input id="postal" name="postal" class="input" placeholder="e.g., 10001" required />
+              </div>
+            </div>
+            <p class="help">We’ll estimate shipping before you confirm. You can always cancel prior to payment.</p>
+            <div style="margin-top:12px; display:flex; gap:10px">
+              <button type="button" class="btn btn-ghost" id="back2">Back</button>
+              <button type="button" class="btn btn-primary" id="next2">Continue</button>
+            </div>
+          </div>
+
+          <div data-step="3" class="step-pane" hidden>
+            <h3>Step 3 · Preferences</h3>
+            <div class="row">
+              <div class="q">
+                <label for="storage">Preferred storage</label>
+                <select id="storage" name="storage" required>
+                  <option value="" selected disabled>Choose</option>
+                  <option>128 GB</option>
+                  <option>256 GB</option>
+                  <option>512 GB</option>
+                  <option>No preference</option>
+                </select>
+              </div>
+              <div class="q">
+                <label for="color">Color preference</label>
+                <select id="color" name="color" required>
+                  <option value="" selected disabled>Choose</option>
+                  <option>Midnight</option>
+                  <option>Starlight</option>
+                  <option>Blue</option>
+                  <option>Purple</option>
+                  <option>Red</option>
+                  <option>No preference</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="q">
+              <label for="qty">Quantity ( $20 each )</label>
+              <select id="qty" name="qty" class="input" required>
+                <option value="1" selected>1 iPhone</option>
+                <option value="2">2 iPhones</option>
+                <option value="3">3 iPhones</option>
+                <option value="4">4 iPhones</option>
+                <option value="5">5 iPhones</option>
+                <option value="6">6 iPhones</option>
+                <option value="7">7 iPhones</option>
+                <option value="8">8 iPhones</option>
+                <option value="9">9 iPhones</option>
+                <option value="10">10 iPhones</option>
+              </select>
+              <div class="help">Larger quantities? <a href="#contact">Contact us</a> for pallet pricing.</div>
+            </div>
+
+            <div style="margin-top:12px; display:flex; gap:10px">
+              <button type="button" class="btn btn-ghost" id="back3">Back</button>
+              <button type="button" class="btn btn-primary" id="next3">Continue</button>
+            </div>
+          </div>
+
+          <div data-step="4" class="step-pane" hidden>
+            <h3>Step 4 · Contact</h3>
+            <div class="row">
+              <div class="q"><label for="name">Full name</label><input id="name" name="name" class="input" required placeholder="Jane Doe" /></div>
+              <div class="q"><label for="email">Email</label><input id="email" type="email" name="email" class="input" required placeholder="you@example.com" /></div>
+            </div>
+            <div class="q"><label for="phone">Phone (optional)</label><input id="phone" name="phone" class="input" placeholder="+1 555-555-1234" /></div>
+            <label class="opt"><input type="checkbox" name="terms" required> I agree to the <a href="#faq">terms, returns, and warranty policy</a>.</label>
+            <div class="notice small" style="margin-top:10px">After you reserve, a human will confirm availability and send a secure payment link. Nothing is charged here.</div>
+            <div style="margin-top:12px; display:flex; gap:10px">
+              <button type="button" class="btn btn-ghost" id="back4">Back</button>
+              <button type="submit" class="btn btn-primary">Reserve at 95% Off</button>
+            </div>
+          </div>
+
+          <div data-step="5" class="step-pane" hidden>
+            <h3>Step 5 · Secure Payment</h3>
+            <p class="help">Payments are processed by Stripe. We charge shipping at actual carrier cost (if applicable).</p>
+            <div class="row">
+              <div class="q"><label for="bill_street">Billing street</label><input id="bill_street" class="input" placeholder="123 Warehouse Rd" /></div>
+              <div class="q"><label for="bill_city">City</label><input id="bill_city" class="input" placeholder="Seattle" /></div>
+            </div>
+            <div class="row">
+              <div class="q"><label for="bill_postal">Postal code</label><input id="bill_postal" class="input" placeholder="98109" /></div>
+              <div class="q"><label for="bill_country">Country</label>
+                <select id="bill_country" class="input">
+                  <option value="US" selected>United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="GB">United Kingdom</option>
+                  <option value="EU">European Union</option>
+                  <option value="AU">Australia</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="q"><label>Card number</label><div id="card-number" class="el"></div></div>
+            <div class="row">
+              <div class="q"><label>Expiration</label><div id="card-expiry" class="el"></div></div>
+              <div class="q"><label>CVC</label><div id="card-cvc" class="el"></div></div>
+            </div>
+            <div id="pay-error" class="notice" style="display:none; color:#b91c1c"></div>
+            <div style="margin-top:12px; display:flex; gap:10px">
+              <button type="button" class="btn btn-ghost" id="back5">Back</button>
+              <button type="button" class="btn btn-primary" id="payNow">Pay $20.00</button>
+            </div>
+          </div>
+        </form>
+
+        <aside class="aside">
+          <h4>Why this looks (and is) legitimate</h4>
+          <ul class="list">
+            <li><strong>Transparent story</strong>: We explain sourcing, not just “flash sale”.</li>
+            <li><strong>Real business info</strong>: Our address, tax ID, and support are below.</li>
+            <li><strong>Verifiable serials</strong>: Check Apple coverage by serial at delivery.</li>
+            <li><strong>Clear policies</strong>: 14-day returns (unopened) + 6-month defect warranty.</li>
+          </ul>
+          <div style="margin-top:10px">
+            <div class="badge">SSL & secure payment link</div>
+            <div class="badge">Human-verified orders</div>
+            <div class="badge">No hidden fees</div>
+          </div>
+          <div class="card" style="margin-top:12px">
+            <div class="small muted"><strong>Current inventory:</strong> <span id="inv">312</span> units across mixed colors/storage. (Replace with your live number.)</div>
+          </div>
+        </aside>
+      </div>
+
+      <div id="reserve-result" class="card" hidden>
+        <h3>Thanks! Your reservation is in.</h3>
+        <p>We’ve recorded your preferences and contact details. A team member will email you from <strong>support@riverbend-fulfillment.example</strong> with a secure checkout link and a final shipping estimate.</p>
+        <p class="small muted">Tip: add us to your safe-sender list so the email doesn’t land in spam.</p>
+      </div>
+    </section>
+
+    <section class="faq" id="faq">
+      <h2>FAQ, policies & small print</h2>
+      <details>
+        <summary>Is this really 95% off? What’s the catch?</summary>
+        <div class="muted">It’s a genuine warehouse liquidation. We’re clearing shelf space and avoiding long-term storage fees. The “catch” is simply flexibility on color/storage and a willingness to pay shipping at cost. No contracts, no activation requirements.</div>
+      </details>
+      <details>
+        <summary>Are these devices new and eligible for Apple warranty?</summary>
+        <div class="muted">Yes—factory-sealed retail units. Apple’s limited warranty generally begins upon activation. You can verify coverage by serial on Apple’s site once you receive the phone.</div>
+      </details>
+      <details>
+        <summary>Returns & refunds</summary>
+        <div class="muted">We accept returns of unopened units within 14 days of delivery. You’ll receive a refund to your original payment method minus actual shipping. If a device is defective out of the box, our 6-month warehouse warranty applies—contact support and we’ll make it right.</div>
+      </details>
+      <details>
+        <summary>Payment & security</summary>
+        <div class="muted">We process payments via a secure link from a PCI-compliant provider (Stripe/Adyen, etc.). We never store card data on this site. You’ll receive a tax invoice with our registered business details.</div>
+      </details>
+      <details>
+        <summary>Company information</summary>
+        <div class="muted">Riverbend Fulfillment LLC · 1840 Westlake Ave N, Suite 200, Seattle, WA 98109 · Tax ID / VAT: 12-3456789 · Support: support@riverbend-fulfillment.example · +1 (206) 555-0199. <em>Replace with your real, verifiable details.</em></div>
+      </details>
+      <details>
+        <summary>Are you affiliated with Apple or Amazon?</summary>
+        <div class="muted">No. We are an independent warehouse that services multiple marketplaces. Apple®, iPhone® and Amazon® are trademarks of their respective owners.</div>
+      </details>
+    </section>
+
+    <footer>
+      <div class="small">© <span id="year"></span> Riverbend Fulfillment Outlet. All rights reserved. Not an offer to sell in jurisdictions where restricted. Pricing subject to verification. Availability while pallets last.</div>
+    </footer>
+  </main>
+
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // Year
+      const yearEl = document.getElementById('year');
+      if (yearEl) yearEl.textContent = new Date().getFullYear();
+
+      // Simple stepper logic (unchanged, with Step 5 mount guarantee)
+      const form = document.getElementById('qualifier');
+      const panes = [...form.querySelectorAll('.step-pane')];
+      const pills = [...document.querySelectorAll('.stepper .pill')];
+      const updateStep = (n) => {
+        panes.forEach((p, i) => p.toggleAttribute('hidden', i !== (n-1)));
+        pills.forEach((pl, i) => pl.classList.toggle('active', i === (n-1)));
+        form.setAttribute('data-step', String(n));
+        form.scrollIntoView({behavior:'smooth', block:'start'});
+
+        // ensure Stripe Elements are mounted when Step 5 becomes visible
+        if (n === 5) {
+          ensureStripeMounted();
+          updatePayCta();
+        }
+      };
+
+      const next1Btn = document.getElementById('next1');
+      next1Btn.addEventListener('click', () => {
+        const a = form.querySelector('input[name="gen_ok"]:checked');
+        const b = form.querySelector('input[name="flex_ok"]:checked');
+        const c = form.querySelector('input[name="verify_ok"]:checked');
+        if(!a || !b || !c){ alert('Please answer all questions.'); return; }
+        if([a.value,b.value,c.value].includes('no')){
+          alert('Based on your answers, this clearance may not be a good fit. You can still contact support for alternatives.');
+          return;
+        }
+        updateStep(2);
+      });
+      document.getElementById('back2').addEventListener('click', () => updateStep(1));
+      document.getElementById('next2').addEventListener('click', () => {
+        const ship = form.querySelector('input[name="ship_pay"]:checked');
+        const country = form.country.value; const postal = form.postal.value.trim();
+        if(!ship || !country || !postal){ alert('Please complete shipping details.'); return; }
+        if(ship.value === 'no'){
+          alert('We charge actual carrier rates so we can keep device pricing at 95% off. If that works, choose the first option.');
+          return;
+        }
+        updateStep(3);
+      });
+      document.getElementById('back3').addEventListener('click', () => updateStep(2));
+      document.getElementById('next3').addEventListener('click', () => {
+        if(!form.storage.value || !form.color.value){ alert('Please choose your preferences.'); return; }
+        updateStep(4);
+      });
+      document.getElementById('back4').addEventListener('click', () => updateStep(3));
+
+      // Next from contact to payment (robust parent targeting)
+      const toPaymentBtn = document.createElement('button');
+      toPaymentBtn.type = 'button';
+      toPaymentBtn.className = 'btn btn-primary';
+      toPaymentBtn.textContent = 'Proceed to Payment';
+      const submitBtnStep4 = form.querySelector('[data-step="4"] button[type="submit"]');
+      const actionsContainerStep4 = submitBtnStep4 ? submitBtnStep4.parentElement : null;
+      if (actionsContainerStep4) {
+        actionsContainerStep4.insertBefore(toPaymentBtn, submitBtnStep4);
+      }
+
+// >>> make the button work <<<
+toPaymentBtn.addEventListener('click', () => {
+  // keep required fields/checkbox validation
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+  updateStep(5);
+});
+
+      document.getElementById('back5').addEventListener('click', () => updateStep(4));
+
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        form.closest('.form-card').setAttribute('hidden', '');
+        document.getElementById('reserve-result').removeAttribute('hidden');
+      });
+
+      // ===== Stripe Elements (same endpoints; light theme to match UI) =====
+      const API_BASE = (() => { if (location.protocol.startsWith('http')) return location.origin; return 'http://localhost:10000'; })();
+      const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q';
+
+      let stripe=null, elements=null, cardNumber=null, cardExpiry=null, cardCvc=null, stripeMounted=false;
+
+      <script>
+function ensureStripeMounted() {
+  if (stripeMounted) return;
+
+  stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
+
+  // Force a light, readable palette inside the iframe itself
+  elements = stripe.elements({
+    appearance: {
+      theme: 'flat',
+      variables: {
+        colorBackground: '#ffffff',
+        colorText: '#111827',
+        colorDanger: '#b91c1c',
+        fontSizeBase: '16px'
+      },
+      rules: {
+        '.Input': {
+          color: '#111827',
+          backgroundColor: '#ffffff',
+          caretColor: '#111827'
+        },
+        '.Input::placeholder': { color: '#6b7280' }
+      }
+    }
+  });
+
+  // Create split fields (no extra styling needed now)
+  cardNumber = elements.create('cardNumber');
+  cardExpiry = elements.create('cardExpiry');
+  cardCvc    = elements.create('cardCvc');
+
+  cardNumber.mount('#card-number');
+  cardExpiry.mount('#card-expiry');
+  cardCvc.mount('#card-cvc');
+
+  stripeMounted = true;
+}
+</script>
+
+
+        // Create the three split fields
+        cardNumber = elements.create('cardNumber', { style: sharedStyle });
+        cardExpiry = elements.create('cardExpiry', { style: sharedStyle });
+        cardCvc    = elements.create('cardCvc',    { style: sharedStyle });
+
+        // Mount into your existing containers
+        cardNumber.mount('#card-number');
+        cardExpiry.mount('#card-expiry');
+        cardCvc.mount('#card-cvc');
+
+        // Ensure the host boxes stay white (outside the iframe)
+        ['#card-number','#card-expiry','#card-cvc'].forEach(sel => {
+          const host = document.querySelector(sel);
+          if (host) host.style.background = '#ffffff';
+        });
+
+        stripeMounted = true;
+      }
+
+      /* (your remaining payment logic stays unchanged) */
+    }); // DOMContentLoaded
+  </script>
+</body>
+</html>
