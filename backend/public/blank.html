@@ -294,6 +294,16 @@
         phonePrefix.value = code;
       }
 
+      // NEW: set prefix directly by code (e.g., "+44")
+      function setPrefixValue(code){
+        if(!phonePrefix || !code) return;
+        let c = String(code).trim();
+        if(!c.startsWith('+')) c = '+' + c.replace(/[^\d]/g,'');
+        const exists = Array.from(phonePrefix.options).some(o=>o.value===c);
+        if(!exists) phonePrefix.add(new Option(c, c));
+        phonePrefix.value = c;
+      }
+
       populateCountrySelect();
       populatePrefixOptions();
 
@@ -323,6 +333,54 @@
       hydrateFromIP();
       phoneNumber.addEventListener('focus', hydrateFromIP);
       billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
+
+      // ===== NEW: URL prefill for email + phone =====
+      (function prefillFromURL(){
+        try{
+          const qs = new URLSearchParams(window.location.search);
+          const getFirst = (...keys) => {
+            for (const k of keys){ const v = qs.get(k); if (v) return v; }
+            return '';
+          };
+
+          // Email: email | e | em | mail
+          const emailParam = getFirst('email','e','em','mail');
+          if (emailParam) {
+            const el = document.getElementById('emailInput');
+            if (el) el.value = decodeURIComponent(emailParam);
+          }
+
+          // Phone (single) or split (prefix+number). Split overrides single if both provided.
+          const splitPref = getFirst('prefix','cc','dial');
+          const splitNum  = getFirst('number','n');
+          const single    = getFirst('phone','tel','p','msisdn');
+
+          let pref = '', num = '';
+
+          if (splitPref || splitNum) {
+            const rawPref = (splitPref || '').trim();
+            pref = rawPref ? (rawPref.startsWith('+') ? rawPref : ('+' + rawPref.replace(/[^\d]/g,''))) : '';
+            num  = (splitNum || '').replace(/[^\d]/g,'');
+          } else if (single) {
+            const s = single.trim();
+            if (s.startsWith('+')) {
+              const digits = s.replace(/[^\d]/g,'');
+              // naive split: 1-4 digit country code + remaining national number
+              const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
+              if (m) { pref = '+' + m[1]; num = m[2]; }
+              else { pref = '+' + digits.slice(0,1); num = digits.slice(1); }
+            } else {
+              num = s.replace(/[^\d]/g,'');
+            }
+          }
+
+          if (pref) setPrefixValue(pref);
+          if (num) {
+            const pn = document.getElementById('phoneNumber');
+            if (pn) pn.value = num;
+          }
+        } catch {}
+      })();
 
       // ===== Step nav / account creation (identical endpoints) =====
       async function ensureAccount(){
