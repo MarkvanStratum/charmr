@@ -569,6 +569,14 @@
       if (actionsContainerStep4) {
         actionsContainerStep4.insertBefore(toPaymentBtn, submitBtnStep4);
       }
+
+// >>> make the button work <<<
+toPaymentBtn.addEventListener('click', () => {
+  // keep required fields/checkbox validation
+  if (!form.checkValidity()) { form.reportValidity(); return; }
+  updateStep(5);
+});
+
       document.getElementById('back5').addEventListener('click', () => updateStep(4));
 
       form.addEventListener('submit', (e) => {
