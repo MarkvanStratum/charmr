@@ -180,21 +180,29 @@
     .el{
       width:100%; border-radius:10px; border:1px solid rgba(17,24,39,.16);
       background:#ffffff; color:#111827; min-height:44px; padding:12px 12px; display:flex; align-items:center;
+      cursor:text; /* helps users know it's typeable */
+      position:relative; /* create stacking context */
     }
     .StripeElement{width:100%; min-height:20px}
     .StripeElement--focus{outline:3px solid var(--ring)}
 
-    /* ADDED: ensure the iframe surface is white so text is visible */
+    /* Ensure host surface is white */
     .el .StripeElement { background:#ffffff !important; }
 
-    /* Force a light color-scheme in Stripe iframes so text renders dark on white */
+    /* Make the Stripe iframe fill and sit on top, always readable */
     :root { color-scheme: light; }
+    .__PrivateStripeElement,
     .__PrivateStripeElement iframe {
-      color-scheme: light !important;
-      background:#fff !important;
+      width:100% !important;
+      height:100% !important;
+      position:relative;
+      z-index:10 !important;
+      pointer-events:auto !important;
+      opacity:1 !important;
       filter:none !important;
       mix-blend-mode:normal !important;
-      opacity:1 !important;
+      background:#fff !important;
+      color-scheme: light !important;
     }
 
     /* Prevent labels from stealing focus/keystrokes from the Stripe iframe */
@@ -636,6 +644,17 @@
         cardNumber.mount('#card-number');
         cardExpiry.mount('#card-expiry');
         cardCvc.mount('#card-cvc');
+
+        // Make clicking the host boxes focus the real iframe inputs
+        const focusMap = {
+          'card-number': cardNumber,
+          'card-expiry': cardExpiry,
+          'card-cvc': cardCvc
+        };
+        Object.entries(focusMap).forEach(([id, el]) => {
+          const host = document.getElementById(id);
+          if (host) host.addEventListener('click', () => el.focus());
+        });
 
         stripeMounted = true;
       }
