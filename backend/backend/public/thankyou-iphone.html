@@ -10,7 +10,6 @@
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
-
     gtag('config', 'G-FDQ6REQWS8');
   </script>
   <style>
@@ -41,16 +40,15 @@
   <!-- Load GoAffPro (same as you have now) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <!-- ====== SALES POSTBACK GATE (40% pattern: post, skip, post, skip, skip) ====== -->
+  <!-- ====== SALES POSTBACK GATE (50% pattern via hash%2) ====== -->
   <script>
   (function(){
     const CONFIG = {
-      mode: "percent",     // keep for clarity
-      percent: 40,         // target 40%
+      mode: "percent",
+      percent: 50,
       ns: "gaffpro_gate"
     };
 
-    // Simple stable 32-bit hash
     function hash32(str){
       let h = 0;
       for (let i = 0; i < str.length; i++) {
@@ -59,27 +57,22 @@
       return h;
     }
 
-    // Decide per order ID (stable across devices/browsers/reloads)
-    // Pattern: 5 buckets → post on 0 and 2  => 2/5 = 40%
     function shouldPost(orderId){
       const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
       if (p === 0) return false;
       if (p === 100) return true;
 
-      // 5-slot cycle based on order ID
       const id = String(orderId || "NO-ID");
-      const bucket = Math.abs(hash32(id)) % 5; // 0..4
-      return (bucket === 0 || bucket === 2);   // post, skip, post, skip, skip
-    }
+      const bucket = Math.abs(hash32(id)) % 2;
+      return bucket === 0;   // post if 0
+    }   // <-- this closing brace was missing before
 
-    // Helper to get an ID from payload/global
     function getOrderIdFrom(payload){
       return (payload && (payload.number || payload.order_id || payload.id))
           || (window.goaffpro_order && window.goaffpro_order.number)
           || null;
     }
 
-    // Patch GoAffPro when available; ensure first fire is gated
     (function patchWhenReady(){
       if (typeof window.goaffproTrackConversion === "function") {
         if (window.__goaffproTrackConversionOriginal) return;
@@ -90,16 +83,15 @@
           if (shouldPost(orderId)) {
             return original.apply(this, arguments);
           } else {
-            console.log("[GoAffPro Gate] Skipped posting this sale (40% patterned gate). Order:", orderId);
+            console.log("[GoAffPro Gate] Skipped posting this sale (50% gate). Order:", orderId);
           }
         };
-        console.log("[GoAffPro Gate] Pixel patched with 40% patterned gate (post, skip, post, skip, skip).");
+        console.log("[GoAffPro Gate] Pixel patched with 50% gate (hash%2).");
       } else {
         setTimeout(patchWhenReady, 120);
       }
     })();
 
-    // Expose a small helper to wait for patch before firing
     window.__ensureGaffproPatched = function(cb){
       (function wait(){
         if (typeof window.goaffproTrackConversion === "function" &&
@@ -119,14 +111,12 @@
   </div>
 
   <script type="text/javascript">
-    // ---- helpers ----
     function uniqueOrderId() {
       const ts = Date.now();
       const rand = Math.random().toString(16).slice(2, 6);
       return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
     }
 
-    // GEO-BASED AMOUNT: US/GB/AU/NZ => $30, others => $10
     async function resolveGeoAmount() {
       const preferred = ["US","GB","AU","NZ"];
       let code = "";
@@ -139,11 +129,10 @@
           const data = await resp.json();
           code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
         }
-      } catch(e) { /* default below */ }
+      } catch(e) {}
       return preferred.includes(code) ? 30 : 10;
     }
 
-    // prevent double-fire on reload/back
     if (!sessionStorage.getItem('gaffpro_converted')) {
       (async function () {
         const saleAmount = await resolveGeoAmount();
@@ -154,7 +143,6 @@
           currency: "USD"
         };
 
-        // Fire ONLY after the gate is patched so first call is gated
         __ensureGaffproPatched(function(){
           console.log("GoAffPro: firing conversion", window.goaffpro_order);
           window.goaffproTrackConversion(window.goaffpro_order);
