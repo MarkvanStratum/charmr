@@ -277,6 +277,7 @@ const profiles = [
   
 
 
+
   
 
 ];
@@ -1214,8 +1215,80 @@ await stripe.customers.update(customer.id, {
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
 
-// £20 intro charge before starting the subscription (public flow, like trial-charge-intent but £20)
-app.post('/api/stripe/intro-charge-20
+// £20 intro charge before starting the subscription (supports quantity)
+app.post('/api/stripe/intro-charge-20', async (req, res) => {
+  try {
+    const {
+      paymentMethodId,
+      email,
+      name,
+      phone,
+      address,   // { line1, line2, city, state, postal_code, country }
+      quantity   // number of items selected
+    } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
+    const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
+    const unitPence = 2000;               // £20 per item
+    const amount = unitPence * qty;       // total to charge now
+
+    // Create (or reuse via email if you prefer) a Customer
+    let customer = null;
+    if (email) {
+      const list = await stripe.customers.list({ email, limit: 1 });
+      if (list.data.length) customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // Attach PM and set default for invoices
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // Create the PaymentIntent for £20 × quantity
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
+      description: `Intro charge (iPhone flow) x${qty} @ £20`,
+      metadata: {
+        purpose: 'intro_charge_20',
+        quantity: String(qty),
+        unit_pence: String(unitPence),
+        total_pence: String(amount)
+      }
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error('intro-charge-20 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
 
 // Create the £2.50 trial PaymentIntent and return client_secret for 3DS
 app.options('/api/stripe/trial-charge-intent', cors());
