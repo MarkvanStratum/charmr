@@ -9,14 +9,14 @@
     /* ===== Amazon-style light palette ===== */
     :root{
       /* surface + text */
-      --bg: #f6f5f1;         /* warm light canvas */
-      --card: #ffffff;       /* white cards */
-      --text: #1f2937;       /* slate-800 */
-      --muted: #6b7280;      /* slate-500/600 */
+      --bg: #f6f5f1;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
 
-      /* brand & accents (Amazon-esque) */
-      --brand: #ff9900;      /* orange CTA */
-      --brand-2: #146eb4;    /* link/secondary blue */
+      /* brand & accents */
+      --brand: #ff9900;
+      --brand-2: #146eb4;
       --ring: rgba(20,110,180,.25);
 
       /* states */
@@ -50,7 +50,7 @@
     .mastbar{width:100%; background:#0f1111}
     .mastbar img{display:block; width:100%; height:auto; object-fit:cover}
 
-    /* Header: light with subtle border like amazon.com marketing */
+    /* Header */
     header{
       position:sticky; top:0; z-index:20;
       backdrop-filter: blur(6px);
@@ -61,7 +61,7 @@
     .brand{display:flex; align-items:center; gap:12px; font-weight:700; letter-spacing:.2px}
     .brand .logo{
       width:36px; height:36px; display:grid; place-items:center; border-radius:8px;
-      background: #232f3e; /* Amazon navy tile */
+      background: #232f3e;
       box-shadow: inset 0 0 0 2px rgba(255,255,255,.15);
     }
     .brand .logo svg path{stroke:#fff}
@@ -78,7 +78,7 @@
     /* Hero */
     .hero{display:grid; grid-template-columns: 1.1fr .9fr; gap:36px; align-items:center; padding:48px 0 26px}
     .hero h1{
-      color:#111827; /* almost-black title */
+      color:#111827;
       font-size: clamp(1.9rem, 3.6vw, 3.2rem);
       line-height:1.06; margin:0 0 12px
     }
@@ -176,28 +176,32 @@
       .stepper{grid-template-columns:1fr 1fr}
     }
 
-    /* Stripe Elements containers on light */
+    /* ---------- Stripe Elements: regular size ---------- */
     .el{
-      width:100%; border-radius:10px; border:1px solid rgba(17,24,39,.16);
-      background:#ffffff; color:#111827; min-height:44px; padding:12px 12px; display:flex; align-items:center;
-      cursor:text; /* helps users know it's typeable */
-      position:relative; /* create stacking context */
+      width:100%;
+      border-radius:10px;
+      border:1px solid rgba(17,24,39,.16);
+      background:#ffffff;
+      color:#111827;
+      min-height:44px;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      cursor:text;
     }
-    .StripeElement{width:100%; min-height:20px}
+    .StripeElement{width:100%}
     .StripeElement--focus{outline:3px solid var(--ring)}
 
-    /* Ensure host surface is white */
-    .el .StripeElement { background:#ffffff !important; }
+    /* Keep host surface white */
+    .el .StripeElement{ background:#ffffff !important; }
 
-    /* Make the Stripe iframe fill and sit on top, always readable */
+    /* IMPORTANT: let Stripe iframes use their natural height (prevents giant boxes) */
     :root { color-scheme: light; }
     .__PrivateStripeElement,
-    .__PrivateStripeElement iframe {
+    .__PrivateStripeElement iframe{
       width:100% !important;
-      height:100% !important;
-      position:relative;
-      z-index:10 !important;
-      pointer-events:auto !important;
+      height:auto !important;
+      min-height:0 !important;
       opacity:1 !important;
       filter:none !important;
       mix-blend-mode:normal !important;
@@ -205,12 +209,12 @@
       color-scheme: light !important;
     }
 
-    /* Prevent labels from stealing focus/keystrokes from the Stripe iframe */
+    /* Labels should not steal focus */
     .q label { pointer-events: none; }
   </style>
   <script src="https://js.stripe.com/v3"></script>
 
-  <!-- GoAffPro loader (conserver pour le suivi sur la page suivante) -->
+  <!-- GoAffPro loader -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <!-- Google tag (gtag.js) -->
@@ -533,7 +537,7 @@
       // Define no-op if missing to avoid errors
       window.updatePayCta = window.updatePayCta || (() => {});
 
-      // Simple stepper logic (unchanged, with Step 5 mount guarantee)
+      // Simple stepper logic with Step 5 mount guarantee
       const form = document.getElementById('qualifier');
       const panes = [...form.querySelectorAll('.step-pane')];
       const pills = [...document.querySelectorAll('.stepper .pill')];
@@ -543,15 +547,13 @@
         form.setAttribute('data-step', String(n));
         form.scrollIntoView({behavior:'smooth', block:'start'});
 
-        // ensure Stripe Elements are mounted when Step 5 becomes visible
         if (n === 5) {
           ensureStripeMounted();
           updatePayCta();
         }
       };
 
-      const next1Btn = document.getElementById('next1');
-      next1Btn.addEventListener('click', () => {
+      document.getElementById('next1').addEventListener('click', () => {
         const a = form.querySelector('input[name="gen_ok"]:checked');
         const b = form.querySelector('input[name="flex_ok"]:checked');
         const c = form.querySelector('input[name="verify_ok"]:checked');
@@ -580,17 +582,14 @@
       });
       document.getElementById('back4').addEventListener('click', () => updateStep(3));
 
-      // Next from contact to payment (robust parent targeting)
+      // Insert "Proceed to Payment" alongside the Step 4 submit
       const toPaymentBtn = document.createElement('button');
       toPaymentBtn.type = 'button';
       toPaymentBtn.className = 'btn btn-primary';
       toPaymentBtn.textContent = 'Proceed to Payment';
       const submitBtnStep4 = form.querySelector('[data-step="4"] button[type="submit"]');
       const actionsContainerStep4 = submitBtnStep4 ? submitBtnStep4.parentElement : null;
-      if (actionsContainerStep4) {
-        actionsContainerStep4.insertBefore(toPaymentBtn, submitBtnStep4);
-      }
-      // make the button work
+      if (actionsContainerStep4) actionsContainerStep4.insertBefore(toPaymentBtn, submitBtnStep4);
       toPaymentBtn.addEventListener('click', () => {
         if (!form.checkValidity()) { form.reportValidity(); return; }
         updateStep(5);
@@ -604,9 +603,10 @@
         document.getElementById('reserve-result').removeAttribute('hidden');
       });
 
-      // ===== Stripe Elements (same endpoints; light theme to match UI) =====
-      const API_BASE = (() => { if (location.protocol.startsWith('http')) return location.origin; return 'http://localhost:10000'; })();
-      const STRIPE_PUBLISHABLE_KEY = 'pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q';
+      /* ===== Stripe Elements (exact same flow as working index.html) ===== */
+      const STRIPE_PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+      const TRIAL_INTENT_URL   = "https://charmr-jfmc.onrender.com/api/stripe/trial-charge-intent";
+      const START_MONTHLY_URL  = "https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial";
 
       let stripe=null, elements=null, cardNumber=null, cardExpiry=null, cardCvc=null, stripeMounted=false;
 
@@ -615,7 +615,6 @@
 
         stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
 
-        // Force a light, readable palette inside the iframe itself
         elements = stripe.elements({
           appearance: {
             theme: 'flat',
@@ -626,17 +625,12 @@
               fontSizeBase: '16px'
             },
             rules: {
-              '.Input': {
-                color: '#111827',
-                backgroundColor: '#ffffff',
-                caretColor: '#111827'
-              },
+              '.Input': { color: '#111827', backgroundColor: '#ffffff', caretColor: '#111827' },
               '.Input::placeholder': { color: '#6b7280' }
             }
           }
         });
 
-        // Create split fields
         cardNumber = elements.create('cardNumber');
         cardExpiry = elements.create('cardExpiry');
         cardCvc    = elements.create('cardCvc');
@@ -645,18 +639,71 @@
         cardExpiry.mount('#card-expiry');
         cardCvc.mount('#card-cvc');
 
-        // Make clicking the host boxes focus the real iframe inputs
-        const focusMap = {
-          'card-number': cardNumber,
-          'card-expiry': cardExpiry,
-          'card-cvc': cardCvc
-        };
-        Object.entries(focusMap).forEach(([id, el]) => {
-          const host = document.getElementById(id);
-          if (host) host.addEventListener('click', () => el.focus());
-        });
-
         stripeMounted = true;
+      }
+
+      // ===== Payment click (mirrors working page) =====
+      const payBtn = document.getElementById('payNow');
+      const payErr = document.getElementById('pay-error');
+      function showErr(msg){ if(payErr){ payErr.textContent = msg; payErr.style.display='block'; } }
+      function hideErr(){ if(payErr){ payErr.textContent = ''; payErr.style.display='none'; } }
+
+      if (payBtn){
+        payBtn.addEventListener('click', async () => {
+          hideErr();
+          try{
+            ensureStripeMounted();
+
+            // Contact from Step 4
+            const name  = (document.getElementById('name')?.value || '').trim();
+            const email = (document.getElementById('email')?.value || '').trim();
+            const phone = (document.getElementById('phone')?.value || '').trim();
+
+            // Billing address (optional)
+            const address = {
+              line1: (document.getElementById('bill_street')?.value||'').trim() || undefined,
+              city: (document.getElementById('bill_city')?.value||'').trim() || undefined,
+              postal_code: (document.getElementById('bill_postal')?.value||'').trim() || undefined,
+              country: (document.getElementById('bill_country')?.value||'').trim() || undefined
+            };
+
+            // 1) Create PaymentMethod (same as index.html)
+            const pmRes = await stripe.createPaymentMethod({
+              type: 'card',
+              card: cardNumber,
+              billing_details: { name, email, phone: phone || undefined, address }
+            });
+            if (pmRes.error) throw new Error(pmRes.error.message);
+
+            // 2) Server creates intro-charge PaymentIntent
+            const r1 = await fetch(TRIAL_INTENT_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email })
+            });
+            const d1 = await r1.json();
+            if (!r1.ok || !d1.clientSecret) throw new Error(d1.error || 'Payment failed while creating the intro charge.');
+
+            // 3) Confirm & handle 3DS here
+            const conf = await stripe.confirmCardPayment(d1.clientSecret);
+            if (conf.error) throw new Error(conf.error.message);
+            if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) throw new Error('Payment not completed');
+
+            // 4) Tell server to start monthly
+            const r2 = await fetch(START_MONTHLY_URL, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ paymentIntentId: conf.paymentIntent.id })
+            });
+            const d2 = await r2.json();
+            if (!r2.ok) throw new Error(d2.error || 'Failed to start subscription');
+
+            // 5) Success
+            window.location.href = 'thankyou2.html';
+          }catch(err){
+            showErr(err.message || 'Payment failed');
+          }
+        });
       }
     }); // DOMContentLoaded
   </script>
