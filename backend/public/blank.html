@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Checkout</title>
+  <title>Blank</title>
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -218,10 +218,14 @@
       const billingCountry = document.getElementById('billingCountry');
       const billingPostcode = document.getElementById('billingPostcode');
 
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+      // CHANGE: point to intro-charge endpoint (first step)
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
+
+      // NEW: monthly price for £5/30 days after trial
+      const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
@@ -447,6 +451,7 @@
         };
 
         try{
+          // 1) Create a PaymentMethod
           const pmRes = await stripe.createPaymentMethod({
             type:'card',
             card:cardNumber,
@@ -454,20 +459,39 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
+          // 2) Start the £20 intro charge
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ priceId: FIXED_PRICE_ID, paymentMethodId: pmRes.paymentMethod.id, name, email })
+            body: JSON.stringify({
+              paymentMethodId: pmRes.paymentMethod.id,
+              name,
+              email,
+              phone: fullPhone,
+              address
+            })
           });
           const data = await resp.json();
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
 
+          // 3) Confirm the intro charge (handles 3DS/SCA)
           const conf = await stripe.confirmCardPayment(data.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
-          if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
-            window.location.href='thankyou-iphone.html';
-          } else {
-            throw new Error('Payment not completed');
-          }
+          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
+
+          // 4) Start the subscription with 30-day trial on £5/30d price
+          const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial", {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              paymentIntentId: data.paymentIntentId,
+              priceIdMonthly: MONTHLY_PRICE_ID
+            })
+          });
+          const subData = await subRes.json();
+          if(subData.error) throw new Error(subData.error);
+
+          // Success → thank you page
+          window.location.href='thankyou-iphone.html';
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
