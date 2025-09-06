@@ -43,14 +43,62 @@
   </div>
 
   <script>
-    // ------------ configuration read (from config.html localStorage) ------------
+    // ------------ storage helpers (cookie + localStorage) ------------
+    function setCookie(name, value, days=365) {
+      const maxAge = days * 86400;
+      document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}`;
+    }
+    function delCookie(name) {
+      document.cookie = `${name}=; path=/; max-age=0`;
+    }
+    function getCookie(name) {
+      const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&') + '=([^;]*)'));
+      return m ? decodeURIComponent(m[1]) : null;
+    }
+
+    // If URL has ?pct= or ?aff=, persist them (so you can test quickly)
+    (function applyFromQueryOnce(){
+      const qs = new URLSearchParams(location.search);
+      const pct = qs.get('pct');
+      const aff = qs.get('aff');
+
+      if (pct != null && pct !== '') {
+        const n = Math.max(0, Math.min(100, parseInt(pct, 10)));
+        if (!isNaN(n)) {
+          try { localStorage.setItem('gaffpro_gate_percent', String(n)); } catch(e){}
+          setCookie('gaffpro_gate_percent', String(n));
+          console.log('[Gate] applied pct from URL =', n);
+        }
+      }
+      if (aff != null) {
+        const v = (aff || '').trim();
+        if (v) {
+          try { localStorage.setItem('gaffpro_affiliate_id', v); } catch(e){}
+          setCookie('gaffpro_affiliate_id', v);
+          console.log('[Gate] applied aff from URL =', v);
+        } else {
+          try { localStorage.removeItem('gaffpro_affiliate_id'); } catch(e){}
+          delCookie('gaffpro_affiliate_id');
+          console.log('[Gate] cleared aff via URL');
+        }
+      }
+    })();
+
+    // ------------ configuration read (cookie > localStorage > default) ------------
     function readPercent() {
+      const fromCookie = getCookie('gaffpro_gate_percent');
+      if (fromCookie != null) {
+        const n = parseInt(fromCookie, 10);
+        if (!isNaN(n)) return Math.max(0, Math.min(100, n));
+      }
       const raw = localStorage.getItem('gaffpro_gate_percent');
       const n = parseInt(raw, 10);
       if (isNaN(n)) return 100;                // default: post ALL sales
       return Math.max(0, Math.min(100, n));
     }
     function readAffiliateOverride() {
+      const c = getCookie('gaffpro_affiliate_id');
+      if (c && c.trim()) return c.trim();
       const v = localStorage.getItem('gaffpro_affiliate_id');
       return v && v.trim() ? v.trim() : null;
     }

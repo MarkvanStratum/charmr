@@ -26,7 +26,7 @@
 <body>
   <div class="card">
     <h1>GoAffPro Postback Controls</h1>
-    <p class="sub">Configure the affiliate override and the % of conversions to post back. Values are saved in <span class="mono">localStorage</span> on this browser.</p>
+    <p class="sub">Configure the affiliate override and the % of conversions to post back. Values are saved in <span class="mono">localStorage</span> and <span class="mono">cookies</span> on this browser.</p>
 
     <label for="affId">Affiliate ID (optional override)</label>
     <input id="affId" type="text" placeholder="e.g. aff_12345 (leave blank to use default/cookie)" />
@@ -67,30 +67,82 @@
   const $simulate = document.getElementById('simulate');
   const $simOut = document.getElementById('simOut');
 
-  // Load existing
-  $aff.value = localStorage.getItem('gaffpro_affiliate_id') || '';
-  const savedPct = localStorage.getItem('gaffpro_gate_percent');
+  // ----- cookie helpers (host-only + best-guess parent domain) -----
+  function getCookie(name) {
+    const m = document.cookie.match(new RegExp('(?:^|; )'+name.replace(/[-[\\]{}()*+?.,\\\\^$|#\\s]/g,'\\$&')+'=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  function setCookieAllScopes(name, value, days=365) {
+    const maxAge = days * 86400;
+    // host-only
+    document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}`;
+    // try parent domains (covers www.<domain> & checkout.<domain>)
+    const host = location.hostname;
+    const parts = host.split('.');
+    if (parts.length >= 2) {
+      const d2 = '.' + parts.slice(-2).join('.');
+      document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; domain=${d2}`;
+      // crude support for e.g. co.uk, com.au (last 3)
+      const last2 = parts.slice(-2).join('.').toLowerCase();
+      if (/^(co|com|org|net|gov|ac)\.[a-z]{2}$/.test(last2) && parts.length >= 3) {
+        const d3 = '.' + parts.slice(-3).join('.');
+        document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}; domain=${d3}`;
+      }
+    }
+  }
+  function delCookieAllScopes(name) {
+    document.cookie = `${name}=; path=/; max-age=0`;
+    const host = location.hostname;
+    const parts = host.split('.');
+    if (parts.length >= 2) {
+      const d2 = '.' + parts.slice(-2).join('.');
+      document.cookie = `${name}=; path=/; max-age=0; domain=${d2}`;
+      const last2 = parts.slice(-2).join('.').toLowerCase();
+      if (/^(co|com|org|net|gov|ac)\.[a-z]{2}$/.test(last2) && parts.length >= 3) {
+        const d3 = '.' + parts.slice(-3).join('.');
+        document.cookie = `${name}=; path=/; max-age=0; domain=${d3}`;
+      }
+    }
+  }
+
+  // ----- Load existing (cookie first, then localStorage) -----
+  const cookieAff = getCookie('gaffpro_affiliate_id');
+  const cookiePct = getCookie('gaffpro_gate_percent');
+
+  $aff.value = (cookieAff != null ? cookieAff : localStorage.getItem('gaffpro_affiliate_id')) || '';
+  const savedPct = (cookiePct != null ? cookiePct : localStorage.getItem('gaffpro_gate_percent'));
   $pct.value = savedPct != null ? savedPct : '50';
 
+  // ----- Save -----
   $save.onclick = () => {
     const aff = ($aff.value || '').trim();
     const pct = Math.max(0, Math.min(100, parseInt($pct.value || '0', 10)));
 
+    // localStorage
     if (aff) localStorage.setItem('gaffpro_affiliate_id', aff);
     else localStorage.removeItem('gaffpro_affiliate_id');
-
     localStorage.setItem('gaffpro_gate_percent', String(pct));
+
+    // cookies (host + parent domain scopes)
+    if (aff) setCookieAllScopes('gaffpro_affiliate_id', aff);
+    else delCookieAllScopes('gaffpro_affiliate_id');
+    setCookieAllScopes('gaffpro_gate_percent', String(pct));
+
     alert('Saved ✅\nAffiliate: ' + (aff || '(none)') + '\nPercent: ' + pct + '%');
   };
 
+  // ----- Clear -----
   $clear.onclick = () => {
     localStorage.removeItem('gaffpro_affiliate_id');
     localStorage.removeItem('gaffpro_gate_percent');
+    delCookieAllScopes('gaffpro_affiliate_id');
+    delCookieAllScopes('gaffpro_gate_percent');
     alert('Cleared. The thank-you page will use its defaults.');
     $aff.value = '';
     $pct.value = '50';
   };
 
+  // ----- Simulator (unchanged) -----
   function hash32(str){
     let h = 0;
     for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
