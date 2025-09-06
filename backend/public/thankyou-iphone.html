@@ -40,32 +40,60 @@
   <!-- Load GoAffPro (same as you have now) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <!-- ====== SALES POSTBACK GATE (50% pattern via hash%2) ====== -->
+  <!-- ====== SALES POSTBACK GATE (reads % & affiliate from localStorage set via config.html) ====== -->
   <script>
   (function(){
     const CONFIG = {
-      mode: "percent",
-      percent: 50,
-      ns: "gaffpro_gate"
+      ns: "gaffpro_gate",
+      defaultPercent: 50  // used only if nothing saved by config.html
     };
 
-    function hash32(str){
-      let h = 0;
-      for (let i = 0; i < str.length; i++) {
-        h = ((h << 5) - h + str.charCodeAt(i)) | 0;
-      }
-      return h;
+    // ---- read settings saved by config.html ----
+    function getPercent(){
+      const raw = localStorage.getItem('gaffpro_gate_percent');
+      const val = raw == null ? CONFIG.defaultPercent : parseInt(raw, 10);
+      const p = isNaN(val) ? CONFIG.defaultPercent : val;
+      return Math.max(0, Math.min(100, p));
+    }
+    function getAffiliateOverride(){
+      const aff = localStorage.getItem('gaffpro_affiliate_id');
+      return (aff && aff.trim()) ? aff.trim() : null;
     }
 
+    // ---- stable hash & decision ----
+    function hash32(str){
+      let h = 0;
+      for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
+      return h >>> 0; // unsigned
+    }
     function shouldPost(orderId){
-      const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
+      const p = getPercent();
       if (p === 0) return false;
       if (p === 100) return true;
-
       const id = String(orderId || "NO-ID");
-      const bucket = Math.abs(hash32(id)) % 2;
-      return bucket === 0;   // post if 0
-    }   // <-- this closing brace was missing before
+      const bucket = hash32(id) % 100; // 0..99
+      const decision = bucket < p;
+      console.log(`[GoAffPro Gate] %=${p} → orderId=${id} bucket=${bucket} → ${decision?'POST':'SKIP'}`);
+      return decision;
+    }
+
+    // Try to set affiliate override if GoAffPro exposes a setter
+    function applyAffiliateOverride(affId){
+      if (!affId) return;
+      try {
+        if (typeof window.goaffproSetAffiliate === 'function') {
+          window.goaffproSetAffiliate(affId);
+          console.log('[GoAffPro Gate] Affiliate override via goaffproSetAffiliate:', affId);
+        } else if (typeof window.goaffpro_set_affiliate === 'function') {
+          window.goaffpro_set_affiliate(affId);
+          console.log('[GoAffPro Gate] Affiliate override via goaffpro_set_affiliate:', affId);
+        } else {
+          console.warn('[GoAffPro Gate] No affiliate setter found. Consider passing ?ref=AFFID on entry pages.');
+        }
+      } catch(e){
+        console.warn('[GoAffPro Gate] Affiliate override attempt failed:', e);
+      }
+    }
 
     function getOrderIdFrom(payload){
       return (payload && (payload.number || payload.order_id || payload.id))
@@ -73,25 +101,31 @@
           || null;
     }
 
+    // Patch GoAffPro when available; ensure first fire is gated using saved %.
     (function patchWhenReady(){
       if (typeof window.goaffproTrackConversion === "function") {
         if (window.__goaffproTrackConversionOriginal) return;
         const original = window.goaffproTrackConversion;
         window.__goaffproTrackConversionOriginal = original;
+
+        // apply affiliate override once
+        applyAffiliateOverride(getAffiliateOverride());
+
         window.goaffproTrackConversion = function(payload){
           const orderId = getOrderIdFrom(payload);
           if (shouldPost(orderId)) {
             return original.apply(this, arguments);
           } else {
-            console.log("[GoAffPro Gate] Skipped posting this sale (50% gate). Order:", orderId);
+            console.log("[GoAffPro Gate] Skipped posting by gate.", orderId);
           }
         };
-        console.log("[GoAffPro Gate] Pixel patched with 50% gate (hash%2).");
+        console.log("[GoAffPro Gate] Pixel patched. Using percent from localStorage.");
       } else {
         setTimeout(patchWhenReady, 120);
       }
     })();
 
+    // Helper for your firing code below to wait for patch
     window.__ensureGaffproPatched = function(cb){
       (function wait(){
         if (typeof window.goaffproTrackConversion === "function" &&

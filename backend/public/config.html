@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GoAffPro Postback Controls</title>
+<style>
+  :root { --bg:#0b1020; --card:#11183a; --text:#e7ecff; --muted:#a8b1d6; --line:#263062; --acc:#6aa8ff; --good:#22c55e; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.45 system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; }
+  .card { width:min(720px,100%); background:var(--card); border:1px solid var(--line); border-radius:14px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.3); }
+  h1 { margin:0 0 6px; font-size:20px; }
+  p.sub { margin:0 0 16px; color:var(--muted); }
+  label { display:block; font-weight:700; margin:12px 0 6px; }
+  input[type="text"], input[type="number"] { width:100%; padding:12px; border:1px solid var(--line); background:#0f1733; color:var(--text); border-radius:10px; }
+  .row { display:grid; grid-template-columns:1fr 220px; gap:12px; }
+  .btns { display:flex; gap:10px; margin-top:16px; }
+  button { padding:10px 14px; border:1px solid var(--line); background:#0f1733; color:var(--text); border-radius:10px; cursor:pointer; }
+  button.primary { background:linear-gradient(180deg,#7aa3ff,#4f86ff); border-color:#3b6cd4; }
+  .note { color:var(--muted); font-size:13px; margin-top:8px; }
+  .ok { color:var(--good); font-weight:700; }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+  .hr { height:1px; background:var(--line); margin:16px 0; }
+  .sim { background:#0f1733; border:1px dashed var(--line); border-radius:10px; padding:12px; margin-top:10px; font-size:14px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>GoAffPro Postback Controls</h1>
+    <p class="sub">Configure the affiliate override and the % of conversions to post back. Values are saved in <span class="mono">localStorage</span> on this browser.</p>
+
+    <label for="affId">Affiliate ID (optional override)</label>
+    <input id="affId" type="text" placeholder="e.g. aff_12345 (leave blank to use default/cookie)" />
+
+    <div class="row">
+      <div>
+        <label for="percent">Postback Percentage (0–100)</label>
+        <input id="percent" type="number" min="0" max="100" step="1" placeholder="50" />
+        <div class="note">Deterministic by <span class="mono">orderId</span>: uses hash % 100 &lt; percent.</div>
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <div class="btns">
+          <button id="save" class="primary">Save</button>
+          <button id="clear">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div>
+      <button id="simulate">Simulate 20 random orderIds</button>
+      <div id="simOut" class="sim" style="display:none;"></div>
+    </div>
+
+    <div class="note" style="margin-top:12px">
+      Keys used: <span class="mono">gaffpro_affiliate_id</span>, <span class="mono">gaffpro_gate_percent</span>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $aff = document.getElementById('affId');
+  const $pct = document.getElementById('percent');
+  const $save = document.getElementById('save');
+  const $clear = document.getElementById('clear');
+  const $simulate = document.getElementById('simulate');
+  const $simOut = document.getElementById('simOut');
+
+  // Load existing
+  $aff.value = localStorage.getItem('gaffpro_affiliate_id') || '';
+  const savedPct = localStorage.getItem('gaffpro_gate_percent');
+  $pct.value = savedPct != null ? savedPct : '50';
+
+  $save.onclick = () => {
+    const aff = ($aff.value || '').trim();
+    const pct = Math.max(0, Math.min(100, parseInt($pct.value || '0', 10)));
+
+    if (aff) localStorage.setItem('gaffpro_affiliate_id', aff);
+    else localStorage.removeItem('gaffpro_affiliate_id');
+
+    localStorage.setItem('gaffpro_gate_percent', String(pct));
+    alert('Saved ✅\nAffiliate: ' + (aff || '(none)') + '\nPercent: ' + pct + '%');
+  };
+
+  $clear.onclick = () => {
+    localStorage.removeItem('gaffpro_affiliate_id');
+    localStorage.removeItem('gaffpro_gate_percent');
+    alert('Cleared. The thank-you page will use its defaults.');
+    $aff.value = '';
+    $pct.value = '50';
+  };
+
+  function hash32(str){
+    let h = 0;
+    for (let i = 0; i < str.length; i++) h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+    return h >>> 0; // unsigned
+  }
+  function shouldPostFor(orderId, percent){
+    const p = Math.max(0, Math.min(100, parseInt(percent||'0',10)));
+    if (p === 0) return false;
+    if (p === 100) return true;
+    const b = hash32(String(orderId)) % 100;
+    return b < p;
+  }
+
+  $simulate.onclick = () => {
+    const pct = Math.max(0, Math.min(100, parseInt($pct.value||'50',10)));
+    const lines = [];
+    let posts = 0;
+    for(let i=0;i<20;i++){
+      const id = 'ORD-' + (Date.now()+i) + '-' + Math.random().toString(16).slice(2,6);
+      const ok = shouldPostFor(id, pct);
+      if (ok) posts++;
+      lines.push((ok ? 'POST  ' : 'SKIP  ') + id);
+    }
+    lines.push('—'.repeat(40));
+    lines.push(`Total posts: ${posts}/20 ≈ ${(posts/20*100).toFixed(0)}%`);
+    $simOut.style.display = 'block';
+    $simOut.textContent = lines.join('\n');
+  };
+})();
+</script>
+</body>
+</html>
