@@ -20,27 +20,28 @@
     p { font-size:1.25rem; margin:0; color:#111827; }
   </style>
 
-  <!-- ====== GOAFFPRO GATE: strict alternating TRACK/SKIP ====== -->
+  <!-- ====== GOAFFPRO GATE: strict alternating TRACK/SKIP (robust patch) ====== -->
   <script>
     (function(){
-      const KEY = "gaffpro_track_counter";
-      let memCounter = 0; // fallback if localStorage is blocked
-      let firedThisPage = false; // in-page duplicate guard (no session-wide suppression)
+      const COUNTER_KEY = "gaffpro_track_counter";
+      let firedThisPage = false; // prevent duplicate fires in a single render
 
       function safeGetCounter(){
         try {
-          const raw = localStorage.getItem(KEY);
+          const raw = localStorage.getItem(COUNTER_KEY);
           return raw == null ? 0 : (parseInt(raw, 10) || 0);
         } catch(e) {
-          return memCounter | 0;
+          // localStorage blocked? fall back to per-tab memory (not persistent)
+          if (!window.__gaffpro_memCounter) window.__gaffpro_memCounter = 0;
+          return window.__gaffpro_memCounter | 0;
         }
       }
       function safeSetCounter(v){
-        try { localStorage.setItem(KEY, String(v)); }
-        catch(e){ memCounter = v | 0; }
+        try { localStorage.setItem(COUNTER_KEY, String(v)); }
+        catch(e){ window.__gaffpro_memCounter = v | 0; }
       }
 
-      // TRACK on odd, SKIP on even — deterministic alternation across page loads in this browser
+      // Alternating: odd => TRACK, even => SKIP
       function shouldTrackNext(){
         let c = safeGetCounter();
         c += 1;
@@ -48,57 +49,75 @@
         return (c % 2) === 1;
       }
 
-      // Intercept assignment so the first fire is always gated
-      Object.defineProperty(window, "goaffproTrackConversion", {
-        configurable: true,
-        enumerable: true,
-        set(fn){
-          if (typeof fn === "function") {
-            const original = fn;
-            const wrapped = function(payload){
-              if (firedThisPage) {
-                console.log("[GoAffPro Gate] Already fired on this page; skipping duplicate.");
-                return;
-              }
-              if (shouldTrackNext()) {
-                console.log("[GoAffPro Gate] TRACK (alternating).");
-                firedThisPage = true;
-                return original.apply(this, arguments);
-              } else {
-                console.log("[GoAffPro Gate] SKIP (alternating).");
-                firedThisPage = true; // mark so we don't attempt again this render
-              }
-            };
-            Object.defineProperty(window, "goaffproTrackConversion", {
-              value: wrapped,
-              writable: false,
-              configurable: true,
-              enumerable: true
-            });
-            window.__goaffproTrackConversionOriginal = original; // for debugging
-            console.log("[GoAffPro Gate] Alternating gate installed (track/skip/track/skip).");
-          } else {
-            Object.defineProperty(window, "goaffproTrackConversion", {
-              value: fn,
-              writable: true,
-              configurable: true,
-              enumerable: true
-            });
-          }
-        },
-        get(){ return undefined; }
-      });
+      // Wrap once, idempotently
+      function wrapIfNeeded(){
+        const fn = window.goaffproTrackConversion;
+        if (typeof fn !== "function") return false;
+        if (fn.__gaffproWrapped) return true;
 
-      // Simple waiter that runs a callback once the wrapped function exists
-      window.__ensureGaffproPatched = function(cb){
-        (function wait(){
-          if (typeof window.goaffproTrackConversion === "function" &&
-              typeof window.__goaffproTrackConversionOriginal === "function") {
-            cb();
-          } else {
-            setTimeout(wait, 100);
+        const wrapped = function(payload){
+          if (firedThisPage) {
+            console.log("[GoAffPro Gate] Already handled on this page.");
+            return;
           }
-        })();
+          firedThisPage = true;
+
+          if (shouldTrackNext()) {
+            console.log("[GoAffPro Gate] TRACK (alternating).");
+            return fn.__gaffproOriginal.apply(this, arguments);
+          } else {
+            console.log("[GoAffPro Gate] SKIP (alternating).");
+            // do nothing
+          }
+        };
+        wrapped.__gaffproWrapped = true;
+        wrapped.__gaffproOriginal = fn;
+        window.goaffproTrackConversion = wrapped;
+        console.log("[GoAffPro Gate] Wrapper installed (alternating track/skip).");
+        return true;
+      }
+
+      // Poll quickly to catch when the pixel appears, then wrap
+      (function pollWrap(){
+        const MAX_MS = 6000;
+        const STEP_MS = 60;
+        let waited = 0;
+
+        const t = setInterval(function(){
+          if (wrapIfNeeded()) {
+            clearInterval(t);
+          } else {
+            waited += STEP_MS;
+            if (waited >= MAX_MS) {
+              clearInterval(t);
+              console.warn("[GoAffPro Gate] Timed out waiting for goaffproTrackConversion.");
+            }
+          }
+        }, STEP_MS);
+      })();
+
+      // Expose a simple "fire when ready" that retries both wrapper install & fire
+      window.__fireGoAffProWhenReady = function(order){
+        const MAX_MS = 6000;
+        const STEP_MS = 60;
+        let waited = 0;
+
+        const tryFire = setInterval(function(){
+          // ensure wrapped; if not yet, attempt again
+          wrapIfNeeded();
+          if (typeof window.goaffproTrackConversion === "function" &&
+              window.goaffproTrackConversion.__gaffproWrapped === true) {
+            console.log("GoAffPro: firing conversion", order);
+            window.goaffproTrackConversion(order);
+            clearInterval(tryFire);
+          } else {
+            waited += STEP_MS;
+            if (waited >= MAX_MS) {
+              clearInterval(tryFire);
+              console.warn("[GoAffPro Gate] Could not fire: wrapper not ready.");
+            }
+          }
+        }, STEP_MS);
       };
     })();
   </script>
@@ -109,7 +128,7 @@
     <p>Thank you for your order. You’ll be contacted shortly with the details.</p>
   </div>
 
-  <!-- Load GoAffPro AFTER the gate so we always wrap it -->
+  <!-- Load GoAffPro AFTER the gate so we can patch it -->
   <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <script>
@@ -137,7 +156,7 @@
       return preferred.includes(code) ? 30 : 10;
     }
 
-    // Build an order every load (no sessionStorage suppression)
+    // Build an order every load (no session-wide suppression)
     (async function () {
       const saleAmount = await resolveGeoAmount();
 
@@ -147,11 +166,8 @@
         currency: "USD"
       };
 
-      // Fire ONLY after the gate-wrapped function exists
-      __ensureGaffproPatched(function(){
-        console.log("GoAffPro: firing conversion", window.goaffpro_order);
-        window.goaffproTrackConversion(window.goaffpro_order);
-      });
+      // Fire once the wrapper (and original) are present
+      __fireGoAffProWhenReady(window.goaffpro_order);
     })();
   </script>
 </body>
