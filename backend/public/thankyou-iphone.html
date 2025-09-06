@@ -20,64 +20,58 @@
     p { font-size:1.25rem; margin:0; color:#111827; }
   </style>
 
-  <!-- ====== SALES POSTBACK GATE (runs BEFORE loader) ====== -->
+  <!-- ====== GOAFFPRO GATE: strict alternating TRACK/SKIP ====== -->
   <script>
     (function(){
-      const CONFIG = { percent: 50 }; // changeable later if needed
+      const KEY = "gaffpro_track_counter";
+      let memCounter = 0; // fallback if localStorage unavailable
 
-      // Simple stable 32-bit hash
-      function hash32(str){
-        let h = 0;
-        for (let i = 0; i < str.length; i++) {
-          h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+      function safeGetCounter(){
+        try {
+          const raw = localStorage.getItem(KEY);
+          return raw == null ? 0 : parseInt(raw, 10) || 0;
+        } catch(e) {
+          return memCounter | 0;
         }
-        return h | 0;
+      }
+      function safeSetCounter(v){
+        try { localStorage.setItem(KEY, String(v)); }
+        catch(e){ memCounter = v | 0; }
       }
 
-      function shouldPost(orderId){
-        const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
-        if (p === 0) return false;
-        if (p === 100) return true;
-        const id = String(orderId || "NO-ID");
-        // true 0–100 bucket so 50% works for any percent (not just %2)
-        const bucket = Math.abs(hash32(id)) % 100; // 0..99
-        return bucket < p;
+      // TRACK on odd, SKIP on even
+      function shouldTrackNext(){
+        let c = safeGetCounter();
+        c += 1;
+        safeSetCounter(c);
+        return (c % 2) === 1;
       }
 
-      function getOrderIdFrom(payload){
-        return (payload && (payload.number || payload.order_id || payload.id))
-            || (window.goaffpro_order && window.goaffpro_order.number)
-            || null;
-      }
-
-      // Intercept assignment to window.goaffproTrackConversion using a setter
-      let _originalSetterWrapped = false;
+      // Intercept the pixel as soon as it's defined, so first fire is gated
       Object.defineProperty(window, "goaffproTrackConversion", {
         configurable: true,
         enumerable: true,
         set(fn){
-          if (typeof fn === "function" && !_originalSetterWrapped) {
+          if (typeof fn === "function") {
             const original = fn;
             const wrapped = function(payload){
-              const orderId = getOrderIdFrom(payload);
-              if (shouldPost(orderId)) {
+              if (shouldTrackNext()) {
+                console.log("[GoAffPro Gate] TRACK (alternating).");
                 return original.apply(this, arguments);
               } else {
-                console.log("[GoAffPro Gate] Skipped posting (", CONFIG.percent, "% gate). Order:", orderId);
+                console.log("[GoAffPro Gate] SKIP (alternating).");
               }
             };
-            // replace with our wrapped version
             Object.defineProperty(window, "goaffproTrackConversion", {
               value: wrapped,
               writable: false,
               configurable: true,
               enumerable: true
             });
-            // mark we’ve wrapped it, and expose original for debugging if needed
+            // Keep a reference to the underlying original for debugging if needed
             window.__goaffproTrackConversionOriginal = original;
-            console.log("[GoAffPro Gate] Intercept installed; gating at", CONFIG.percent + "%");
+            console.log("[GoAffPro Gate] Alternating gate installed (track/skip/track/skip).");
           } else {
-            // if something non-function tries to set it, just store it
             Object.defineProperty(window, "goaffproTrackConversion", {
               value: fn,
               writable: true,
@@ -86,12 +80,10 @@
             });
           }
         },
-        get(){
-          return undefined; // until pixel sets it, getter returns undefined
-        }
+        get(){ return undefined; }
       });
 
-      // Helper to wait until our wrapped function exists
+      // Helper: wait until the wrapped function exists before firing
       window.__ensureGaffproPatched = function(cb){
         (function wait(){
           if (typeof window.goaffproTrackConversion === "function" &&
@@ -139,12 +131,11 @@
       return preferred.includes(code) ? 30 : 10;
     }
 
-    // Prevent double-fire in the same session
+    // Prevent double-fire in the same browser session (e.g., refresh/back)
     if (!sessionStorage.getItem('gaffpro_converted')) {
       (async function () {
         const saleAmount = await resolveGeoAmount();
 
-        // Define the order object (ID is stable for hashing)
         window.goaffpro_order = {
           number: uniqueOrderId(),
           total: saleAmount,
