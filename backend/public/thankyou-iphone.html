@@ -1,19 +1,18 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iPhone Thank You | Charmr</title>
-
+  <title>iphone Thank You | Charmr</title>
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
+
     gtag('config', 'G-FDQ6REQWS8');
   </script>
-
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -31,106 +30,102 @@
       border-radius: 12px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    p { font-size: 1.25rem; margin: 0; color: #111827; }
+    p {
+      font-size: 1.25rem;
+      margin: 0;
+      color: #111827;
+    }
   </style>
 </head>
 <body>
-  <!-- GoAffPro loader -->
-  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <!-- Load GoAffPro (same as you have now) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <div class="container">
-    <p>Thank you for your order — you will be contacted shortly with the details.</p>
-  </div>
-
+  <!-- ====== SALES POSTBACK GATE (50% pattern via hash%2) ====== -->
   <script>
-    // ------------ storage helpers (cookie + localStorage) ------------
-    function setCookie(name, value, days=365) {
-      const maxAge = days * 86400;
-      document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${maxAge}`;
-    }
-    function delCookie(name) {
-      document.cookie = `${name}=; path=/; max-age=0`;
-    }
-    function getCookie(name) {
-      const m = document.cookie.match(new RegExp('(?:^|; )' + name.replace(/[-[\]/{}()*+?.\\^$|]/g, '\\$&') + '=([^;]*)'));
-      return m ? decodeURIComponent(m[1]) : null;
-    }
+  (function(){
+    const CONFIG = {
+      mode: "percent",     // keep for clarity
+      percent: 50,         // target 50%
+      ns: "gaffpro_gate"
+    };
 
-    // If URL has ?pct= or ?aff=, persist them (so you can test quickly)
-    (function applyFromQueryOnce(){
-      const qs = new URLSearchParams(location.search);
-      const pct = qs.get('pct');
-      const aff = qs.get('aff');
-
-      if (pct != null && pct !== '') {
-        const n = Math.max(0, Math.min(100, parseInt(pct, 10)));
-        if (!isNaN(n)) {
-          try { localStorage.setItem('gaffpro_gate_percent', String(n)); } catch(e){}
-          setCookie('gaffpro_gate_percent', String(n));
-          console.log('[Gate] applied pct from URL =', n);
-        }
+    // Simple stable 32-bit hash
+    function hash32(str){
+      let h = 0;
+      for (let i = 0; i < str.length; i++) {
+        h = ((h << 5) - h + str.charCodeAt(i)) | 0;
       }
-      if (aff != null) {
-        const v = (aff || '').trim();
-        if (v) {
-          try { localStorage.setItem('gaffpro_affiliate_id', v); } catch(e){}
-          setCookie('gaffpro_affiliate_id', v);
-          console.log('[Gate] applied aff from URL =', v);
-        } else {
-          try { localStorage.removeItem('gaffpro_affiliate_id'); } catch(e){}
-          delCookie('gaffpro_affiliate_id');
-          console.log('[Gate] cleared aff via URL');
-        }
+      return h;
+    }
+
+    // Decide per order ID (stable across devices/browsers/reloads)
+    // 50%: two buckets (0,1) → post on 0 => 1/2 posts
+    function shouldPost(orderId){
+      const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
+      if (p === 0) return false;
+      if (p === 100) return true;
+
+      const id = String(orderId || "NO-ID");
+      const bucket = Math.abs(hash32(id)) % 2; // gives 0 or 1
+      return bucket === 0;   // post if 0
+    }
+
+    // Helper to get an ID from payload/global
+    function getOrderIdFrom(payload){
+      return (payload && (payload.number || payload.order_id || payload.id))
+          || (window.goaffpro_order && window.goaffpro_order.number)
+          || null;
+    }
+
+    // Patch GoAffPro when available; ensure first fire is gated
+    (function patchWhenReady(){
+      if (typeof window.goaffproTrackConversion === "function") {
+        if (window.__goaffproTrackConversionOriginal) return;
+        const original = window.goaffproTrackConversion;
+        window.__goaffproTrackConversionOriginal = original;
+        window.goaffproTrackConversion = function(payload){
+          const orderId = getOrderIdFrom(payload);
+          if (shouldPost(orderId)) {
+            return original.apply(this, arguments);
+          } else {
+            console.log("[GoAffPro Gate] Skipped posting this sale (50% gate). Order:", orderId);
+          }
+        };
+        console.log("[GoAffPro Gate] Pixel patched with 50% gate (hash%2).");
+      } else {
+        setTimeout(patchWhenReady, 120);
       }
     })();
 
-    // ------------ configuration read (cookie > localStorage > default) ------------
-    function readPercent() {
-      const fromCookie = getCookie('gaffpro_gate_percent');
-      if (fromCookie != null) {
-        const n = parseInt(fromCookie, 10);
-        if (!isNaN(n)) return Math.max(0, Math.min(100, n));
-      }
-      const raw = localStorage.getItem('gaffpro_gate_percent');
-      const n = parseInt(raw, 10);
-      if (isNaN(n)) return 100;                // default: post ALL sales
-      return Math.max(0, Math.min(100, n));
-    }
-    function readAffiliateOverride() {
-      const c = getCookie('gaffpro_affiliate_id');
-      if (c && c.trim()) return c.trim();
-      const v = localStorage.getItem('gaffpro_affiliate_id');
-      return v && v.trim() ? v.trim() : null;
-    }
+    // Expose a small helper to wait for patch before firing
+    window.__ensureGaffproPatched = function(cb){
+      (function wait(){
+        if (typeof window.goaffproTrackConversion === "function" &&
+            window.__goaffproTrackConversionOriginal) {
+          cb();
+        } else {
+          setTimeout(wait, 150);
+        }
+      })();
+    };
+  })();
+  </script>
+  <!-- ====== END SALES POSTBACK GATE ====== -->
 
-    // ------------ helper utils ------------
+  <div class="container">
+    <p>Thank you for your order you will be contacted shortly with the details.</p>
+  </div>
+
+  <script type="text/javascript">
+    // ---- helpers ----
     function uniqueOrderId() {
       const ts = Date.now();
       const rand = Math.random().toString(16).slice(2, 6);
       return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
     }
-    function hash32(str){
-      let h = 0; for (let i=0;i<str.length;i++){ h=((h<<5)-h+str.charCodeAt(i))|0; }
-      return h >>> 0;
-    }
-    function shouldPost(orderId, percent){
-      if (percent <= 0) return false;
-      if (percent >= 100) return true;
-      const bucket = hash32(String(orderId || 'NO-ID')) % 100;
-      const ok = bucket < percent;
-      console.log(`[GoAffPro Gate] %=${percent} bucket=${bucket} → ${ok?'POST':'SKIP'}`);
-      return ok;
-    }
-    function waitFor(fnName, timeout=6000){
-      return new Promise((resolve, reject) => {
-        const start = Date.now();
-        (function tick(){
-          if (typeof window[fnName] === 'function') return resolve(window[fnName]);
-          if (Date.now() - start > timeout) return reject(new Error('timeout'));
-          setTimeout(tick, 100);
-        })();
-      });
-    }
+
+    // GEO-BASED AMOUNT: US/GB/AU/NZ => $30, others => $10
     async function resolveGeoAmount() {
       const preferred = ["US","GB","AU","NZ"];
       let code = "";
@@ -143,56 +138,197 @@
           const data = await resp.json();
           code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
         }
-      } catch(e) {}
+      } catch(e) { /* default below */ }
       return preferred.includes(code) ? 30 : 10;
     }
 
-    // ------------ fire conversion (simple & robust) ------------
-    (async function main(){
-      // testing helper: add ?force=1 to re-fire even if session marked
-      const params = new URLSearchParams(location.search);
-      const force = params.get('force') === '1';
+    // prevent double-fire on reload/back
+    if (!sessionStorage.getItem('gaffpro_converted')) {
+      (async function () {
+        const saleAmount = await resolveGeoAmount();
 
-      if (!force && sessionStorage.getItem('gaffpro_converted')) {
-        console.log("GoAffPro: conversion already fired in this session (use ?force=1 to test again).");
-        return;
+        window.goaffpro_order = {
+          number: uniqueOrderId(),
+          total: saleAmount,
+          currency: "USD"
+        };
+
+        // Fire ONLY after the gate is patched so first call is gated
+        __ensureGaffproPatched(function(){
+          console.log("GoAffPro: firing conversion", window.goaffpro_order);
+          window.goaffproTrackConversion(window.goaffpro_order);
+          sessionStorage.setItem('gaffpro_converted', '1');
+        });
+      })();
+    } else {
+      console.log("GoAffPro: conversion already fired in this session");
+    }
+  </script>
+
+</body>
+</html>
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>iphone Thank You | Charmr</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: white;
+      padding: 2rem 3rem;
+      text-align: center;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    p {
+      font-size: 1.25rem;
+      margin: 0;
+      color: #111827;
+    }
+  </style>
+</head>
+<body>
+  <!-- Load GoAffPro (same as you have now) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <!-- ====== SALES POSTBACK GATE (50% pattern via hash%2) ====== -->
+  <script>
+  (function(){
+    const CONFIG = {
+      mode: "percent",     // keep for clarity
+      percent: 50,         // target 50%
+      ns: "gaffpro_gate"
+    };
+
+    // Simple stable 32-bit hash
+    function hash32(str){
+      let h = 0;
+      for (let i = 0; i < str.length; i++) {
+        h = ((h << 5) - h + str.charCodeAt(i)) | 0;
       }
+      return h;
+    }
 
-      // optional affiliate override if loader exposes a setter
-      const aff = readAffiliateOverride();
-      try {
-        if (aff && typeof window.goaffproSetAffiliate === 'function') {
-          window.goaffproSetAffiliate(aff);
-          console.log('[GoAffPro] Affiliate override via goaffproSetAffiliate:', aff);
-        } else if (aff && typeof window.goaffpro_set_affiliate === 'function') {
-          window.goaffpro_set_affiliate(aff);
-          console.log('[GoAffPro] Affiliate override via goaffpro_set_affiliate:', aff);
-        }
-      } catch(e){ console.warn('[GoAffPro] Affiliate override failed:', e); }
+    // Decide per order ID (stable across devices/browsers/reloads)
+    // 50%: two buckets (0,1) → post on 0 => 1/2 posts
+    function shouldPost(orderId){
+      const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
+      if (p === 0) return false;
+      if (p === 100) return true;
 
-      const saleAmount = await resolveGeoAmount();
-      const orderId = uniqueOrderId();
-      const percent = readPercent();
+      const id = String(orderId || "NO-ID");
+      const bucket = Math.abs(hash32(id)) % 2; // gives 0 or 1
+      return bucket === 0;   // post if 0
+    }
 
-      // decide first (no patching needed)
-      if (!shouldPost(orderId, percent)) {
-        console.log('[GoAffPro] Skipped by % gate.');
-        return;
-      }
+    // Helper to get an ID from payload/global
+    function getOrderIdFrom(payload){
+      return (payload && (payload.number || payload.order_id || payload.id))
+          || (window.goaffpro_order && window.goaffpro_order.number)
+          || null;
+    }
 
-      // set the order payload expected by GoAffPro
-      window.goaffpro_order = { number: orderId, total: saleAmount, currency: "USD" };
-
-      try {
-        const track = await waitFor('goaffproTrackConversion', 6000);
-        track(window.goaffpro_order);
-        console.log('[GoAffPro] Conversion fired:', window.goaffpro_order);
-        sessionStorage.setItem('gaffpro_converted', '1');
-      } catch (e) {
-        console.error('[GoAffPro] Could not find goaffproTrackConversion:', e);
-        // Nothing else to do without the SDK function
+    // Patch GoAffPro when available; ensure first fire is gated
+    (function patchWhenReady(){
+      if (typeof window.goaffproTrackConversion === "function") {
+        if (window.__goaffproTrackConversionOriginal) return;
+        const original = window.goaffproTrackConversion;
+        window.__goaffproTrackConversionOriginal = original;
+        window.goaffproTrackConversion = function(payload){
+          const orderId = getOrderIdFrom(payload);
+          if (shouldPost(orderId)) {
+            return original.apply(this, arguments);
+          } else {
+            console.log("[GoAffPro Gate] Skipped posting this sale (50% gate). Order:", orderId);
+          }
+        };
+        console.log("[GoAffPro Gate] Pixel patched with 50% gate (hash%2).");
+      } else {
+        setTimeout(patchWhenReady, 120);
       }
     })();
+
+    // Expose a small helper to wait for patch before firing
+    window.__ensureGaffproPatched = function(cb){
+      (function wait(){
+        if (typeof window.goaffproTrackConversion === "function" &&
+            window.__goaffproTrackConversionOriginal) {
+          cb();
+        } else {
+          setTimeout(wait, 150);
+        }
+      })();
+    };
+  })();
   </script>
+  <!-- ====== END SALES POSTBACK GATE ====== -->
+
+  <script type="text/javascript">
+    // ---- helpers ----
+    function uniqueOrderId() {
+      const ts = Date.now();
+      const rand = Math.random().toString(16).slice(2, 6);
+      return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
+    }
+
+    // GEO-BASED AMOUNT: US/GB/AU/NZ => $30, others => $10
+    async function resolveGeoAmount() {
+      const preferred = ["US","GB","AU","NZ"];
+      let code = "";
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 2500);
+        const resp = await fetch("https://ipapi.co/json/", { signal: controller.signal });
+        clearTimeout(timer);
+        if (resp.ok) {
+          const data = await resp.json();
+          code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
+        }
+      } catch(e) { /* default below */ }
+      return preferred.includes(code) ? 30 : 10;
+    }
+
+    // prevent double-fire on reload/back
+    if (!sessionStorage.getItem('gaffpro_converted')) {
+      (async function () {
+        const saleAmount = await resolveGeoAmount();
+
+        window.goaffpro_order = {
+          number: uniqueOrderId(),
+          total: saleAmount,
+          currency: "USD"
+        };
+
+        // Fire ONLY after the gate is patched so first call is gated
+        __ensureGaffproPatched(function(){
+          console.log("GoAffPro: firing conversion", window.goaffpro_order);
+          window.goaffproTrackConversion(window.goaffpro_order);
+          sessionStorage.setItem('gaffpro_converted', '1');
+        });
+      })();
+    } else {
+      console.log("GoAffPro: conversion already fired in this session");
+    }
+  </script>
+
 </body>
 </html>
