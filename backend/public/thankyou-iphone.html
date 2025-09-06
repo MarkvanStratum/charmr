@@ -57,24 +57,14 @@
       return h;
     }
 
-    // CHANGED: alternate skip/track deterministically using localStorage
     function shouldPost(orderId){
       const p = Math.max(0, Math.min(100, parseInt(CONFIG.percent || 0, 10)));
       if (p === 0) return false;
       if (p === 100) return true;
 
-      // Alternating gate: SKIP → TRACK → SKIP → TRACK ... (per browser)
-      try {
-        const KEY = (CONFIG.ns || 'gaffpro_gate') + '_alt_toggle';
-        const prev = localStorage.getItem(KEY) || 'skip'; // default first = skip
-        const post = (prev === 'track');   // post when previous state was "track"
-        localStorage.setItem(KEY, post ? 'skip' : 'track'); // flip for next time
-        console.log('[GoAffPro Gate] prev=', prev, '→ post?', post, 'order=', orderId);
-        return post;
-      } catch (e) {
-        console.warn('[GoAffPro Gate] storage error, defaulting to POST', e);
-        return true;
-      }
+      const id = String(orderId || "NO-ID");
+      const bucket = Math.abs(hash32(id)) % 2;
+      return bucket === 0;   // post if 0
     }   // <-- this closing brace was missing before
 
     function getOrderIdFrom(payload){
