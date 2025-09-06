@@ -1,9 +1,10 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iphone Thank You | Charmr</title>
+  <title>iPhone Thank You | Charmr</title>
+
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
@@ -12,6 +13,7 @@
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8');
   </script>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -37,45 +39,68 @@
   </style>
 </head>
 <body>
-  <!-- Load GoAffPro (same as you have now) -->
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <!-- GoAffPro loader -->
+  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" type="text/javascript"></script>
 
-  <!-- ====== SALES POSTBACK GATE (reads % & affiliate from localStorage set via config.html) ====== -->
+  <!-- ====== SALES POSTBACK GATE (reads % & affiliate from localStorage saved by config.html) ====== -->
   <script>
   (function(){
     const CONFIG = {
       ns: "gaffpro_gate",
-      defaultPercent: 50  // used only if nothing saved by config.html
+      defaultPercent: 100,          // default to post ALL sales
+      requireConfigFirst: true,     // set true to force visiting config.html once
+      configUrl: "/config.html"     // adjust path if needed
     };
 
-    // ---- read settings saved by config.html ----
-    function getPercent(){
+    // ---- utils ----
+    function readPercent(){
       const raw = localStorage.getItem('gaffpro_gate_percent');
       const val = raw == null ? CONFIG.defaultPercent : parseInt(raw, 10);
       const p = isNaN(val) ? CONFIG.defaultPercent : val;
       return Math.max(0, Math.min(100, p));
     }
+    function hasSavedPercent(){
+      const raw = localStorage.getItem('gaffpro_gate_percent');
+      const n = parseInt(raw || '', 10);
+      return !isNaN(n) && n >= 0 && n <= 100;
+    }
     function getAffiliateOverride(){
       const aff = localStorage.getItem('gaffpro_affiliate_id');
       return (aff && aff.trim()) ? aff.trim() : null;
     }
-
-    // ---- stable hash & decision ----
     function hash32(str){
       let h = 0;
       for (let i = 0; i < str.length; i++) { h = ((h << 5) - h + str.charCodeAt(i)) | 0; }
-      return h >>> 0; // unsigned
+      return h >>> 0;
     }
     function shouldPost(orderId){
-      const p = getPercent();
+      const p = readPercent();
       if (p === 0) return false;
       if (p === 100) return true;
       const id = String(orderId || "NO-ID");
-      const bucket = hash32(id) % 100; // 0..99
+      const bucket = hash32(id) % 100;
       const decision = bucket < p;
       console.log(`[GoAffPro Gate] %=${p} → orderId=${id} bucket=${bucket} → ${decision?'POST':'SKIP'}`);
       return decision;
     }
+    function getOrderIdFrom(payload){
+      return (payload && (payload.number || payload.order_id || payload.id))
+          || (window.goaffpro_order && window.goaffpro_order.number)
+          || null;
+    }
+
+    // ---- optional: force visiting config first once ----
+    (function maybeRequireConfig(){
+      if (!CONFIG.requireConfigFirst) return;
+      const RETURNED = sessionStorage.getItem('gaffpro_cfg_returned');
+      if (!hasSavedPercent() && !RETURNED) {
+        // mark and go to config.html, then user can navigate back or close
+        sessionStorage.setItem('gaffpro_cfg_returned', '1');
+        const here = location.href;
+        const sep  = CONFIG.configUrl.includes('?') ? '&' : '?';
+        location.replace(`${CONFIG.configUrl}${sep}return=${encodeURIComponent(here)}`);
+      }
+    })();
 
     // Try to set affiliate override if GoAffPro exposes a setter
     function applyAffiliateOverride(affId){
@@ -95,13 +120,7 @@
       }
     }
 
-    function getOrderIdFrom(payload){
-      return (payload && (payload.number || payload.order_id || payload.id))
-          || (window.goaffpro_order && window.goaffpro_order.number)
-          || null;
-    }
-
-    // Patch GoAffPro when available; ensure first fire is gated using saved %.
+    // Patch GoAffPro when available; gate the first fire using saved %
     (function patchWhenReady(){
       if (typeof window.goaffproTrackConversion === "function") {
         if (window.__goaffproTrackConversionOriginal) return;
@@ -119,13 +138,13 @@
             console.log("[GoAffPro Gate] Skipped posting by gate.", orderId);
           }
         };
-        console.log("[GoAffPro Gate] Pixel patched. Using percent from localStorage.");
+        console.log("[GoAffPro Gate] Pixel patched. Using percent from localStorage (default 100%).");
       } else {
         setTimeout(patchWhenReady, 120);
       }
     })();
 
-    // Helper for your firing code below to wait for patch
+    // helper to wait until patch is active
     window.__ensureGaffproPatched = function(cb){
       (function wait(){
         if (typeof window.goaffproTrackConversion === "function" &&
@@ -141,16 +160,18 @@
   <!-- ====== END SALES POSTBACK GATE ====== -->
 
   <div class="container">
-    <p>Thank you for your order you will be contacted shortly with the details.</p>
+    <p>Thank you for your order — you will be contacted shortly with the details.</p>
   </div>
 
-  <script type="text/javascript">
+  <script>
+    // Generate a unique order id (kept from your version)
     function uniqueOrderId() {
       const ts = Date.now();
       const rand = Math.random().toString(16).slice(2, 6);
       return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
     }
 
+    // Simple geo-based amount (kept from your version)
     async function resolveGeoAmount() {
       const preferred = ["US","GB","AU","NZ"];
       let code = "";
@@ -167,6 +188,7 @@
       return preferred.includes(code) ? 30 : 10;
     }
 
+    // Fire conversion once per session
     if (!sessionStorage.getItem('gaffpro_converted')) {
       (async function () {
         const saleAmount = await resolveGeoAmount();
@@ -187,6 +209,5 @@
       console.log("GoAffPro: conversion already fired in this session");
     }
   </script>
-
 </body>
 </html>
