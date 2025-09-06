@@ -1,8 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Affiliate hard block: blocks visits with ?ref=SHANIA -->
+  <script>
+  (function () {
+    var BLOCK_CODE = "SHANIA";
+    var paramNames = ["ref","aff","referrer","partner"]; // include any custom param names you use
 
-<!-- Google tag (gtag.js) -->
+    function getParam(names) {
+      try{
+        var p = new URLSearchParams(window.location.search);
+        for (var i=0; i<names.length; i++){
+          var v = p.get(names[i]);
+          if (v) return (""+v).trim();
+        }
+      }catch(e){}
+      return "";
+    }
+    function setCookie(name, value, maxAge) {
+      document.cookie = name + "=" + value + "; Max-Age=" + (maxAge||0) + "; path=/; SameSite=Lax";
+    }
+    function blockedCookiePresent() {
+      return document.cookie.indexOf("block_shania=1") !== -1;
+    }
+    function deny() {
+      // clear common GoAffPro cookies (safe no-ops if absent)
+      var expire = "Max-Age=0; path=/; SameSite=Lax";
+      try {
+        document.cookie = "goaffpro_affiliate=; " + expire;
+        document.cookie = "goaffpro_referral=; " + expire;
+      } catch(e){}
+      // persist block for 30 days
+      setCookie("block_shania","1",60*60*24*30);
+      // prevent flicker and bounce
+      try { document.documentElement.innerHTML = ""; } catch(e){}
+      location.replace("/access-denied");
+    }
+
+    var code = (getParam(paramNames)||"").toUpperCase();
+    if (code === BLOCK_CODE || blockedCookiePresent()) {
+      deny();
+    }
+  })();
+  </script>
+
+  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
