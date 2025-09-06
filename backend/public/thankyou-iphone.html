@@ -15,159 +15,55 @@
   </script>
 
   <style>
-    body { font-family: Arial, sans-serif; background:#f4f4f4; display:flex; align-items:center; justify-content:center; height:100vh; margin:0; }
-    .container { background:white; padding:2rem 3rem; text-align:center; border-radius:12px; box-shadow:0 4px 15px rgba(0,0,0,.1); }
-    p { font-size:1.25rem; margin:0; color:#111827; }
+    body {
+      font-family: Arial, sans-serif;
+      background:#f4f4f4;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100vh;
+      margin:0;
+    }
+    .container {
+      background:white;
+      padding:2rem 3rem;
+      text-align:center;
+      border-radius:12px;
+      box-shadow:0 4px 15px rgba(0,0,0,.1);
+    }
+    p {
+      font-size:1.25rem;
+      margin:0;
+      color:#111827;
+    }
   </style>
-
-  <!-- ====== GOAFFPRO GATE: strict alternating TRACK/SKIP (robust patch) ====== -->
-  <script>
-    (function(){
-      const COUNTER_KEY = "gaffpro_track_counter";
-      let firedThisPage = false; // prevent duplicate fires in a single render
-
-      function safeGetCounter(){
-        try {
-          const raw = localStorage.getItem(COUNTER_KEY);
-          return raw == null ? 0 : (parseInt(raw, 10) || 0);
-        } catch(e) {
-          // localStorage blocked? fall back to per-tab memory (not persistent)
-          if (!window.__gaffpro_memCounter) window.__gaffpro_memCounter = 0;
-          return window.__gaffpro_memCounter | 0;
-        }
-      }
-      function safeSetCounter(v){
-        try { localStorage.setItem(COUNTER_KEY, String(v)); }
-        catch(e){ window.__gaffpro_memCounter = v | 0; }
-      }
-
-      // Alternating: odd => TRACK, even => SKIP
-      function shouldTrackNext(){
-        let c = safeGetCounter();
-        c += 1;
-        safeSetCounter(c);
-        return (c % 2) === 1;
-      }
-
-      // Wrap once, idempotently
-      function wrapIfNeeded(){
-        const fn = window.goaffproTrackConversion;
-        if (typeof fn !== "function") return false;
-        if (fn.__gaffproWrapped) return true;
-
-        const wrapped = function(payload){
-          if (firedThisPage) {
-            console.log("[GoAffPro Gate] Already handled on this page.");
-            return;
-          }
-          firedThisPage = true;
-
-          if (shouldTrackNext()) {
-            console.log("[GoAffPro Gate] TRACK (alternating).");
-            return fn.__gaffproOriginal.apply(this, arguments);
-          } else {
-            console.log("[GoAffPro Gate] SKIP (alternating).");
-            // do nothing
-          }
-        };
-        wrapped.__gaffproWrapped = true;
-        wrapped.__gaffproOriginal = fn;
-        window.goaffproTrackConversion = wrapped;
-        console.log("[GoAffPro Gate] Wrapper installed (alternating track/skip).");
-        return true;
-      }
-
-      // Poll quickly to catch when the pixel appears, then wrap
-      (function pollWrap(){
-        const MAX_MS = 6000;
-        const STEP_MS = 60;
-        let waited = 0;
-
-        const t = setInterval(function(){
-          if (wrapIfNeeded()) {
-            clearInterval(t);
-          } else {
-            waited += STEP_MS;
-            if (waited >= MAX_MS) {
-              clearInterval(t);
-              console.warn("[GoAffPro Gate] Timed out waiting for goaffproTrackConversion.");
-            }
-          }
-        }, STEP_MS);
-      })();
-
-      // Expose a simple "fire when ready" that retries both wrapper install & fire
-      window.__fireGoAffProWhenReady = function(order){
-        const MAX_MS = 6000;
-        const STEP_MS = 60;
-        let waited = 0;
-
-        const tryFire = setInterval(function(){
-          // ensure wrapped; if not yet, attempt again
-          wrapIfNeeded();
-          if (typeof window.goaffproTrackConversion === "function" &&
-              window.goaffproTrackConversion.__gaffproWrapped === true) {
-            console.log("GoAffPro: firing conversion", order);
-            window.goaffproTrackConversion(order);
-            clearInterval(tryFire);
-          } else {
-            waited += STEP_MS;
-            if (waited >= MAX_MS) {
-              clearInterval(tryFire);
-              console.warn("[GoAffPro Gate] Could not fire: wrapper not ready.");
-            }
-          }
-        }, STEP_MS);
-      };
-    })();
-  </script>
-  <!-- ====== END GATE ====== -->
 </head>
 <body>
   <div class="container">
     <p>Thank you for your order. You’ll be contacted shortly with the details.</p>
   </div>
 
-  <!-- Load GoAffPro AFTER the gate so we can patch it -->
-  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <!-- ===== GoAffPro Loader ===== -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <script>
-    // ---- helpers ----
-    function uniqueOrderId() {
-      const ts = Date.now();
-      const rand = Math.random().toString(16).slice(2, 6);
-      return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
-    }
+  <!-- ===== GoAffPro Conversion Tracking ===== -->
+  <script type="text/javascript">
+    window.goaffpro_order = {
+      number : "#1001",
+      total: 1000
+    };
 
-    // GEO-BASED AMOUNT: US/GB/AU/NZ => $30, others => $10
-    async function resolveGeoAmount() {
-      const preferred = ["US","GB","AU","NZ"];
-      let code = "";
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 2500);
-        const resp = await fetch("https://ipapi.co/json/", { signal: controller.signal });
-        clearTimeout(timer);
-        if (resp.ok) {
-          const data = await resp.json();
-          code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
+    (function fireWhenReady(){
+      var maxMs = 3000, step = 60, waited = 0;
+      var t = setInterval(function(){
+        if (typeof window.goaffproTrackConversion !== "undefined") {
+          window.goaffproTrackConversion(window.goaffpro_order);
+          clearInterval(t);
+        } else {
+          waited += step;
+          if (waited >= maxMs) clearInterval(t);
         }
-      } catch(e) { /* default below */ }
-      return preferred.includes(code) ? 30 : 10;
-    }
-
-    // Build an order every load (no session-wide suppression)
-    (async function () {
-      const saleAmount = await resolveGeoAmount();
-
-      window.goaffpro_order = {
-        number: uniqueOrderId(),
-        total: saleAmount,
-        currency: "USD"
-      };
-
-      // Fire once the wrapper (and original) are present
-      __fireGoAffProWhenReady(window.goaffpro_order);
+      }, step);
     })();
   </script>
 </body>
