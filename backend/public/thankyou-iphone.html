@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iphone Thank You | Charmr</title>
+  <title>skip iphone Thank You | Charmr</title>
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -13,6 +13,9 @@
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8');
   </script>
+
+  <!-- GoAffPro loader (should be present on every page) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <style>
     body {
@@ -39,24 +42,105 @@
   </style>
 </head>
 <body>
-
-  <!-- GoAffPro loader (top of page) -->
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-
   <div class="container">
     <p>Thank you for your order. You will be contacted shortly with the details.</p>
   </div>
 
-  <!-- GoAffPro pixel: track 100% (no gating) -->
-  <script type="text/javascript">
-    window.goaffpro_order = {
-      number: "#1001",
-      total: 1000
-    };
-    if (typeof window.goaffproTrackConversion !== "undefined") {
-      window.goaffproTrackConversion(window.goaffpro_order);
-    }
-  </script>
+  <!-- ====== (Optional) SALES POSTBACK GATE you already had; kept intact but NOT used for GoAffPro ====== -->
+  <script>
+  (function(){
+    const LAB_ALT = new URLSearchParams(location.search).get('lab') === 'alt';
 
+    function fnv1a32(str){
+      let h = 0x811c9dc5 >>> 0;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
+      return h >>> 0;
+    }
+
+    // Decide track vs skip (not applied to GoAffPro; left for other networks if you need it)
+    async function decideTrackForOrder(orderNo, salt=""){
+      if (LAB_ALT) {
+        const k = "gaffpro_lab_alt_counter";
+        const n = (parseInt(sessionStorage.getItem(k) || "0", 10) || 0) + 1;
+        sessionStorage.setItem(k, String(n));
+        return (n % 2) === 1;
+      }
+      const id = String(orderNo || "");
+      if (!id) {
+        const KEY = "gaffpro_decision_fallback";
+        const existing = sessionStorage.getItem(KEY);
+        if (existing !== null) return existing === "1";
+        const d = Math.random() < 0.5;
+        sessionStorage.setItem(KEY, d ? "1" : "0");
+        return d;
+      }
+      const seed = salt + "|" + id;
+      try {
+        const enc = new TextEncoder();
+        const digest = await crypto.subtle.digest("SHA-256", enc.encode(seed));
+        const b = new Uint8Array(digest);
+        const v = (b[0] | (b[1]<<8) | (b[2]<<16) | (b[3]<<24)) >>> 0;
+        return (v & 1) === 0; // even -> track (~50%)
+      } catch (e) {
+        return (fnv1a32(seed) & 1) === 0;
+      }
+    }
+
+    // ====== GoAffPro CONVERSION (always track here, posts back $30 revenue) ======
+    function getOrderNumber() {
+      const qp = new URLSearchParams(location.search);
+      // Try common param names first
+      const candidates = [
+        qp.get('order'),
+        qp.get('order_id'),
+        qp.get('orderId'),
+        qp.get('order_no'),
+        qp.get('orderNumber')
+      ].filter(Boolean);
+      let order = candidates[0] || sessionStorage.getItem('last_order_number') || "#1001";
+      // Sanitize to avoid weird chars
+      order = String(order).slice(0, 128).replace(/[^\w#-]/g, '_');
+      // Remember in this session
+      sessionStorage.setItem('last_order_number', order);
+      return order;
+    }
+
+    // Wait for GoAffPro function, then fire
+    function trackGoAffProConversion(orderNumber, revenueCents){
+      window.goaffpro_order = {
+        number: orderNumber,
+        total: revenueCents
+      };
+      if (typeof window.goaffproTrackConversion !== "undefined") {
+        window.goaffproTrackConversion(window.goaffpro_order);
+      } else {
+        // If loader is a bit late, retry a few times
+        let tries = 0;
+        const iv = setInterval(function(){
+          tries++;
+          if (typeof window.goaffproTrackConversion !== "undefined") {
+            clearInterval(iv);
+            window.goaffproTrackConversion(window.goaffpro_order);
+          } else if (tries > 20) { // ~10s total if 500ms interval
+            clearInterval(iv);
+            // Optional: console.warn('GoAffPro not ready; conversion not sent.');
+          }
+        }, 500);
+      }
+    }
+
+    // Fire GoAffPro conversion immediately with $30 => 3000 cents
+    const orderNum = getOrderNumber();
+    trackGoAffProConversion(orderNum, 3000);
+
+    // If you ever want to apply the 50% gate to OTHER networks, you can use:
+    // decideTrackForOrder(orderNum, "your-salt").then((shouldTrack) => {
+    //   if (shouldTrack) { ...fire your other network pixels... }
+    // });
+  })();
+  </script>
 </body>
 </html>
