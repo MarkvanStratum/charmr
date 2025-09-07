@@ -15,7 +15,7 @@
     gtag('config', 'G-FDQ6REQWS8');
   </script>
 
-  <!-- GoAffPro loader (keep your shop key) -->
+  <!-- GoAffPro loader -->
   <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <style>
@@ -48,58 +48,99 @@
     <p class="muted" id="dbg"></p>
   </div>
 
-  <!-- GoAffPro conversion pixel -->
+  <!-- GoAffPro conversion pixel (fires once per order) -->
   <script>
-    (function () {
-      // Helper: read query params for easy testing
-      function qp(name){
-        var m = new RegExp('[?&]'+name+'=([^&#]*)').exec(location.search);
-        return m ? decodeURIComponent(m[1].replace(/\+/g,' ')) : '';
-      }
+  (function () {
+    function qp(name){
+      var m = new RegExp('[?&]'+name+'=([^&#]*)').exec(location.search);
+      return m ? decodeURIComponent(m[1].replace(/\+/g,' ')) : '';
+    }
 
-      // --- IMPORTANT ---
-      // In production: replace these with your REAL order values from your backend/template.
-      var REAL_ORDER_NUMBER = qp('order') || '';   // e.g., "#A-102938"
-      var REAL_TOTAL        = parseFloat(qp('total')) || NaN; // e.g., 30.00
-      var REAL_CURRENCY     = qp('cur') || 'USD';
+    var ORDER_NUMBER = qp('order');          // required
+    var TOTAL_RAW    = qp('total');
+    var CURRENCY     = (qp('cur') || 'USD').toUpperCase();
 
-      // Testing convenience:
-      // If no real order number was provided, generate a UNIQUE test id so each refresh tracks.
-      var orderNumber = REAL_ORDER_NUMBER || ('#TEST-' + Date.now());
-      var orderTotal  = isNaN(REAL_TOTAL) ? 0.01 : REAL_TOTAL; // tiny value for test if not supplied
+    var ORDER_TOTAL = (TOTAL_RAW !== '' && !isNaN(+TOTAL_RAW)) ? +TOTAL_RAW : null;
 
-      // Expose payload globally (recommended in SDK docs)
-      window.goaffproOrder = {
-        number: orderNumber,
-        total: orderTotal,
-        currency: REAL_CURRENCY,
-        forceSDK: true
-      };
+    if (!ORDER_NUMBER) {
+      console.warn('[GoAffPro] Missing order id → not posting.');
+      document.getElementById('dbg')?.append('(no order id; not posting)');
+      return;
+    }
 
-      // Fire when SDK is available; retry briefly if loader is slow
-      function fire(){
-        try{
-          if (typeof window.goaffproTrackConversion === 'function') {
-            window.goaffproTrackConversion(window.goaffproOrder);
-            return true;
-          }
-        }catch(e){}
+    if (ORDER_TOTAL === null) {
+      console.warn('[GoAffPro] Missing total; defaulting to 0.01 for safety.');
+      ORDER_TOTAL = 0.01;
+    }
+
+    var STORAGE_KEY = 'gaffpro_fired_' + ORDER_NUMBER;
+    var RENDER_FLAG = '__gaffpro_fired_this_render';
+
+    function alreadyFired() {
+      try {
+        return sessionStorage.getItem(STORAGE_KEY) === '1' || localStorage.getItem(STORAGE_KEY) === '1';
+      } catch (e) {
         return false;
       }
+    }
+    function markFired() {
+      try {
+        sessionStorage.setItem(STORAGE_KEY, '1');
+        localStorage.setItem(STORAGE_KEY, '1');
+      } catch (e) {}
+    }
 
-      if (!fire()) {
-        window.addEventListener('load', fire);
-        var tries = 0, iv = setInterval(function(){
-          if (fire() || ++tries > 40) clearInterval(iv); // ~6s
-        }, 150);
+    if (window[RENDER_FLAG] || alreadyFired()) {
+      console.log('[GoAffPro] Already posted for', ORDER_NUMBER, '— skipping.');
+      document.getElementById('dbg')?.append(' (already posted; skipped)');
+      return;
+    }
+
+    window.goaffproOrder = {
+      number: ORDER_NUMBER,
+      total: ORDER_TOTAL,
+      currency: CURRENCY
+    };
+
+    function tryFire() {
+      if (window[RENDER_FLAG]) return true;
+      if (typeof window.goaffproTrackConversion !== 'function') return false;
+
+      if (alreadyFired()) {
+        console.log('[GoAffPro] Already posted (race) for', ORDER_NUMBER, '— skipping.');
+        return true;
       }
 
-      // Small debug note on the page so you can see what was sent
-      var dbgEl = document.getElementById('dbg');
-      if (dbgEl) {
-        dbgEl.textContent = 'GoAffPro payload → number: ' + orderNumber + ', total: ' + orderTotal + ', currency: ' + REAL_CURRENCY;
-      }
-    })();
+      window[RENDER_FLAG] = true;
+      window.goaffproTrackConversion(window.goaffproOrder);
+      markFired();
+      console.log('[GoAffPro] Posted once for', ORDER_NUMBER, window.goaffproOrder);
+      return true;
+    }
+
+    if (document.visibilityState === 'prerender') {
+      document.addEventListener('visibilitychange', function onv(){
+        if (document.visibilityState === 'visible') {
+          document.removeEventListener('visibilitychange', onv);
+          (tryFire() || poll());
+        }
+      });
+    } else {
+      (tryFire() || poll());
+    }
+
+    function poll() {
+      var tries = 0, iv = setInterval(function(){
+        if (tryFire() || ++tries > 60) clearInterval(iv);
+      }, 150);
+    }
+
+    var dbgEl = document.getElementById('dbg');
+    if (dbgEl) dbgEl.textContent =
+      'GoAffPro payload → number: ' + ORDER_NUMBER +
+      ', total: ' + ORDER_TOTAL +
+      ', currency: ' + CURRENCY;
+  })();
   </script>
 </body>
 </html>
