@@ -43,23 +43,37 @@
     <p>Thank you for your order. You will be contacted shortly with the details.</p>
   </div>
 
-  <!-- Load GoAffPro -->
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+ 
 
   <!-- ====== SALES POSTBACK GATE (DETERMINISTIC 50% PER ORDER) ====== -->
   <script>
   (function(){
-    // --- tiny sync hash fallback (if WebCrypto unavailable) ---
-    function djb2(str){
-      let h = 5381;
-      for (let i = 0; i < str.length; i++) h = ((h << 5) + h) + str.charCodeAt(i);
+    // ---- LAB MODE for manual testing: add ?lab=alt to URL to force strict alternate (track/skip/track/skip) ----
+    const LAB_ALT = new URLSearchParams(location.search).get('lab') === 'alt';
+
+    // ---- FNV-1a 32-bit (sync fallback) ----
+    function fnv1a32(str){
+      let h = 0x811c9dc5 >>> 0;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+      }
       return h >>> 0;
     }
-    // Decide track vs skip using a cryptographic hash of the order ID (stable 50%)
+
+    // ---- Decide track vs skip from order ID (stable 50%) ----
     async function decideTrackForOrder(orderNo, salt=""){
+      if (LAB_ALT) {
+        const k = "gaffpro_lab_alt_counter";
+        const n = (parseInt(sessionStorage.getItem(k) || "0", 10) || 0) + 1;
+        sessionStorage.setItem(k, String(n));
+        // odd -> track, even -> skip (for testing you should see exact 50/50)
+        return (n % 2) === 1;
+      }
+
       const id = String(orderNo || "");
       if (!id) {
-        // No stable order ID available? Make a one-time sticky decision in this tab.
+        // No stable ID? One-time sticky coin flip in this tab so reloads don't change it
         const KEY = "gaffpro_decision_fallback";
         const existing = sessionStorage.getItem(KEY);
         if (existing !== null) return existing === "1";
@@ -67,135 +81,21 @@
         sessionStorage.setItem(KEY, d ? "1" : "0");
         return d;
       }
+
+      const seed = salt + "|" + id;
       try {
         const enc = new TextEncoder();
-        const data = enc.encode(salt + "|" + id);
-        const digest = await crypto.subtle.digest("SHA-256", data);
-        const firstByte = new Uint8Array(digest)[0];
-        return (firstByte & 1) === 0; // even -> track ≈ 50%
-      } catch(e){
-        // fallback hash (sync)
-        return (djb2(salt + "|" + id) & 1) === 0;
+        const digest = await crypto.subtle.digest("SHA-256", enc.encode(seed));
+        // combine first 4 bytes into a uint32 for uniformity
+        const b = new Uint8Array(digest);
+        const v = (b[0] | (b[1]<<8) | (b[2]<<16) | (b[3]<<24)) >>> 0;
+        return (v & 1) === 0; // even -> track (~50%)
+      } catch (e) {
+        // robust sync fallback
+        return (fnv1a32(seed) & 1) === 0;
       }
     }
 
-    // Patch GoAffPro when available; gate every call
-    function installGate(){
-      if (typeof window.goaffproTrackConversion !== "function") return false;
-      if (window.goaffproTrackConversion.__wrappedV4) return true;
-
-      const original = window.goaffproTrackConversion;
-
-      async function wrapped(payload){
-        // Look for a stable order identifier in payload
-        const orderNo = payload?.number || payload?.order_id || payload?.id || payload?.orderId;
-        const salt = ""; // optionally include affiliate code/email if you want per-affiliate 50%
-
-        // If this tab already finalized a decision, don't do anything again
-        if (sessionStorage.getItem("gaffpro_converted") === "1") {
-          console.log("[GoAffPro Gate] already decided in this tab/session");
-          return;
-        }
-
-        const track = await decideTrackForOrder(orderNo, salt);
-        if (track){
-          console.log("[GoAffPro Gate] 50%: TRACK", { orderNo, payload });
-          const res = original.apply(this, arguments);
-          sessionStorage.setItem("gaffpro_converted", "1"); // finalize in this tab
-          return res;
-        } else {
-          console.log("[GoAffPro Gate] 50%: SKIP", { orderNo, payload });
-          sessionStorage.setItem("gaffpro_converted", "1"); // finalize in this tab even on skip
-          return; // no-op
-        }
-      }
-
-      wrapped.__wrappedV4 = true;
-      wrapped.__original = original;
-      window.goaffproTrackConversion = wrapped;
-      console.log("[GoAffPro Gate] Installed per-order 50% gate.");
-      return true;
-    }
-
-    // Try to install ASAP and keep retrying briefly
-    (function waitForPixel(){
-      if (!installGate()){
-        setTimeout(waitForPixel, 80);
-      }
-    })();
-
-    // Expose helper to ensure gate is on before firing first call
-    window.__ensureGaffproPatched = function(cb){
-      (function wait(){
-        if (typeof window.goaffproTrackConversion === "function" &&
-            window.goaffproTrackConversion.__wrappedV4 === true) {
-          cb();
-        } else {
-          installGate();
-          setTimeout(wait, 80);
-        }
-      })();
-    };
-
-    // (Optional) expose a debug hook if you want to test in console
-    window.__gaffproDebug = {
-      decideTrackForOrder
-    };
-  })();
-  </script>
-  <!-- ====== END SALES POSTBACK GATE ====== -->
-
-  <!-- Example: dynamic order + amount; fires once per session to avoid double-post on reload/back -->
-  <script type="text/javascript">
-    // ---- helpers ----
-    function uniqueOrderId() {
-      const ts = Date.now();
-      const rand = Math.random().toString(16).slice(2, 6);
-      return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
-    }
-
-    // GEO-BASED AMOUNT: US/GB/AU/NZ => $30, others => $10
-    async function resolveGeoAmount() {
-      const preferred = ["US","GB","AU","NZ"];
-      let code = "";
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 2500);
-        const resp = await fetch("https://ipapi.co/json/", { signal: controller.signal });
-        clearTimeout(timer);
-        if (resp.ok) {
-          const data = await resp.json();
-          code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
-        }
-      } catch(e) { /* default below */ }
-      return preferred.includes(code) ? 30 : 10;
-    }
-
-    // prevent double-fire on reload/back within same tab session
-    if (!sessionStorage.getItem('gaffpro_converted')) {
-      (async function () {
-        const saleAmount = await resolveGeoAmount();
-
-        // 🔁 TODO: replace with your platform's real order number if available
-        const orderNumber = window.realOrderNumber || uniqueOrderId();
-
-        window.goaffpro_order = {
-          number: orderNumber,
-          total: saleAmount,
-          currency: "USD"
-        };
-
-        // Fire ONLY after the gate is patched so first call gets gated correctly
-        __ensureGaffproPatched(function(){
-          console.log("GoAffPro: firing conversion (gated 50%)", window.goaffpro_order);
-          window.goaffproTrackConversion(window.goaffpro_order);
-          // Note: sessionStorage 'gaffpro_converted' is set INSIDE the wrapper (track or skip)
-        });
-      })();
-    } else {
-      console.log("GoAffPro: conversion already decided in this session");
-    }
-  </script>
-
+    
 </body>
 </html>
