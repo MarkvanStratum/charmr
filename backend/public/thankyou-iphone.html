@@ -8,7 +8,7 @@
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
-    // ✅ Required GA4 init (missing before). This sends a page_view.
+    // ✅ GA4 init: sends a page_view.
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);} 
     gtag('js', new Date());
@@ -56,28 +56,29 @@
   <!-- GoAffPro conversion pixel (robust firing) -->
   <script type="text/javascript">
     (function(){
-      // Some setups expect numeric order numbers (no "#").
-      // If your platform uses a hash, you can add it back, but try numeric first.
-      var goaffproOrder = {
-        number: "1001", // previously "#1001"; numeric tends to be safer
-        total: 30        // posts back $30 in revenue
+      // ✅ Official-style order object for SDK tracking
+      window.goaffproOrder = {
+        number: "#1001",   // order number (include # if your store uses it)
+        total: 30,         // final amount (number, not string)
+        currency: "USD",   // optional but strongly recommended
+        forceSDK: true     // required for custom pages
       };
 
-      function fireConversion(){
+      function fireGoAffPro() {
         try {
           if (typeof window.goaffproTrackConversion === 'function') {
-            window.goaffproTrackConversion(goaffproOrder);
+            window.goaffproTrackConversion(window.goaffproOrder);
             return true;
           }
         } catch(e) {}
         return false;
       }
 
-      // Try immediately, then on window load, then poll briefly (handles slow loader)
-      if (!fireConversion()) {
-        window.addEventListener('load', fireConversion);
+      // Fire immediately, then on load, then poll for slow loader
+      if (!fireGoAffPro()) {
+        window.addEventListener('load', fireGoAffPro);
         var tries = 0, iv = setInterval(function(){
-          if (fireConversion() || ++tries > 20) clearInterval(iv);
+          if (fireGoAffPro() || ++tries > 40) clearInterval(iv); // ~6s
         }, 150);
       }
     })();
