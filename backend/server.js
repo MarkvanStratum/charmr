@@ -3813,7 +3813,7 @@ app.post('/api/stripe/start-monthly-after-trial', async (req, res) => {
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceIdMonthly || GBP_MONTHLY_PRICE_ID }],
-      trial_period_days: 1,
+      trial_period_days: 30,
       payment_behavior: 'default_incomplete', // safe for SCA when first invoice is due
       metadata: {
         planPriceId: priceIdMonthly || GBP_MONTHLY_PRICE_ID
@@ -3952,7 +3952,7 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
       "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 (from your code)
       "price_1RsdzREJXIhiKzYG45b69nSl" // £20 (from your code)
     ]);
-    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 1 : undefined;
+    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 30 : undefined;
 
     const subscription = await stripe.subscriptions.create({
   customer: customerId,
