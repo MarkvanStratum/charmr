@@ -490,8 +490,33 @@
           const subData = await subRes.json();
           if(subData.error) throw new Error(subData.error);
 
-          // Success → thank you page
-          window.location.href='thankyou-iphone.html';
+          // Success → thank you page (50/50 split)
+          (function(){
+            const A = 'thankyou-iphone.html';
+            const B = 'thankyou-iphone-skip.html';
+            // Prefer deterministic split based on Stripe paymentIntent.id
+            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            function fnv1a32(str){
+              let h = 0x811c9dc5 >>> 0;
+              for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 0x01000193) >>> 0;
+              }
+              return h >>> 0;
+            }
+            function randomBit(){
+              try {
+                const u32 = new Uint32Array(1);
+                crypto.getRandomValues(u32);
+                return (u32[0] & 1) === 0;
+              } catch (_) {
+                return Math.random() < 0.5;
+              }
+            }
+            const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
+            window.location.href = pickA ? A : B;
+          })();
+
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
