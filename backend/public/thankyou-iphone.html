@@ -46,59 +46,74 @@
   <!-- Load GoAffPro -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <!-- ====== SALES POSTBACK GATE (STRICT 50%: track, skip, track, skip...) ====== -->
+  <!-- ====== SALES POSTBACK GATE (DETERMINISTIC 50% PER ORDER) ====== -->
   <script>
   (function(){
-    const COUNTER_KEY = "gaffpro_track_counter_v2"; // new key to avoid clashing with older tests
-    let firedWrapperOnce = false;
-
-    function safeGetCounter(){
-      try {
-        const raw = localStorage.getItem(COUNTER_KEY);
-        return raw == null ? 0 : (parseInt(raw, 10) || 0);
-      } catch(e){
-        // Fallback if storage is blocked
-        if (typeof window.__gaffpro_memCounter === "number") return window.__gaffpro_memCounter|0;
-        window.__gaffpro_memCounter = 0;
-        return 0;
+    // --- tiny sync hash fallback (if WebCrypto unavailable) ---
+    function djb2(str){
+      let h = 5381;
+      for (let i = 0; i < str.length; i++) h = ((h << 5) + h) + str.charCodeAt(i);
+      return h >>> 0;
+    }
+    // Decide track vs skip using a cryptographic hash of the order ID (stable 50%)
+    async function decideTrackForOrder(orderNo, salt=""){
+      const id = String(orderNo || "");
+      if (!id) {
+        // No stable order ID available? Make a one-time sticky decision in this tab.
+        const KEY = "gaffpro_decision_fallback";
+        const existing = sessionStorage.getItem(KEY);
+        if (existing !== null) return existing === "1";
+        const d = Math.random() < 0.5;
+        sessionStorage.setItem(KEY, d ? "1" : "0");
+        return d;
       }
-    }
-    function safeSetCounter(v){
-      try { localStorage.setItem(COUNTER_KEY, String(v)); }
-      catch(e){ window.__gaffpro_memCounter = v|0; }
-    }
-
-    // Strict alternating: 1=>track, 2=>skip, 3=>track, 4=>skip, ...
-    function shouldTrackNext(){
-      let c = safeGetCounter();
-      c += 1;               // increment per conversion attempt
-      safeSetCounter(c);
-      return (c % 2) === 1; // odd => track, even => skip
+      try {
+        const enc = new TextEncoder();
+        const data = enc.encode(salt + "|" + id);
+        const digest = await crypto.subtle.digest("SHA-256", data);
+        const firstByte = new Uint8Array(digest)[0];
+        return (firstByte & 1) === 0; // even -> track ≈ 50%
+      } catch(e){
+        // fallback hash (sync)
+        return (djb2(salt + "|" + id) & 1) === 0;
+      }
     }
 
     // Patch GoAffPro when available; gate every call
     function installGate(){
       if (typeof window.goaffproTrackConversion !== "function") return false;
-      if (window.goaffproTrackConversion.__gaffproWrapped) return true;
+      if (window.goaffproTrackConversion.__wrappedV4) return true;
 
       const original = window.goaffproTrackConversion;
-      function wrapped(payload){
-        const track = shouldTrackNext();
+
+      async function wrapped(payload){
+        // Look for a stable order identifier in payload
+        const orderNo = payload?.number || payload?.order_id || payload?.id || payload?.orderId;
+        const salt = ""; // optionally include affiliate code/email if you want per-affiliate 50%
+
+        // If this tab already finalized a decision, don't do anything again
+        if (sessionStorage.getItem("gaffpro_converted") === "1") {
+          console.log("[GoAffPro Gate] already decided in this tab/session");
+          return;
+        }
+
+        const track = await decideTrackForOrder(orderNo, salt);
         if (track){
-          return original.apply(this, arguments);
+          console.log("[GoAffPro Gate] 50%: TRACK", { orderNo, payload });
+          const res = original.apply(this, arguments);
+          sessionStorage.setItem("gaffpro_converted", "1"); // finalize in this tab
+          return res;
         } else {
-          console.log("[GoAffPro Gate] STRICT 50%: SKIP this conversion.", payload);
-          // do nothing (skipped by design)
+          console.log("[GoAffPro Gate] 50%: SKIP", { orderNo, payload });
+          sessionStorage.setItem("gaffpro_converted", "1"); // finalize in this tab even on skip
+          return; // no-op
         }
       }
-      wrapped.__gaffproWrapped = true;
-      wrapped.__gaffproOriginal = original;
-      window.goaffproTrackConversion = wrapped;
 
-      if (!firedWrapperOnce){
-        firedWrapperOnce = true;
-        console.log("[GoAffPro Gate] Installed strict alternating gate (track/skip/track/skip...).");
-      }
+      wrapped.__wrappedV4 = true;
+      wrapped.__original = original;
+      window.goaffproTrackConversion = wrapped;
+      console.log("[GoAffPro Gate] Installed per-order 50% gate.");
       return true;
     }
 
@@ -113,13 +128,18 @@
     window.__ensureGaffproPatched = function(cb){
       (function wait(){
         if (typeof window.goaffproTrackConversion === "function" &&
-            window.goaffproTrackConversion.__gaffproWrapped === true) {
+            window.goaffproTrackConversion.__wrappedV4 === true) {
           cb();
         } else {
           installGate();
           setTimeout(wait, 80);
         }
       })();
+    };
+
+    // (Optional) expose a debug hook if you want to test in console
+    window.__gaffproDebug = {
+      decideTrackForOrder
     };
   })();
   </script>
@@ -156,21 +176,24 @@
       (async function () {
         const saleAmount = await resolveGeoAmount();
 
+        // 🔁 TODO: replace with your platform's real order number if available
+        const orderNumber = window.realOrderNumber || uniqueOrderId();
+
         window.goaffpro_order = {
-          number: uniqueOrderId(),
+          number: orderNumber,
           total: saleAmount,
           currency: "USD"
         };
 
-        // Fire ONLY after the gate is patched so first call gets alternated correctly
+        // Fire ONLY after the gate is patched so first call gets gated correctly
         __ensureGaffproPatched(function(){
-          console.log("GoAffPro: firing conversion", window.goaffpro_order);
+          console.log("GoAffPro: firing conversion (gated 50%)", window.goaffpro_order);
           window.goaffproTrackConversion(window.goaffpro_order);
-          sessionStorage.setItem('gaffpro_converted', '1');
+          // Note: sessionStorage 'gaffpro_converted' is set INSIDE the wrapper (track or skip)
         });
       })();
     } else {
-      console.log("GoAffPro: conversion already fired in this session");
+      console.log("GoAffPro: conversion already decided in this session");
     }
   </script>
 
