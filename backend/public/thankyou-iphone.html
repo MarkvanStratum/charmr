@@ -5,11 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Thank You iphone</title>
 
-<!-- Google tag (gtag.js) -->
+  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    // ✅ Required GA4 init (missing before). This sends a page_view.
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);} 
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
 
   <!-- GoAffPro loader -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
   <style>
     body {
       margin: 0;
@@ -45,15 +53,34 @@
     <p>You will be contacted shortly with the details.</p>
   </div>
 
-  <!-- GoAffPro conversion pixel -->
+  <!-- GoAffPro conversion pixel (robust firing) -->
   <script type="text/javascript">
-    window.goaffpro_order = {
-      number : "#1001",
-      total: 30 // posts back $30 in revenue
-    }
-    if(typeof window.goaffproTrackConversion !== "undefined"){
-      window.goaffproTrackConversion(window.goaffpro_order)
-    }
+    (function(){
+      // Some setups expect numeric order numbers (no "#").
+      // If your platform uses a hash, you can add it back, but try numeric first.
+      var goaffproOrder = {
+        number: "1001", // previously "#1001"; numeric tends to be safer
+        total: 30        // posts back $30 in revenue
+      };
+
+      function fireConversion(){
+        try {
+          if (typeof window.goaffproTrackConversion === 'function') {
+            window.goaffproTrackConversion(goaffproOrder);
+            return true;
+          }
+        } catch(e) {}
+        return false;
+      }
+
+      // Try immediately, then on window load, then poll briefly (handles slow loader)
+      if (!fireConversion()) {
+        window.addEventListener('load', fireConversion);
+        var tries = 0, iv = setInterval(function(){
+          if (fireConversion() || ++tries > 20) clearInterval(iv);
+        }, 150);
+      }
+    })();
   </script>
 </body>
 </html>
