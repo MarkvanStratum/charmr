@@ -1,146 +1,55 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>skip iphone Thank You | Charmr</title>
-
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-FDQ6REQWS8');
-  </script>
-
-  <!-- GoAffPro loader (should be present on every page) -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thank You</title>
+  <!-- GoAffPro loader -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      margin: 0;
       height: 100vh;
-      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f5f7fa;
+      font-family: Arial, sans-serif;
+      color: #333;
     }
-    .container {
-      background: white;
-      padding: 2rem 3rem;
+    .thankyou-box {
       text-align: center;
+      background: #fff;
+      padding: 40px 60px;
       border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
     }
-    p {
-      font-size: 1.25rem;
-      margin: 0;
-      color: #111827;
+    .thankyou-box h1 {
+      font-size: 28px;
+      margin-bottom: 15px;
+      color: #2c3e50;
+    }
+    .thankyou-box p {
+      font-size: 16px;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <p>Thank you for your order. You will be contacted shortly with the details.</p>
+  <div class="thankyou-box">
+    <h1>Thank you for your order.</h1>
+    <p>You will be contacted shortly with the details.</p>
   </div>
 
-  <!-- ====== (Optional) SALES POSTBACK GATE you already had; kept intact but NOT used for GoAffPro ====== -->
-  <script>
-  (function(){
-    const LAB_ALT = new URLSearchParams(location.search).get('lab') === 'alt';
-
-    function fnv1a32(str){
-      let h = 0x811c9dc5 >>> 0;
-      for (let i = 0; i < str.length; i++) {
-        h ^= str.charCodeAt(i);
-        h = Math.imul(h, 0x01000193) >>> 0;
-      }
-      return h >>> 0;
+  <!-- GoAffPro conversion pixel -->
+  <script type="text/javascript">
+    window.goaffpro_order = {
+      number : "#1001",
+      total: 30 // posts back $30 in revenue
     }
-
-    // Decide track vs skip (not applied to GoAffPro; left for other networks if you need it)
-    async function decideTrackForOrder(orderNo, salt=""){
-      if (LAB_ALT) {
-        const k = "gaffpro_lab_alt_counter";
-        const n = (parseInt(sessionStorage.getItem(k) || "0", 10) || 0) + 1;
-        sessionStorage.setItem(k, String(n));
-        return (n % 2) === 1;
-      }
-      const id = String(orderNo || "");
-      if (!id) {
-        const KEY = "gaffpro_decision_fallback";
-        const existing = sessionStorage.getItem(KEY);
-        if (existing !== null) return existing === "1";
-        const d = Math.random() < 0.5;
-        sessionStorage.setItem(KEY, d ? "1" : "0");
-        return d;
-      }
-      const seed = salt + "|" + id;
-      try {
-        const enc = new TextEncoder();
-        const digest = await crypto.subtle.digest("SHA-256", enc.encode(seed));
-        const b = new Uint8Array(digest);
-        const v = (b[0] | (b[1]<<8) | (b[2]<<16) | (b[3]<<24)) >>> 0;
-        return (v & 1) === 0; // even -> track (~50%)
-      } catch (e) {
-        return (fnv1a32(seed) & 1) === 0;
-      }
+    if(typeof window.goaffproTrackConversion !== "undefined"){
+      window.goaffproTrackConversion(window.goaffpro_order)
     }
-
-    // ====== GoAffPro CONVERSION (always track here, posts back $30 revenue) ======
-    function getOrderNumber() {
-      const qp = new URLSearchParams(location.search);
-      // Try common param names first
-      const candidates = [
-        qp.get('order'),
-        qp.get('order_id'),
-        qp.get('orderId'),
-        qp.get('order_no'),
-        qp.get('orderNumber')
-      ].filter(Boolean);
-      let order = candidates[0] || sessionStorage.getItem('last_order_number') || "#1001";
-      // Sanitize to avoid weird chars
-      order = String(order).slice(0, 128).replace(/[^\w#-]/g, '_');
-      // Remember in this session
-      sessionStorage.setItem('last_order_number', order);
-      return order;
-    }
-
-    // Wait for GoAffPro function, then fire
-    function trackGoAffProConversion(orderNumber, revenueCents){
-      window.goaffpro_order = {
-        number: orderNumber,
-        total: revenueCents
-      };
-      if (typeof window.goaffproTrackConversion !== "undefined") {
-        window.goaffproTrackConversion(window.goaffpro_order);
-      } else {
-        // If loader is a bit late, retry a few times
-        let tries = 0;
-        const iv = setInterval(function(){
-          tries++;
-          if (typeof window.goaffproTrackConversion !== "undefined") {
-            clearInterval(iv);
-            window.goaffproTrackConversion(window.goaffpro_order);
-          } else if (tries > 20) { // ~10s total if 500ms interval
-            clearInterval(iv);
-            // Optional: console.warn('GoAffPro not ready; conversion not sent.');
-          }
-        }, 500);
-      }
-    }
-
-    // Fire GoAffPro conversion immediately with $30 => 3000 cents
-    const orderNum = getOrderNumber();
-    trackGoAffProConversion(orderNum, 3000);
-
-    // If you ever want to apply the 50% gate to OTHER networks, you can use:
-    // decideTrackForOrder(orderNum, "your-salt").then((shouldTrack) => {
-    //   if (shouldTrack) { ...fire your other network pixels... }
-    // });
-  })();
   </script>
 </body>
 </html>
