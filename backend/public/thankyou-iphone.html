@@ -38,10 +38,19 @@
     <!-- Conversion tracking. Replace number/total with your dynamic values as needed. -->
     <script>
       (function () {
-        // TODO: Replace these with your actual order values
+        // Order data: from URL (?number=...&total=...), with an optional ?test=1 to auto-mint unique IDs for repeat tests.
+        var params = new URLSearchParams(location.search);
+        var isTest = params.has('test');
+
+        var orderNumber = params.get('number');
+        if (!orderNumber && isTest) {
+          orderNumber = '#' + Date.now(); // e.g. #1694100000000
+        }
+        var orderTotal = params.get('total');
+
         var orderData = {
-          number: "#1001", // e.g. "#1234" (string)
-          total: 1000       // e.g. 49.99 (number, no currency symbol)
+          number: orderNumber || "#1001", // fallback for non-test usage
+          total: orderTotal ? Number(orderTotal) : 1000
         };
 
         function trackConversion() {
