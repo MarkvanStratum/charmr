@@ -25,75 +25,83 @@
       <p>We will contact you shortly with delivery details.</p>
     </main>
 
+    <div id="gfp-debug" aria-live="polite" style="display:none;position:fixed;left:0;right:0;bottom:0;padding:8px 12px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:rgba(0,0,0,.08);border-top:1px solid rgba(0,0,0,.15)"></div>
+
     <!-- GoAffPro loader (shop id as provided) -->
     <script id="goaffpro-loader" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" async></script>
 
     <script>
       // === HOW TO SUPPLY ORDER DATA ===
-      // Option A (recommended for server-rendered thank-you pages):
-      //   Set these BEFORE this script executes:
-      //     window.ORDER_NUMBER = "ORD-12345";  // unique per purchase (string)
-      //     window.ORDER_TOTAL  = 149.99;       // numeric total, no currency symbol
-      // Option B (useful for testing or redirects):
-      //   Append to URL: ?number=ORD-12345&total=149.99
+      // Option A (server-rendered thank-you pages): set BEFORE this script runs
+      //   window.ORDER_NUMBER = "ORD-12345";  // unique per purchase (string)
+      //   window.ORDER_TOTAL  = 149.99;       // numeric total, no currency symbol
+      // Option B (testing or redirect):
+      //   Append to URL: ?number=ORD-12345&total=149.99  (add &debug=1 to see logs)
 
       (function () {
+        var params = new URLSearchParams(location.search);
+        var DEBUG = params.get('debug') === '1';
+        var debugEl = document.getElementById('gfp-debug');
+        function log() {
+          if (!DEBUG) return;
+          if (debugEl) { debugEl.style.display = 'block'; debugEl.innerHTML += Array.from(arguments).join(' ') + '<br/>'; }
+          try { console.log('[GoAffPro TY]', ...arguments); } catch (_) {}
+        }
+
+        function parseTotal(v) {
+          if (v == null) return NaN;
+          var s = String(v).replace(/[^0-9.-]/g, ''); // strip currency/space
+          return parseFloat(s);
+        }
+
         function getOrderData() {
-          var params = new URLSearchParams(location.search);
-
-          var hasUrlTotal = params.has('total');
           var number = params.get('number') || window.ORDER_NUMBER;
-          var total  = hasUrlTotal ? params.get('total') : window.ORDER_TOTAL;
-
-          // Validate
-          if (!number) return null;
-          var totalNum = Number(total);
-          if (!isFinite(totalNum)) return null;
-
-          return { number: String(number), total: totalNum };
+          var totalRaw = params.has('total') ? params.get('total') : window.ORDER_TOTAL;
+          var total = parseTotal(totalRaw);
+          if (!number || !isFinite(total)) {
+            log('Missing/invalid order data → number:', number, 'total:', totalRaw);
+            return null;
+          }
+          return { number: String(number), total: total };
         }
 
-        function alreadyTracked(orderNumber) {
-          try {
-            return sessionStorage.getItem('goaffpro_tracked_' + orderNumber) === '1';
-          } catch (_) { return false; }
-        }
+        var order = getOrderData();
+        if (!order) { log('Tracking aborted: provide ?number=&total= or set window.ORDER_NUMBER/ORDER_TOTAL.'); return; }
+        log('Order:', order.number, 'Total:', order.total);
 
-        function markTracked(orderNumber) {
-          try { sessionStorage.setItem('goaffpro_tracked_' + orderNumber, '1'); } catch (_) {}
-        }
-
-        function tryTrack(order) {
-          if (!order) return;
-          if (alreadyTracked(order.number)) return;
+        function tryTrackOnce() {
           if (typeof window.goaffproTrackConversion === 'function') {
-            window.goaffpro_order = order; // expose for GoAffPro
+            window.goaffpro_order = order;
             try {
               window.goaffproTrackConversion(order);
-              markTracked(order.number);
+              log('✓ Called goaffproTrackConversion');
             } catch (e) {
-              // Swallow errors; you can log to your own endpoint if desired
+              log('✗ Track call threw error:', e && e.message ? e.message : e);
             }
             return true;
           }
           return false;
         }
 
-        var orderData = getOrderData();
-
-        // 1) Attempt after loader.js finishes
-        var loader = document.getElementById('goaffpro-loader');
-        if (loader) {
-          loader.addEventListener('load', function () { tryTrack(orderData); });
+        function pollUntilReady(timeoutMs) {
+          var end = Date.now() + timeoutMs;
+          (function loop(){
+            if (tryTrackOnce()) return;
+            if (Date.now() > end) { log('✗ Timed out waiting for goaffproTrackConversion. Check ad blockers or CSP.'); return; }
+            setTimeout(loop, 250);
+          })();
         }
 
-        // 2) Fallback: if the loader came from cache or loaded earlier, try on DOM ready
+        var loader = document.getElementById('goaffpro-loader');
+        if (loader) {
+          loader.addEventListener('load', function(){ log('loader.js loaded'); pollUntilReady(15000); });
+          loader.addEventListener('error', function(){ log('✗ loader.js failed to load (blocked?)'); });
+        }
+
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
-          setTimeout(function () { if (!tryTrack(orderData)) setTimeout(function () { tryTrack(orderData); }, 350); }, 0);
+          setTimeout(function(){ pollUntilReady(15000); }, 0);
         } else {
-          document.addEventListener('DOMContentLoaded', function () {
-            if (!tryTrack(orderData)) setTimeout(function () { tryTrack(orderData); }, 350);
-          });
+          document.addEventListener('DOMContentLoaded', function(){ pollUntilReady(15000); });
         }
       })();
     </script>
