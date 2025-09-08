@@ -480,7 +480,13 @@
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
 
           // 3) Confirm the intro charge (handles 3DS/SCA)
-          const conf = await stripe.confirmCardPayment(data.clientSecret);
+          const conf = await stripe.confirmCardPayment(data.clientSecret, {
+  payment_method: {
+    card: cardNumber,
+    billing_details: { name: name || undefined, email: email || undefined, phone: fullPhone, address }
+  }
+});
+
           console.log('confirmCardPayment:', conf);
 
           if (conf.error) {
