@@ -4,30 +4,16 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Thank you</title>
-
   <style>
-    :root { color-scheme: light dark; }
-    html, body { height: 100%; }
+    html, body { height: 100%; margin: 0; }
     body {
-      margin: 0;
-      min-height: 100svh;
-      display: grid;
-      place-items: center;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial;
-      background: canvas;
-      color: canvastext;
+      display: grid; place-items: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
     }
-    main {
-      text-align: center;
-      max-width: 60ch;
-      padding: 2rem;
-    }
-    h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.4rem); }
-    p  { margin: 0; font-size: 1.125rem; opacity: .9; }
+    main { text-align: center; max-width: 60ch; padding: 2rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    p  { margin: 0; font-size: 1.1rem; opacity: .9; }
   </style>
-
-  <!-- GoAffPro general tracking: add to ALL pages (before </head>) -->
-  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </head>
 <body>
   <main>
@@ -35,20 +21,19 @@
     <p>We will contact you shortly with delivery details.</p>
   </main>
 
-  <!-- Conversion tracking on the Thank You page (after the loader) -->
-  <script>
-    // Populate these from your platform (don’t hard-code):
+  <script type="text/javascript">
+    // Set the order payload first (replace 'order_id' at runtime)
     window.goaffpro_order = {
-      id: String(ORDER_ID),              // e.g. "1001"
-      number: String(ORDER_NUMBER),      // e.g. "#1001" or "ORD-789"
-      total: Number(ORDER_TOTAL),        // e.g. 300 (number, no currency symbol)
-      currency: "USD",
-      forceSDK: true
+       id:'order_id',
     };
 
-    if (typeof window.goaffproTrackConversion === "function") {
-      window.goaffproTrackConversion(window.goaffpro_order);
-    }
+    // Dynamically load the SDK exactly like the docs
+    (function() {
+        var elem = document.createElement("script");
+        elem.type = "application/javascript";
+        elem.src = "https://api.goaffpro.com/loader.js?shop=nzyvwvfbde";
+        document.body.appendChild(elem);
+    })();
   </script>
 </body>
 </html>
