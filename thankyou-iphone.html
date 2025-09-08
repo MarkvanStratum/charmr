@@ -1,115 +1,47 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Thank You</title>
-    <style>
-      :root { color-scheme: light dark; }
-      html, body { height: 100%; margin: 0; }
-      body {
-        display: grid;
-        place-items: center;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-        line-height: 1.5;
-      }
-      .container { text-align: center; max-width: 42rem; padding: 2rem; }
-      h1 { margin: 0 0 0.5rem 0; font-size: clamp(1.5rem, 3vw + 1rem, 2.25rem); }
-      p { margin: 0; font-size: 1.05rem; opacity: 0.9; }
-      #debug { display:none; position:fixed; left:0; right:0; bottom:0; padding:8px 12px; font:12px/1.4 ui-monospace, Menlo, Consolas, monospace; background:rgba(0,0,0,.08); border-top:1px solid rgba(0,0,0,.15); }
-      #debug.show { display:block; }
-    </style>
-  </head>
-  <body>
-    <main class="container" role="main" aria-labelledby="ty-heading">
-      <h1 id="ty-heading">Thank you for your order.</h1>
-      <p>We will contact you shortly with delivery details.</p>
-    </main>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thank you</title>
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body { display: grid; place-items: center; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
+    main { text-align: center; max-width: 60ch; padding: 2rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    p  { margin: 0; font-size: 1.1rem; opacity: .9; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Thank you for your order.</h1>
+    <p>We will contact you shortly with delivery details.</p>
+  </main>
 
-    <div id="debug" aria-live="polite"></div>
+  <script type="text/javascript">
+    // === EXACTLY like their example: define the order object first ===
+    // For testing, generate a unique number/id each time so it tracks on every load.
+    // Replace this generation with your real backend values in production.
+    (function() {
+      var stamp = Date.now().toString(36).toUpperCase();   // e.g., "MB6J2X9A"
+      var generatedNumber = "#TEST-" + stamp;              // e.g., "#TEST-MB6J2X9A"
 
-    <!-- GoAffPro loader -->
-    <script id="goaffpro-loader" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" async></script>
+      window.goaffpro_order = {
+        id: generatedNumber,        // unique string
+        number: generatedNumber,    // human-readable string
+        total: 300,                 // number (no currency symbol)
+        currency: "USD",            // ISO-4217 code
+        forceSDK: true
+      };
+    })();
 
-    <!-- Supply real order data in ONE of two ways:
-         A) URL params:      ?number=ORD-12345&total=149.99
-         B) Global variables set BEFORE this script runs:
-            <script>window.ORDER_NUMBER="ORD-12345"; window.ORDER_TOTAL=149.99;</script>
-    -->
-    <script>
-      (function () {
-        var params = new URLSearchParams(location.search);
-        var DEBUG = params.get('debug') === '1';
-        var debugEl = document.getElementById('debug');
-        function log() {
-          if (!DEBUG) return;
-          debugEl.classList.add('show');
-          debugEl.innerHTML += Array.from(arguments).map(String).join(' ') + '<br/>';
-          try { console.log('[GoAffPro TY]', ...arguments); } catch (_) {}
-        }
-
-        function normalizeTotal(v) {
-          if (v == null) return NaN;
-          // Accept 1,234.56  |  1234,56  |  1234.56  and strip currency symbols
-          var s = String(v).replace(/[^0-9,\.]/g, '')
-                           .replace(/,(?=\d{3}(\D|$))/g, '')   // drop thousands comma
-                           .replace(/\.(?=\d{3}(\D|$))/g, ''); // drop thousands dot
-          if (/\d,\d{1,2}$/.test(s)) s = s.replace(',', '.');  // decimal comma -> dot
-          return Number(s);
-        }
-
-        function getOrderData() {
-          var number = params.get('number') || window.ORDER_NUMBER;
-          var totalRaw = params.has('total') ? params.get('total') : window.ORDER_TOTAL;
-          var total = normalizeTotal(totalRaw);
-          if (!number || !isFinite(total)) {
-            log('Missing/invalid order data → number:', number, 'total:', totalRaw);
-            return null;
-          }
-          return { number: String(number), total: total };
-        }
-
-        var order = getOrderData();
-        if (!order) {
-          log('Tracking aborted: provide ?number=&total= or set window.ORDER_NUMBER/ORDER_TOTAL.');
-          return;
-        }
-        log('Order:', order.number, 'Total:', order.total);
-
-        function tryTrackOnce() {
-          if (typeof window.goaffproTrackConversion === 'function') {
-            window.goaffpro_order = order;
-            try {
-              window.goaffproTrackConversion(order);
-              log('✓ Called goaffproTrackConversion');
-            } catch (e) {
-              log('✗ Track call error:', e && e.message ? e.message : e);
-            }
-            return true;
-          }
-          return false;
-        }
-
-        // Wait (poll) up to 15s for loader to expose the tracking function
-        var deadline = Date.now() + 15000;
-        function poll() {
-          if (tryTrackOnce()) return;
-          if (Date.now() > deadline) {
-            log('✗ Timed out waiting for goaffproTrackConversion. Check ad blockers or CSP.');
-            return;
-          }
-          setTimeout(poll, 250);
-        }
-
-        var loader = document.getElementById('goaffpro-loader');
-        if (loader) loader.addEventListener('load', function () { log('loader.js loaded'); poll(); });
-
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-          setTimeout(poll, 0);
-        } else {
-          document.addEventListener('DOMContentLoaded', function () { setTimeout(poll, 0); });
-        }
-      })();
-    </script>
-  </body>
+    // === EXACTLY their dynamic loader pattern ===
+    (function() {
+      var elem = document.createElement("script");
+      elem.type = "application/javascript";
+      elem.src  = "https://api.goaffpro.com/loader.js?shop=nzyvwvfbde";
+      document.body.appendChild(elem);
+    })();
+  </script>
+</body>
 </html>
