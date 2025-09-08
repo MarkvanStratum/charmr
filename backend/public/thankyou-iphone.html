@@ -1,71 +1,27 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thank you</title>
-  <style>
-    html, body { height: 100%; margin: 0; }
-    body { display: grid; place-items: center; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
-    main { text-align: center; max-width: 60ch; padding: 2rem; }
-    h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
-    p  { margin: 0; font-size: 1.1rem; opacity: .9; }
-  </style>
-</head>
-<body>
-  <main>
-    <h1>Thank you for your order.</h1>
-    <p>We will contact you shortly with delivery details.</p>
-  </main>
+<!-- Put this in your Thank You page -->
+<script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+<script>
+  // 1) Unique order number/id every load (for testing)
+  const generatedNumber = "#TEST-" + Date.now() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
 
-  <script type="text/javascript">
-    // --- Build the order payload BEFORE loading the SDK (per docs) ---
-    (function () {
-      var qs = new URLSearchParams(location.search);
+  // 2) Valid payload (object). This is what GoAffPro expects when Secure Payloads is OFF.
+  var goaffproOrder = {
+    id: generatedNumber,          // string
+    number: generatedNumber,      // string (can match id)
+    total: 300,                   // number (no quotes)
+    currency: "USD",              // ISO code
+    forceSDK: true
+  };
 
-      // Pull values from the URL. Example:
-      // ?order=%231001&total=300&currency=USD&id=1001
-      var id       = qs.get("id")     || qs.get("order") || "";
-      var number   = qs.get("order")  || id              || "";
-      var totalStr = qs.get("total");
-      var total    = totalStr ? parseFloat(totalStr) : NaN;
-      var currency = qs.get("currency") || "USD";
-
-      if (!number || !(total >= 0)) {
-        console.error("[GoAffPro] Missing order or total in URL. Example: ?order=%231001&total=300&currency=USD&id=1001");
-      }
-
-      window.goaffpro_order = {
-        id: id || number,      // string
-        number: number,        // string (human-readable)
-        total: total,          // number (no currency symbol)
-        currency: currency,    // ISO code (e.g., "USD")
-        forceSDK: true
-      };
-    })();
-
-    // --- Dynamically load the SDK exactly like the docs, then call conversion ---
-    (function() {
-      var s = document.createElement("script");
-      s.type = "application/javascript";
-      s.src  = "https://api.goaffpro.com/loader.js?shop=nzyvwvfbde";
-      s.async = true;
-
-      s.onload = function () {
-        if (typeof window.goaffproTrackConversion === "function") {
-          window.goaffproTrackConversion(window.goaffpro_order);
-          console.log("[GoAffPro] Conversion sent:", window.goaffpro_order);
-        } else {
-          console.error("[GoAffPro] SDK loaded but goaffproTrackConversion is unavailable.");
-        }
-      };
-
-      s.onerror = function () {
-        console.error("[GoAffPro] Failed to load SDK. Check CSP/ad-blockers and shop key.");
-      };
-
-      document.body.appendChild(s);
-    })();
-  </script>
-</body>
-</html>
+  // 3) Call the tracker once the SDK function exists (handles load races)
+  (function wait(i){
+    if (typeof window.goaffproTrackConversion === "function") {
+      window.goaffproTrackConversion(goaffproOrder);
+      console.log("[GoAffPro] Sent:", goaffproOrder);
+    } else if (i < 50) {          // ~10s max
+      setTimeout(() => wait(i+1), 200);
+    } else {
+      console.error("[GoAffPro] goaffproTrackConversion not found. Check CSP/ad-blockers/shop key.");
+    }
+  })(0);
+</script>
