@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Thank You iphone</title>
+  <title>Thank You</title>
+
+  <!-- GoAffPro loader (as requested: at the top) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -14,9 +17,6 @@
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8');
   </script>
-
-  <!-- GoAffPro loader (keep this high on the page) -->
-  <script async defer src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <style>
     body {
@@ -50,50 +50,45 @@
     <p class="muted" id="dbg"></p>
   </div>
 
-  <!-- GoAffPro conversion (robust) -->
+  <!-- GoAffPro conversion (bottom; builds payload + fires once) -->
   <script type="text/javascript">
   (function () {
-    // --- Helpers ------------------------------------------------------------
+    // ------- helpers --------------------------------------------------------
     function getParamFrom(searchLike, name) {
-      var m = new RegExp('[?&#]' + name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '=([^&#]*)').exec(searchLike);
+      var m = new RegExp('[?&#]' + name.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&') + '=([^&#]*)').exec(searchLike);
       return m ? decodeURIComponent(m[1].replace(/\+/g, ' ')) : '';
     }
-    function qp(/*names...*/) {
+    function qp() { // query or hash
       var search = location.search, hash = location.hash;
       for (var i = 0; i < arguments.length; i++) {
-        var v = getParamFrom(search, arguments[i]) || getParamFrom(hash, arguments[i]);
+        var k = arguments[i];
+        var v = getParamFrom(search, k) || getParamFrom(hash, k);
         if (v) return v;
       }
       return '';
     }
-    function firstNonEmpty(arr) {
-      for (var i = 0; i < arr.length; i++) if (arr[i]) return arr[i];
-      return '';
-    }
-    function parseAmount(raw) {
+    function firstNonEmpty(arr){ for (var i=0;i<arr.length;i++) if (arr[i]) return arr[i]; return ''; }
+    function parseAmount(raw){
       if (!raw) return null;
-      var s = String(raw).trim().replace(/\s/g, '').replace(',', '.');
-      var num = +s;
-      return isNaN(num) ? null : num;
+      var s = String(raw).trim().replace(/\s/g,'').replace(',', '.');
+      var num = +s; return isNaN(num) ? null : num;
     }
-    function extractFromPath() {
-      // last path segment that looks like an order token
+    function extractFromPath(){
       var seg = location.pathname.split('/').filter(Boolean).pop() || '';
-      // accept things like 12345, ABC123, #1001, 2024-09-08-XYZ
-      if (/^[#A-Za-z0-9._-]{3,64}$/.test(seg)) return seg;
+      return /^[#A-Za-z0-9._-]{3,64}$/.test(seg) ? seg : '';
+    }
+    function readSession(keys){
+      try { for (var i=0;i<keys.length;i++){ var v = sessionStorage.getItem(keys[i]); if (v) return v; } } catch(e){}
       return '';
     }
-    function readSession(keys) {
-      try {
-        for (var i=0;i<keys.length;i++){
-          var v = sessionStorage.getItem(keys[i]);
-          if (v) return v;
-        }
-      } catch(e){}
-      return '';
+    function dbg(msg){
+      try{
+        var el = document.getElementById('dbg');
+        if (el) el.textContent += (el.textContent ? ' · ' : '') + msg;
+      }catch(e){}
     }
 
-    // --- Gather order context ----------------------------------------------
+    // ------- collect order context -----------------------------------------
     var ORDER_NUMBER = firstNonEmpty([
       qp('order','order_id','id','number','orderno','orderNo'),
       readSession(['order','order_id','checkout_order_id','last_order_number']),
@@ -106,14 +101,10 @@
     ]);
 
     var CURRENCY = (firstNonEmpty([qp('cur','currency'), readSession(['currency'])]) || 'USD').toUpperCase();
-
     var ORDER_TOTAL = parseAmount(TOTAL_RAW);
-    if (ORDER_TOTAL === null) ORDER_TOTAL = 0.01; // tiny non-zero default
+    if (ORDER_TOTAL === null) ORDER_TOTAL = 0.01; // tiny non-zero default to avoid drops
 
-    // --- Debug UI -----------------------------------------------------------
-    var dbgEl = document.getElementById('dbg');
-    function dbg(msg){ try{ if(dbgEl){ dbgEl.textContent += (dbgEl.textContent ? ' · ' : '') + msg; } }catch(e){} }
-    dbg('GoAffPro payload → number: ' + (ORDER_NUMBER||'') + ', total: ' + ORDER_TOTAL + ', currency: ' + CURRENCY);
+    dbg('payload → number: ' + (ORDER_NUMBER||'') + ', total: ' + ORDER_TOTAL + ', currency: ' + CURRENCY);
 
     if (!ORDER_NUMBER) {
       console.warn('[GoAffPro] Missing order id → not posting.');
@@ -121,35 +112,28 @@
       return;
     }
 
-    // --- Duplicate suppression (session only so testing is easier) ----------
-    var STORAGE_KEY = 'gaffpro_fired_' + ORDER_NUMBER;
-    function alreadyFired() {
-      try { return sessionStorage.getItem(STORAGE_KEY) === '1'; } catch(e){ return false; }
-    }
-    function markFired() {
-      try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch(e){}
-    }
-    if (alreadyFired()) {
-      console.log('[GoAffPro] Already posted for', ORDER_NUMBER, '— skipping.');
-      dbg('already posted; skipped');
-      return;
-    }
-
-    // --- Build payload exactly like GoAffPro snippet (plus currency) --------
+    // expose exactly as requested
     window.goaffpro_order = {
-      number: ORDER_NUMBER,     // can be like "#1001"
-      total: ORDER_TOTAL,       // number
-      currency: CURRENCY        // optional but helpful
+      number: ORDER_NUMBER,
+      total: ORDER_TOTAL,
+      currency: CURRENCY
     };
+    // (optional: also set camelCase alias for broader compatibility)
+    window.goaffproOrder = window.goaffpro_order;
 
-    // --- Fire once the SDK is ready ----------------------------------------
+    // duplicate suppression (per session)
+    var STORAGE_KEY = 'gaffpro_fired_' + ORDER_NUMBER;
+    function alreadyFired(){ try { return sessionStorage.getItem(STORAGE_KEY) === '1'; } catch(e){ return false; } }
+    function markFired(){ try { sessionStorage.setItem(STORAGE_KEY, '1'); } catch(e){} }
+
+    // fire once when SDK is ready
     var RENDER_FLAG = '__gaffpro_fired_this_render';
     function fire() {
       if (window[RENDER_FLAG]) return true;
       if (typeof window.goaffproTrackConversion !== 'function') return false;
 
-      if (alreadyFired()) { // race check
-        console.log('[GoAffPro] Already posted (race) for', ORDER_NUMBER, '— skipping.');
+      if (alreadyFired()) {
+        dbg('already posted; skipped');
         return true;
       }
 
@@ -157,8 +141,8 @@
       try {
         window.goaffproTrackConversion(window.goaffpro_order);
         markFired();
-        console.log('[GoAffPro] Posted once for', ORDER_NUMBER, window.goaffpro_order);
         dbg('posted');
+        console.log('[GoAffPro] Conversion posted for', ORDER_NUMBER, window.goaffpro_order);
       } catch (e) {
         console.error('[GoAffPro] Track call threw:', e);
         dbg('track error');
@@ -172,44 +156,28 @@
         if (fire() || ++tries >= maxTries) {
           clearInterval(iv);
           if (tries >= maxTries) {
-            console.error('[GoAffPro] loader never initialized — likely blocked by ad/CSP.');
+            console.error('[GoAffPro] loader never initialized — check blockers/CSP.');
             dbg('loader missing/blocked');
           }
         }
       }, interval);
     }
 
-    // If the page was prerendered, wait until visible to avoid double-fires
-    function start() {
-      // Attempt immediately; if not ready, poll up to ~15s
-      if (!fire()) {
-        // Also hook script tag events if present
-        var s = document.querySelector('script[src*="api.goaffpro.com/loader.js"]');
-        if (s) {
-          s.addEventListener('load', fire);
-          s.addEventListener('error', function(){
-            console.error('[GoAffPro] loader failed to load.');
-            dbg('loader failed');
-          });
-        }
-        pollUntilReady(15000);
+    // try now; if not ready, wait for loader or poll
+    if (!fire()) {
+      var s = document.querySelector('script[src*="api.goaffpro.com/loader.js"]');
+      if (s) {
+        s.addEventListener('load', fire, { once: true });
+        s.addEventListener('error', function(){
+          console.error('[GoAffPro] loader failed to load.');
+          dbg('loader failed');
+        }, { once: true });
       }
-    }
-
-    if (document.visibilityState === 'prerender') {
-      document.addEventListener('visibilitychange', function onv(){
-        if (document.visibilityState === 'visible') {
-          document.removeEventListener('visibilitychange', onv);
-          start();
-        }
-      });
-    } else {
-      start();
+      pollUntilReady(15000);
     }
   })();
   </script>
 
-  <!-- Optional: extremely basic noscript notice (JS is required for tracking) -->
   <noscript>
     <p style="position:fixed;bottom:8px;left:8px;right:8px;text-align:center;color:#777;font:12px/1.4 Arial;">
       JavaScript is disabled; order tracking requires JavaScript.
