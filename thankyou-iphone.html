@@ -1,208 +1,115 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>iphone Thank You | Charmr</title>
-
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-FDQ6REQWS8');
-  </script>
-
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f4f4f4;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .container {
-      background: white;
-      padding: 2rem 3rem;
-      text-align: center;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    }
-    p {
-      font-size: 1.25rem;
-      margin: 0;
-      color: #111827;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <p>Thank you for your order. You will be contacted shortly with the details.</p>
-  </div>
-
-  <!-- Load GoAffPro -->
-  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-
-  <!-- ====== SALES POSTBACK GATE (DETERMINISTIC 50% PER ORDER) ====== -->
-  <script>
-  (function(){
-    // ---- LAB MODE for manual testing: add ?lab=alt to URL to force strict alternate (track/skip/track/skip) ----
-    const LAB_ALT = new URLSearchParams(location.search).get('lab') === 'alt';
-
-    // ---- FNV-1a 32-bit (sync fallback) ----
-    function fnv1a32(str){
-      let h = 0x811c9dc5 >>> 0;
-      for (let i = 0; i < str.length; i++) {
-        h ^= str.charCodeAt(i);
-        h = Math.imul(h, 0x01000193) >>> 0;
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Thank You</title>
+    <style>
+      :root { color-scheme: light dark; }
+      html, body { height: 100%; margin: 0; }
+      body {
+        display: grid;
+        place-items: center;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        line-height: 1.5;
       }
-      return h >>> 0;
-    }
+      .container { text-align: center; max-width: 42rem; padding: 2rem; }
+      h1 { margin: 0 0 0.5rem 0; font-size: clamp(1.5rem, 3vw + 1rem, 2.25rem); }
+      p { margin: 0; font-size: 1.05rem; opacity: 0.9; }
+      #debug { display:none; position:fixed; left:0; right:0; bottom:0; padding:8px 12px; font:12px/1.4 ui-monospace, Menlo, Consolas, monospace; background:rgba(0,0,0,.08); border-top:1px solid rgba(0,0,0,.15); }
+      #debug.show { display:block; }
+    </style>
+  </head>
+  <body>
+    <main class="container" role="main" aria-labelledby="ty-heading">
+      <h1 id="ty-heading">Thank you for your order.</h1>
+      <p>We will contact you shortly with delivery details.</p>
+    </main>
 
-    // ---- Decide track vs skip from order ID (stable 50%) ----
-    async function decideTrackForOrder(orderNo, salt=""){
-      if (LAB_ALT) {
-        const k = "gaffpro_lab_alt_counter";
-        const n = (parseInt(sessionStorage.getItem(k) || "0", 10) || 0) + 1;
-        sessionStorage.setItem(k, String(n));
-        // odd -> track, even -> skip (for testing you should see exact 50/50)
-        return (n % 2) === 1;
-      }
+    <div id="debug" aria-live="polite"></div>
 
-      const id = String(orderNo || "");
-      if (!id) {
-        // No stable ID? One-time sticky coin flip in this tab so reloads don't change it
-        const KEY = "gaffpro_decision_fallback";
-        const existing = sessionStorage.getItem(KEY);
-        if (existing !== null) return existing === "1";
-        const d = Math.random() < 0.5;
-        sessionStorage.setItem(KEY, d ? "1" : "0");
-        return d;
-      }
+    <!-- GoAffPro loader -->
+    <script id="goaffpro-loader" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" async></script>
 
-      const seed = salt + "|" + id;
-      try {
-        const enc = new TextEncoder();
-        const digest = await crypto.subtle.digest("SHA-256", enc.encode(seed));
-        // combine first 4 bytes into a uint32 for uniformity
-        const b = new Uint8Array(digest);
-        const v = (b[0] | (b[1]<<8) | (b[2]<<16) | (b[3]<<24)) >>> 0;
-        return (v & 1) === 0; // even -> track (~50%)
-      } catch (e) {
-        // robust sync fallback
-        return (fnv1a32(seed) & 1) === 0;
-      }
-    }
+    <!-- Supply real order data in ONE of two ways:
+         A) URL params:      ?number=ORD-12345&total=149.99
+         B) Global variables set BEFORE this script runs:
+            <script>window.ORDER_NUMBER="ORD-12345"; window.ORDER_TOTAL=149.99;</script>
+    -->
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var DEBUG = params.get('debug') === '1';
+        var debugEl = document.getElementById('debug');
+        function log() {
+          if (!DEBUG) return;
+          debugEl.classList.add('show');
+          debugEl.innerHTML += Array.from(arguments).map(String).join(' ') + '<br/>';
+          try { console.log('[GoAffPro TY]', ...arguments); } catch (_) {}
+        }
 
-    // ---- Patch GoAffPro to gate BEFORE posting ----
-    function installGate(){
-      if (typeof window.goaffproTrackConversion !== "function") return false;
-      if (window.goaffproTrackConversion.__wrappedV5) return true;
+        function normalizeTotal(v) {
+          if (v == null) return NaN;
+          // Accept 1,234.56  |  1234,56  |  1234.56  and strip currency symbols
+          var s = String(v).replace(/[^0-9,\.]/g, '')
+                           .replace(/,(?=\d{3}(\D|$))/g, '')   // drop thousands comma
+                           .replace(/\.(?=\d{3}(\D|$))/g, ''); // drop thousands dot
+          if (/\d,\d{1,2}$/.test(s)) s = s.replace(',', '.');  // decimal comma -> dot
+          return Number(s);
+        }
 
-      const original = window.goaffproTrackConversion;
+        function getOrderData() {
+          var number = params.get('number') || window.ORDER_NUMBER;
+          var totalRaw = params.has('total') ? params.get('total') : window.ORDER_TOTAL;
+          var total = normalizeTotal(totalRaw);
+          if (!number || !isFinite(total)) {
+            log('Missing/invalid order data → number:', number, 'total:', totalRaw);
+            return null;
+          }
+          return { number: String(number), total: total };
+        }
 
-      async function wrapped(payload){
-        // Try common order id fields
-        const orderNo = payload?.number || payload?.order_id || payload?.id || payload?.orderId;
-        const salt = ""; // optionally include affiliate code/email to do 50% per-affiliate
-
-        // Already decided in this tab? do nothing
-        if (sessionStorage.getItem("gaffpro_converted") === "1") {
-          console.log("[GoAffPro Gate] already decided in this tab/session");
+        var order = getOrderData();
+        if (!order) {
+          log('Tracking aborted: provide ?number=&total= or set window.ORDER_NUMBER/ORDER_TOTAL.');
           return;
         }
+        log('Order:', order.number, 'Total:', order.total);
 
-        const track = await decideTrackForOrder(orderNo, salt);
-        if (track){
-          console.log("[GoAffPro Gate] TRACK", { orderNo, payload });
-          const res = original.apply(this, arguments);
-          sessionStorage.setItem("gaffpro_converted", "1");
-          return res;
+        function tryTrackOnce() {
+          if (typeof window.goaffproTrackConversion === 'function') {
+            window.goaffpro_order = order;
+            try {
+              window.goaffproTrackConversion(order);
+              log('✓ Called goaffproTrackConversion');
+            } catch (e) {
+              log('✗ Track call error:', e && e.message ? e.message : e);
+            }
+            return true;
+          }
+          return false;
+        }
+
+        // Wait (poll) up to 15s for loader to expose the tracking function
+        var deadline = Date.now() + 15000;
+        function poll() {
+          if (tryTrackOnce()) return;
+          if (Date.now() > deadline) {
+            log('✗ Timed out waiting for goaffproTrackConversion. Check ad blockers or CSP.');
+            return;
+          }
+          setTimeout(poll, 250);
+        }
+
+        var loader = document.getElementById('goaffpro-loader');
+        if (loader) loader.addEventListener('load', function () { log('loader.js loaded'); poll(); });
+
+        if (document.readyState === 'complete' || document.readyState === 'interactive') {
+          setTimeout(poll, 0);
         } else {
-          console.log("[GoAffPro Gate] SKIP", { orderNo, payload });
-          sessionStorage.setItem("gaffpro_converted", "1");
-          return; // no-op
+          document.addEventListener('DOMContentLoaded', function () { setTimeout(poll, 0); });
         }
-      }
-
-      wrapped.__wrappedV5 = true;
-      wrapped.__original = original;
-      window.goaffproTrackConversion = wrapped;
-      console.log("[GoAffPro Gate] Installed per-order 50% gate (SHA-256/FNV).");
-      return true;
-    }
-
-    // Retry until loader defines the function
-    (function waitForPixel(){
-      if (!installGate()) setTimeout(waitForPixel, 80);
-    })();
-
-    // Ensure wrapper is ready before first call
-    window.__ensureGaffproPatched = function(cb){
-      (function wait(){
-        if (typeof window.goaffproTrackConversion === "function" &&
-            window.goaffproTrackConversion.__wrappedV5 === true) cb();
-        else { installGate(); setTimeout(wait, 80); }
       })();
-    };
-
-    // Optional debug hook
-    window.__gaffproDebug = { decideTrackForOrder };
-  })();
-  </script>
-  <!-- ====== END SALES POSTBACK GATE ====== -->
-
-  <!-- Fire once per session/tab -->
-  <script>
-    // Helpers
-    function uniqueOrderId() {
-      const ts = Date.now();
-      const rand = Math.random().toString(16).slice(2, 10);
-      return `ORD-${new Date().toISOString().slice(0,10).replace(/-/g,'')}-${ts}-${rand}`;
-    }
-
-    async function resolveGeoAmount() {
-      const preferred = ["US","GB","AU","NZ"];
-      let code = "";
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 2500);
-        const resp = await fetch("https://ipapi.co/json/", { signal: controller.signal });
-        clearTimeout(timer);
-        if (resp.ok) {
-          const data = await resp.json();
-          code = (data && (data.country_code || data.country) || "").toString().toUpperCase();
-        }
-      } catch(e) {}
-      return preferred.includes(code) ? 30 : 10;
-    }
-
-    if (!sessionStorage.getItem('gaffpro_converted')) {
-      (async function () {
-        const saleAmount = await resolveGeoAmount();
-
-        // 🔁 REPLACE WITH REAL ORDER NUMBER if available:
-        const orderNumber = window.orderNumberFromCheckout || window.realOrderNumber || uniqueOrderId();
-
-        window.goaffpro_order = {
-          number: orderNumber,
-          total: saleAmount,
-          currency: "USD"
-        };
-
-        __ensureGaffproPatched(function(){
-          console.log("GoAffPro: firing (gated 50%)", window.goaffpro_order);
-          window.goaffproTrackConversion(window.goaffpro_order);
-          // sessionStorage flag is set inside wrapper after the decision
-        });
-      })();
-    } else {
-      console.log("GoAffPro: conversion already decided in this session");
-    }
-  </script>
-
-</body>
+    </script>
+  </body>
 </html>
