@@ -218,12 +218,11 @@
       const billingCountry = document.getElementById('billingCountry');
       const billingPostcode = document.getElementById('billingPostcode');
 
-      // CHANGE: hard-lock backend + intro-charge endpoint
-      const BACKEND = 'https://charmr-jfmc.onrender.com';
-      const SUBSCRIBE_URL = BACKEND + "/api/stripe/intro-charge-20";
+      // CHANGE: point to intro-charge endpoint (first step)
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
       const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
-      const API_BASE = 'https://charmr-jfmc.onrender.com';
+      const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
       // NEW: monthly price for £5/30 days after trial
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
@@ -396,12 +395,12 @@
       // ===== Step nav / account creation (identical endpoints) =====
       async function ensureAccount(){
         const email = document.getElementById('emailInput')?.value.trim();
-        thePassword = document.getElementById('passwordInput')?.value;
+        const password = document.getElementById('passwordInput')?.value;
         const prefix = phonePrefix?.value || '';
         const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
         const phone = raw ? (prefix + raw) : '';
-        if(!email || !thePassword) throw new Error('Email and password required');
-        const r = await fetch(API_BASE + '/api/register',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password: thePassword, phone }) });
+        if(!email || !password) throw new Error('Email and password required');
+        const r = await fetch(API_BASE + '/api/register',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password, phone }) });
         if(r.status===201) return true;
         let data={}; try{ data=await r.json(); }catch{}
         if(r.status===400 && (data.error||'').toLowerCase().includes('exists')) return true;
@@ -432,14 +431,6 @@
           cardCvc.mount('#card-cvc');
         }
       }catch(e){ console.warn('Stripe init skipped:', e); }
-
-      // ---- helper: robust JSON parse (only change) ----
-      async function safeJson(resp){
-        const ct = resp.headers.get('content-type') || '';
-        if (ct.includes('application/json')) return resp.json();
-        const text = await resp.text();
-        throw new Error(`Server returned ${resp.status} ${resp.statusText || ''}. Body starts with: ${text.slice(0,120)}`);
-      }
 
       document.getElementById('payNow')?.addEventListener('click', async ()=>{
         if(!stripe){ alert('Payment temporarily unavailable. Please check your connection and try again.'); return; }
@@ -479,8 +470,7 @@
               address
             })
           });
-          const data = await safeJson(resp); // <-- changed
-
+          const data = await resp.json();
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
 
           // 3) Confirm the intro charge (handles 3DS/SCA)
@@ -497,19 +487,15 @@
               priceIdMonthly: MONTHLY_PRICE_ID
             })
           });
-          const subData = await safeJson(subRes); // <-- changed
+          const subData = await subRes.json();
           if(subData.error) throw new Error(subData.error);
-
-          // success breadcrumb
-          console.log('[CHECKOUT SUCCESS] ready to redirect');
 
           // Success → thank you page (50/50 split)
           (function(){
             const A = 'thankyou-iphone.html';
-            const B = 'thankyou-iphone.html';
-
+            const B = 'thankyou-iphone-skip.html';
+            // Prefer deterministic split based on Stripe paymentIntent.id
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-
             function fnv1a32(str){
               let h = 0x811c9dc5 >>> 0;
               for (let i = 0; i < str.length; i++) {
@@ -527,12 +513,8 @@
                 return Math.random() < 0.5;
               }
             }
-
             const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
-            const target = pickA ? A : B;
-
-            console.log('[TY redirect]', { paymentIntentId: pid, target });
-            location.replace(target);
+            window.location.href = pickA ? A : B;
           })();
 
         }catch(err){
