@@ -490,12 +490,18 @@
           const subData = await subRes.json();
           if(subData.error) throw new Error(subData.error);
 
-          // Success → thank you page (50/50 split)
+          // <<< ADDED: success breadcrumb just before redirect
+          console.log('[CHECKOUT SUCCESS] ready to redirect');
+
+          <!-- Success → thank you page (50/50 split) -->
           (function(){
+            // Relative paths are fine because all three files are in the same directory
             const A = 'thankyou-iphone.html';
-            const B = 'thankyou-iphone-skip.html';
+            const B = 'thankyou-iphone.html';
+
             // Prefer deterministic split based on Stripe paymentIntent.id
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+
             function fnv1a32(str){
               let h = 0x811c9dc5 >>> 0;
               for (let i = 0; i < str.length; i++) {
@@ -513,8 +519,15 @@
                 return Math.random() < 0.5;
               }
             }
+
             const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
-            window.location.href = pickA ? A : B;
+            const target = pickA ? A : B;
+
+            // Helpful console breadcrumbs while testing
+            console.log('[TY redirect]', { paymentIntentId: pid, target });
+
+            // Use replace so back button doesn’t re-open checkout
+            location.replace(target);
           })();
 
         }catch(err){
