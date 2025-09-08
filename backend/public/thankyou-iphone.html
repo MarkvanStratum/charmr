@@ -5,104 +5,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Thank You</title>
     <style>
-      /* Simple, centered layout */
-      :root { color-scheme: light dark; }
-      html, body { height: 100%; margin: 0; }
-      body {
-        display: grid;
-        place-items: center;
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-        line-height: 1.5;
-      }
-      .container { text-align: center; max-width: 42rem; padding: 2rem; }
-      h1 { margin: 0 0 0.5rem 0; font-size: clamp(1.5rem, 3vw + 1rem, 2.25rem); }
-      p { margin: 0; font-size: 1.05rem; opacity: 0.9; }
+      html,body{height:100%;margin:0}
+      body{display:grid;place-items:center;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;line-height:1.5}
+      .container{text-align:center;max-width:42rem;padding:2rem}
+      h1{margin:0 0 .5rem 0;font-size:clamp(1.5rem,3vw + 1rem,2.25rem)}
+      p{margin:0;font-size:1.05rem;opacity:.9}
     </style>
+
+    <!-- Loader: add this to ALL pages site-wide too -->
+    <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
   </head>
   <body>
-    <main class="container" role="main" aria-labelledby="ty-heading">
-      <h1 id="ty-heading">Thank you for your order.</h1>
+    <main class="container" role="main" aria-labelledby="ty">
+      <h1 id="ty">Thank you for your order.</h1>
       <p>We will contact you shortly with delivery details.</p>
     </main>
 
-    <div id="gfp-debug" aria-live="polite" style="display:none;position:fixed;left:0;right:0;bottom:0;padding:8px 12px;font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;background:rgba(0,0,0,.08);border-top:1px solid rgba(0,0,0,.15)"></div>
-
-    <!-- GoAffPro loader (shop id as provided) -->
-    <script id="goaffpro-loader" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" async></script>
-
+    <!-- Conversion: only on the thank-you page, AFTER the loader -->
     <script>
-      // === HOW TO SUPPLY ORDER DATA ===
-      // Option A (server-rendered thank-you pages): set BEFORE this script runs
-      //   window.ORDER_NUMBER = "ORD-12345";  // unique per purchase (string)
-      //   window.ORDER_TOTAL  = 149.99;       // numeric total, no currency symbol
-      // Option B (testing or redirect):
-      //   Append to URL: ?number=ORD-12345&total=149.99  (add &debug=1 to see logs)
-
       (function () {
-        var params = new URLSearchParams(location.search);
-        var DEBUG = params.get('debug') === '1';
-        var debugEl = document.getElementById('gfp-debug');
-        function log() {
-          if (!DEBUG) return;
-          if (debugEl) { debugEl.style.display = 'block'; debugEl.innerHTML += Array.from(arguments).join(' ') + '<br/>'; }
-          try { console.log('[GoAffPro TY]', ...arguments); } catch (_) {}
-        }
+        // TODO: replace with your real values from checkout:
+        var goaffproOrder = {
+          number: 'REPLACE_WITH_REAL_ORDER_NUMBER', // e.g. '#12345' or 'ORD-789'
+          total:  REPLACE_WITH_REAL_ORDER_TOTAL,    // e.g. 149.99 (number, no currency symbol)
+          forceSDK: true                            // per GoAffPro SDK guide
+        };
 
-        function parseTotal(v) {
-          if (v == null) return NaN;
-          var s = String(v).replace(/[^0-9.-]/g, ''); // strip currency/space
-          return parseFloat(s);
-        }
-
-        function getOrderData() {
-          var number = params.get('number') || window.ORDER_NUMBER;
-          var totalRaw = params.has('total') ? params.get('total') : window.ORDER_TOTAL;
-          var total = parseTotal(totalRaw);
-          if (!number || !isFinite(total)) {
-            log('Missing/invalid order data → number:', number, 'total:', totalRaw);
-            return null;
-          }
-          return { number: String(number), total: total };
-        }
-
-        var order = getOrderData();
-        if (!order) { log('Tracking aborted: provide ?number=&total= or set window.ORDER_NUMBER/ORDER_TOTAL.'); return; }
-        log('Order:', order.number, 'Total:', order.total);
-
-        function tryTrackOnce() {
+        function send() {
           if (typeof window.goaffproTrackConversion === 'function') {
-            window.goaffpro_order = order;
-            try {
-              window.goaffproTrackConversion(order);
-              log('✓ Called goaffproTrackConversion');
-            } catch (e) {
-              log('✗ Track call threw error:', e && e.message ? e.message : e);
-            }
-            return true;
+            window.goaffproTrackConversion(goaffproOrder);
           }
-          return false;
         }
-
-        function pollUntilReady(timeoutMs) {
-          var end = Date.now() + timeoutMs;
-          (function loop(){
-            if (tryTrackOnce()) return;
-            if (Date.now() > end) { log('✗ Timed out waiting for goaffproTrackConversion. Check ad blockers or CSP.'); return; }
-            setTimeout(loop, 250);
-          })();
-        }
-
-        var loader = document.getElementById('goaffpro-loader');
-        if (loader) {
-          loader.addEventListener('load', function(){ log('loader.js loaded'); pollUntilReady(15000); });
-          loader.addEventListener('error', function(){ log('✗ loader.js failed to load (blocked?)'); });
-        }
-
-        if (document.readyState === 'complete' || document.readyState === 'interactive') {
-          setTimeout(function(){ pollUntilReady(15000); }, 0);
-        } else {
-          document.addEventListener('DOMContentLoaded', function(){ pollUntilReady(15000); });
-        }
+        // Call when ready (covers cached/async loader)
+        if (typeof window.goaffproTrackConversion === 'function') send();
+        else { window.addEventListener('load', send); setTimeout(send, 300); }
       })();
     </script>
   </body>
