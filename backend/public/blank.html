@@ -533,6 +533,9 @@
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
+
+          // NEW: Redirect to placeholder URL on payment failure
+          window.location.href = "https://www.google.com";
         }
         // On success keep overlay up until redirect / 3DS completes
       });
