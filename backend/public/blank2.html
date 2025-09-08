@@ -458,9 +458,11 @@
             billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
           });
           if(pmRes.error){
-            console.error('createPaymentMethod error:', pmRes.error);
-            throw pmRes.error;
-          }
+  console.error('createPaymentMethod error:', pmRes.error);
+  const code = pmRes.error.code ? ` (${pmRes.error.code})` : '';
+  throw new Error(`${pmRes.error.message}${code}`);
+}
+
 
           // 2) Start the £20 intro charge
           const resp = await fetch(SUBSCRIBE_URL,{
@@ -546,9 +548,17 @@
           })();
 
         }catch(err){
-          if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
-          hideLoading();
-        }
+  const code = err?.code ? ` (${err.code})` : '';
+  const pi =
+    err?.payment_intent?.id ? `  PI: ${err.payment_intent.id}` :
+    err?.paymentIntent?.id   ? `  PI: ${err.paymentIntent.id}` : '';
+  if(errBox){
+    errBox.textContent = `${err.message || 'Something went wrong.'}${code}${pi}`;
+    errBox.setAttribute('aria-hidden','false');
+  }
+  hideLoading();
+}
+
         // On success keep overlay up until redirect / 3DS completes
       });
     });
