@@ -218,8 +218,9 @@
       const billingCountry = document.getElementById('billingCountry');
       const billingPostcode = document.getElementById('billingPostcode');
 
-      // CHANGE: point to intro-charge endpoint (first step)
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+      // CHANGE: hard-lock backend + intro-charge endpoint
+      const BACKEND = 'https://charmr-jfmc.onrender.com';
+      const SUBSCRIBE_URL = BACKEND + "/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
       const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
       const API_BASE = 'https://charmr-jfmc.onrender.com';
