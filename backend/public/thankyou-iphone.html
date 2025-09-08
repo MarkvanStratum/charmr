@@ -14,15 +14,8 @@
         font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
         line-height: 1.5;
       }
-      .container {
-        text-align: center;
-        max-width: 42rem;
-        padding: 2rem;
-      }
-      h1 {
-        margin: 0 0 0.5rem 0;
-        font-size: clamp(1.5rem, 3vw + 1rem, 2.25rem);
-      }
+      .container { text-align: center; max-width: 42rem; padding: 2rem; }
+      h1 { margin: 0 0 0.5rem 0; font-size: clamp(1.5rem, 3vw + 1rem, 2.25rem); }
       p { margin: 0; font-size: 1.05rem; opacity: 0.9; }
     </style>
   </head>
@@ -32,51 +25,75 @@
       <p>We will contact you shortly with delivery details.</p>
     </main>
 
-    <!-- GoAffPro Loader: keep this EXACTLY as provided (shop id included) -->
-    <script id="goaffpro-loader" type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" async></script>
+    <!-- GoAffPro loader (shop id as provided) -->
+    <script id="goaffpro-loader" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" async></script>
 
-    <!-- Conversion tracking. Replace number/total with your dynamic values as needed. -->
     <script>
+      // === HOW TO SUPPLY ORDER DATA ===
+      // Option A (recommended for server-rendered thank-you pages):
+      //   Set these BEFORE this script executes:
+      //     window.ORDER_NUMBER = "ORD-12345";  // unique per purchase (string)
+      //     window.ORDER_TOTAL  = 149.99;       // numeric total, no currency symbol
+      // Option B (useful for testing or redirects):
+      //   Append to URL: ?number=ORD-12345&total=149.99
+
       (function () {
-        // Order data: from URL (?number=...&total=...), with an optional ?test=1 to auto-mint unique IDs for repeat tests.
-        var params = new URLSearchParams(location.search);
-        var isTest = params.has('test');
+        function getOrderData() {
+          var params = new URLSearchParams(location.search);
 
-        var orderNumber = params.get('number');
-        if (!orderNumber && isTest) {
-          orderNumber = '#' + Date.now(); // e.g. #1694100000000
+          var hasUrlTotal = params.has('total');
+          var number = params.get('number') || window.ORDER_NUMBER;
+          var total  = hasUrlTotal ? params.get('total') : window.ORDER_TOTAL;
+
+          // Validate
+          if (!number) return null;
+          var totalNum = Number(total);
+          if (!isFinite(totalNum)) return null;
+
+          return { number: String(number), total: totalNum };
         }
-        var orderTotal = params.get('total');
 
-        var orderData = {
-          number: orderNumber || "#1001", // fallback for non-test usage
-          total: orderTotal ? Number(orderTotal) : 1000
-        };
+        function alreadyTracked(orderNumber) {
+          try {
+            return sessionStorage.getItem('goaffpro_tracked_' + orderNumber) === '1';
+          } catch (_) { return false; }
+        }
 
-        function trackConversion() {
-          if (typeof window.goaffproTrackConversion === "function") {
-            window.goaffpro_order = orderData; // expose for GoAffPro
+        function markTracked(orderNumber) {
+          try { sessionStorage.setItem('goaffpro_tracked_' + orderNumber, '1'); } catch (_) {}
+        }
+
+        function tryTrack(order) {
+          if (!order) return;
+          if (alreadyTracked(order.number)) return;
+          if (typeof window.goaffproTrackConversion === 'function') {
+            window.goaffpro_order = order; // expose for GoAffPro
             try {
-              window.goaffproTrackConversion(window.goaffpro_order);
-              // Optional: mark as tracked to avoid double firing
-              window.__goaffpro_tracked__ = true;
-            } catch (_) { /* swallow */ }
+              window.goaffproTrackConversion(order);
+              markTracked(order.number);
+            } catch (e) {
+              // Swallow errors; you can log to your own endpoint if desired
+            }
+            return true;
           }
+          return false;
         }
 
-        // Fire after the GoAffPro loader is ready
+        var orderData = getOrderData();
+
+        // 1) Attempt after loader.js finishes
         var loader = document.getElementById('goaffpro-loader');
         if (loader) {
-          loader.addEventListener('load', function () {
-            if (!window.__goaffpro_tracked__) trackConversion();
-          });
+          loader.addEventListener('load', function () { tryTrack(orderData); });
         }
 
-        // Fallback: if loader was already cached/loaded, attempt after DOM is ready
+        // 2) Fallback: if the loader came from cache or loaded earlier, try on DOM ready
         if (document.readyState === 'complete' || document.readyState === 'interactive') {
-          setTimeout(trackConversion, 0);
+          setTimeout(function () { if (!tryTrack(orderData)) setTimeout(function () { tryTrack(orderData); }, 350); }, 0);
         } else {
-          document.addEventListener('DOMContentLoaded', function () { setTimeout(trackConversion, 0); });
+          document.addEventListener('DOMContentLoaded', function () {
+            if (!tryTrack(orderData)) setTimeout(function () { tryTrack(orderData); }, 350);
+          });
         }
       })();
     </script>
