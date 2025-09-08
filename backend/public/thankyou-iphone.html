@@ -6,10 +6,7 @@
   <title>Thank you</title>
   <style>
     html, body { height: 100%; margin: 0; }
-    body {
-      display: grid; place-items: center;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
+    body { display: grid; place-items: center; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; }
     main { text-align: center; max-width: 60ch; padding: 2rem; }
     h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
     p  { margin: 0; font-size: 1.1rem; opacity: .9; }
@@ -22,17 +19,37 @@
   </main>
 
   <script type="text/javascript">
-    // Set the order payload first (replace 'order_id' at runtime)
+    // 1) Set the order payload BEFORE loading the SDK (per docs)
+    // ⬇️ Replace these with your platform’s real values for THIS order
     window.goaffpro_order = {
-       id:'order_id',
+      id: "ORDER_ID_HERE",          // e.g. "1001" (string)
+      number: "ORDER_NUMBER_HERE",  // e.g. "#1001" or "ORD-789" (string)
+      total: 300,                   // number (no quotes, no currency symbol)
+      currency: "USD",
+      forceSDK: true
     };
 
-    // Dynamically load the SDK exactly like the docs
+    // 2) Dynamically load the SDK exactly like the docs — and then CALL the conversion
     (function() {
-        var elem = document.createElement("script");
-        elem.type = "application/javascript";
-        elem.src = "https://api.goaffpro.com/loader.js?shop=nzyvwvfbde";
-        document.body.appendChild(elem);
+      var elem = document.createElement("script");
+      elem.type = "application/javascript";
+      elem.src = "https://api.goaffpro.com/loader.js?shop=nzyvwvfbde";
+      elem.async = true;
+
+      // 🔑 This is the crucial bit missing from the basic dynamic example:
+      elem.onload = function() {
+        if (typeof window.goaffproTrackConversion === "function") {
+          window.goaffproTrackConversion(window.goaffpro_order);
+          console.log("[GoAffPro] Conversion sent:", window.goaffpro_order);
+        } else {
+          console.error("[GoAffPro] SDK loaded but goaffproTrackConversion is unavailable.");
+        }
+      };
+      elem.onerror = function() {
+        console.error("[GoAffPro] Failed to load loader.js (CSP/ad-blocker/shop key?).");
+      };
+
+      document.body.appendChild(elem);
     })();
   </script>
 </body>
