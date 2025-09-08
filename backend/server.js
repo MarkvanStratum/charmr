@@ -3653,27 +3653,18 @@ await stripe.customers.update(customer.id, {
 app.options('/api/stripe/intro-charge-20', cors());
 
 // £20 intro charge before starting the subscription (supports quantity)
+// intro-charge-20 — create PI first (no paymentMethodId), then confirm on client
 app.post('/api/stripe/intro-charge-20', async (req, res) => {
   try {
-    const {
-      paymentMethodId,
-      email,
-      name,
-      phone,
-      address,   // { line1, line2, city, state, postal_code, country }
-      quantity   // number of items selected
-    } = req.body || {};
-
-    if (!paymentMethodId || !email) {
-      return res.status(400).json({ error: 'paymentMethodId and email are required' });
-    }
+    const { name, email, phone, address, quantity } = req.body || {};
+    if (!email) return res.status(400).json({ error: 'email is required' });
 
     // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
     const unitPence = 2000;               // £20 per item
     const amount = unitPence * qty;       // total to charge now
 
-    // Create (or reuse via email if you prefer) a Customer
+    // Find or create a Customer (reuse by email)
     let customer = null;
     if (email) {
       const list = await stripe.customers.list({ email, limit: 1 });
@@ -3686,6 +3677,39 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
         phone: phone || undefined,
         address: address || undefined
       });
+    }
+
+    // Create the PaymentIntent WITHOUT a payment_method (3DS will be handled at confirm)
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session', // reuse for subsequent payments/subscription
+      description: `Intro charge (iPhone flow) x${qty} @ £20`,
+      metadata: {
+        purpose: 'intro_charge_20',
+        quantity: String(qty),
+        unit_pence: String(unitPence),
+        total_pence: String(amount)
+      },
+      payment_method_options: {
+        card: { request_three_d_secure: 'challenge' } // nudge issuers to show 3DS
+      }
+      // NOTE: no `payment_method` passed here
+    });
+
+    return res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error('intro-charge-20 error:', err);
+    return res.status(400).json({ error: err.message || 'Unable to start payment' });
+  }
+});
+
     }
 
     // Attach PM and set default for invoices
@@ -3813,7 +3837,7 @@ app.post('/api/stripe/start-monthly-after-trial', async (req, res) => {
     const subscription = await stripe.subscriptions.create({
       customer: customerId,
       items: [{ price: priceIdMonthly || GBP_MONTHLY_PRICE_ID }],
-      trial_period_days: 7,
+      trial_period_days: 30,
       payment_behavior: 'default_incomplete', // safe for SCA when first invoice is due
       metadata: {
         planPriceId: priceIdMonthly || GBP_MONTHLY_PRICE_ID
@@ -3952,7 +3976,7 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
       "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 (from your code)
       "price_1RsdzREJXIhiKzYG45b69nSl" // £20 (from your code)
     ]);
-    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 7 : undefined;
+    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 30s : undefined;
 
     const subscription = await stripe.subscriptions.create({
   customer: customerId,
