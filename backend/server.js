@@ -52,7 +52,6 @@ async function upsertBrevoContact({ email, attributes = {}, listId = process.env
 
 const { Pool } = pkg;
 const app = express();
-const PORT = process.env.PORT || 10000;
 const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 const OPERATOR_KEY = process.env.OPERATOR_KEY || "";
 
