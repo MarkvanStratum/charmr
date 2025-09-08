@@ -1180,44 +1180,58 @@ async function getOrCreateStripeCustomer(userId) {
 // --- NO-TRIAL PUBLIC SUBSCRIBE ENDPOINT (for payment.html only) ---
 // If you already have app.use(cors()) and app.use(express.json()), keep them.
 // Reply to CORS preflights for this route:
+// Preflight stays the same
 app.options('/api/stripe/subscribe-notrial', cors());
 
 // Public route: NO auth, NO trial.
-// Body: { priceId, paymentMethodId, email }
+// Body: { priceId, paymentMethodId, email?, name? }
 // Returns: { clientSecret, subscriptionId, status }
 app.post('/api/stripe/subscribe-notrial', async (req, res) => {
   try {
-    const { priceId, paymentMethodId, email, name } = req.body || {};
+    // Handle browsers/pages that send JSON with text/plain (req.body as string)
+    const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : (req.body || {});
+    const { priceId, paymentMethodId, email, name } = body;
+
     if (!priceId) return res.status(400).json({ error: 'Missing priceId' });
     if (!paymentMethodId) return res.status(400).json({ error: 'Missing paymentMethodId' });
 
-     // 1) Create a customer (store email and, if provided, name)
+    // 1) Create a Customer (email/name optional)
     const customer = await stripe.customers.create({
       email: email || undefined,
-     name:  (name && name.trim()) || undefined
-   });
+      name:  (name && name.trim()) || undefined
+    });
 
-    // 2) Attach PM and set default
-await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
-await stripe.customers.update(customer.id, {
-  invoice_settings: { default_payment_method: paymentMethodId },
-});
+    // 2) Attach PM and set default for invoices
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      // Ignore "already attached" edge (e.g., user re-tries)
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
 
-// After attaching PM and setting invoice_settings
-const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
-const bd = pm?.billing_details || {};
-await stripe.customers.update(customer.id, {
-  phone: bd.phone || undefined,
-  address: bd.address || undefined, // { line1, city, postal_code, country, ... }
-});
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    });
 
-    // 3) Create subscription with NO TRIAL and get a PaymentIntent immediately
+    // Optionally mirror phone/address from PM billing_details to the Customer
+    try {
+      const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+      const bd = pm?.billing_details || {};
+      await stripe.customers.update(customer.id, {
+        phone: bd.phone || undefined,
+        address: bd.address || undefined, // { line1, city, postal_code, country, ... }
+      });
+    } catch (_) {
+      // non-blocking
+    }
+
+    // 3) Create subscription (NO TRIAL) and surface PI for SCA
     const subscription = await stripe.subscriptions.create({
       customer: customer.id,
       items: [{ price: priceId }],
-      payment_behavior: 'default_incomplete',
+      payment_behavior: 'default_incomplete',                 // safe for SCA
       payment_settings: { save_default_payment_method: 'on_subscription' },
-      trial_end: 'now', // <— force-disable any price/client trial
+      trial_end: 'now',                                       // force-disable trials
       expand: ['latest_invoice.payment_intent'],
     });
 
@@ -1238,9 +1252,11 @@ await stripe.customers.update(customer.id, {
     });
   } catch (err) {
     console.error('subscribe-notrial error:', err);
-    res.status(400).json({ error: err.message || 'Unknown error' });
+    // Keep 400 so the frontend treats it as a handled failure and can show err.message
+    res.status(400).json({ error: err?.message || 'Unknown error' });
   }
 });
+
 
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
