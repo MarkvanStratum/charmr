@@ -1262,28 +1262,27 @@ app.post('/api/stripe/subscribe-notrial', async (req, res) => {
 app.options('/api/stripe/intro-charge-20', cors());
 
 // £20 intro charge before starting the subscription (supports quantity)
-app.post('/api/stripe/intro-charge-20', async (req, res) => {
+// £20 intro charge before starting the subscription (supports quantity)
+app.post('/api/stripe/intro-charge-20', express.text({ type: 'text/plain' }), async (req, res) => {
   try {
-    const {
-      paymentMethodId,
-      email,
-      name,
-      phone,
-      address,   // { line1, line2, city, state, postal_code, country }
-      quantity   // number of items selected
-    } = req.body || {};
+    // Accept both proper JSON and text/plain bodies containing JSON
+    const body =
+      typeof req.body === 'string'
+        ? (req.body.trim().startsWith('{') ? JSON.parse(req.body) : {})
+        : (req.body || {});
 
-    // 🔧 CHANGE: only require paymentMethodId (email optional to avoid pre-Stripe 400s)
+    const { paymentMethodId, email, name, phone, address, quantity } = body;
+
     if (!paymentMethodId) {
-      return res.status(400).json({ error: 'paymentMethodId is required' });
+      return res.status(400).json({ error: 'paymentMethodId is required (server did not receive it)' });
     }
 
-    // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
+    // Normalize quantity (default 1; clamp 1..10)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
     const unitPence = 2000;               // £20 per item
     const amount = unitPence * qty;       // total to charge now
 
-    // Create (or reuse via email if you prefer) a Customer
+    // Create (or reuse via email) a Customer
     let customer = null;
     if (email) {
       const list = await stripe.customers.list({ email, limit: 1 });
@@ -1291,10 +1290,10 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
     }
     if (!customer) {
       customer = await stripe.customers.create({
-        email: email || undefined,
-        name: (name && name.trim()) || undefined,
-        phone: phone || undefined,
-        address: address || undefined
+        email: email ? String(email).trim() : undefined,
+        name:  name  ? String(name).trim()  : undefined,
+        phone: phone ? String(phone).trim() : undefined,
+        address: (address && typeof address === 'object') ? address : undefined
       });
     }
 
@@ -1315,7 +1314,7 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       customer: customer.id,
       payment_method: paymentMethodId,
       confirmation_method: 'automatic',
-      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
+      setup_future_usage: 'off_session',
       description: `Intro charge (iPhone flow) x${qty} @ £20`,
       metadata: {
         purpose: 'intro_charge_20',
@@ -1331,8 +1330,8 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       customerId: customer.id
     });
   } catch (err) {
-    console.error('intro-charge-20 error:', err);
-    res.status(400).json({ error: err.message || 'Unknown error' });
+    console.error('intro-charge-20 error:', { message: err?.message, code: err?.code, type: err?.type });
+    res.status(400).json({ error: err?.message || 'Unknown error', code: err?.code, type: err?.type });
   }
 });
 
