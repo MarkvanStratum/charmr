@@ -19,25 +19,39 @@
   </main>
 
   <script type="text/javascript">
-    // 1) Set the order payload BEFORE loading the SDK (per docs)
-    // ⬇️ Replace these with your platform’s real values for THIS order
-    window.goaffpro_order = {
-      id: "ORDER_ID_HERE",          // e.g. "1001" (string)
-      number: "ORDER_NUMBER_HERE",  // e.g. "#1001" or "ORD-789" (string)
-      total: 300,                   // number (no quotes, no currency symbol)
-      currency: "USD",
-      forceSDK: true
-    };
+    // --- Build the order payload BEFORE loading the SDK (per docs) ---
+    (function () {
+      var qs = new URLSearchParams(location.search);
 
-    // 2) Dynamically load the SDK exactly like the docs — and then CALL the conversion
+      // Pull values from the URL. Example:
+      // ?order=%231001&total=300&currency=USD&id=1001
+      var id       = qs.get("id")     || qs.get("order") || "";
+      var number   = qs.get("order")  || id              || "";
+      var totalStr = qs.get("total");
+      var total    = totalStr ? parseFloat(totalStr) : NaN;
+      var currency = qs.get("currency") || "USD";
+
+      if (!number || !(total >= 0)) {
+        console.error("[GoAffPro] Missing order or total in URL. Example: ?order=%231001&total=300&currency=USD&id=1001");
+      }
+
+      window.goaffpro_order = {
+        id: id || number,      // string
+        number: number,        // string (human-readable)
+        total: total,          // number (no currency symbol)
+        currency: currency,    // ISO code (e.g., "USD")
+        forceSDK: true
+      };
+    })();
+
+    // --- Dynamically load the SDK exactly like the docs, then call conversion ---
     (function() {
-      var elem = document.createElement("script");
-      elem.type = "application/javascript";
-      elem.src = "https://api.goaffpro.com/loader.js?shop=nzyvwvfbde";
-      elem.async = true;
+      var s = document.createElement("script");
+      s.type = "application/javascript";
+      s.src  = "https://api.goaffpro.com/loader.js?shop=nzyvwvfbde";
+      s.async = true;
 
-      // 🔑 This is the crucial bit missing from the basic dynamic example:
-      elem.onload = function() {
+      s.onload = function () {
         if (typeof window.goaffproTrackConversion === "function") {
           window.goaffproTrackConversion(window.goaffpro_order);
           console.log("[GoAffPro] Conversion sent:", window.goaffpro_order);
@@ -45,11 +59,12 @@
           console.error("[GoAffPro] SDK loaded but goaffproTrackConversion is unavailable.");
         }
       };
-      elem.onerror = function() {
-        console.error("[GoAffPro] Failed to load loader.js (CSP/ad-blocker/shop key?).");
+
+      s.onerror = function () {
+        console.error("[GoAffPro] Failed to load SDK. Check CSP/ad-blockers and shop key.");
       };
 
-      document.body.appendChild(elem);
+      document.body.appendChild(s);
     })();
   </script>
 </body>
