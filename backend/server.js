@@ -12,6 +12,14 @@ import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
 import * as paymentMod from "./payment.js";
 
+// Pick the right export from payment.js
+const paymentRouter =
+  paymentMod.default ??
+  paymentMod.router ??
+  paymentMod.app ??
+  paymentMod;
+
+
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
 import multer from "multer";
