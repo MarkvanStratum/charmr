@@ -256,6 +256,7 @@
           <option value="DE">Deutschland</option>
           <option value="FR">Frankreich</option>
           <option value="IT">Italien</option>
+          <option value="AT">Österreich</option>
           <option value="CZ">Tschechien</option>
           <option value="PL">Polen</option>
           <option value="NL">Niederlande</option>
@@ -418,7 +419,7 @@
         });
     })();
 
-    /* ---------- Telefonvorwahl per IP (garantiert IT/CZ/PL/DE/FR) ---------- */
+    /* ---------- Telefonvorwahl per IP (mit Auswahl-Schutz & Österreich) ---------- */
     (function phonePrefixByIP(){
       const selectEl = document.getElementById('phonePrefix');
       if(!selectEl) return;
@@ -426,16 +427,21 @@
       // Vollständige Liste wie im Original:
       const COUNTRIES = [/* … full list unchanged … */];
 
-      // Sicherstellen, dass diese 5 Länder vorhanden sind (deutsche Bezeichnungen)
+      // Sicherstellen, dass diese Länder vorhanden sind (deutsche Bezeichnungen)
       const ENSURE = [
-        { cc:'IT', code:'+39',  name:'Italien'   },
-        { cc:'CZ', code:'+420', name:'Tschechien'},
-        { cc:'PL', code:'+48',  name:'Polen'     },
+        { cc:'IT', code:'+39',  name:'Italien'     },
+        { cc:'CZ', code:'+420', name:'Tschechien'  },
+        { cc:'PL', code:'+48',  name:'Polen'       },
         { cc:'DE', code:'+49',  name:'Deutschland' },
-        { cc:'FR', code:'+33',  name:'Frankreich'}
+        { cc:'FR', code:'+33',  name:'Frankreich'  },
+        { cc:'AT', code:'+43',  name:'Österreich'  }
       ];
 
-      function ensureFivePresent(){
+      // Tracken, ob Nutzer die Auswahl geändert hat (nicht überschreiben)
+      let userTouchedPrefix = false;
+      selectEl.addEventListener('change', () => { userTouchedPrefix = true; });
+
+      function ensureSixPresent(){
         const existing = new Set(Array.from(selectEl.options).map(o=>o.value));
         ENSURE.forEach(({code,name})=>{
           if(!existing.has(code)){
@@ -445,6 +451,7 @@
       }
 
       function buildOptions(preferredCC, preferredCalling){
+        const prev = selectEl.value; // bisherige Auswahl merken
         selectEl.innerHTML = '';
         const added = new Set();
 
@@ -469,17 +476,24 @@
           added.add(code);
         });
 
-        ensureFivePresent();
-        if (!selectEl.value) selectEl.value = '+49';
+        ensureSixPresent();
+
+        // Nutzerwahl bevorzugen, wenn vorhanden
+        if (userTouchedPrefix && Array.from(selectEl.options).some(o => o.value === prev)) {
+          selectEl.value = prev;
+        } else if (!selectEl.value) {
+          selectEl.value = '+49';
+        }
       }
 
       // Schnelles Seed mit DE
       try { buildOptions('DE', null); } catch {}
 
-      // Mit IP verfeinern
+      // Mit IP verfeinern – aber nur, wenn Nutzer noch nicht interagiert hat
       fetch('https://ipapi.co/json/')
         .then(r=>r.ok?r.json():Promise.reject())
         .then(data=>{
+          if (userTouchedPrefix) return; // Auswahl nicht überschreiben
           const cc = ((data&&(data.country||data.country_code))||'DE').toUpperCase();
           const calling = (data&&data.country_calling_code)||null;
           buildOptions(cc, calling);
@@ -495,6 +509,7 @@
         })
         .catch(()=>{
           try{
+            if (userTouchedPrefix) return; // ebenfalls nicht überschreiben
             const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'de-DE';
             const cc = (loc.split('-')[1]||'DE').toUpperCase();
             buildOptions(cc, null);
