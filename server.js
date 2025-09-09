@@ -6,10 +6,11 @@ import jwt from "jsonwebtoken";
 import pkg from "pg";
 import Stripe from "stripe";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
+import * as paymentMod from "./payment.js"
 
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
@@ -28,6 +29,8 @@ import {
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const router = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -63,6 +66,10 @@ const SECRET_KEY = process.env.SECRET_KEY || "yoursecretkey";
 // 🔹 NEW: operator auth key
 const OPERATOR_KEY = process.env.OPERATOR_KEY || "";
 
+// Prices for the 1-day paid trial flow
+const GBP_TRIAL_PRICE_ID   = process.env.STRIPE_TRIAL_PRICE_ID   || "price_1S1vwtEJXIhiKzYGHB3ZIf9v"; // £2.50 per day (GBP)
+const GBP_MONTHLY_PRICE_ID = process.env.STRIPE_MONTHLY_PRICE_ID || "price_1RsdzREJXIhiKzYG45b69nSl"; // £20 per month (GBP)
+
 // 🔹 NEW: uploads setup (serve at /uploads)
 const UPLOAD_DIR = path.join(__dirname, "uploads");
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -94,8 +101,6 @@ upsertBrevoContact({
   attributes: { SOURCE: 'contact' }
 });
 
-res.status(200).json({ message: 'Email sent successfully' });
-
     res.status(200).json({ message: 'Email sent successfully' });
   } catch (error) {
     console.error('❌ Error sending email:', error);
@@ -113,6 +118,25 @@ app.use((req, res, next) => {
     express.json()(req, res, next);
   }
 });
+
+// ✅ Mount payment.js router (robust resolver)
+const _pm = (paymentMod && typeof paymentMod === "object") ? paymentMod : {};
+// ✅ Mount payment.js router (single mount)
+const paymentRouter =
+  (paymentMod.default && typeof paymentMod.default === "function")
+    ? paymentMod.default
+    : (paymentMod.router && typeof paymentMod.router === "function")
+    ? paymentMod.router
+    : (paymentMod.app && typeof paymentMod.app === "function")
+    ? paymentMod.app
+    : null;
+
+if (!paymentRouter) {
+  throw new Error("payment.js must export an Express router (default export or named 'router').");
+}
+
+app.use("/", paymentRouter);
+
 
 
 const pool = new Pool({
@@ -229,15 +253,8 @@ const profiles = [
     "image": "https://notadatingsite.online/pics/2.png",
     "description": "snap me if u cute \ud83d\ude1c\ud83d\udc8c got a soft spot 4 accents n cheeky grins"
   },
-  {
-    "id": 3,
-    "name": "Chloe Moore",
-    "city": "Aberdeen",
-    "image": "https://notadatingsite.online/pics/3.png",
-    "description": "wat u see is wat u get \ud83d\ude09 cheeky smile n even cheekier mind lol \ud83d\ude08"
-  },
   
-
+  
 ];
 
 const firstMessages = {
@@ -401,48 +418,63 @@ async function notifyNewMessage(userId, girlId, senderName) {
 // --- end helpers ---
 
 app.post("/api/register", async (req, res) => {
-  const { email, password, gender, lookingFor, phone } = req.body;
+  let { email, password, gender, lookingFor, phone } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: "Email and password required" });
 
+  // Normalize
+  email = String(email).trim().toLowerCase();
+  gender = (typeof gender === "string" ? gender.trim() : null) || null;
+  lookingFor = (typeof lookingFor === "string" ? lookingFor.trim() : null) || null;
+  if (typeof phone === "string") {
+    const digits = phone.replace(/[^\d]/g, "");      // keep digits only
+    phone = digits || null;                           // store null if empty
+  } else {
+    phone = null;
+  }
+
   try {
-    const userCheck = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
-    if (userCheck.rows.length > 0) return res.status(400).json({ error: "User already exists" });
+    // Pre-check (still helpful to short-circuit)
+    const userCheck = await pool.query("SELECT 1 FROM users WHERE email = $1", [email]);
+    if (userCheck.rows.length > 0) {
+      return res.status(400).json({ error: "User already exists" });
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Attempt insert (catch any races/unique violations below)
     await pool.query(
-  `INSERT INTO users (email, password, gender, lookingfor, phone) VALUES ($1, $2, $3, $4, $5)`,
-  [email, hashedPassword, gender, lookingFor, phone]
-);
+      `INSERT INTO users (email, password, gender, lookingfor, phone)
+       VALUES ($1, $2, $3, $4, $5)`,
+      [email, hashedPassword, gender, lookingFor, phone]
+    );
 
-// 🔸 Fire-and-forget welcome email; DO NOT block signup
-(async () => {
-  try { await sendWelcomeEmail(email); }
-  catch (e) { console.warn("Welcome email failed (non-blocking):", e?.message || e); }
-})();
+    // Fire-and-forget welcome email
+    (async () => {
+      try { await sendWelcomeEmail(email); }
+      catch (e) { console.warn("Welcome email failed (non-blocking):", e?.message || e); }
+    })();
 
-// Get the new user's ID
-const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
-const newUser = newUserResult.rows[0];
-const token = jwt.sign(
-  { id: newUser.id, email: newUser.email },
-  SECRET_KEY,
-  { expiresIn: "7d" }
-);
+    // Load new user id (no token returned to client here—preserve your behavior)
+    const newUserResult = await pool.query("SELECT id, email FROM users WHERE email = $1", [email]);
+    const newUser = newUserResult.rows[0];
 
-// Non-blocking Brevo sync
-upsertBrevoContact({
-  email,
-  attributes: { SOURCE: 'signup' } // optional, helps segmenting in Brevo
-}).catch(e => console.warn("Brevo contact upsert failed:", e?.message || e));
+    // Non-blocking Brevo sync (do not await)
+    upsertBrevoContact({
+      email,
+      attributes: { SOURCE: 'signup' }
+    }).catch(e => console.warn("Brevo contact upsert failed:", e?.message || e));
 
-// 🔸 Redirect to login page after successful registration
-return res.redirect(303, "/login.html");
-
+    return res.status(201).json({ ok: true, redirect: "/login.html" });
   } catch (err) {
+    // Turn UNIQUE VIOLATION into a clean 400 instead of 500
+    if (err && (err.code === '23505' || /unique/i.test(err.message))) {
+      return res.status(400).json({ error: "User already exists" });
+    }
     console.error("Register error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 app.post("/api/request-password-reset", async (req, res) => {
   const { email } = req.body;
@@ -1111,10 +1143,18 @@ app.post('/api/stripe/subscribe-notrial', async (req, res) => {
    });
 
     // 2) Attach PM and set default
-    await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
-    await stripe.customers.update(customer.id, {
-      invoice_settings: { default_payment_method: paymentMethodId },
-    });
+await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+await stripe.customers.update(customer.id, {
+  invoice_settings: { default_payment_method: paymentMethodId },
+});
+
+// After attaching PM and setting invoice_settings
+const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+const bd = pm?.billing_details || {};
+await stripe.customers.update(customer.id, {
+  phone: bd.phone || undefined,
+  address: bd.address || undefined, // { line1, city, postal_code, country, ... }
+});
 
     // 3) Create subscription with NO TRIAL and get a PaymentIntent immediately
     const subscription = await stripe.subscriptions.create({
@@ -1143,6 +1183,260 @@ app.post('/api/stripe/subscribe-notrial', async (req, res) => {
     });
   } catch (err) {
     console.error('subscribe-notrial error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+// CORS preflight for the £20 intro charge
+app.options('/api/stripe/intro-charge-20', cors());
+
+// £20 intro charge before starting the subscription (supports quantity)
+app.post('/api/stripe/intro-charge-20', async (req, res) => {
+  try {
+    const {
+      paymentMethodId,
+      email,
+      name,
+      phone,
+      address,   // { line1, line2, city, state, postal_code, country }
+      quantity   // number of items selected
+    } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
+    const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
+    const unitPence = 2000;               // £20 per item
+    const amount = unitPence * qty;       // total to charge now
+
+    // Create (or reuse via email if you prefer) a Customer
+    let customer = null;
+    if (email) {
+      const list = await stripe.customers.list({ email, limit: 1 });
+      if (list.data.length) customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // Attach PM and set default for invoices
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // Create the PaymentIntent for £20 × quantity
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
+      description: `Intro charge (iPhone flow) x${qty} @ £20`,
+      metadata: {
+        purpose: 'intro_charge_20',
+        quantity: String(qty),
+        unit_pence: String(unitPence),
+        total_pence: String(amount)
+      }
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error('intro-charge-20 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
+// Create the £2.50 trial PaymentIntent and return client_secret for 3DS
+app.options('/api/stripe/trial-charge-intent', cors());
+app.post('/api/stripe/trial-charge-intent', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name } = req.body || {};
+    if (!paymentMethodId) return res.status(400).json({ error: 'Missing paymentMethodId' });
+
+    // Reuse customer by email if possible (public page has no JWT)
+    let customer = null;
+    if (email) {
+      const list = await stripe.customers.list({ email, limit: 1 });
+      if (list.data.length) customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email: email || undefined,
+        name: (name && name.trim()) || undefined
+      });
+    }
+
+    // Attach PM (ignore "already attached" errors)
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    // Make it default for invoices
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // Create the £2.50 PaymentIntent (GBP = pence)
+    const intent = await stripe.paymentIntents.create({
+      amount: 250,                      // £2.50
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session', // save card for the subscription
+      description: 'Paid trial (1 day) £2.50',
+      metadata: {
+        purpose: 'trial_charge',
+        priceMonthly: GBP_MONTHLY_PRICE_ID
+      }
+    });
+
+    res.json({
+      clientSecret: intent.client_secret,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error('trial-charge-intent error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+// After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
+app.options('/api/stripe/start-monthly-after-trial', cors());
+app.post('/api/stripe/start-monthly-after-trial', async (req, res) => {
+  try {
+    const { paymentIntentId, priceIdMonthly } = req.body || {};
+    if (!paymentIntentId) return res.status(400).json({ error: 'Missing paymentIntentId' });
+
+    const pi = await stripe.paymentIntents.retrieve(paymentIntentId);
+
+    if (pi.status !== 'succeeded') {
+      return res.status(400).json({ error: `Trial payment not successful (status: ${pi.status})` });
+    }
+
+    const customerId = typeof pi.customer === 'string' ? pi.customer : pi.customer?.id;
+    const defaultPm = typeof pi.payment_method === 'string' ? pi.payment_method : pi.payment_method?.id;
+
+    if (!customerId || !defaultPm) {
+      return res.status(400).json({ error: 'Missing customer or payment method on the PaymentIntent' });
+    }
+
+    // Make sure default PM is set
+    await stripe.customers.update(customerId, {
+      invoice_settings: { default_payment_method: defaultPm }
+    });
+
+    // Create the monthly subscription with a 1-day trial
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceIdMonthly || GBP_MONTHLY_PRICE_ID }],
+      trial_period_days: 7,
+      payment_behavior: 'default_incomplete', // safe for SCA when first invoice is due
+      metadata: {
+        planPriceId: priceIdMonthly || GBP_MONTHLY_PRICE_ID
+        // no userId here because this page is public/unauthenticated
+      },
+      expand: ['latest_invoice.payment_intent']
+    });
+
+    // No payment due now (on trial), so no client_secret is needed here
+    res.json({
+      ok: true,
+      subscriptionId: subscription.id,
+      status: subscription.status
+    });
+  } catch (err) {
+    console.error('start-monthly-after-trial error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+// CORS preflight for the trial route
+app.options('/api/stripe/schedule-trial', cors());
+
+/**
+ * POST /api/stripe/schedule-trial
+ * Body: { paymentMethodId, email?, name? }
+ * Creates a Subscription Schedule:
+ *   Phase 1: 1 day at £2.50 (GBP_TRIAL_PRICE_ID)
+ *   Phase 2: £20/month forever (GBP_MONTHLY_PRICE_ID)
+ * Returns: { scheduleId, subscriptionId, status, clientSecret }
+ */
+app.post('/api/stripe/schedule-trial', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name } = (req.body || {});
+    if (!paymentMethodId) return res.status(400).json({ error: 'Missing paymentMethodId' });
+
+    // 1) Create a customer (optional email/name for your records)
+    const customer = await stripe.customers.create({
+      email: email || undefined,
+      name:  (name && name.trim()) || undefined,
+    });
+
+    // 2) Attach the card and set it as default for invoices
+    await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId },
+    });
+
+    // 3) Create a schedule that starts NOW:
+    //    - Phase 1: £2.50 per day, 1 iteration (== 1 day)
+    //    - Phase 2: £20 per month, continues indefinitely
+    const schedule = await stripe.subscriptionSchedules.create({
+      customer: customer.id,
+      start_date: 'now',
+      default_settings: {
+        collection_method: 'charge_automatically',
+        default_payment_method: paymentMethodId,
+      },
+      phases: [
+        {
+          items: [{ price: GBP_TRIAL_PRICE_ID }],
+          iterations: 1,                 // 1 x (1 day)
+          proration_behavior: 'none',
+        },
+        {
+          items: [{ price: GBP_MONTHLY_PRICE_ID }],
+          proration_behavior: 'none',
+        },
+      ],
+      // Surface the initial PaymentIntent so the browser can confirm SCA on-page
+      expand: ['subscription.latest_invoice.payment_intent'],
+    });
+
+    const sub    = schedule.subscription;
+    const latest = sub && sub.latest_invoice;
+    const pi     = (latest && typeof latest.payment_intent !== 'string') ? latest.payment_intent : null;
+
+    res.json({
+      scheduleId: schedule.id,
+      subscriptionId: sub?.id || null,
+      status: sub?.status || schedule.status,
+      clientSecret: pi?.client_secret || null,   // your HTML will call stripe.confirmCardPayment(...)
+    });
+  } catch (err) {
+    console.error('schedule-trial error:', err);
     res.status(400).json({ error: err.message || 'Unknown error' });
   }
 });
@@ -1196,7 +1490,7 @@ app.post('/api/stripe/subscribe', authenticateToken, async (req, res) => {
       "price_1Rsdy1EJXIhiKzYGOtzvwhUH", // £5 (from your code)
       "price_1RsdzREJXIhiKzYG45b69nSl" // £20 (from your code)
     ]);
-    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 1 : undefined;
+    const trial_period_days = TRIAL_ONE_DAY_PRICE_IDS.has(priceId) ? 7 : undefined;
 
     const subscription = await stripe.subscriptions.create({
   customer: customerId,
