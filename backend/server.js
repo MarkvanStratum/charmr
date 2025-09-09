@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
-import paymentRouter from "./payment.js";
+import * as paymentMod from "./payment.js";
 
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
@@ -120,7 +120,7 @@ app.use((req, res, next) => {
 });
 
 // ✅ Mount payment.js (imported at top)
-app.use("/", paymentRouter);
+app.use("/", paymentMod.default ?? paymentMod.router ?? paymentMod.app ?? paymentMod);
 
 
 const pool = new Pool({
