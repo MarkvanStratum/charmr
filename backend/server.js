@@ -1262,11 +1262,9 @@ app.post('/api/stripe/subscribe-notrial', async (req, res) => {
 app.options('/api/stripe/intro-charge-20', cors());
 
 // £20 intro charge before starting the subscription (supports quantity)
-// £20 intro charge before starting the subscription (supports quantity)
 app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
   try {
     const body = req.body || {};
-
     const { paymentMethodId, email, name, phone, address, quantity } = body;
 
     if (!paymentMethodId) {
@@ -1275,8 +1273,8 @@ app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
 
     // Normalize quantity (default 1; clamp 1..10)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
-    const unitPence = 2000;               // £20 per item
-    const amount = unitPence * qty;       // total to charge now
+    const unitPence = 2000;
+    const amount = unitPence * qty;
 
     // Create (or reuse via email) a Customer
     let customer = null;
@@ -1316,20 +1314,21 @@ app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
         purpose: 'intro_charge_20',
         quantity: String(qty),
         unit_pence: String(unitPence),
-        total_pence: String(amount)
-      }
+        total_pence: String(amount),
+      },
     });
 
     res.json({
       clientSecret: paymentIntent.client_secret,
       paymentIntentId: paymentIntent.id,
-      customerId: customer.id
+      customerId: customer.id,
     });
   } catch (err) {
     console.error('intro-charge-20 error:', { message: err?.message, code: err?.code, type: err?.type });
     res.status(400).json({ error: err?.message || 'Unknown error', code: err?.code, type: err?.type });
   }
 });
+
 
 
 // Create the £2.50 trial PaymentIntent and return client_secret for 3DS
