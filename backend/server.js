@@ -10,15 +10,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
-import * as paymentMod from "./payment.js";
-
-// Pick the right export from payment.js
-const paymentRouter =
-  paymentMod.default ??
-  paymentMod.router ??
-  paymentMod.app ??
-  paymentMod;
-
+import * as paymentMod from "./payment.js"
 
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
@@ -126,6 +118,38 @@ app.use((req, res, next) => {
     express.json()(req, res, next);
   }
 });
+
+// ✅ Mount payment.js router (robust resolver)
+const _pm = (paymentMod && typeof paymentMod === "object") ? paymentMod : {};
+const paymentRouter =
+  (_pm.default && typeof _pm.default.use === "function") ? _pm.default :
+  (_pm.router  && typeof _pm.router.use  === "function") ? _pm.router  :
+  (_pm.app     && typeof _pm.app.use     === "function") ? _pm.app     :
+  null;
+
+if (paymentRouter) {
+  app.use("/", paymentRouter);
+} else {
+  console.warn("⚠️ payment.js did not export an Express router (default / router / app). Skipping mount.");
+}
+
+
+// ✅ Mount payment.js router
+const paymentRouter =
+  (paymentMod.default && typeof paymentMod.default === "function")
+    ? paymentMod.default
+    : (paymentMod.router && typeof paymentMod.router === "function")
+    ? paymentMod.router
+    : (paymentMod.app && typeof paymentMod.app === "function")
+    ? paymentMod.app
+    : null;
+
+if (!paymentRouter) {
+  throw new Error("payment.js must export an Express router (default export or named 'router').");
+}
+
+app.use("/", paymentRouter);
+
 
 // ✅ Mount payment.js (imported at top)
 app.use("/", paymentMod.default ?? paymentMod.router ?? paymentMod.app ?? paymentMod);
