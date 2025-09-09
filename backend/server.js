@@ -121,29 +121,8 @@ app.use((req, res, next) => {
 // ✅ Mount payment.js AFTER app is created (and only once)
 (async () => {
   try {
-    const paymentPath = path.join(__dirname, "payment.js"); // adjust if payment.js is elsewhere
-    console.log("🔎 Importing payment.js from:", paymentPath);
-    const paymentMod = await import(pathToFileURL(paymentPath).href);
-
-    const paymentRouter =
-      paymentMod.default ||            // ESM default export
-      paymentMod.router ||             // named export "router"
-      paymentMod.app ||                // (if someone exported an express app)
-      paymentMod;                      // last resort: the module itself
-
-    if (!paymentRouter || typeof paymentRouter.use !== 'function') {
-      console.error('payment.js export keys:', Object.keys(paymentMod || {}));
-      throw new Error('payment.js did not export an Express router');
-    }
-
-    // Mount at root (your routes already start with /api/… and /webhook)
-    app.use('/', paymentRouter);
-    console.log("✅ Mounted payment.js");
-  } catch (e) {
-    console.error("❌ Failed to mount payment.js:", e);
-    throw e;
-  }
-})();
+    import paymentRouter from "./payment.js";
+app.use("/", paymentRouter);
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
