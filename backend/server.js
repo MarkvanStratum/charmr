@@ -11,14 +11,22 @@ import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
 // server.js (top)
-import * as paymentMod from './payment.js';
+// Load payment module and accept default, named, or raw export
+const paymentMod = await import('./payment.js');
+const paymentRouter =
+  paymentMod.default ||            // ESM default export
+  paymentMod.router ||             // named export "router"
+  paymentMod.app ||                // (if someone exported an express app)
+  paymentMod;                      // last resort: the module itself
 
-// ... after `const app = express();`
-const payRouter = paymentMod.default || paymentMod.paymentRouter || paymentMod.router || paymentMod;
-if (!payRouter || typeof payRouter !== 'function') {
+if (!paymentRouter || typeof paymentRouter.use !== 'function') {
+  console.error('payment.js export keys:', Object.keys(paymentMod));
   throw new Error('payment.js did not export an Express router');
 }
-app.use(payRouter);
+
+// Mount it wherever you expect, e.g. at root or /api
+app.use('/', paymentRouter);
+
 
 
 // ... after you create `const app = express();`
@@ -46,6 +54,8 @@ import {
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const router = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
