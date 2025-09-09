@@ -218,13 +218,14 @@
       const billingCountry = document.getElementById('billingCountry');
       const billingPostcode = document.getElementById('billingPostcode');
 
-      // CHANGE: point to intro-charge endpoint (first step)
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+      // UPDATED: point to the new payment.js endpoints
+      const INTRO_CREATE_INTENT_URL = "/api/pay/intro20/create-intent";
+      const INTRO_CREATE_SUB_URL    = "/api/pay/intro20/create-sub5"; // we'll pass trialDays: 7 in body
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
       const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
-      // NEW: monthly price for £5/30 days after trial
+      // NEW: monthly price for £5/30 days after trial (kept from your file; not used directly here)
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -375,7 +376,6 @@
             const s = single.trim();
             if (s.startsWith('+')) {
               const digits = s.replace(/[^\d]/g,'');
-              // naive split: 1-4 digit country code + remaining national number
               const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
               if (m) { pref = '+' + m[1]; num = m[2]; }
               else { pref = '+' + digits.slice(0,1); num = digits.slice(1); }
@@ -451,7 +451,7 @@
         };
 
         try{
-          // 1) Create a PaymentMethod
+          // 1) Create a PaymentMethod from the card fields
           const pmRes = await stripe.createPaymentMethod({
             type:'card',
             card:cardNumber,
@@ -459,43 +459,48 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Start the £20 intro charge
-          const resp = await fetch(SUBSCRIBE_URL,{
+          // 2) Create the £20 intro PaymentIntent (server: payment.js)
+          const r1 = await fetch(API_BASE + INTRO_CREATE_INTENT_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({
               paymentMethodId: pmRes.paymentMethod.id,
-              name,
-              email,
-              phone: fullPhone,
-              address
+              name, email, phone: fullPhone, address
             })
           });
-          const data = await resp.json();
-          if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
+          const d1 = await r1.json();
+          if(!r1.ok || !d1.clientSecret) throw new Error(d1.error || 'Failed to start payment');
 
-          // 3) Confirm the intro charge (handles 3DS/SCA)
-          const conf = await stripe.confirmCardPayment(data.clientSecret);
+          // 3) Confirm the £20 intro PaymentIntent in-browser (3DS if required)
+          const conf = await stripe.confirmCardPayment(d1.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // 4) Start the subscription with 30-day trial on £5/30d price
-          const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial", {
+          // 4) Create the £5/month subscription (server will set up; we pass trialDays=7 as a hint)
+          const r2 = await fetch(API_BASE + INTRO_CREATE_SUB_URL, {
             method:'POST',
             headers:{'Content-Type':'application/json'},
             body: JSON.stringify({
-              paymentIntentId: data.paymentIntentId,
-              priceIdMonthly: MONTHLY_PRICE_ID
+              customerId: d1.customerId,
+              trialDays: 7 // server may ignore if not implemented; harmless extra
             })
           });
-          const subData = await subRes.json();
-          if(subData.error) throw new Error(subData.error);
+          const d2 = await r2.json();
+          if(!r2.ok) throw new Error(d2.error || 'Subscription creation failed');
 
-          // Success → thank you page (50/50 split)
+          // If server returns an invoice PaymentIntent client_secret (e.g., no trial), confirm it
+          if (d2.clientSecret) {
+            const confSub = await stripe.confirmCardPayment(d2.clientSecret);
+            if(confSub.error) throw new Error(confSub.error.message);
+            if(!(confSub.paymentIntent && (confSub.paymentIntent.status==='succeeded' || confSub.paymentIntent.status==='requires_action'))) {
+              throw new Error('Subscription invoice not completed');
+            }
+          }
+
+          // Success → thank you page (deterministic 50/50 by PI id)
           (function(){
             const A = 'thankyou-iphone.html';
             const B = 'thankyou-iphone-skip.html';
-            // Prefer deterministic split based on Stripe paymentIntent.id
-            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || d1.paymentIntentId || '';
             function fnv1a32(str){
               let h = 0x811c9dc5 >>> 0;
               for (let i = 0; i < str.length; i++) {
