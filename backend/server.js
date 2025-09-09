@@ -10,7 +10,16 @@ import { fileURLToPath } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
-import paymentRouter from './payment.js';  // default import
+// server.js (top)
+import * as paymentMod from './payment.js';
+
+// ... after `const app = express();`
+const payRouter = paymentMod.default || paymentMod.paymentRouter || paymentMod.router || paymentMod;
+if (!payRouter || typeof payRouter !== 'function') {
+  throw new Error('payment.js did not export an Express router');
+}
+app.use(payRouter);
+
 
 // ... after you create `const app = express();`
 app.use(paymentRouter);
