@@ -10,6 +10,11 @@ import { fileURLToPath } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
+import paymentRouter from './payment.js';
+
+// Mount at root (routes already start with /api/...)
+app.use(paymentRouter);
+
 
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
