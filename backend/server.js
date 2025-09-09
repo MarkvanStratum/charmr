@@ -1263,13 +1263,9 @@ app.options('/api/stripe/intro-charge-20', cors());
 
 // £20 intro charge before starting the subscription (supports quantity)
 // £20 intro charge before starting the subscription (supports quantity)
-app.post('/api/stripe/intro-charge-20', express.text({ type: 'text/plain' }), async (req, res) => {
+app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
   try {
-    // Accept both proper JSON and text/plain bodies containing JSON
-    const body =
-      typeof req.body === 'string'
-        ? (req.body.trim().startsWith('{') ? JSON.parse(req.body) : {})
-        : (req.body || {});
+    const body = req.body || {};
 
     const { paymentMethodId, email, name, phone, address, quantity } = body;
 
