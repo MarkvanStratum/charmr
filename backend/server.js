@@ -10,7 +10,11 @@ import { fileURLToPath } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
-import paymentRouter from './payment.js';
+import paymentRouter from './payment.js';  // default import
+
+// ... after you create `const app = express();`
+app.use(paymentRouter);
+
 
 // Mount at root (routes already start with /api/...)
 app.use(paymentRouter);
