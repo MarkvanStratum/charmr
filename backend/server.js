@@ -10,6 +10,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
+import paymentRouter from "./payment.js";
 
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
@@ -118,11 +119,9 @@ app.use((req, res, next) => {
   }
 });
 
-// ✅ Mount payment.js AFTER app is created (and only once)
-(async () => {
-  try {
-    import paymentRouter from "./payment.js";
+// ✅ Mount payment.js (imported at top)
 app.use("/", paymentRouter);
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
