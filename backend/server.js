@@ -3653,16 +3653,10 @@ await stripe.customers.update(customer.id, {
 app.options('/api/stripe/intro-charge-20', cors());
 
 // £20 intro charge before starting the subscription (supports quantity)
-app.post('/api/stripe/intro-charge-20', async (req, res) => {
+app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
   try {
-    const {
-      paymentMethodId,
-      email,
-      name,
-      phone,
-      address,   // { line1, line2, city, state, postal_code, country }
-      quantity   // number of items selected
-    } = req.body || {};
+    const body = req.body || {};
+    const { paymentMethodId, email, name, phone, address, quantity } = body;
 
     if (!paymentMethodId || !email) {
       return res.status(400).json({ error: 'paymentMethodId and email are required' });
