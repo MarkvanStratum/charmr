@@ -3649,6 +3649,10 @@ await stripe.customers.update(customer.id, {
   }
 });
 
+// force JSON parsing for this path no matter which file defines the handler
+app.use('/api/stripe/intro-charge-20', express.json());
+
+
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
 
@@ -3693,27 +3697,29 @@ app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
     });
 
     // Create the PaymentIntent for £20 × quantity
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'gbp',
-      customer: customer.id,
-      payment_method: paymentMethodId,
-      confirmation_method: 'automatic',
-      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
-      description: `Intro charge (iPhone flow) x${qty} @ £20`,
-      metadata: {
-        purpose: 'intro_charge_20',
-        quantity: String(qty),
-        unit_pence: String(unitPence),
-        total_pence: String(amount)
-      }
-    });
+    // inside /api/stripe/intro-charge-20
+const paymentIntent = await stripe.paymentIntents.create({
+  amount,
+  currency: 'gbp',
+  customer: customer.id,
+  payment_method: paymentMethodId,
+  confirmation_method: 'automatic',
+  confirm: false, // ← ensure the server does NOT confirm
+  setup_future_usage: 'off_session',
+  payment_method_options: {
+    card: { request_three_d_secure: 'any' } // ← nudge issuer to 3DS if needed
+  },
+  description: `Intro charge (iPhone flow) x${qty} @ £20`,
+  metadata: { purpose: 'intro_charge_20', quantity: String(qty) /* … */ }
+});
 
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      customerId: customer.id
-    });
+// return the client secret so the browser can confirm (and show 3DS)
+res.json({
+  clientSecret: paymentIntent.client_secret,
+  paymentIntentId: paymentIntent.id,
+  customerId: customer.id
+});
+
   } catch (err) {
     console.error('intro-charge-20 error:', err);
     res.status(400).json({ error: err.message || 'Unknown error' });
