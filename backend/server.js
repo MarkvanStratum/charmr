@@ -3649,18 +3649,20 @@ await stripe.customers.update(customer.id, {
   }
 });
 
-// force JSON parsing for this path no matter which file defines the handler
-app.use('/api/stripe/intro-charge-20', express.json());
-
-
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
 
 // £20 intro charge before starting the subscription (supports quantity)
-app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
+app.post('/api/stripe/intro-charge-20', async (req, res) => {
   try {
-    const body = req.body || {};
-    const { paymentMethodId, email, name, phone, address, quantity } = body;
+    const {
+      paymentMethodId,
+      email,
+      name,
+      phone,
+      address,   // { line1, line2, city, state, postal_code, country }
+      quantity   // number of items selected
+    } = req.body || {};
 
     if (!paymentMethodId || !email) {
       return res.status(400).json({ error: 'paymentMethodId and email are required' });
@@ -3697,27 +3699,27 @@ app.post('/api/stripe/intro-charge-20', express.json(), async (req, res) => {
     });
 
     // Create the PaymentIntent for £20 × quantity
-    // inside /api/stripe/intro-charge-20
-const paymentIntent = await stripe.paymentIntents.create({
-  amount,
-  currency: 'gbp',
-  customer: customer.id,
-  confirmation_method: 'automatic',
-  confirm: false,                           // ← important
-  setup_future_usage: 'off_session',
-  payment_method_options: {
-    card: { request_three_d_secure: 'any' } // ← nudges issuer to show 3DS if needed
-  },
-  description: `Intro charge x${qty} @ £20`,
-  metadata: { purpose: 'intro_charge_20', quantity: String(qty) }
-});
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
+      description: `Intro charge (iPhone flow) x${qty} @ £20`,
+      metadata: {
+        purpose: 'intro_charge_20',
+        quantity: String(qty),
+        unit_pence: String(unitPence),
+        total_pence: String(amount)
+      }
+    });
 
-res.json({
-  clientSecret: paymentIntent.client_secret,
-  paymentIntentId: paymentIntent.id,
-  customerId: customer.id
-});
-
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
   } catch (err) {
     console.error('intro-charge-20 error:', err);
     res.status(400).json({ error: err.message || 'Unknown error' });
