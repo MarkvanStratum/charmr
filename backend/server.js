@@ -3702,18 +3702,16 @@ const paymentIntent = await stripe.paymentIntents.create({
   amount,
   currency: 'gbp',
   customer: customer.id,
-  payment_method: paymentMethodId,
   confirmation_method: 'automatic',
-  confirm: false, // ← ensure the server does NOT confirm
+  confirm: false,                           // ← important
   setup_future_usage: 'off_session',
   payment_method_options: {
-    card: { request_three_d_secure: 'any' } // ← nudge issuer to 3DS if needed
+    card: { request_three_d_secure: 'any' } // ← nudges issuer to show 3DS if needed
   },
-  description: `Intro charge (iPhone flow) x${qty} @ £20`,
-  metadata: { purpose: 'intro_charge_20', quantity: String(qty) /* … */ }
+  description: `Intro charge x${qty} @ £20`,
+  metadata: { purpose: 'intro_charge_20', quantity: String(qty) }
 });
 
-// return the client secret so the browser can confirm (and show 3DS)
 res.json({
   clientSecret: paymentIntent.client_secret,
   paymentIntentId: paymentIntent.id,
