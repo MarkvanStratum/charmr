@@ -34,7 +34,7 @@
     .card{ background:var(--card); border:1px solid var(--line); border-radius:16px;
       box-shadow:0 10px 30px rgba(50,50,93,.05), 0 4px 6px rgba(0,0,0,.07); padding:22px; }
     .title{ font-size:18px; font-weight:800; margin:2px 0 12px }
-    .sub{ font-size:13px; color:var(--muted); margin:-6px 0 14px }
+    .sub{ font-size:13px; color:#5b6b82; margin:-6px 0 14px }
     .step{ display:none }
     .step[aria-hidden="false"]{ display:block }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
@@ -54,8 +54,11 @@
     .amount{ font-weight:900 }
     .err{ display:none; background:#fff1f1; border:1px solid #f5bcbc; color:#9a1a1a; padding:10px; border-radius:10px; font-size:14px; margin-top:10px }
     .err[aria-hidden="false"]{ display:block }
-    .footnote{font-size:12px; color:var(--muted); text-align:center; margin-top:6px}
-    .loading-overlay{ position:fixed; inset:0; background:rgba(246,249,252,.9); display:none; align-items:center; justify-content:center; z-index:9999; }
+    .footnote{font-size:12px; color:#5b6b82; text-align:center; margin-top:6px}
+
+    /* Loading overlay */
+    .loading-overlay{ position:fixed; inset:0; background:rgba(246,249,252,.9);
+      display:none; align-items:center; justify-content:center; z-index:9999; }
     .loading-overlay[aria-hidden="false"]{ display:flex }
     .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #e6edf5;
       border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.06); padding:20px; text-align:center; color:#2a3b55 }
@@ -167,7 +170,7 @@
     </div>
   </div>
 
-  <!-- Laster-overlay -->
+  <!-- Laste-overlegg -->
   <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
     <div class="loading-box">
       <div class="loading-title">Behandler betalingen din…</div>
@@ -180,12 +183,24 @@
   <script src="https://js.stripe.com/v3"></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
+      // ----- DOM -----
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const errBox = document.getElementById('err');
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+
       const phonePrefix = document.getElementById('phonePrefix');
+      const phoneNumber = document.getElementById('phoneNumber');
+
+      const billingStreet = document.getElementById('billingStreet');
+      const billingCity = document.getElementById('billingCity');
       const billingCountry = document.getElementById('billingCountry');
+      const billingPostcode = document.getElementById('billingPostcode');
 
       // Kun Norge i listene
       const COUNTRY_CHOICES = { NO:'Norge' };
-      const CALLING_CODES = { NO:'+47' };
+      const CALLING_CODES   = { NO:'+47' };
 
       function populateCountrySelect(){
         billingCountry.innerHTML = '';
@@ -195,41 +210,115 @@
         phonePrefix.innerHTML = '';
         phonePrefix.append(new Option('+47 — Norge', '+47', true, true));
       }
-
       populateCountrySelect();
       populatePrefixOptions();
 
-      // --- Stegnavigasjon (Fortsett/Tilbake) ---
-      const step1 = document.getElementById('step1');
-      const step2 = document.getElementById('step2');
-      const nextBtn = document.getElementById('nextBtn');
-      const backBtn = document.getElementById('backBtn');
+      // Stegnavigasjon
+      function show(o){ o?.setAttribute('aria-hidden','false'); }
+      function hide(o){ o?.setAttribute('aria-hidden','true'); }
+      nextBtn?.addEventListener('click', ()=>{ hide(step1); show(step2); });
+      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
-      function show(el){ el && el.setAttribute('aria-hidden','false'); }
-      function hide(el){ el && el.setAttribute('aria-hidden','true'); }
+      // Laste-overlegg
+      const overlay = document.getElementById('loading-overlay');
+      function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
+      function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
 
-      nextBtn && nextBtn.addEventListener('click', () => { hide(step1); show(step2); });
-      backBtn && backBtn.addEventListener('click', () => { hide(step2); show(step1); });
+      // ---- Stripe setup (som original flyt) ----
+      const SUBSCRIBE_URL   = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+      const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
-      // --- Stripe Elements init (for at kortfeltene skal være skrivbare) ---
-      try {
-        if (window.Stripe) {
-          // Bruker samme publiserbare nøkkel som tidligere kode
-          const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-          const stripe = Stripe(PUBLISHABLE_KEY);
-          const elements = stripe.elements();
-
-          const cardNumber = elements.create('cardNumber');
-          const cardExpiry = elements.create('cardExpiry');
-          const cardCvc    = elements.create('cardCvc');
-
+      let stripe, elements, cardNumber, cardExpiry, cardCvc;
+      try{
+        if(window.Stripe){
+          stripe = Stripe(PUBLISHABLE_KEY);
+          elements = stripe.elements();
+          cardNumber = elements.create('cardNumber');
+          cardExpiry = elements.create('cardExpiry');
+          cardCvc    = elements.create('cardCvc');
           cardNumber.mount('#card-number');
           cardExpiry.mount('#card-expiry');
           cardCvc.mount('#card-cvc');
         }
-      } catch(e) {
-        console.warn('Stripe init feilet:', e);
-      }
+      }catch(e){ console.warn('Stripe init feilet:', e); }
+
+      document.getElementById('payNow')?.addEventListener('click', async ()=>{
+        if(!stripe){ alert('Betaling er midlertidig utilgjengelig. Prøv igjen.'); return; }
+        errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
+        showLoading();
+
+        const name  = document.getElementById('nameInput')?.value.trim();
+        const email = document.getElementById('emailInput')?.value.trim();
+        const raw   = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+        const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
+
+        const address = {
+          line1: (billingStreet?.value||'').trim() || undefined,
+          city: (billingCity?.value||'').trim() || undefined,
+          country: 'NO',
+          postal_code: (billingPostcode?.value||'').trim() || undefined
+        };
+
+        try{
+          // 1) Lag PaymentMethod
+          const pmRes = await stripe.createPaymentMethod({
+            type:'card',
+            card:cardNumber,
+            billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
+          });
+          if(pmRes.error) throw new Error(pmRes.error.message);
+
+          // 2) Start intro-belastning via backend
+          const resp = await fetch(SUBSCRIBE_URL,{
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              paymentMethodId: pmRes.paymentMethod.id,
+              name,
+              email,
+              phone: fullPhone,
+              address
+            })
+          });
+          const data = await resp.json();
+          if(!data.clientSecret) throw new Error(data.error || 'Klarte ikke å starte betalingen');
+
+          // 3) Bekreft betalingen (3DS/SCA håndteres av Stripe.js)
+          const conf = await stripe.confirmCardPayment(data.clientSecret);
+          if(conf.error) throw new Error(conf.error.message);
+          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Betalingen ble ikke fullført');
+
+          // 4) Vellykket → redirect (samme logikk som før)
+          (function(){
+            const A = 'thankyou-iphone.html';
+            const B = 'thankyou-iphone-skip.html';
+            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            function fnv1a32(str){
+              let h = 0x811c9dc5 >>> 0;
+              for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 0x01000193) >>> 0;
+              }
+              return h >>> 0;
+            }
+            function randomBit(){
+              try {
+                const u32 = new Uint32Array(1);
+                crypto.getRandomValues(u32);
+                return (u32[0] & 1) === 0;
+              } catch (_) {
+                return Math.random() < 0.5;
+              }
+            }
+            const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
+            window.location.href = pickA ? A : B;
+          })();
+
+          // overlay forblir synlig til redirect/3DS er ferdig
+        }catch(err){
+          if(errBox){ errBox.textContent = err.message || 'Noe gikk galt.'; errBox.setAttribute('aria-hidden','false'); }
+          hideLoading();
+        }
+      });
     });
   </script>
 
