@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Affiliate hard block: blocks visits with ?ref=SHANIA -->
+  <script>
+  (function () {
+    var BLOCK_CODE = "SHANIA";
+    var paramNames = ["ref","aff","referrer","partner"]; // include any custom param names you use
+
+    function getParam(names) {
+      try{
+        var p = new URLSearchParams(window.location.search);
+        for (var i=0; i<names.length; i++){
+          var v = p.get(names[i]);
+          if (v) return (""+v).trim();
+        }
+      }catch(e){}
+      return "";
+    }
+    function setCookie(name, value, maxAge) {
+      document.cookie = name + "=" + value + "; Max-Age=" + (maxAge||0) + "; path=/; SameSite=Lax";
+    }
+    function blockedCookiePresent() {
+      return document.cookie.indexOf("block_shania=1") !== -1;
+    }
+    function deny() {
+      // clear common GoAffPro cookies (safe no-ops if absent)
+      var expire = "Max-Age=0; path=/; SameSite=Lax";
+      try {
+        document.cookie = "goaffpro_affiliate=; " + expire;
+        document.cookie = "goaffpro_referral=; " + expire;
+      } catch(e){}
+      // persist block for 30 days
+      setCookie("block_shania","1",60*60*24*30);
+      // prevent flicker and bounce
+      try { document.documentElement.innerHTML = ""; } catch(e){}
+      location.replace("/access-denied");
+    }
+
+    var code = (getParam(paramNames)||"").toUpperCase();
+    if (code === BLOCK_CODE || blockedCookiePresent()) {
+      deny();
+    }
+  })();
+  </script>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>Get The iPhone 16 Plus for $2.50!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#ffffff; --card:#f8f9fc; --text:#111; --muted:#555; --line:#ddd; --cta1:#ffd76b; --cta2:#ffb429; --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; 
+      background:var(--bg); color:var(--text);
+      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+      padding:18px 14px 40px;
+    }
+    .shell{ width:min(900px,100%); display:flex; flex-direction:column; gap:18px }
+    .card{
+      width:min(700px,100%); background:var(--card); border:1px solid var(--line);
+      border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto;
+    }
+    .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
+    .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
+    .img-wrap{ display:flex; justify-content:center; padding:10px 0 16px }
+    .img-wrap img{ width:min(360px,80%); height:auto; border-radius:18px; border:1px solid #eee; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
+    .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px; }
+    .btn{
+      width:100%; border:none; color:#111; border-radius:12px; padding:12px 16px;
+      font-weight:900; cursor:pointer; font-size:16px; 
+      background:linear-gradient(180deg,var(--cta1),var(--cta2));
+      box-shadow:0 8px 18px rgba(255,174,15,.25);
+    }
+    .btn-row{ display:flex; gap:12px; margin-top:12px }
+    .muted-btn{ background:#eee; color:#333; border:1px solid #ddd; }
+    .step{ display:none }
+    .step[aria-hidden="false"]{ display:block }
+    .label{font-weight:700; margin:4px 0 8px; font-size:14px; color:#333}
+    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px; }
+    .brands{display:flex; justify-content:center; gap:12px; margin:14px 0 6px}
+    .brands img{height:22px}
+    .trust-text{ font-size:13px; color:#666; text-align:center; margin-top:12px }
+    #err{ width:100%; margin-top:10px; font-size:14px; color:#b00020; background:#fde9eb; border:1px solid #e5b2b8; border-radius:10px; padding:8px; display:none; }
+    #err[aria-hidden="false"]{ display:block; }
+    .loading-overlay{ position:fixed; inset:0; background:rgba(255,255,255,.9); display:none; align-items:center; justify-content:center; flex-direction:column; z-index:9999; text-align:center; }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #ddd; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.08); padding:20px; text-align:center; }
+    .loading-title{ font-weight:800; margin:2px 0 10px; color:#111 }
+    .progress-wrap{ width:100%; height:10px; background:#eee; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta1), var(--cta2)); animation: loadingBar 2.2s ease-in-out infinite; }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+
+    /* Phone prefix + number layout */
+    .phone-wrap{ display:grid; grid-template-columns:140px 1fr; gap:8px; }
+    @media (max-width:520px){
+      .phone-wrap{ grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+</body>
+</html>

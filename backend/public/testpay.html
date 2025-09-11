@@ -32,14 +32,20 @@
     .pay{ width:min(560px,100%); background:#fff; border:1px solid var(--ring); border-radius:var(--radius); padding:18px; display:flex; flex-direction:column; align-items:center; box-shadow:0 4px 14px rgba(0,0,0,.05); }
     .pay .label{font-weight:800; margin:2px 0 8px; font-size:14px}
     .input{ width:100%; max-width:520px; padding:12px; border:1px solid #d1d5db; border-radius:12px; background:#fff; color:#111; font-size:16px; margin-bottom:10px; text-align:center; }
-    .el{ width:100%; max-width:520px; padding:12px; border:1px solid #d1d5db; border-radius:12px; background:#fafafa; color:#111; }
-    .el-card{ height:48px; display:flex; align-items:center; } /* ensures the Stripe iframe has room */
+    .el{
+      width:100%; max-width:520px;
+      min-height:48px;              /* ensure iframe space */
+      display:flex; align-items:center;
+      padding:12px; border:1px solid #d1d5db; border-radius:12px;
+      background:#fafafa; color:#111;
+      position:relative; z-index:3; /* keep on top of neighbors */
+    }
     .el-focus{ border-color:#c9cbd3 }
+    .btn{ width:min(520px,100%); appearance:none; border:none; background:var(--cta); color:#fff; border-radius:12px; padding:12px 14px; font-weight:900; cursor:pointer; transition:transform .06s ease, filter .12s ease; text-align:center; font-size:16px; position:relative; z-index:1; }
+    .btn:hover{ filter:brightness(.95); } .btn:active{ transform:translateY(1px); } .btn[disabled]{ opacity:.7; cursor:not-allowed; }
     .brands{display:flex; align-items:center; gap:10px; margin:6px 0 8px} .brands img{height:18px}
     .trustchips{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; justify-content:center; margin:6px 0 12px; color:#555; font-size:12px; }
     .chip{display:flex; align-items:center; gap:6px; padding:6px 10px; background:#fff; border:1px solid var(--line); border-radius:999px}
-    .btn{ width:min(520px,100%); appearance:none; border:none; background:var(--cta); color:#fff; border-radius:12px; padding:12px 14px; font-weight:900; cursor:pointer; transition:transform .06s ease, filter .12s ease; text-align:center; font-size:16px; }
-    .btn:hover{ filter:brightness(.95); } .btn:active{ transform:translateY(1px); } .btn[disabled]{ opacity:.7; cursor:not-allowed; }
     .below-copy{ width:min(760px,100%); color:#444; font-size:13.5px; line-height:1.6; background:#fff; border:1px solid var(--ring); border-radius:var(--radius); padding:12px; box-shadow:0 2px 8px rgba(0,0,0,.03); text-align:left }
     .assure{ width:min(760px,100%); display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; color:#374151; font-size:13px; }
     .foot{ padding:14px 20px; border-top:1px solid var(--ring); background:#fff; color:#555; font-size:12px; display:flex; justify-content:center; gap:14px; flex-wrap:wrap; text-align:center; }
@@ -106,9 +112,20 @@
           <span style="margin-left:auto;opacity:.85">Secured by <span style="color:#635bff;font-weight:800">stripe</span></span>
         </div>
 
-        <!-- SINGLE CARD ELEMENT (fix) -->
-        <div class="label" style="margin-top:6px">Card details</div>
-        <div id="card-element" class="el el-card"></div>
+        <!-- SPLIT STRIPE ELEMENTS -->
+        <div class="label" style="margin-top:6px">Card number</div>
+        <div id="card-number" class="el"></div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; width:100%; max-width:520px; margin-top:10px">
+          <div>
+            <div class="label">Expiration date</div>
+            <div id="card-expiry" class="el"></div>
+          </div>
+          <div>
+            <div class="label">Security code</div>
+            <div id="card-cvc" class="el"></div>
+          </div>
+        </div>
 
         <div id="err" role="alert" aria-hidden="true"></div>
         <button class="btn" id="payNow">Try Charmr For Free!</button>
@@ -180,9 +197,14 @@
     appearance: { theme: 'stripe' } // light theme so text is visible on light bg
   });
 
-  // SINGLE CARD ELEMENT
-  const card = elements.create('card', { hidePostalCode: false, style: { base: { fontSize: '16px' } }, classes: { focus: 'el-focus' } });
-  card.mount('#card-element');
+  // SPLIT ELEMENTS (with reliable sizing)
+  const baseStyle = { style: { base: { fontSize: '16px' } }, classes: { focus: 'el-focus' } };
+  const cardNumber = elements.create('cardNumber', baseStyle);
+  const cardExpiry = elements.create('cardExpiry', baseStyle);
+  const cardCvc    = elements.create('cardCvc',    baseStyle);
+  cardNumber.mount('#card-number');
+  cardExpiry.mount('#card-expiry');
+  cardCvc.mount('#card-cvc');
 
   function guessCountry(){ try{ const loc=Intl.DateTimeFormat().resolvedOptions().locale||''; const part=loc.split('-')[1]; if(part&&part.length===2) return part.toUpperCase(); }catch{} return 'GB'; }
 
@@ -256,7 +278,7 @@
     let pm;
     try{
       const name = (document.getElementById('nameInput')?.value || '').trim();
-      const pmRes = await stripe.createPaymentMethod({ type:'card', card, billing_details:{ name } });
+      const pmRes = await stripe.createPaymentMethod({ type:'card', card: cardNumber, billing_details:{ name } });
       if (pmRes.error) throw pmRes.error;
       pm = pmRes.paymentMethod;
     }catch(e){ hideLoading(); showError(e.message || 'Card details are invalid.'); return; }

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Charmr.xyz — Sign up</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0e0f; --card:#151518; --text:#fff; --ring:0 0 0 1.5px rgba(255,255,255,.08) inset, 0 8px 24px rgba(0,0,0,.45);
+    --heroW:150px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  .app{max-width:980px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding:12px 16px 24px}
+  .topbar{position:sticky;top:0;z-index:40;display:flex;align-items:center;justify-content:space-between;padding:14px 12px;background:linear-gradient(to bottom,rgba(0,0,0,.7),rgba(0,0,0,0));backdrop-filter:saturate(120%) blur(8px)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+  .logo{width:22px;height:22px;display:grid;place-items:center;color:#6ee7b7;background:#2a2a2e;border-radius:8px;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.06)}
+  .hero-wrap{display:flex;flex-direction:column;align-items:center;gap:10px;margin:12px 0 18px}
+  .hero-title{margin:0;font-weight:800;font-size:30px;line-height:1.15;text-align:center;color:#ff69b4} /* pink hero title */
+  .hero-sub{margin:2px 0 0;color:#d9dbe2;opacity:.95;font-weight:600;text-align:center}
+  .hero-video{width:var(--heroW);aspect-ratio:9/13;border-radius:18px;overflow:hidden;box-shadow:var(--ring);background:#0b0b0d;margin:6px auto 0}
+  .hero-video video{width:100%;height:100%;object-fit:cover;object-position:center top;display:block}
+  .card{background:#151518;border-radius:18px;padding:16px;box-shadow:var(--ring);max-width:620px;margin:0 auto}
+  .title{margin:0 0 6px;font-size:28px;font-weight:800;text-align:center}
+  .subtitle{color:#d9dbe2;opacity:.92;margin:0 0 14px;font-weight:600;text-align:center}
+  .subtitle .pink{color:#ff69b4;font-weight:800} /* pink for highlighted text */
+  form{display:grid;gap:12px}
+  label{font-weight:700}
+  input{background:#1a1a1f;color:#fff;padding:12px 14px;border-radius:12px;border:1px solid #2a2a31;outline:none}
+  input:focus{border-color:#3a3a41;box-shadow:0 0 0 2px rgba(255,255,255,.06)}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 22px;border:none;border-radius:14px;font-weight:800;cursor:pointer;color:#111;background:linear-gradient(180deg,#ffd76b,#ffb429);box-shadow:0 8px 22px rgba(255,174,15,.28)}
+  .btn.full{width:100%}
+  .hint{color:#cfcfd6;text-align:center;margin-top:8px}
+</style>
+
+<!-- Google tag -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-17486667499"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-FDQ6REQWS8');
+</script>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="brand"><span class="logo">💎</span><span>Charmr.xyz</span></div><div></div>
+    </div>
+
+    <section id="signup">
+      <div class="hero-wrap">
+        <h1 class="hero-title">Let’s bring your matches to life…</h1>
+        <p class="hero-sub">Enter your email to unlock them and start your journey.</p>
+        <div class="hero-video">
+          <video src="https://www.charmr.xyz/video1.mp4" autoplay muted loop playsinline></video>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 class="title">Create your account</h2>
+        <p class="subtitle">We’ve saved <span class="pink">700 AI girls</span> based on your exact preferences.</p>
+        <form id="signup-form">
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required placeholder="you@email.com" />
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required placeholder="Create a password" />
+          <button type="submit" class="btn full">Unlock My Matches</button>
+        </form>
+        <p class="hint">Already have an account? <a href="login.html" style="color:#ffd159;text-decoration:none;">Log in here</a></p>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Submit -> register (best-effort) -> go to plan.html
+    document.getElementById('signup-form').addEventListener('submit', async (ev)=>{
+      ev.preventDefault();
+      const email=(document.getElementById('email').value||'').trim();
+      const password=document.getElementById('password').value;
+      if(!email||!password){ alert('Please enter your email and password.'); return; }
+      try{
+        const res=await fetch('/api/register',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({email,password})
+        });
+        const data=await res.json().catch(()=>({}));
+        if(res.ok && data?.token){ try{ localStorage.setItem('token',data.token);}catch{} }
+      }catch(e){ /* continue regardless */ }
+      window.location.href='plan.html';
+    });
+  </script>
+
+  <!-- GoAffPro -->
+  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</body>
+</html>

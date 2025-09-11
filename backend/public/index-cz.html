@@ -312,7 +312,7 @@
     const step1=document.getElementById('step1'),step2=document.getElementById('step2');
     const nameInput=document.getElementById('nameInput');
     const emailInput=document.getElementById('emailInput');
-    const passwordInput=document.getElementById('passwordInput']);
+    const passwordInput=document.getElementById('passwordInput'); /* FIX: removed stray ] */
 
     async function ensureAccount() {
       const email = emailInput.value.trim();
@@ -368,8 +368,10 @@
     };
 
     document.getElementById('backBtn').onclick=()=>{ 
-      step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true"});
+      step1.setAttribute("aria-hidden","false");
+      step2.setAttribute("aria-hidden","true"); /* FIX: brace */
       window.scrollTo({top:0,behavior:'smooth'});
+    };
 
     /* ---------- Symbol měny podle IP (jen zobrazení) ---------- */
     (function setCurrencyByIP(){
@@ -409,7 +411,7 @@
         });
     })();
 
-    /* ---------- Předvolba telefonu podle IP (zajištěno IT/CZ/PL/DE/FR) ---------- */
+    /* ---------- Předvolba telefonu podle IP (s ochranou výběru uživatele) ---------- */
     (function phonePrefixByIP(){
       const selectEl = document.getElementById('phonePrefix');
       if(!selectEl) return;
@@ -426,6 +428,10 @@
         { cc:'FR', code:'+33',  name:'Francie'  }
       ];
 
+      // Sleduj, zda uživatel změnil výběr – pak už IP detekcí nepřepisovat
+      let userTouchedPrefix = false;
+      selectEl.addEventListener('change', () => { userTouchedPrefix = true; });
+
       function ensureFivePresent(){
         const existing = new Set(Array.from(selectEl.options).map(o=>o.value));
         ENSURE.forEach(({code,name})=>{
@@ -436,6 +442,7 @@
       }
 
       function buildOptions(preferredCC, preferredCalling){
+        const prev = selectEl.value; // zapamatuj dosavadní volbu
         selectEl.innerHTML = '';
         const added = new Set();
 
@@ -461,16 +468,23 @@
         });
 
         ensureFivePresent();
-        if (!selectEl.value) selectEl.value = '+420';
+
+        // Pokud uživatel už vybral, zachovej
+        if (userTouchedPrefix && Array.from(selectEl.options).some(o => o.value === prev)) {
+          selectEl.value = prev;
+        } else if (!selectEl.value) {
+          selectEl.value = '+420';
+        }
       }
 
       // Rychlé osazení CZ
       try { buildOptions('CZ', null); } catch {}
 
-      // Upřesnit podle IP
+      // Upřesnit podle IP – nepřepisovat, když už uživatel sáhl
       fetch('https://ipapi.co/json/')
         .then(r=>r.ok?r.json():Promise.reject())
         .then(data=>{
+          if (userTouchedPrefix) return;
           const cc = ((data&&(data.country||data.country_code))||'CZ').toUpperCase();
           const calling = (data&&data.country_calling_code)||null;
           buildOptions(cc, calling);
@@ -486,6 +500,7 @@
         })
         .catch(()=>{
           try{
+            if (userTouchedPrefix) return;
             const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'cs-CZ';
             const cc = (loc.split('-')[1]||'CZ').toUpperCase();
             buildOptions(cc, null);
