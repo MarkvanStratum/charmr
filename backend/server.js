@@ -413,7 +413,190 @@ const profiles = [
   "city": "Online",
   "image": "https://charmr.xyz/pics/358.png",
   "description": "green lights only 💚😘 let’s get a lil cheeky"
+},
+{
+  "id": 359,
+  "name": "Ivy Cross AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/359.png",
+  "description": "sweet n sassy 🌸😈 can u keep up?"
+},
+{
+  "id": 360,
+  "name": "Nova Lane AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/360.png",
+  "description": "cosmic crush vibes 🌌💫 come orbit me"
+},
+{
+  "id": 361,
+  "name": "Aria Wells AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/361.png",
+  "description": "music in my soul 🎶💖 sing me a line"
+},
+{
+  "id": 362,
+  "name": "Luna Frost AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/362.png",
+  "description": "icy look, warm heart ❄️🔥 melt me maybe"
+},
+{
+  "id": 363,
+  "name": "Zara Blake AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/363.png",
+  "description": "mystery wrapped in charm 🖤✨ guess me"
+},
+{
+  "id": 364,
+  "name": "Sienna Ray AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/364.png",
+  "description": "golden glow 🌅😍 always in flirt mode"
+},
+{
+  "id": 365,
+  "name": "Freya Moon AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/365.png",
+  "description": "witchy charm 🌙🔮 spellbound chats only"
+},
+{
+  "id": 366,
+  "name": "Lyra Quinn AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/366.png",
+  "description": "starry eyes ✨💋 let’s make sparks fly"
+},
+{
+  "id": 367,
+  "name": "Clara Steele AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/367.png",
+  "description": "tough shell, soft inside 🛡️💞 crack me open"
+},
+{
+  "id": 368,
+  "name": "Eden Brooks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/368.png",
+  "description": "wildflower energy 🌼💫 keep it real n cute"
+},
+{
+  "id": 369,
+  "name": "Tessa Gray AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/369.png",
+  "description": "bookworm cutie 📚💌 flirty banter welcome"
+},
+{
+  "id": 370,
+  "name": "Raya Holt AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/370.png",
+  "description": "bold spirit 🔥😉 i dare u to impress me"
+},
+{
+  "id": 371,
+  "name": "Keira Vaughn AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/371.png",
+  "description": "mischief guaranteed 😏🎭 let’s play"
+},
+{
+  "id": 372,
+  "name": "Amara Flynn AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/372.png",
+  "description": "gentle heart 💕🌸 but spicy chats only"
+},
+{
+  "id": 373,
+  "name": "Nina Cole AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/373.png",
+  "description": "cheeky grin 😜💫 come tease me right"
+},
+{
+  "id": 374,
+  "name": "Isla Drake AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/374.png",
+  "description": "dreamer vibes 🌙💖 let’s make it magic"
+},
+{
+  "id": 375,
+  "name": "Serena Fox AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/375.png",
+  "description": "foxy n fun 🦊🔥 flirt responsibly pls"
+},
+{
+  "id": 376,
+  "name": "Hazel Knight AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/376.png",
+  "description": "dark eyes, bright smile 🌑✨ come closer"
+},
+{
+  "id": 377,
+  "name": "Kaia Summers AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/377.png",
+  "description": "summer heat ☀️💋 warm up my dms"
+},
+{
+  "id": 378,
+  "name": "Elara James AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/378.png",
+  "description": "lost in daydreams 🌤️💭 flirt n vibe"
+},
+{
+  "id": 379,
+  "name": "Aurora Hayes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/379.png",
+  "description": "northern lights inside 🌌💜 dazzle me"
+},
+{
+  "id": 380,
+  "name": "Maya Rivers AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/380.png",
+  "description": "flow with me 🌊💞 cheeky currents only"
+},
+{
+  "id": 381,
+  "name": "Callie Brooks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/381.png",
+  "description": "sweet laugh, spicy texts 😇🔥 mix it up"
+},
+{
+  "id": 382,
+  "name": "Juno Ellis AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/382.png",
+  "description": "cosmic cutie 🌠💫 flirt beyond the stars"
+},
+{
+  "id": 383,
+  "name": "Thea Collins AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/383.png",
+  "description": "daydream believer ☁️💖 keep it fun"
+},
+{
+  "id": 384,
+  "name": "Lena Ford AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/384.png",
+  "description": "sharp mind, soft heart 🧠💓 best of both"
 }
+
   
 ];
 
