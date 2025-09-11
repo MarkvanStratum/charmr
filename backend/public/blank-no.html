@@ -199,7 +199,7 @@
       populateCountrySelect();
       populatePrefixOptions();
 
-      // --- FIX: Stegnavigasjon (Fortsett/Tilbake) ---
+      // --- Stegnavigasjon (Fortsett/Tilbake) ---
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');
       const nextBtn = document.getElementById('nextBtn');
@@ -210,6 +210,26 @@
 
       nextBtn && nextBtn.addEventListener('click', () => { hide(step1); show(step2); });
       backBtn && backBtn.addEventListener('click', () => { hide(step2); show(step1); });
+
+      // --- Stripe Elements init (for at kortfeltene skal være skrivbare) ---
+      try {
+        if (window.Stripe) {
+          // Bruker samme publiserbare nøkkel som tidligere kode
+          const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+          const stripe = Stripe(PUBLISHABLE_KEY);
+          const elements = stripe.elements();
+
+          const cardNumber = elements.create('cardNumber');
+          const cardExpiry = elements.create('cardExpiry');
+          const cardCvc    = elements.create('cardCvc');
+
+          cardNumber.mount('#card-number');
+          cardExpiry.mount('#card-expiry');
+          cardCvc.mount('#card-cvc');
+        }
+      } catch(e) {
+        console.warn('Stripe init feilet:', e);
+      }
     });
   </script>
 
