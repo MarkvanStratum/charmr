@@ -198,6 +198,18 @@
 
       populateCountrySelect();
       populatePrefixOptions();
+
+      // --- FIX: Stegnavigasjon (Fortsett/Tilbake) ---
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+
+      function show(el){ el && el.setAttribute('aria-hidden','false'); }
+      function hide(el){ el && el.setAttribute('aria-hidden','true'); }
+
+      nextBtn && nextBtn.addEventListener('click', () => { hide(step1); show(step2); });
+      backBtn && backBtn.addEventListener('click', () => { hide(step2); show(step1); });
     });
   </script>
 
