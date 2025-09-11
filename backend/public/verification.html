@@ -4,16 +4,6 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Unlock premium features at a 97% discount!</title>
-
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-FDQ6REQWS8');
-  </script>
-
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -21,7 +11,6 @@
       --bg:#ffffff; --card:#f8f9fc; --text:#111; --muted:#555; --line:#ddd;
       --cta1:#ffd76b; --cta2:#ffb429; --radius:16px; --green:#12b886; --red:#e03131;
     }
-    *{box-sizing:border-box}
     body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
           background:var(--bg); color:#111; display:flex; flex-direction:column;
           align-items:center; justify-content:flex-start; padding:18px 14px 40px;}
@@ -30,15 +19,8 @@
            border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05);
            margin-inline:auto;}
     .title{ font-size:30px; font-weight:900; text-align:center; margin:6px 0 12px; 
-            letter-spacing:.2px; color:#e91e63; } /* pink title */
+            letter-spacing:.2px; color:#e91e63; }
     .sub{ text-align:center; color:var(--muted); margin-top:-2px; margin-bottom:16px }
-
-    /* Video hero (scaled bigger now) */
-    .video-wrap{ position:relative; border-radius:18px; overflow:hidden; border:1px solid #eee; background:#000;
-                 max-width:40%; margin:0 auto; }  /* increased to 30% and centered */
-    .video-wrap video{ width:100%; height:auto; display:block; }
-
-    /* Pricing row */
     .pricing{ display:flex; align-items:center; justify-content:center; gap:12px; margin:12px 0 6px }
     .was{ color:#888; position:relative; font-weight:700; }
     .was::after{ content:""; position:absolute; left:-3px; right:-3px; top:50%; height:2px; background:linear-gradient(90deg,#c9c9c9,#999); transform:rotate(-6deg);}
@@ -46,40 +28,7 @@
           padding:6px 10px; border-radius:10px; font-size:18px;}
     .save{ font-size:12px; color:#0b6b3a; font-weight:800; letter-spacing:.2px;
            background:#e9f8f0; border:1px dashed #9ddfbe; padding:4px 8px; border-radius:999px;}
-
-    /* Inputs & buttons */
-    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
-    .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px; }
-    .btn{ width:100%; border:none; color:#111; border-radius:12px; padding:12px 16px;
-          font-weight:900; cursor:pointer; font-size:16px;
-          background:linear-gradient(180deg,var(--cta1),var(--cta2));
-          box-shadow:0 8px 18px rgba(255,174,15,.25);}
-    .btn-row{ display:flex; gap:12px; margin-top:12px }
-    .muted-btn{ background:#eee; color:#333; border:1px solid #ddd; }
-
-    /* Steps */
-    .step{ display:none }
-    .step[aria-hidden="false"]{ display:block }
-
-    /* Stripe Elements styling */
-    .label{font-weight:700; margin:4px 0 8px; font-size:14px; color:#333}
-    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px; }
-
-    .brands{display:flex; justify-content:center; gap:12px; margin:14px 0 6px}
-    .brands img{height:22px}
-    .trust-text{ font-size:13px; color:#666; text-align:center; margin-top:12px }
-
-    #err{ width:100%; margin-top:10px; font-size:14px; color:#b00020; background:#fde9eb; border:1px solid #e5b2b8; border-radius:10px; padding:8px; display:none; }
-    #err[aria-hidden="false"]{ display:block; }
-
-    /* Loading */
-    .loading-overlay{ position:fixed; inset:0; background:rgba(255,255,255,.9); display:none; align-items:center; justify-content:center; flex-direction:column; z-index:9999; text-align:center; }
-    .loading-overlay[aria-hidden="false"]{ display:flex }
-    .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #ddd; border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.08); padding:20px; text-align:center; }
-    .loading-title{ font-weight:800; margin:2px 0 10px; color:#111 }
-    .progress-wrap{ width:100%; height:10px; background:#eee; border-radius:999px; overflow:hidden; }
-    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta1), var(--cta2)); animation: loadingBar 2.2s ease-in-out infinite; }
-    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+    .trial-note{ text-align:center; font-size:16px; font-weight:800; color:#e03131; margin-top:12px; }
   </style>
 </head>
 <body>
@@ -90,16 +39,15 @@
       <h1 class="title">Unlock premium features at a 97% discount!</h1>
       <p class="sub">Unlimited meetups, picture sharing, gifting and more!</p>
 
-      <div class="video-wrap" aria-label="AI girlfriend video">
-        <video src="video1.mp4" autoplay loop muted playsinline preload="metadata"></video>
-      </div>
-
       <!-- Fancy pricing display -->
       <div id="pricing" class="pricing" style="margin-top:14px">
-        <span class="was"><span data-price="99" data-precision="0">$99</span></span>
-        <span class="now">Now <span data-price="2.5" data-precision="2">$2.50</span></span>
+        <span class="was">£99</span>
+        <span class="now">Now £2.50</span>
         <span class="save">Save 97%</span>
       </div>
+
+      <!-- Clear trial/subscription message -->
+      <p class="trial-note">£2.50 GBP for a 7-day trial. After the 7-day trial, a subscription will start automatically at £20 per month.</p>
 
       <div class="grid" style="margin-top:10px">
         <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required />
@@ -117,171 +65,14 @@
       <h2 class="title">Secure Payment</h2>
       <p class="sub">Your details are safe — powered by Stripe.</p>
 
-      <div id="gpay-button"></div>
-
-      <div class="label">Card number</div>
-      <div id="card-number" class="el"></div>
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
-        <div>
-          <div class="label">Expiration</div>
-          <div id="card-expiry" class="el"></div>
-        </div>
-        <div>
-          <div class="label">CVC</div>
-          <div id="card-cvc" class="el"></div>
-        </div>
-      </div>
-
-      <div id="err" role="alert" aria-hidden="true"></div>
-
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay <span id="priceButton" data-price="2.5" data-precision="2">$2.50</span> Securely</button>
+        <button class="btn" id="payNow">Pay £2.50 Securely</button>
       </div>
 
-      <div class="brands">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
-        <img src="https://charmr.xyz/logos/mc2.png" alt="Mastercard">
-        <img src="https://charmr.xyz/logos/amex.png" alt="Amex">
-        <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay">
-      </div>
-
-      <p class="trust-text">🔒 256-bit SSL Secured · Powered by Stripe · 30-Day Money Back Guarantee</p>
+      <!-- Repeat clear note under payment button -->
+      <p class="trial-note">£2.50 GBP for a 7-day trial. After the 7-day trial, a subscription will start automatically at £20 per month.</p>
     </section>
   </div>
-
-  <!-- Loading overlay -->
-  <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
-    <div class="loading-box">
-      <div class="loading-title">Processing your payment…</div>
-      <div class="progress-wrap"><div class="progress-bar"></div></div>
-      <p class="sub">Please wait, this may take a few seconds.</p>
-    </div>
-  </div>
-
-  <!-- Stripe.js -->
-  <script src="https://js.stripe.com/v3"></script>
-  <script>
-    /* ---------- Step navigation ---------- */
-    const step1=document.getElementById('step1'),step2=document.getElementById('step2');
-    document.getElementById('nextBtn').onclick=()=>{ 
-      if(!nameInput.value||!emailInput.value){alert("Please enter your details");return}
-      localStorage.setItem("checkout_name",nameInput.value);
-      localStorage.setItem("checkout_email",emailInput.value);
-      step1.setAttribute("aria-hidden","true");
-      step2.setAttribute("aria-hidden","false");
-      window.scrollTo({top:0,behavior:'smooth'});
-    };
-    document.getElementById('backBtn').onclick=()=>{ 
-      step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
-      window.scrollTo({top:0,behavior:'smooth'});
-    };
-
-    /* ---------- Currency symbol by IP (display only) ---------- */
-    (function setCurrencyByIP(){
-      const EU = new Set([
-        'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
-        'LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'
-      ]);
-      function symbolFor(cc){
-        if(cc==='US') return '$';
-        if(cc==='GB' || cc==='UK') return '£';
-        if(EU.has(cc)) return '€';
-        return '$';
-      }
-      function fmt(amount, precision, symbol){
-        const n = Number(amount);
-        const fixed = (precision != null) ? n.toFixed(Number(precision)) : (Number.isInteger(n) ? String(n) : n.toFixed(2));
-        return symbol + fixed.replace(/\.00$/,'');
-      }
-      function apply(symbol){
-        document.querySelectorAll('[data-price]').forEach(el=>{
-          const amt = el.getAttribute('data-price');
-          const prec = el.getAttribute('data-precision');
-          el.textContent = fmt(amt, prec, symbol);
-        });
-      }
-      apply('$');
-      fetch('https://ipapi.co/json/')
-        .then(r => r.ok ? r.json() : Promise.reject())
-        .then(data => apply(symbolFor((data && (data.country || data.country_code)) || 'US')))
-        .catch(() => {
-          try {
-            const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
-            const cc = (loc.split('-')[1] || 'US').toUpperCase();
-            apply(symbolFor(cc));
-          } catch {}
-        });
-    })();
-
-    /* ---------- Stripe logic (two-step paid trial → monthly) ---------- */
-    const TRIAL_INTENT_URL="https://charmr-jfmc.onrender.com/api/stripe/trial-charge-intent";
-    const START_MONTHLY_URL="https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial";
-    const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-
-    const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
-    const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
-    cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
-    const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
-    function showError(m){$err.textContent=m;$err.style.display="block"}
-    function hideError(){$err.textContent="";$err.style.display="none"}
-    function showLoading(){overlay.setAttribute("aria-hidden","false")}
-    function hideLoading(){overlay.setAttribute("aria-hidden","true")}
-
-    document.getElementById("payNow").onclick=async()=>{
-      hideError();showLoading();
-      try{
-        // 1) Create a PaymentMethod from Elements
-        const pmRes = await stripe.createPaymentMethod({
-          type:"card",
-          card:cardNumber,
-          billing_details:{name:nameInput.value,email:emailInput.value}
-        });
-        if(pmRes.error){ throw new Error(pmRes.error.message); }
-        const paymentMethodId = pmRes.paymentMethod.id;
-
-        // 2) Ask server to create the £2.50 PaymentIntent (gets client_secret)
-        const r1 = await fetch(TRIAL_INTENT_URL,{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            paymentMethodId,
-            name:nameInput.value,
-            email:emailInput.value
-          })
-        });
-        const d1 = await r1.json();
-        if(!r1.ok || !d1.clientSecret){ 
-          throw new Error(d1.error || "Payment failed while creating the trial charge."); 
-        }
-
-        // 3) Confirm the £2.50 charge (SCA happens here if needed)
-        const conf = await stripe.confirmCardPayment(d1.clientSecret);
-        if(conf.error){ throw new Error(conf.error.message); }
-        if(!(conf.paymentIntent && conf.paymentIntent.status==="succeeded")){
-          throw new Error("Payment not completed");
-        }
-
-        // 4) Start the £20/month subscription with a 1-day trial
-        const r2 = await fetch(START_MONTHLY_URL,{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            paymentIntentId: conf.paymentIntent.id
-            // priceIdMonthly optional; server defaults to GBP monthly ID
-          })
-        });
-        const d2 = await r2.json();
-        if(!r2.ok){ throw new Error(d2.error || "Failed to start subscription"); }
-
-        // 5) Success!
-        window.location.href="thankyou2.html";
-      }catch(err){
-        showError(err.message || "Payment failed");
-      }finally{
-        hideLoading();
-      }
-    };
-  </script>
 </body>
 </html>
