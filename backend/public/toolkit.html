@@ -34,8 +34,8 @@
     }
     .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
     .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
-    .img-wrap{ display:flex; justify-content:center; padding:10px 0 16px }
-    .img-wrap img{ width:min(360px,80%); height:auto; border-radius:18px; border:1px solid #eee; }
+    .img-wrap{ display:flex; justify-content:center; align-items:center; padding:10px 0 16px; }
+.img-wrap img{ max-width:min(600px,100%); width:auto; height:auto; border-radius:18px; border:1px solid #eee; }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
     .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px; }
     .btn{
@@ -292,7 +292,7 @@
       }
       function applyPriceSymbol(symbol){
         document.querySelectorAll('[data-price]').forEach(el=>{
-          el.textContent = `${symbol}2.50`;
+          el.textContent = `{symbol}`;
         });
         document.title = `20V MAX* 10-Tool Combo Kit`;
       }
