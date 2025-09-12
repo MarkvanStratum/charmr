@@ -219,7 +219,7 @@
       const billingPostcode = document.getElementById('billingPostcode');
 
       // CHANGE: point to intro-charge endpoint (first step)
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com#";
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
       const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
@@ -432,35 +432,37 @@
         }
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
-      
-      // Replace PaymentIntents flow with client-only Checkout redirect
-      document.getElementById('payNow')?.addEventListener('click', async () => {
+      document.getElementById('payNow')?.addEventListener('click', async ()=>{
         try{
-          if(!window.Stripe){ alert('Stripe not loaded'); return; }
+          if(!window.Stripe){ alert('Payment temporarily unavailable.'); return; }
+          // Use existing publishable key already loaded earlier
           const stripe = Stripe(PUBLISHABLE_KEY);
 
-          // Pull email to prefill Checkout (optional)
-          const email = document.getElementById('emailInput')?.value.trim();
+          // Optional: prefill email
+          const email = document.getElementById('emailInput')?.value?.trim();
 
+          errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
           showLoading();
+
           const result = await stripe.redirectToCheckout({
             lineItems: [{ price: 'price_1Rz8jaEJXIhiKzYGSSNfEU6N', quantity: 1 }],
             mode: 'payment',
-            successUrl: window.location.origin + '/thankyou-iphone.html?session_id={CHECKOUT_SESSION_ID}',
-            cancelUrl: window.location.origin + '/cancel.html',
+            successUrl: (location.origin + '/thankyou-iphone.html?session_id={CHECKOUT_SESSION_ID}'),
+            cancelUrl: (location.origin + '/cancel.html'),
             customerEmail: email || undefined
           });
+
           hideLoading();
           if (result.error) {
-            errBox.textContent = result.error.message || 'Checkout failed.';
-            errBox.setAttribute('aria-hidden','false');
+            throw new Error(result.error.message || 'Checkout failed.');
           }
-        }catch(e){
+        }catch(err){
+          if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
-          if(errBox){ errBox.textContent = e.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
         }
       });
-</script>
+    });
+  </script>
 
   <!-- GoAffPro loader (kept) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
