@@ -239,7 +239,6 @@
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
-      // --- Make "Weiter" resilient (unchanged logic) ---
       function isLikelyDevOrFile() {
         return !location.protocol.startsWith('http') ||
                location.hostname === 'localhost' ||
@@ -329,25 +328,11 @@
       try{
         if(window.Stripe){
           stripe = Stripe(PUBLISHABLE_KEY);
+          elements = stripe.elements();
 
-          // Increase font size & comfortable typing area
-          elements = stripe.elements({
-            fonts: [],
-          });
-
-          const elementStyle = {
-            base: {
-              fontSize: '16px',
-              lineHeight: '24px',
-              color: '#0a2540',
-              '::placeholder': { color: '#8aa0b6' }
-            },
-            invalid: { color: '#d30000' }
-          };
-
-          cardNumber = elements.create('cardNumber', { style: elementStyle });
-          cardExpiry = elements.create('cardExpiry', { style: elementStyle });
-          cardCvc    = elements.create('cardCvc',    { style: elementStyle });
+          cardNumber = elements.create('cardNumber');
+          cardExpiry = elements.create('cardExpiry');
+          cardCvc    = elements.create('cardCvc');
 
           cardNumber.mount('#card-number');
           cardExpiry.mount('#card-expiry');
