@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Checkout · £1 one‑time</title>
+  <title>Checkout · £1 one‑time (Stripe Checkout)</title>
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -219,7 +219,7 @@
       const billingPostcode = document.getElementById('billingPostcode');
 
       // CHANGE: point to intro-charge endpoint (first step)
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/one-time-1gbp";
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com#";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
       const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
@@ -432,87 +432,35 @@
         }
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
-      document.getElementById('payNow')?.addEventListener('click', async ()=>{
-        if(!stripe){ alert('Payment temporarily unavailable. Please check your connection and try again.'); return; }
-        errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
-        showLoading();
-
-        const name = document.getElementById('nameInput')?.value.trim();
-        const email = document.getElementById('emailInput')?.value.trim();
-        const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
-        const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
-
-        const isoCountry = billingCountry.value || undefined;
-        const address = {
-          line1: (billingStreet?.value||'').trim() || undefined,
-          city: (billingCity?.value||'').trim() || undefined,
-          country: isoCountry,
-          postal_code: (billingPostcode?.value||'').trim() || undefined
-        };
-
+      
+      // Replace PaymentIntents flow with client-only Checkout redirect
+      document.getElementById('payNow')?.addEventListener('click', async () => {
         try{
-          // 1) Create a PaymentMethod
-          const pmRes = await stripe.createPaymentMethod({
-            type:'card',
-            card:cardNumber,
-            billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
+          if(!window.Stripe){ alert('Stripe not loaded'); return; }
+          const stripe = Stripe(PUBLISHABLE_KEY);
+
+          // Pull email to prefill Checkout (optional)
+          const email = document.getElementById('emailInput')?.value.trim();
+
+          showLoading();
+          const result = await stripe.redirectToCheckout({
+            lineItems: [{ price: 'price_1Rz8jaEJXIhiKzYGSSNfEU6N', quantity: 1 }],
+            mode: 'payment',
+            successUrl: window.location.origin + '/thankyou-iphone.html?session_id={CHECKOUT_SESSION_ID}',
+            cancelUrl: window.location.origin + '/cancel.html',
+            customerEmail: email || undefined
           });
-          if(pmRes.error) throw new Error(pmRes.error.message);
-
-          // 2) Start the £20 intro charge
-          const resp = await fetch(SUBSCRIBE_URL,{
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-              paymentMethodId: pmRes.paymentMethod.id,
-              name,
-              email,
-              phone: fullPhone,
-              address
-            })
-          });
-          const data = await resp.json();
-          if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
-
-          // 3) Confirm the intro charge (handles 3DS/SCA)
-          const conf = await stripe.confirmCardPayment(data.clientSecret);
-          if(conf.error) throw new Error(conf.error.message);
-          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
-
-          // Success → thank you page (50/50 split)
-          (function(){
-            const A = 'thankyou-iphone.html';
-            const B = 'thankyou-iphone-skip.html';
-            // Prefer deterministic split based on Stripe paymentIntent.id
-            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-            function fnv1a32(str){
-              let h = 0x811c9dc5 >>> 0;
-              for (let i = 0; i < str.length; i++) {
-                h ^= str.charCodeAt(i);
-                h = Math.imul(h, 0x01000193) >>> 0;
-              }
-              return h >>> 0;
-            }
-            function randomBit(){
-              try {
-                const u32 = new Uint32Array(1);
-                crypto.getRandomValues(u32);
-                return (u32[0] & 1) === 0;
-              } catch (_) {
-                return Math.random() < 0.5;
-              }
-            }
-            const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
-            window.location.href = pickA ? A : B;
-          })();
-
-        }catch(err){
-          if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
+          if (result.error) {
+            errBox.textContent = result.error.message || 'Checkout failed.';
+            errBox.setAttribute('aria-hidden','false');
+          }
+        }catch(e){
+          hideLoading();
+          if(errBox){ errBox.textContent = e.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
         }
-        // On success keep overlay up until redirect / 3DS completes
       });
-    });
-  </script>
+</script>
 
   <!-- GoAffPro loader (kept) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
