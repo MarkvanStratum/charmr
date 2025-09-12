@@ -407,14 +407,16 @@
         throw new Error(data.error || 'Registration failed');
       }
 
+      // CHANGE: advance to step 2 immediately, then try to create the account in the background
       nextBtn?.addEventListener('click', async ()=>{
+        hide(step1); show(step2);
         try{
           await ensureAccount();
-          hide(step1); show(step2);
         }catch(e){
           if(errBox){ errBox.textContent = 'Account setup issue: ' + (e.message||'check details'); errBox.setAttribute('aria-hidden','false'); }
         }
       });
+
       backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
       // ===== Stripe (same logic) =====
@@ -478,31 +480,39 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // Success → thank you page (50/50 split)
+          // Success → thank you page (robust 50/50 split)
           (function(){
             const A = 'thankyou-iphone.html';
-            const B = 'thankyou-iphone.html';
-            // Prefer deterministic split based on Stripe paymentIntent.id
+            const B = 'thankyou-iphone-skip.html';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+
+            // FNV-1a 32-bit (returns unsigned int)
             function fnv1a32(str){
               let h = 0x811c9dc5 >>> 0;
-              for (let i = 0; i < str.length; i++) {
+              for (let i = 0; i < str.length; i++){
                 h ^= str.charCodeAt(i);
                 h = Math.imul(h, 0x01000193) >>> 0;
               }
               return h >>> 0;
             }
-            function randomBit(){
-              try {
+            // Crypto-safe random int [0, maxExclusive)
+            function cryptoRandInt(max){
+              try{
                 const u32 = new Uint32Array(1);
                 crypto.getRandomValues(u32);
-                return (u32[0] & 1) === 0;
-              } catch (_) {
-                return Math.random() < 0.5;
-              }
+                return Number(u32[0] % BigInt(max));
+              }catch{ return Math.floor(Math.random()*max); }
             }
-            const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
-            window.location.href = pickA ? A : B;
+
+            // Use modulo 100 instead of a single parity bit for better distribution
+            const pickA = pid
+              ? ((fnv1a32(pid) % 100) < 50)   // deterministic 50/50 from paymentIntent.id
+              : (cryptoRandInt(100) < 50);    // fallback 50/50 if pid missing
+
+            // Optional cache-buster using pid/timestamp (doesn't affect split)
+            const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
+
+            window.location.href = (pickA ? A : B) + qb;
           })();
 
         }catch(err){
