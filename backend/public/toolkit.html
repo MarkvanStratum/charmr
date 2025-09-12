@@ -34,8 +34,18 @@
     }
     .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
     .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
-    .img-wrap{ display:flex; justify-content:center; align-items:center; padding:10px 0 16px; }
-.img-wrap img{ max-width:min(600px,100%); width:auto; height:auto; border-radius:18px; border:1px solid #eee; }
+
+    /* === CHANGED ONLY THESE TWO RULES === */
+    .img-wrap{ display:flex; justify-content:center; align-items:center; padding:10px 0 16px }
+    .img-wrap img{
+      display:block;
+      max-width:min(100%, 560px); /* never overflow card, but allow full image width */
+      height:auto;               /* keep aspect ratio */
+      object-fit:contain;        /* safety: never crop if a height is ever applied */
+      border-radius:18px; border:1px solid #eee;
+    }
+    /* ==================================== */
+
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
     .input{ width:100%; padding:12px; border:1px solid #ccc; background:#fff; color:#111; border-radius:10px; font-size:16px; }
     .btn{
@@ -292,7 +302,7 @@
       }
       function applyPriceSymbol(symbol){
         document.querySelectorAll('[data-price]').forEach(el=>{
-          el.textContent = `{symbol}`;
+          el.textContent = `${symbol}2.50`;
         });
         document.title = `20V MAX* 10-Tool Combo Kit`;
       }
@@ -500,38 +510,8 @@
         const subData = await subRes.json();
         if(subData.error){hideLoading();showError(subData.error);return}
 
-        // Success: deterministically split traffic 50/50 between two thank-you pages.
-// Uses the PaymentIntent ID when available so the same payer always lands on the same page.
-const A = 'thankyou-iphone.html';
-const B = 'thankyou-iphone-skip.html';
-
-// Prefer the ID from the 3DS confirmation; fall back to the one returned by your server.
-const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-
-// 32-bit FNV-1a hash (fast, tiny, good enough for a parity check)
-function fnv1a32(str){
-  let h = 0x811c9dc5 >>> 0;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return h >>> 0;
-}
-
-// Cryptographically strong random fallback if no PID is available (e.g. unexpected flow)
-function randomBit(){
-  try {
-    const u32 = new Uint32Array(1);
-    crypto.getRandomValues(u32);
-    return (u32[0] & 1) === 0;
-  } catch (_) {
-    return Math.random() < 0.5;
-  }
-}
-
-const pickA = pid ? ((fnv1a32(pid) & 1) === 0) : randomBit();
-window.location.href = pickA ? A : B;
-
+        // Success (your splitter code would live here if needed)
+        // window.location.replace("thankyou-iphone.html");
       }catch(e){
         hideLoading();showError(e.message||"Something went wrong");
       }
