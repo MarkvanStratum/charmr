@@ -595,7 +595,344 @@ const profiles = [
   "city": "Online",
   "image": "https://charmr.xyz/pics/384.png",
   "description": "sharp mind, soft heart 🧠💓 best of both"
+},
+{
+  "id": 385,
+  "name": "Lyra Cole AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/385.png",
+  "description": "green thumb 🌱🌼 plant mom energy"
+},
+{
+  "id": 386,
+  "name": "Ella Frost AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/386.png",
+  "description": "coffee shop dweller ☕📖 cozy vibes"
+},
+{
+  "id": 387,
+  "name": "Juliet Perry AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/387.png",
+  "description": "secret poet 🖋️✨ rhymes & feels"
+},
+{
+  "id": 388,
+  "name": "Ivy Abbott AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/388.png",
+  "description": "animal lover 🐶🐱 hearts & paws"
+},
+{
+  "id": 389,
+  "name": "Noelle Reyes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/389.png",
+  "description": "dream chaser 🌟🚀 never slowing"
+},
+{
+  "id": 390,
+  "name": "Valeria Banks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/390.png",
+  "description": "techy girl 🤖💻 sparks & circuits"
+},
+{
+  "id": 391,
+  "name": "Serena Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/391.png",
+  "description": "sweet but savage 🍯⚡ try me"
+},
+{
+  "id": 392,
+  "name": "Zara Cross AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/392.png",
+  "description": "animal lover 🐶🐱 hearts & paws"
+},
+{
+  "id": 393,
+  "name": "Sage Cross AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/393.png",
+  "description": "indie music vibes 🎶🎧 lost in sound"
+},
+{
+  "id": 394,
+  "name": "Zara Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/394.png",
+  "description": "sunset chaser 🌅💖 golden hour glow"
+},
+{
+  "id": 395,
+  "name": "Sage Perry AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/395.png",
+  "description": "indie music vibes 🎶🎧 lost in sound"
+},
+{
+  "id": 396,
+  "name": "Naomi Ray AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/396.png",
+  "description": "city lights lover 🌃💫 always awake"
+},
+{
+  "id": 397,
+  "name": "Ivy Lawson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/397.png",
+  "description": "beach runner 🏝️🏃‍♀️ waves + miles"
+},
+{
+  "id": 398,
+  "name": "Chloe Nash AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/398.png",
+  "description": "bad jokes included 😂🙈 deal with it"
+},
+{
+  "id": 399,
+  "name": "Elena Mercer AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/399.png",
+  "description": "sunshine smile 🌞💖 brighten your day"
+},
+{
+  "id": 400,
+  "name": "Autumn Hart AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/400.png",
+  "description": "glow getter ✨💄 shine everywhere"
+},
+{
+  "id": 401,
+  "name": "Elena Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/401.png",
+  "description": "romantic soul 💌🌹 sweet & true"
+},
+{
+  "id": 402,
+  "name": "Autumn Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/402.png",
+  "description": "wild heart, free soul 🌸✨ always vibin'"
+},
+{
+  "id": 403,
+  "name": "Stella Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/403.png",
+  "description": "starry dreamer 🌠💕 limitless skies"
+},
+{
+  "id": 404,
+  "name": "Nina Nash AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/404.png",
+  "description": "gamer girl vibes 🎮💜 press start"
+},
+{
+  "id": 405,
+  "name": "Leah West AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/405.png",
+  "description": "indie music vibes 🎶🎧 lost in sound"
+},
+{
+  "id": 406,
+  "name": "Juliet Rhodes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/406.png",
+  "description": "starry dreamer 🌠💕 limitless skies"
+},
+{
+  "id": 407,
+  "name": "Lila Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/407.png",
+  "description": "bookworm with sass 📚😏 plot twist"
+},
+{
+  "id": 408,
+  "name": "Alina Perry AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/408.png",
+  "description": "beach runner 🏝️🏃‍♀️ waves + miles"
+},
+{
+  "id": 409,
+  "name": "Camila Banks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/409.png",
+  "description": "glow getter ✨💄 shine everywhere"
+},
+{
+  "id": 410,
+  "name": "Violet Grant AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/410.png",
+  "description": "sunset chaser 🌅💖 golden hour glow"
+},
+{
+  "id": 411,
+  "name": "Lila Rhodes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/411.png",
+  "description": "spicy foodie 🌮🌶️ flavor queen"
+},
+{
+  "id": 412,
+  "name": "Gemma Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/412.png",
+  "description": "fitness cutie 🏋️‍♀️💦 hustle & glow"
+},
+{
+  "id": 413,
+  "name": "Iris Briggs AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/413.png",
+  "description": "fashion queen 👗👠 walk the vibe"
+},
+{
+  "id": 414,
+  "name": "Chloe Ray AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/414.png",
+  "description": "green thumb 🌱🌼 plant mom energy"
+},
+{
+  "id": 415,
+  "name": "Sofia Nash AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/415.png",
+  "description": "poet soul ✍️🌹 whisper soft words"
+},
+{
+  "id": 416,
+  "name": "Sofia Summers AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/416.png",
+  "description": "bookworm with sass 📚😏 plot twist"
+},
+{
+  "id": 417,
+  "name": "Violet Vega AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/417.png",
+  "description": "adventure seeker 🌍🗺️ let's explore"
+},
+{
+  "id": 418,
+  "name": "Freya Lawson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/418.png",
+  "description": "quiet thinker 🤔💭 deep waters"
+},
+{
+  "id": 419,
+  "name": "Autumn Hunt AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/419.png",
+  "description": "wild heart, free soul 🌸✨ always vibin'"
+},
+{
+  "id": 420,
+  "name": "Adeline Slater AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/420.png",
+  "description": "always sketching ✏️🎨 my canvas life"
+},
+{
+  "id": 421,
+  "name": "Keira Knight AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/421.png",
+  "description": "animal lover 🐶🐱 hearts & paws"
+},
+{
+  "id": 422,
+  "name": "Ella Quinn AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/422.png",
+  "description": "dream chaser 🌟🚀 never slowing"
+},
+{
+  "id": 423,
+  "name": "Ivy Slater AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/423.png",
+  "description": "sunset chaser 🌅💖 golden hour glow"
+},
+{
+  "id": 424,
+  "name": "Leah Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/424.png",
+  "description": "always sketching ✏️🎨 my canvas life"
+},
+{
+  "id": 425,
+  "name": "Naomi Chase AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/425.png",
+  "description": "beach babe 🏖️🌊 salt in the air"
+},
+{
+  "id": 426,
+  "name": "Violet Fox AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/426.png",
+  "description": "spicy foodie 🌮🌶️ flavor queen"
+},
+{
+  "id": 427,
+  "name": "Adeline Jordan AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/427.png",
+  "description": "curious mind 🔎💡 ask me why"
+},
+{
+  "id": 428,
+  "name": "Sofia Adler AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/428.png",
+  "description": "starry dreamer 🌠💕 limitless skies"
+},
+{
+  "id": 429,
+  "name": "Nina Monroe AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/429.png",
+  "description": "coffee shop dweller ☕📖 cozy vibes"
+},
+{
+  "id": 430,
+  "name": "Clara Hart AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/430.png",
+  "description": "sports junkie 🏀⚽ always in motion"
+},
+{
+  "id": 431,
+  "name": "Daisy Grayson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/431.png",
+  "description": "artsy muse 🎨🌈 colors of life"
+},
+{
+  "id": 432,
+  "name": "Willow Stone AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/432.png",
+  "description": "always singing 🎤🎵 music in veins"
 }
+
 
   
 ];
