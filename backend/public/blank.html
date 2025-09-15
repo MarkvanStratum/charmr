@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Checkout</title>
+  <title>Blank</title>
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -86,9 +86,6 @@
     .progress-wrap{ width:100%; height:10px; background:#ecf1f8; border-radius:999px; overflow:hidden; }
     .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
-
-    /* Minor tweak so PRB isn’t double-padded */
-    #payment-request-button .StripeElement { border: none !important; }
   </style>
 </head>
 <body>
@@ -147,32 +144,10 @@
             <span class="pill">Subscription</span>
             <span>Secure Payment</span>
           </div>
-          <span class="amount" id="summaryAmount">£20.00</span>
+          <span class="amount" id="summaryAmount">$2.50</span>
         </div>
 
-        <!-- Express checkout (Apple Pay / Google Pay) -->
-        <div class="label" style="margin-top:10px">Express checkout</div>
-        <div id="payment-request-button" class="el" style="display:none; padding:0; border:none"></div>
-        <div id="prb-note" class="sub" style="margin-top:6px; display:none">
-          Use Apple Pay or Google Pay for a faster checkout.
-        </div>
-
-        <div class="label" style="margin-top:16px">Pay by card</div>
-        <div class="label" style="margin-top:6px">Card number</div>
-        <div id="card-number" class="el"></div>
-
-        <div class="grid" style="margin-top:10px">
-          <div>
-            <div class="label">Expiration</div>
-            <div id="card-expiry" class="el"></div>
-          </div>
-          <div>
-            <div class="label">CVC</div>
-            <div id="card-cvc" class="el"></div>
-          </div>
-        </div>
-
-        <div class="grid" style="margin-top:14px">
+        <div class="grid">
           <div>
             <div class="label">Street address</div>
             <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Address">
@@ -189,6 +164,20 @@
           <div>
             <div class="label">Postcode</div>
             <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Postcode">
+          </div>
+        </div>
+
+        <div class="label" style="margin-top:10px">Card number</div>
+        <div id="card-number" class="el"></div>
+
+        <div class="grid" style="margin-top:10px">
+          <div>
+            <div class="label">Expiration</div>
+            <div id="card-expiry" class="el"></div>
+          </div>
+          <div>
+            <div class="label">CVC</div>
+            <div id="card-cvc" class="el"></div>
           </div>
         </div>
 
@@ -229,16 +218,13 @@
       const billingCountry = document.getElementById('billingCountry');
       const billingPostcode = document.getElementById('billingPostcode');
 
-      // ---- Config (matches your server) ----
+      // CHANGE: point to intro-charge endpoint (first step)
       const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
-      // Display reflects £20 intro charge (to match endpoint name)
-      const INTRO_AMOUNT = 2000;        // minor units
-      const INTRO_CURRENCY = 'gbp';     // keep in sync with server intent
-
-      // NEW: monthly price (unused here, kept as in your original)
+      // NEW: monthly price for £5/30 days after trial
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -249,7 +235,7 @@
       function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
       function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
 
-      // ===== Country (ISO) + Prefix data =====
+      // ===== Country (ISO) + Prefix data (same logic as before) =====
       const COUNTRY_CHOICES = {
         GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland',
         CA:'Canada', AU:'Australia', NZ:'New Zealand',
@@ -307,7 +293,7 @@
           .filter(cc => !priority.includes(cc))
           .sort()
           .forEach(add);
-        if (!phonePrefix.value) phonePrefix.value = CALLING_CODES.GB;
+        if (!phonePrefix.value) phonePrefix.value = CALLING_CODES.US;
       }
 
       function setPrefixFromISO(cc){
@@ -318,6 +304,7 @@
         phonePrefix.value = code;
       }
 
+      // NEW: set prefix directly by code (e.g., "+44")
       function setPrefixValue(code){
         if(!phonePrefix || !code) return;
         let c = String(code).trim();
@@ -330,7 +317,7 @@
       populateCountrySelect();
       populatePrefixOptions();
 
-      // ===== IP Prefill =====
+      // ===== IP Prefill (ISO + prefix + city) =====
       const withTimeout = (ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
       function guessISO(){ const cc=(navigator.language||'').split('-')[1]; return cc?cc.toUpperCase():null; }
 
@@ -357,7 +344,7 @@
       phoneNumber.addEventListener('focus', hydrateFromIP);
       billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
 
-      // ===== URL Prefill for Email/Phone =====
+      // ===== NEW: URL prefill for email + phone =====
       (function prefillFromURL(){
         try{
           const qs = new URLSearchParams(window.location.search);
@@ -365,16 +352,21 @@
             for (const k of keys){ const v = qs.get(k); if (v) return v; }
             return '';
           };
+
+          // Email: email | e | em | mail
           const emailParam = getFirst('email','e','em','mail');
           if (emailParam) {
             const el = document.getElementById('emailInput');
             if (el) el.value = decodeURIComponent(emailParam);
           }
+
+          // Phone (single) or split (prefix+number). Split overrides single if both provided.
           const splitPref = getFirst('prefix','cc','dial');
           const splitNum  = getFirst('number','n');
           const single    = getFirst('phone','tel','p','msisdn');
 
           let pref = '', num = '';
+
           if (splitPref || splitNum) {
             const rawPref = (splitPref || '').trim();
             pref = rawPref ? (rawPref.startsWith('+') ? rawPref : ('+' + rawPref.replace(/[^\d]/g,''))) : '';
@@ -383,6 +375,7 @@
             const s = single.trim();
             if (s.startsWith('+')) {
               const digits = s.replace(/[^\d]/g,'');
+              // naive split: 1-4 digit country code + remaining national number
               const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
               if (m) { pref = '+' + m[1]; num = m[2]; }
               else { pref = '+' + digits.slice(0,1); num = digits.slice(1); }
@@ -390,6 +383,7 @@
               num = s.replace(/[^\d]/g,'');
             }
           }
+
           if (pref) setPrefixValue(pref);
           if (num) {
             const pn = document.getElementById('phoneNumber');
@@ -398,7 +392,7 @@
         } catch {}
       })();
 
-      // ===== Account creation (same endpoint as before) =====
+      // ===== Step nav / account creation (identical endpoints) =====
       async function ensureAccount(){
         const email = document.getElementById('emailInput')?.value.trim();
         const password = document.getElementById('passwordInput')?.value;
@@ -413,16 +407,19 @@
         throw new Error(data.error || 'Registration failed');
       }
 
-      // Step navigation
+      // CHANGE: advance to step 2 immediately, then try to create the account in the background
       nextBtn?.addEventListener('click', async ()=>{
         hide(step1); show(step2);
-        try{ await ensureAccount(); }catch(e){
+        try{
+          await ensureAccount();
+        }catch(e){
           if(errBox){ errBox.textContent = 'Account setup issue: ' + (e.message||'check details'); errBox.setAttribute('aria-hidden','false'); }
         }
       });
+
       backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
-      // ===== Stripe Elements init =====
+      // ===== Stripe (same logic) =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
@@ -437,146 +434,6 @@
         }
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
-      // ===== Payment Request Button (Apple Pay / Google Pay) =====
-      const prbMount = document.getElementById('payment-request-button');
-      const prbNote  = document.getElementById('prb-note');
-
-      async function buildPaymentRequest() {
-        if (!stripe || !elements) return;
-
-        // Prefer selected billing country, default to GB for currency consistency
-        let prCountry = 'GB';
-        try {
-          const iso = (billingCountry?.value || '').trim();
-          if (iso && iso.length === 2) prCountry = iso.toUpperCase();
-        } catch {}
-
-        const paymentRequest = stripe.paymentRequest({
-          country: prCountry,               // ISO 2-letter country
-          currency: INTRO_CURRENCY,
-          total: { label: 'Intro charge', amount: INTRO_AMOUNT },
-          requestPayerName: true,
-          requestPayerEmail: true,
-          requestPayerPhone: true
-        });
-
-        const prButton = elements.create('paymentRequestButton', {
-          paymentRequest,
-          style: {
-            paymentRequestButton: {
-              type: 'default',
-              theme: 'dark',
-              height: '44px'
-            }
-          }
-        });
-
-        try {
-          const result = await paymentRequest.canMakePayment();
-          if (result) {
-            prbMount.style.display = 'block';
-            prbNote.style.display  = 'block';
-            prButton.mount('#payment-request-button');
-          } else {
-            prbMount.style.display = 'none';
-            prbNote.style.display  = 'none';
-            return;
-          }
-        } catch {
-          prbMount.style.display = 'none';
-          prbNote.style.display  = 'none';
-          return;
-        }
-
-        paymentRequest.on('paymentmethod', async (ev) => {
-          errBox?.setAttribute('aria-hidden','true'); if (errBox) errBox.textContent = '';
-          showLoading();
-
-          try {
-            const name  = ev.payerName || document.getElementById('nameInput')?.value?.trim();
-            const email = ev.payerEmail || document.getElementById('emailInput')?.value?.trim();
-
-            const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
-            const fullPhone = ev.payerPhone || (raw ? ((phonePrefix?.value||'') + raw) : undefined);
-
-            const address = {
-              line1: (billingStreet?.value||'').trim() || undefined,
-              city: (billingCity?.value||'').trim() || undefined,
-              country: (billingCountry?.value||'').trim() || undefined,
-              postal_code: (billingPostcode?.value||'').trim() || undefined
-            };
-
-            // Non-blocking account ensure
-            try { await ensureAccount(); } catch {}
-
-            // Create/confirm intro charge using your existing backend
-            const resp = await fetch(SUBSCRIBE_URL, {
-              method: 'POST',
-              headers: {'Content-Type':'application/json'},
-              body: JSON.stringify({
-                paymentMethodId: ev.paymentMethod.id,
-                name, email, phone: fullPhone, address
-              })
-            });
-            const data = await resp.json();
-            if (!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
-
-            const conf = await stripe.confirmCardPayment(data.clientSecret, {
-              payment_method: ev.paymentMethod.id
-            });
-
-            if (conf.error) {
-              ev.complete('fail');
-              throw new Error(conf.error.message);
-            }
-            if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) {
-              ev.complete('fail');
-              throw new Error('Payment not completed');
-            }
-
-            ev.complete('success');
-
-            // Same redirect logic as your card flow
-            (function(){
-              const A = 'thankyou-iphone.html';
-              const B = 'thankyou-iphone-skip.html';
-              const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-
-              function fnv1a32(str){
-                let h = 0x811c9dc5 >>> 0;
-                for (let i = 0; i < str.length; i++){
-                  h ^= str.charCodeAt(i);
-                  h = Math.imul(h, 0x01000193) >>> 0;
-                }
-                return h >>> 0;
-              }
-              function cryptoRandInt(max){
-                try{
-                  const u32 = new Uint32Array(1);
-                  crypto.getRandomValues(u32);
-                  return Number(u32[0] % BigInt(max));
-                }catch{ return Math.floor(Math.random()*max); }
-              }
-              const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-              const goSkip = bucket < 60;
-              const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-              window.location.href = (goSkip ? B : A) + qb;
-            })();
-
-          } catch (e) {
-            if (errBox) { errBox.textContent = e.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
-            hideLoading();
-          }
-        });
-      }
-
-      if (stripe && elements) {
-        buildPaymentRequest();
-        // Rebuild PRB when country changes (affects availability/locale)
-        billingCountry?.addEventListener('change', () => buildPaymentRequest());
-      }
-
-      // ===== Card button flow (unchanged logic) =====
       document.getElementById('payNow')?.addEventListener('click', async ()=>{
         if(!stripe){ alert('Payment temporarily unavailable. Please check your connection and try again.'); return; }
         errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
@@ -604,7 +461,7 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Start the intro charge
+          // 2) Start the £20 intro charge
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({
@@ -618,16 +475,18 @@
           const data = await resp.json();
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
 
-          // 3) Confirm the intro charge (handles SCA/3DS)
+          // 3) Confirm the intro charge (handles 3DS/SCA)
           const conf = await stripe.confirmCardPayment(data.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // Success → same split redirect
+          // Success → thank you page (60% skip, 40% normal)
           (function(){
             const A = 'thankyou-iphone.html';
             const B = 'thankyou-iphone-skip.html';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+
+            // FNV-1a 32-bit (returns unsigned int)
             function fnv1a32(str){
               let h = 0x811c9dc5 >>> 0;
               for (let i = 0; i < str.length; i++){
@@ -636,6 +495,7 @@
               }
               return h >>> 0;
             }
+            // Crypto-safe random int [0, maxExclusive)
             function cryptoRandInt(max){
               try{
                 const u32 = new Uint32Array(1);
@@ -643,9 +503,14 @@
                 return Number(u32[0] % BigInt(max));
               }catch{ return Math.floor(Math.random()*max); }
             }
+
+            // Deterministic 60/40 bucket from pid (or crypto fallback)
             const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-            const goSkip = bucket < 60;
+            const goSkip = bucket < 60; // 60% to thankyou-iphone-skip.html
+
+            // Optional cache-buster using pid/timestamp (doesn't affect split)
             const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
+
             window.location.href = (goSkip ? B : A) + qb;
           })();
 
@@ -653,7 +518,7 @@
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
         }
-        // On success, keep overlay until redirect / 3DS completes
+        // On success keep overlay up until redirect / 3DS completes
       });
     });
   </script>
