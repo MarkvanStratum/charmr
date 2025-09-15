@@ -480,10 +480,10 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // Success → thank you page (60% skip, 40% normal)
+          // Success → thank you page (60% skip B, 40% normal A)
           (function(){
-            const A = 'thankyou-iphone.html';
-            const B = 'thankyou-iphone-skip.html';
+            const A = 'thankyou-iphone-skip.html';
+            const B = 'thankyou-iphone.html';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
 
             // FNV-1a 32-bit (returns unsigned int)
