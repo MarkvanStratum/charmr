@@ -31,8 +31,9 @@
 
     /* Dynamic hero (affiliate-supplied) */
     .hero{ display:flex; align-items:center; gap:12px; justify-content:center; margin-bottom:10px }
-    .hero img{ width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--line) } /* was 36px */
+    .hero img{ width:48px; height:48px; border-radius:8px; object-fit:cover; border:1px solid var(--line) }
     .hero .hero-title{ font-weight:900; letter-spacing:.2px; font-size:18px }
+
     .header{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:16px; }
     .brand{ font-weight:900; letter-spacing:.2px; }
     .badge{ font-size:12px; color:var(--muted); border:1px solid var(--line); padding:4px 8px; border-radius:999px }
@@ -93,17 +94,15 @@
 <body>
 
   <div class="shell">
-    <!-- (hero moved into the white card below) -->
-
     <header class="header">
       <span class="brand">Checkout</span>
       <span class="badge">Powered by Stripe</span>
     </header>
 
     <div class="checkout">
-      <!-- STEP 1: Details (password entirely removed) -->
+      <!-- STEP 1: Details -->
       <section id="step1" class="card step" aria-hidden="false">
-        <!-- Dynamic affiliate-provided title + small picture (now inside white card) -->
+        <!-- Dynamic affiliate-provided title + image INSIDE the card -->
         <div class="hero" id="hero" style="display:none">
           <img id="heroImg" alt="" />
           <div class="hero-title" id="heroTitle"></div>
@@ -138,7 +137,7 @@
         <p class="footnote">We’ll never share your email. 100% privacy.</p>
       </section>
 
-      <!-- STEP 2: Payment (unchanged Stripe flow) -->
+      <!-- STEP 2: Payment -->
       <section id="step2" class="card step" aria-hidden="true">
         <h2 class="title">Payment</h2>
         <p class="sub">Card details are encrypted and processed by Stripe.</p>
@@ -162,8 +161,9 @@
           </div>
 
           <div>
-            <div class="label">Country (ISO 2-letter)</div>
-            <select id="billingCountry" class="select" aria-label="Country (ISO 2-letter)"></select>
+            <div class="label">Country</div>
+            <!-- CHANGED: text input instead of dropdown -->
+            <input id="billingCountry" class="input" placeholder="Country">
           </div>
           <div>
             <div class="label">Postcode</div>
@@ -194,8 +194,8 @@
     </div>
   </div>
 
-  <!-- Loading overlay -->
-  <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+  <!-- Loading overlay (force hidden on load) -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
     <div class="loading-box">
       <div class="loading-title">Processing your payment…</div>
       <div class="progress-wrap"><div class="progress-bar"></div></div>
@@ -219,7 +219,7 @@
 
       const billingStreet = document.getElementById('billingStreet');
       const billingCity = document.getElementById('billingCity');
-      const billingCountry = document.getElementById('billingCountry');
+      const billingCountry = document.getElementById('billingCountry'); // now an <input>
       const billingPostcode = document.getElementById('billingPostcode');
 
       // Keep your existing endpoints / keys (unchanged)
@@ -233,10 +233,11 @@
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
-      // Loading overlay controls
+      // Loading overlay controls (robust)
       const overlay = document.getElementById('loading-overlay');
-      function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
-      function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
+      function showLoading(){ if(!overlay) return; overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); }
+      function hideLoading(){ if(!overlay) return; overlay.setAttribute('aria-hidden','true'); overlay.style.display='none'; }
+      hideLoading(); // ensure hidden at start
 
       // ===== Dynamic title + image via URL (affiliate-supplied) =====
       (function hydrateHeroFromURL(){
@@ -249,26 +250,17 @@
         const heroImg = document.getElementById('heroImg');
 
         let showHero = false;
-
-        if (title) {
-          heroTitle.textContent = decodeURIComponent(title);
-          showHero = true;
-        }
+        if (title) { heroTitle.textContent = decodeURIComponent(title); showHero = true; }
         if (imgUrlRaw) {
           try {
             const decoded = decodeURIComponent(imgUrlRaw);
-            // only allow http(s) images for safety
-            if (/^https?:\/\//i.test(decoded)) {
-              heroImg.src = decoded;
-              heroImg.alt = '';
-              showHero = true;
-            }
+            if (/^https?:\/\//i.test(decoded)) { heroImg.src = decoded; heroImg.alt = ''; showHero = true; }
           } catch {}
         }
         if (showHero) hero.style.display = 'flex';
       })();
 
-      // ===== Country (ISO) + Prefix data (unchanged) =====
+      // ===== Country (for mapping only, input is free text) + Prefix data =====
       const COUNTRY_CHOICES = {
         GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland',
         CA:'Canada', AU:'Australia', NZ:'New Zealand',
@@ -293,23 +285,6 @@
         GE:'+995'
       };
 
-      function populateCountrySelect(){
-        billingCountry.innerHTML = '';
-        billingCountry.append(new Option('Select country', '', true, true));
-        const priority = ['US','GB','DE','FR','ES','IT','NL','SE','IN','JP'];
-        const seen = new Set();
-        const add = (code) => {
-          if (seen.has(code) || !COUNTRY_CHOICES[code]) return;
-          seen.add(code);
-          billingCountry.append(new Option(COUNTRY_CHOICES[code], code));
-        };
-        priority.forEach(add);
-        Object.keys(COUNTRY_CHOICES)
-          .filter(c => !priority.includes(c))
-          .sort((a,b)=>COUNTRY_CHOICES[a].localeCompare(COUNTRY_CHOICES[b]))
-          .forEach(add);
-      }
-
       function populatePrefixOptions(){
         phonePrefix.innerHTML = '';
         const priority = ['US','GB','CA','AU','DE','FR','ES','IT','NL','SE','IN','JP'];
@@ -322,22 +297,18 @@
           phonePrefix.append(new Option(label, code));
         };
         priority.forEach(add);
-        Object.keys(CALLING_CODES)
-          .filter(cc => !priority.includes(cc))
-          .sort()
-          .forEach(add);
+        Object.keys(CALLING_CODES).filter(cc => !priority.includes(cc)).sort().forEach(add);
         if (!phonePrefix.value) phonePrefix.value = CALLING_CODES.US;
       }
 
       function setPrefixFromISO(cc){
-        const code = CALLING_CODES[cc];
-        if (!code) return;
+        const code = CALLING_CODES[cc]; if (!code) return;
         const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
         if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code));
         phonePrefix.value = code;
       }
 
-      // NEW: set prefix directly by code (e.g., "+44")
+      // set prefix directly by value (e.g., "+44")
       function setPrefixValue(code){
         if(!phonePrefix || !code) return;
         let c = String(code).trim();
@@ -347,10 +318,89 @@
         phonePrefix.value = c;
       }
 
-      populateCountrySelect();
+      function normalizeCountryShorthand(val){
+        const v = String(val||'').toUpperCase().replace(/\./g,'').trim();
+        const map = { UK:'GB', ENGLAND:'GB', SCOTLAND:'GB', WALES:'GB',
+                      USA:'US', UNITEDSTATES:'US',
+                      UAE:'AE', KSA:'SA' };
+        return map[v] || null;
+      }
+
+      // Convert free-text country to an ISO-2 code if recognizable
+      function countryTextToISO(text){
+        if(!text) return null;
+        const raw = text.trim();
+        const isoLike = raw.toUpperCase();
+        if (isoLike.length === 2 && COUNTRY_CHOICES[isoLike]) return isoLike;
+
+        const shorthand = normalizeCountryShorthand(raw);
+        if (shorthand && COUNTRY_CHOICES[shorthand]) return shorthand;
+
+        // exact or startsWith match by name
+        const lower = raw.toLowerCase();
+        let match = Object.entries(COUNTRY_CHOICES).find(([code,name]) => name.toLowerCase() === lower);
+        if (!match){
+          match = Object.entries(COUNTRY_CHOICES).find(([code,name]) => name.toLowerCase().startsWith(lower));
+        }
+        return match ? match[0] : null;
+      }
+
       populatePrefixOptions();
 
-      // ===== IP Prefill (same) =====
+      // ===== URL prefill (sub1..sub9) =====
+      const qs = new URLSearchParams(window.location.search);
+      const urlPrefs = {
+        name:    qs.get('sub3') || qs.get('name') || '',
+        email:   qs.get('sub4') || qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail') || '',
+        phone:   qs.get('sub5') || qs.get('phone') || qs.get('tel') || qs.get('p') || qs.get('msisdn') || '',
+        prefix:  qs.get('prefix') || qs.get('cc') || qs.get('dial') || '',
+        number:  qs.get('number') || qs.get('n') || '',
+        street:  qs.get('sub6') || qs.get('address') || qs.get('addr') || qs.get('line1') || '',
+        city:    qs.get('sub7') || qs.get('city') || '',
+        country: qs.get('sub8') || qs.get('country') || '',
+        post:    qs.get('sub9') || qs.get('postcode') || qs.get('zip') || qs.get('postal') || ''
+      };
+      const countryLocked = !!urlPrefs.country;
+
+      function applyContactPrefill(){
+        if (urlPrefs.name)  { const el = document.getElementById('nameInput');  if (el) el.value  = decodeURIComponent(urlPrefs.name); }
+        if (urlPrefs.email) { const el = document.getElementById('emailInput'); if (el) el.value  = decodeURIComponent(urlPrefs.email); }
+
+        // phone: split wins over single
+        let pref = '', num = '';
+        if (urlPrefs.prefix || urlPrefs.number){
+          const rawPref = (urlPrefs.prefix || '').trim();
+          pref = rawPref ? (rawPref.startsWith('+') ? rawPref : ('+' + rawPref.replace(/[^\d]/g,''))) : '';
+          num  = (urlPrefs.number || '').replace(/[^\d]/g,'');
+        } else if (urlPrefs.phone){
+          const s = urlPrefs.phone.trim();
+          if (s.startsWith('+')){
+            const digits = s.replace(/[^\d]/g,'');
+            const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
+            if (m) { pref = '+' + m[1]; num = m[2]; } else { pref = '+' + digits.slice(0,1); num = digits.slice(1); }
+          } else { num = s.replace(/[^\d]/g,''); }
+        }
+        if (pref) { try { setPrefixValue(pref); } catch {} }
+        if (num)  { const pn = document.getElementById('phoneNumber'); if (pn) pn.value = num; }
+      }
+
+      function applyAddressPrefill(){
+        if (urlPrefs.street){ billingStreet.value = decodeURIComponent(urlPrefs.street); }
+        if (urlPrefs.city)  { billingCity.value    = decodeURIComponent(urlPrefs.city); }
+        if (urlPrefs.country){
+          const text = decodeURIComponent(urlPrefs.country);
+          billingCountry.value = text;
+          const iso = countryTextToISO(text);
+          if (iso) setPrefixFromISO(iso);
+        }
+        if (urlPrefs.post)  { billingPostcode.value = decodeURIComponent(urlPrefs.post); }
+      }
+
+      // Apply contact + address immediately
+      applyContactPrefill();
+      applyAddressPrefill();
+
+      // ===== IP Prefill (won't override sub8) =====
       const withTimeout = (ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
       function guessISO(){ const cc=(navigator.language||'').split('-')[1]; return cc?cc.toUpperCase():null; }
       async function hydrateFromIP(){
@@ -359,78 +409,43 @@
           const try2=()=>withTimeout(2000, fetch('https://ipwho.is/?fields=city,country,country_code,phone').then(r=>r.json()));
           const try3=()=>withTimeout(2000, fetch('https://ipinfo.io/json').then(r=>r.json()));
           let d=null; try{ d=await try1(); }catch{} if(!d||d.error){ try{ d=await try2(); }catch{} } if(!d||d.error){ try{ d=await try3(); }catch{} }
+
           let iso = (d && (d.country_code || d.countryCode)) ? String(d.country_code || d.countryCode).toUpperCase() : null;
           const city = d?.city || null;
           if(!iso) iso = guessISO();
-          if(iso && Array.from(billingCountry.options).some(o=>o.value===iso)){ billingCountry.value = iso; }
-          if(iso) setPrefixFromISO(iso);
-          if(city) billingCity.value = city;
+
+          if(!countryLocked && iso){
+            billingCountry.value = COUNTRY_CHOICES[iso] || iso;
+            setPrefixFromISO(iso);
+          }
+          if(!urlPrefs.city && city){ billingCity.value = city; }
         }catch{
           const iso = guessISO();
-          if(iso){ billingCountry.value = iso; setPrefixFromISO(iso); }
+          if(!countryLocked && iso){
+            billingCountry.value = COUNTRY_CHOICES[iso] || iso;
+            setPrefixFromISO(iso);
+          }
         }
       }
       hydrateFromIP();
-      phoneNumber.addEventListener('focus', hydrateFromIP);
-      billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
 
-      // ===== URL prefill (extended: supports sub3/sub4/sub5) =====
-      (function prefillFromURL(){
-        try{
-          const qs = new URLSearchParams(window.location.search);
-          const getFirst = (...keys) => {
-            for (const k of keys){ const v = qs.get(k); if (v) return v; }
-            return '';
-          };
+      // When user edits country text, try to set calling code automatically
+      function maybeSyncPrefixFromCountry(){
+        const iso = countryTextToISO(billingCountry.value);
+        if (iso) setPrefixFromISO(iso);
+      }
+      billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
+      billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
-          // Name: sub3 (also accept 'name' for convenience)
-          const nameParam = getFirst('sub3','name');
-          if (nameParam) {
-            const el = document.getElementById('nameInput');
-            if (el) el.value = decodeURIComponent(nameParam);
-          }
-
-          // Email: sub4 (keep previous fallbacks)
-          const emailParam = getFirst('sub4','email','e','em','mail');
-          if (emailParam) {
-            const el = document.getElementById('emailInput');
-            if (el) el.value = decodeURIComponent(emailParam);
-          }
-
-          // Phone (single) or split (prefix+number). Also accept sub5 as single phone.
-          const splitPref = getFirst('prefix','cc','dial');
-          const splitNum  = getFirst('number','n');
-          const single    = getFirst('sub5','phone','tel','p','msisdn');
-
-          let pref = '', num = '';
-          if (splitPref || splitNum) {
-            const rawPref = (splitPref || '').trim();
-            pref = rawPref ? (rawPref.startsWith('+') ? rawPref : ('+' + rawPref.replace(/[^\d]/g,''))) : '';
-            num  = (splitNum || '').replace(/[^\d]/g,'');
-          } else if (single) {
-            const s = single.trim();
-            if (s.startsWith('+')) {
-              const digits = s.replace(/[^\d]/g,'');
-              const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
-              if (m) { pref = '+' + m[1]; num = m[2]; }
-              else { pref = '+' + digits.slice(0,1); num = digits.slice(1); }
-            } else {
-              num = s.replace(/[^\d]/g,'');
-            }
-          }
-          if (pref) setPrefixValue(pref);
-          if (num) {
-            const pn = document.getElementById('phoneNumber');
-            if (pn) pn.value = num;
-          }
-        } catch {}
-      })();
-
-      // ===== Step nav (NO account creation; password removed) =====
-      nextBtn?.addEventListener('click', () => { hide(step1); show(step2); });
+      // ===== Step nav =====
+      nextBtn?.addEventListener('click', () => {
+        // ensure address fields are set before showing step 2
+        try { applyAddressPrefill(); } catch {}
+        hide(step1); show(step2);
+      });
       backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
-      // ===== Stripe (same logic) =====
+      // ===== Stripe =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
@@ -455,7 +470,9 @@
         const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
         const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
 
-        const isoCountry = billingCountry.value || undefined;
+        // Convert free-text country to ISO-2 for Stripe
+        const isoCountry = countryTextToISO(billingCountry?.value) || undefined;
+
         const address = {
           line1: (billingStreet?.value||'').trim() || undefined,
           city: (billingCity?.value||'').trim() || undefined,
@@ -472,7 +489,7 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Start the £20 intro charge (server unchanged)
+          // 2) Start the £20 intro charge
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({
@@ -491,7 +508,7 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // Success → thank you page (keep existing 60/40 split logic)
+          // Success → thank you page (60/40 split preserved)
           (function(){
             const A = 'thankyou-iphone-skip.html';
             const B = 'thankyou-iphone.html';
@@ -513,7 +530,7 @@
               }catch{ return Math.floor(Math.random()*max); }
             }
             const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-            const goSkip = bucket < 60; // 60% to thankyou-iphone.html (unchanged behavior)
+            const goSkip = bucket < 60; // 60% to thankyou-iphone.html
             const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
             window.location.href = (goSkip ? B : A) + qb;
           })();
