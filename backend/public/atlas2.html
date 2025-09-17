@@ -364,7 +364,7 @@
         if (showHero) hero.style.display = 'flex';
       })();
 
-      // ===== Country choices + calling codes (unchanged helpers, trimmed to essentials) =====
+      // ===== Country choices + calling codes =====
       const COUNTRY_CHOICES = {
         GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland', CA:'Canada', AU:'Australia', NZ:'New Zealand',
         DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands', BE:'Belgium', CH:'Switzerland', AT:'Austria',
@@ -435,20 +435,21 @@
         email:   qs.get('sub9') || '',
         phone:   qs.get('sub10') || ''
       };
-      const countryLocked = !!urlPrefs.country;
+
+      // will prevent IP from overriding if we already set a prefix from URL
+      let prefixLockedFromURL = false;
 
       function applyContactPrefill(){
         if (urlPrefs.first){ firstName.value = decodeURIComponent(urlPrefs.first); }
         if (urlPrefs.last){  lastName.value  = decodeURIComponent(urlPrefs.last); }
         if (urlPrefs.email){ document.getElementById('emailInput').value = decodeURIComponent(urlPrefs.email); }
 
-        // phone: if starts with +, split naive prefix/local; else drop non-digits
         const rawPhone = (urlPrefs.phone || '').trim();
         if (rawPhone){
           if (rawPhone.startsWith('+')){
             const digits = rawPhone.replace(/[^\d]/g,'');
             const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
-            if (m){ setPrefixValue('+'+m[1]); phoneNumber.value = m[2]; }
+            if (m){ setPrefixValue('+'+m[1]); phoneNumber.value = m[2]; prefixLockedFromURL = true; }
             else { phoneNumber.value = digits; }
           } else {
             phoneNumber.value = rawPhone.replace(/[^\d]/g,'');
@@ -471,7 +472,26 @@
       applyContactPrefill();
       applyAddressPrefill();
 
-      // (IP-based autofill REMOVED per request)
+      // ---- IP-based prefix ONLY (does not touch city/country fields) ----
+      (function hydratePrefixFromIP(){
+        if (prefixLockedFromURL) return; // respect URL-provided phone
+        const withTimeout = (ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
+        const guessISO = ()=>{ const cc=(navigator.language||'').split('-')[1]; return cc?cc.toUpperCase():null; };
+        (async () => {
+          try{
+            const try1=()=>withTimeout(2000, fetch('https://ipapi.co/json/').then(r=>r.json()));
+            const try2=()=>withTimeout(2000, fetch('https://ipwho.is/?fields=country,country_code').then(r=>r.json()));
+            const try3=()=>withTimeout(2000, fetch('https://ipinfo.io/json').then(r=>r.json()));
+            let d=null; try{ d=await try1(); }catch{} if(!d||d.error){ try{ d=await try2(); }catch{} } if(!d||d.error){ try{ d=await try3(); }catch{} }
+            let iso = (d && (d.country_code || d.countryCode)) ? String(d.country_code || d.countryCode).toUpperCase() : null;
+            if(!iso) iso = guessISO();
+            if(iso) setPrefixFromISO(iso);
+          }catch{
+            const iso = guessISO();
+            if(iso) setPrefixFromISO(iso);
+          }
+        })();
+      })();
 
       // Sync prefix when user edits country
       function maybeSyncPrefixFromCountry(){
