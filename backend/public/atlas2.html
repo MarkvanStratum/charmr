@@ -253,7 +253,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Order Summary</div>
-          <div class="order-row"><span>Total</span><span id="orderTotal">£20.00</span></div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">$14.95</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Only 13 left in stock<br>
@@ -275,7 +275,7 @@
               <div class="small">SSL Encrypted</div>
             </div>
             <div class="box">
-              <div class="big">£10K</div>
+              <div class="big">$10K</div>
               <div class="small">Buyer Protection</div>
             </div>
           </div>
@@ -327,7 +327,7 @@
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
       // Display price like screenshot (purely cosmetic)
-      const INTRO_PRICE_TEXT = '£20.00';
+      const INTRO_PRICE_TEXT = '$14.95';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -562,7 +562,7 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Start the £20 intro charge (kept)
+          // 2) Start the $20 intro charge (kept)
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
