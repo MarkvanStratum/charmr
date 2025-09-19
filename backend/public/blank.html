@@ -227,6 +227,9 @@
       // NEW: monthly price for £5/30 days after trial
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
+      /* NEW: redirect URL for ANY failed/declined/unsuccessful payment */
+      const FAIL_REDIRECT_URL = "https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
+
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
@@ -515,8 +518,11 @@
           })();
 
         }catch(err){
+          // SHOW the error (unchanged) …
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
+          // … then IMMEDIATELY redirect ANY failed/declined/blocked/insufficient-funds payment
+          window.location.href = FAIL_REDIRECT_URL;
         }
         // On success keep overlay up until redirect / 3DS completes
       });
