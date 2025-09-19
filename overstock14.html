@@ -5,6 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Warehouse Clearout: iPhone 14 — 95% Off | Independent Fulfillment Outlet</title>
   <meta name="description" content="Independent fulfillment center liquidating an overstock of sealed iPhone 14 units at 95% off. Limited pallets, first-come first-served. Transparent story, real warranty, fair shipping." />
+  <!-- Google Tag Manager (GTM) -->
+  <script>
+    (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+    })(window,document,'script','dataLayer','GT-KF6CRFST');
+  </script>
+  <!-- End Google Tag Manager -->
+
   <style>
     /* ===== Amazon-style light palette ===== */
     :root{
@@ -145,9 +155,26 @@
   </style>
   <script src="https://js.stripe.com/v3"></script>
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <!-- Existing GA gtag loader (kept) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <!-- Initialize GA4 + Google Ads (AW) on the same gtag -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    /* Existing GA property */
+    gtag('config', 'G-FDQ6REQWS8');
+    /* Google Ads account */
+    gtag('config', 'AW-17486667499');
+  </script>
 </head>
 <body>
+  <!-- Google Tag Manager (noscript) -->
+  <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GT-KF6CRFST"
+  height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+  <!-- End Google Tag Manager (noscript) -->
+
   <!-- NEW: full-width banner image at the very top -->
   <div class="mastbar"><img src="amazon.png" alt="Top bar" /></div>
 
@@ -475,6 +502,69 @@
       const yearEl = document.getElementById('year');
       if (yearEl) yearEl.textContent = new Date().getFullYear();
 
+      // ---- Analytics helpers (Google Ads + GA4 + GTM dataLayer events) ----
+      const dl = window.dataLayer = window.dataLayer || [];
+      const safeText = (el) => (el?.innerText || el?.textContent || '').trim().slice(0, 120);
+
+      function trackPageView(){
+        // GA4 style page_view
+        if (typeof gtag === 'function') {
+          gtag('event', 'page_view');
+        }
+        dl.push({ event: 'page_view' });
+      }
+
+      function trackButtonClick(target){
+        const label = target?.id || target?.name || target?.value || safeText(target) || '(unlabeled)';
+        if (typeof gtag === 'function') {
+          gtag('event', 'button_click', {
+            event_category: 'engagement',
+            event_label: label
+          });
+        }
+        dl.push({ event: 'button_click', label });
+      }
+
+      function trackBeginCheckout(valueGBP){
+        if (typeof gtag === 'function') {
+          gtag('event', 'begin_checkout', { value: valueGBP, currency: 'GBP' });
+        }
+        dl.push({ event: 'begin_checkout', value: valueGBP, currency: 'GBP' });
+      }
+
+      function trackAddPaymentInfo(valueGBP){
+        if (typeof gtag === 'function') {
+          gtag('event', 'add_payment_info', { value: valueGBP, currency: 'GBP' });
+        }
+        dl.push({ event: 'add_payment_info', value: valueGBP, currency: 'GBP' });
+      }
+
+      function trackPurchase(totalGBP, transactionId, qty){
+        // Fire GA4 purchase + send to Google Ads account
+        if (typeof gtag === 'function') {
+          gtag('event', 'purchase', {
+            transaction_id: transactionId || undefined,
+            value: totalGBP,
+            currency: 'GBP',
+            items: [{ item_name: 'iPhone 14', quantity: qty }],
+            send_to: 'AW-17486667499'
+          });
+        }
+        dl.push({
+          event: 'purchase',
+          transaction_id: transactionId || undefined,
+          value: totalGBP,
+          currency: 'GBP',
+          items: [{ item_name: 'iPhone 14', quantity: qty }]
+        });
+      }
+
+      // Global button click tracking (native buttons, links with .btn, and role=button)
+      document.addEventListener('click', (e) => {
+        const btn = e.target.closest('button, .btn, a.btn, [role="button"]');
+        if (btn) trackButtonClick(btn);
+      });
+
       // Stepper
       const form = document.getElementById('qualifier');
       const panes = [...form.querySelectorAll('.step-pane')];
@@ -484,7 +574,7 @@
         pills.forEach((pl, i) => pl.classList.toggle('active', i === (n-1)));
         form.setAttribute('data-step', String(n));
         form.scrollIntoView({behavior:'smooth', block:'start'});
-        if (n === 5) { ensureStripeMounted(); updatePayCta(); }
+        if (n === 5) { ensureStripeMounted(); updatePayCta(); trackBeginCheckout(getQty()*20); }
       };
 
       document.getElementById('next1').addEventListener('click', () => {
@@ -587,6 +677,8 @@
         payBtn.addEventListener('click', async () => {
           hideErr();
           showLoading(); // <— show processing overlay
+          // Track entering payment step click intent (not a purchase)
+          trackAddPaymentInfo(getQty()*20);
           try{
             ensureStripeMounted();
 
@@ -629,14 +721,21 @@
             if (conf.error) throw new Error(conf.error.message);
             if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) throw new Error('Payment not completed');
 
-            // Success
-            window.location.href = 'thankyou2.html';
+            // Success: track purchase (GA4 + Google Ads) THEN redirect
+            const total = qty * 20;
+            const txId = conf.paymentIntent.id;
+            trackPurchase(total, txId, qty);
+
+            window.location.href = 'thankyou-overstock.html';
           }catch(err){
             hideLoading(); // <— hide on error
             showErr(err.message || 'Payment failed');
           }
         });
       }
+
+      // Fire initial page_view
+      trackPageView();
     });
   </script>
 </body>
