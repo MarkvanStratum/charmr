@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Overstock Thank you</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    /* GA init (required for page_view). Without this, the loader above won't send hits. */
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
+  </script>
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid;
+      place-items: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #fff; color: #111;
+    }
+    main { text-align: center; max-width: 60ch; padding: 2rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    p  { margin: 0; font-size: 1.1rem; opacity: .9; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Thank you for your order.</h1>
+    <p>We will contact you shortly with delivery details.</p>
+  </main>
+
+  <!-- Put this in your Thank You page -->
+  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <script>
+    // 1) Unique order number/id every load (for testing)
+    const generatedNumber = "#TEST-" + Date.now() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+
+    // 2) Valid payload (object). This is what GoAffPro expects when Secure Payloads is OFF.
+    var goaffproOrder = {
+      id: generatedNumber,          // string
+      number: generatedNumber,      // string (can match id)
+      total: 1,                   // number (no quotes)
+      currency: "USD",              // ISO code
+      forceSDK: true
+    };
+
+    // 3) Call the tracker once the SDK function exists (handles load races)
+    (function wait(i){
+      if (typeof window.goaffproTrackConversion === "function") {
+        window.goaffproTrackConversion(goaffproOrder);
+        console.log("[GoAffPro] Sent:", goaffproOrder);
+      } else if (i < 50) {          // ~10s max
+        setTimeout(() => wait(i+1), 200);
+      } else {
+        console.error("[GoAffPro] goaffproTrackConversion not found. Check CSP/ad-blockers/shop key.");
+      }
+    })(0);
+  </script>
+</body>
+</html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Thank you</title>
+
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    /* GA init (required for page_view). Without this, the loader above won't send hits. */
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
+  </script>
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid;
+      place-items: center;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: #fff; color: #111;
+    }
+    main { text-align: center; max-width: 60ch; padding: 2rem; }
+    h1 { margin: 0 0 .5rem; font-size: clamp(1.6rem, 4vw, 2.2rem); }
+    p  { margin: 0; font-size: 1.1rem; opacity: .9; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Thank you for your order.</h1>
+    <p>We will contact you shortly with delivery details.</p>
+  </main>
+
+  <!-- Put this in your Thank You page -->
+  <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <script>
+    // 1) Unique order number/id every load (for testing)
+    const generatedNumber = "#TEST-" + Date.now() + "-" + Math.random().toString(36).slice(2,6).toUpperCase();
+
+    // 2) Valid payload (object). This is what GoAffPro expects when Secure Payloads is OFF.
+    var goaffproOrder = {
+      id: generatedNumber,          // string
+      number: generatedNumber,      // string (can match id)
+      total: 300,                   // number (no quotes)
+      currency: "USD",              // ISO code
+      forceSDK: true
+    };
+
+    // 3) Call the tracker once the SDK function exists (handles load races)
+    (function wait(i){
+      if (typeof window.goaffproTrackConversion === "function") {
+        window.goaffproTrackConversion(goaffproOrder);
+        console.log("[GoAffPro] Sent:", goaffproOrder);
+      } else if (i < 50) {          // ~10s max
+        setTimeout(() => wait(i+1), 200);
+      } else {
+        console.error("[GoAffPro] goaffproTrackConversion not found. Check CSP/ad-blockers/shop key.");
+      }
+    })(0);
+  </script>
+</body>
+</html>
