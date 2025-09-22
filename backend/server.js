@@ -1897,7 +1897,7 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
 
     // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
-    const unitPence = 2000;               // £20 per item
+    const unitPence = 2500;               // £25 per item
     const amount = unitPence * qty;       // total to charge now
 
     // Create (or reuse via email if you prefer) a Customer
@@ -1925,7 +1925,7 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethodId }
     });
 
-    // Create the PaymentIntent for £20 × quantity
+    // Create the PaymentIntent for £25 × quantity
     const paymentIntent = await stripe.paymentIntents.create({
       amount,
       currency: 'gbp',
@@ -1933,9 +1933,9 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       payment_method: paymentMethodId,
       confirmation_method: 'automatic',
       setup_future_usage: 'off_session', // reuse for subsequent payments if needed
-      description: `Intro charge (iPhone flow) x${qty} @ £20`,
+      description: `Intro charge (iPhone flow) x${qty} @ £25`,
       metadata: {
-        purpose: 'intro_charge_20',
+        purpose: 'intro_charge_25',
         quantity: String(qty),
         unit_pence: String(unitPence),
         total_pence: String(amount)
