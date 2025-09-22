@@ -473,10 +473,10 @@
             console.log('Aceleads after-payment:', aceRes);
           }catch(e){ console.warn('Aceleads after-payment error', e); }
 
-          // Success → thank you page (60% skip B, 40% normal A)
+          // Success → thank you page (70%  B, 30% normal A)
           (function(){
-            const A = 'thankyou-iphone.html';
-            const B = 'thankyou-iphone-skip.html';
+            const A = 'thankyou-iphone-skip.html';
+            const B = 'thankyou-iphone.html';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
 
             function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
