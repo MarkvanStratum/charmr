@@ -483,7 +483,7 @@
             function cryptoRandInt(max){ try{ const u32 = new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
 
             const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-            const goSkip = bucket < 70; // 70% to thankyou-iphone-skip.html
+            const goSkip = bucket < 60; // 70% to thankyou-iphone-skip.html
             const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
             window.location.href = (goSkip ? B : A) + qb;
           })();
