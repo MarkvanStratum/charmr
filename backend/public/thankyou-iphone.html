@@ -34,6 +34,37 @@
     <p>We will contact you shortly with delivery details.</p>
   </main>
 
+  <!-- Ensure sub_id is present in URL before GoAffPro loads -->
+  <script>
+    (function ensureSubIdInURL(){
+      var url = new URL(location.href);
+      if (!url.searchParams.get("sub_id")) {
+        function getStored(){
+          try{
+            var m = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+            if (m) return decodeURIComponent(m[1]);
+            var ls = localStorage.getItem("aff_sub_id");
+            if (ls) return ls;
+          }catch(e){}
+          return null;
+        }
+        var sub = getStored();
+        if (!sub && document.referrer) {
+          try{
+            var ref = new URL(document.referrer);
+            sub = ref.searchParams.get("sub_id") || ref.searchParams.get("subid") ||
+                  ref.searchParams.get("aff_sub") || ref.searchParams.get("click_id") ||
+                  ref.searchParams.get("cid")    || ref.searchParams.get("tid");
+          }catch(e){}
+        }
+        if (sub) {
+          url.searchParams.set("sub_id", sub);
+          history.replaceState(null, "", url.toString());
+        }
+      }
+    })();
+  </script>
+
   <!-- Put this in your Thank You page -->
   <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
   <script>
@@ -98,6 +129,37 @@
     <h1>Thank you for your order.</h1>
     <p>We will contact you shortly with delivery details.</p>
   </main>
+
+  <!-- Ensure sub_id is present in URL before GoAffPro loads -->
+  <script>
+    (function ensureSubIdInURL(){
+      var url = new URL(location.href);
+      if (!url.searchParams.get("sub_id")) {
+        function getStored(){
+          try{
+            var m = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+            if (m) return decodeURIComponent(m[1]);
+            var ls = localStorage.getItem("aff_sub_id");
+            if (ls) return ls;
+          }catch(e){}
+          return null;
+        }
+        var sub = getStored();
+        if (!sub && document.referrer) {
+          try{
+            var ref = new URL(document.referrer);
+            sub = ref.searchParams.get("sub_id") || ref.searchParams.get("subid") ||
+                  ref.searchParams.get("aff_sub") || ref.searchParams.get("click_id") ||
+                  ref.searchParams.get("cid")    || ref.searchParams.get("tid");
+          }catch(e){}
+        }
+        if (sub) {
+          url.searchParams.set("sub_id", sub);
+          history.replaceState(null, "", url.toString());
+        }
+      }
+    })();
+  </script>
 
   <!-- Put this in your Thank You page -->
   <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>

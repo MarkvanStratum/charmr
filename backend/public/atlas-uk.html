@@ -326,6 +326,34 @@
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
+      // ==== NEW: Capture & persist affiliate sub-id early ====
+      (function captureAffiliateId(){
+        const KEYS = ["sub_id","subid","aff_sub","aff_sub1","click_id","cid","tid"];
+        function findIn(urlString){
+          const u = new URL(urlString, location.href);
+          for (const k of KEYS){
+            const v = u.searchParams.get(k);
+            if (v) return {key:k, val:v};
+          }
+          return null;
+        }
+        function setStore(name, value, days){
+          try{
+            const d = new Date(); d.setTime(d.getTime() + days*864e5);
+            document.cookie = name + "=" + encodeURIComponent(value) + ";expires=" + d.toUTCString() + ";path=/;SameSite=Lax";
+            localStorage.setItem(name, value);
+          }catch(e){}
+        }
+        let found = findIn(location.href);
+        if (!found && document.referrer){
+          try{ found = findIn(document.referrer); }catch(e){}
+        }
+        if (found){
+          setStore("aff_sub_id", found.val, 90);
+          setStore("aff_sub_key", found.key, 90);
+        }
+      })();
+
       // Display price like screenshot (purely cosmetic)
       const INTRO_PRICE_TEXT = '£9.95';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
@@ -343,7 +371,7 @@
       (function hydrateHeroFromURL(){
         const qs = new URLSearchParams(window.location.search);
         const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
-               const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
+        const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
 
         const hero = document.getElementById('hero');
         const heroTitle = document.getElementById('heroTitle');
@@ -584,8 +612,17 @@
             function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
             const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
             const goSkip = bucket < 70; // 70% to thankyou-iphone.html
-            const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-            window.location.href = (goSkip ? B : A) + qb;
+
+            // ==== NEW: build query with v/t AND carry sub_id if stored ====
+            const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+            try{
+              const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+              const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
+              if (sub) qp.set('sub_id', sub);
+            }catch(e){}
+
+            const dest = (goSkip ? B : A) + '?' + qp.toString();
+            window.location.href = dest;
           })();
 
         }catch(err){
