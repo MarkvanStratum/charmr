@@ -11,6 +11,8 @@ import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
 
+
+
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
 import multer from "multer";
@@ -1942,11 +1944,16 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       }
     });
 
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      customerId: customer.id
-    });
+    // ✅ NEW: decide thank-you route here
+const route = getThankYouRoute(paymentIntent.id);
+
+// Send the route to the frontend
+res.json({
+  success: true,
+  paymentIntentId: paymentIntent.id,
+  thankYouRoute: route
+});
+
   } catch (err) {
     console.error('intro-charge-20 error:', err);
     res.status(400).json({ error: err.message || 'Unknown error' });
