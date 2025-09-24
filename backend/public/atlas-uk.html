@@ -603,17 +603,38 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // Success → thank you page (b70/a30 split preserved)
-          (function(){
+          // ======= CHANGED BLOCK: route via server (fallback to old 70/30) =======
+          (async () => {
             const A = 'thankyou-iphone-skip.html';
             const B = 'thankyou-iphone.html';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-            function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
-            function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
-            const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-            const goSkip = bucket < 70; // 70% to thankyou-iphone.html
 
-            // ==== NEW: build query with v/t AND carry sub_id if stored ====
+            // Try server-side round-robin first
+            let route = null;
+            try{
+              const r = await fetch(`${API_BASE}/api/thankyou-route`, {
+                method:'POST',
+                headers:{ 'Content-Type':'application/json' },
+                body: JSON.stringify({ paymentIntentId: pid })
+              });
+              const j = await r.json();
+              route = j && (j.route || j.thankYouRoute); // accept either key
+            }catch(e){}
+
+            // Decide destination
+            let destPage;
+            if (route === 'skip' || route === 'main') {
+              destPage = (route === 'skip') ? A : B;
+            } else {
+              // Fallback: original deterministic 70/30 hash
+              function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
+              function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
+              const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
+              const goSkip = bucket < 70; // 70% to thankyou-iphone.html
+              destPage = goSkip ? B : A;
+            }
+
+            // Build query (?v=pid) and carry sub_id
             const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
             try{
               const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
@@ -621,9 +642,9 @@
               if (sub) qp.set('sub_id', sub);
             }catch(e){}
 
-            const dest = (goSkip ? B : A) + '?' + qp.toString();
-            window.location.href = dest;
+            window.location.href = destPage + '?' + qp.toString();
           })();
+          // ======= END CHANGED BLOCK =======
 
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
