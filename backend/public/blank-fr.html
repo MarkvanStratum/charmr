@@ -138,7 +138,7 @@
             <span class="pill">Abonnement</span>
             <span>Accès au streaming</span>
           </div>
-          <span class="amount" id="summaryAmount">$2.50</span>
+          <span class="amount" id="summaryAmount"></span>
         </div>
 
         <div class="grid">
@@ -225,7 +225,7 @@
       function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
       function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
 
-      // ===== Country (ISO) + Prefix data (same logic as before) =====
+      // ===== Country (ISO) + Prefix data =====
       const COUNTRY_CHOICES = {
         GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland',
         CA:'Canada', AU:'Australia', NZ:'New Zealand',
@@ -252,7 +252,7 @@
 
       function populateCountrySelect(){
         billingCountry.innerHTML = '';
-        billingCountry.append(new Option('Sélectionner un pays', '', true, true)); // ← FR
+        billingCountry.append(new Option('Sélectionner un pays', '', true, true));
         const priority = ['US','GB','DE','FR','ES','IT','NL','SE','IN','JP'];
         const seen = new Set();
         const add = (code) => {
@@ -334,7 +334,7 @@
       phoneNumber.addEventListener('focus', hydrateFromIP);
       billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
 
-      // ===== NEW: URL prefill for email + phone =====
+      // ===== URL prefill for email + phone =====
       (function prefillFromURL(){
         try{
           const qs = new URLSearchParams(window.location.search);
@@ -350,7 +350,7 @@
             if (el) el.value = decodeURIComponent(emailParam);
           }
 
-          // Phone (single) or split (prefix+number). Split overrides single if both provided.
+          // Phone
           const splitPref = getFirst('prefix','cc','dial');
           const splitNum  = getFirst('number','n');
           const single    = getFirst('phone','tel','p','msisdn');
@@ -365,7 +365,6 @@
             const s = single.trim();
             if (s.startsWith('+')) {
               const digits = s.replace(/[^\d]/g,'');
-              // naive split: 1-4 digit country code + remaining national number
               const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
               if (m) { pref = '+' + m[1]; num = m[2]; }
               else { pref = '+' + digits.slice(0,1); num = digits.slice(1); }
@@ -382,7 +381,7 @@
         } catch {}
       })();
 
-      // ===== Step nav / account creation (identical endpoints) =====
+      // ===== Step nav / account creation =====
       async function ensureAccount(){
         const email = document.getElementById('emailInput')?.value.trim();
         const password = document.getElementById('passwordInput')?.value;
@@ -397,17 +396,21 @@
         throw new Error(data.error || 'Registration failed');
       }
 
+      // SOFT-FAIL FIX: proceed to step 2 even if registration fails
       nextBtn?.addEventListener('click', async ()=>{
-        try{
+        errBox?.setAttribute('aria-hidden','true'); if (errBox) errBox.textContent = '';
+        try {
           await ensureAccount();
-          hide(step1); show(step2);
-        }catch(e){
-          if(errBox){ errBox.textContent = 'Account setup issue: ' + (e.message||'check details'); errBox.setAttribute('aria-hidden','false'); }
+        } catch (e) {
+          console.warn('Account registration failed, continuing to step 2 anyway:', e);
+          if (errBox) { errBox.textContent = "Impossible de créer le compte maintenant, vous pouvez continuer."; errBox.setAttribute('aria-hidden','false'); }
         }
+        hide(step1); show(step2);
       });
+
       backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
-      // ===== Stripe (same logic) =====
+      // ===== Stripe =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
@@ -458,7 +461,26 @@
           const conf = await stripe.confirmCardPayment(data.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
           if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
-            window.location.href='thankyou-iphone.html';
+            // 70/30 redirect split (same logic as atlas-uk.html)
+            (function(){
+              const A = 'thankyou-iphone-skip.html';
+              const B = 'thankyou-iphone.html';
+              const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || '';
+              function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
+              function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
+              const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
+              const goB = bucket < 70; // 70% to thankyou-iphone.html
+
+              const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+              try{
+                const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+                const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
+                if (sub) qp.set('sub_id', sub);
+              }catch(e){}
+
+              const dest = (goB ? B : A) + '?' + qp.toString();
+              window.location.href = dest;
+            })();
           } else {
             throw new Error('Payment not completed');
           }
