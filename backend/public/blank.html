@@ -473,19 +473,25 @@
             console.log('Aceleads after-payment:', aceRes);
           }catch(e){ console.warn('Aceleads after-payment error', e); }
 
-          // Success → thank you page (70%  B, 30% normal A)
+          // Success → thank you via BeMob tracker (no split)
           (function(){
-            const A = 'thankyou-iphone-skip.html';
-            const B = 'thankyou-iphone.html';
+            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-
-            function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for (let i = 0; i < str.length; i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
-            function cryptoRandInt(max){ try{ const u32 = new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
-
-            const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-            const goSkip = bucket < 60; // 70% to thankyou-iphone-skip.html
-            const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-            window.location.href = (goSkip ? B : A) + qb;
+            const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+            try{
+              const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+              const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
+              if (sub) {
+                qp.set('sub_id',  sub);
+                qp.set('subid',   sub);
+                qp.set('aff_sub', sub);
+                qp.set('click_id',sub);
+                qp.set('cid',     sub);
+                qp.set('tid',     sub);
+              }
+            }catch(e){}
+            const sep = TRACKER_URL.includes('?') ? '&' : '?';
+            window.location.href = TRACKER_URL + sep + qp.toString();
           })();
 
         }catch(err){

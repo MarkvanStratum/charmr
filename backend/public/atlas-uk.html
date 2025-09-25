@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Secure Checkout</title>
+  <title>Atlas UK</title>
 
   <!-- Google tag (unchanged) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
+    function gtag(){dataLayer.push(arguments);} 
     gtag('js', new Date());
     gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
   </script>
@@ -92,7 +92,7 @@
     .trust{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
     .trust .box{ border:1px solid var(--line); border-radius:10px; padding:8px }
     .trust .big{ font-weight:900; font-size:18px }
-    .trust .small{ font-size:12px; color:var(--muted) }
+    .trust .small{ font-size:12px; color:#5b6b82 }
 
     /* Steps (Information / Payment) */
     .step{ display:none }
@@ -603,25 +603,25 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // Success → thank you page (b70/a30 split preserved)
+          // Success → thank you via BeMob tracker (no split)
           (function(){
-            const A = 'thankyou-iphone-skip.html';
-            const B = 'thankyou-iphone.html';
+            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-            function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h >>> 0; }
-            function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
-            const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-            const goSkip = bucket < 70; // 70% to thankyou-iphone.html
-
-            // ==== NEW: build query with v/t AND carry sub_id if stored ====
             const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
             try{
               const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
               const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
-              if (sub) qp.set('sub_id', sub);
+              if (sub) {
+                qp.set('sub_id',  sub);
+                qp.set('subid',   sub);
+                qp.set('aff_sub', sub);
+                qp.set('click_id',sub);
+                qp.set('cid',     sub);
+                qp.set('tid',     sub);
+              }
             }catch(e){}
-
-            const dest = (goSkip ? B : A) + '?' + qp.toString();
+            const sep = TRACKER_URL.includes('?') ? '&' : '?';
+            const dest = TRACKER_URL + sep + qp.toString();
             window.location.href = dest;
           })();
 
