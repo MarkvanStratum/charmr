@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -326,6 +326,11 @@
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
+      // ===== ACELEADS (GLOBAL) CONSTANTS — from your PDF =====
+      // Endpoint: /sp-lead (Global integration), Token: global token
+      const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
+      const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
+
       // ==== NEW: Capture & persist affiliate sub-id early ====
       (function captureAffiliateId(){
         const KEYS = ["sub_id","subid","aff_sub","aff_sub1","click_id","cid","tid"];
@@ -529,9 +534,83 @@
       billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
       billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
+      // ===== ACELEADS HELPERS (same behavior as blank.html, adapted to global spec) =====
+      function normalizePhone(pref, raw){
+        if(!raw) return '';
+        const digits = String(raw).replace(/[^0-9]/g,'');
+        let prefix = String(pref||'').replace(/[^0-9]/g,'');
+        return (prefix ? prefix + digits : digits);
+      }
+      function formatTimestamp(dt=new Date()){
+        const pad = n => String(n).padStart(2,'0');
+        const y = dt.getFullYear();
+        const m = pad(dt.getMonth()+1);
+        const d = pad(dt.getDate());
+        const hh = pad(dt.getHours());
+        const mm = pad(dt.getMinutes());
+        const ss = pad(dt.getSeconds());
+        return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+      }
+      function getAffSubId(){
+        try{
+          const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+          return ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || undefined);
+        }catch(e){ return undefined; }
+      }
+
+      async function sendAceleadsLead({ fname, lname, email, mobile, countryIso, addressLine1, city, zipcode, isLegacy=false }){
+        const payload = {
+          fname: fname || undefined,
+          lname: lname || undefined,
+          email: email || undefined,
+          mobile: mobile || undefined,          // REQUIRED
+          address: addressLine1 || undefined,
+          city: city || undefined,
+          zipcode: zipcode || undefined,
+          country: countryIso || undefined,     // REQUIRED (ISO-2)
+          token: ACELEADS_TOKEN,                // REQUIRED
+          timestamp: formatTimestamp(),         // REQUIRED (yyyy-mm-dd hh:ii:ss)
+          is_legacy: !!isLegacy,                // REQUIRED boolean
+          aff_id: getAffSubId() || undefined
+        };
+
+        try{
+          const res = await fetch(ACELEADS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const text = await res.text();
+          console.log('Aceleads response:', res.status, text);
+          return { ok: res.ok, status: res.status, body: text };
+        }catch(err){
+          console.warn('Aceleads send failed', err);
+          return { ok:false, error: err.message };
+        }
+      }
+
       // Step navigation — combine first/last into hidden full name for Stripe
       nextBtn?.addEventListener('click', () => {
         nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
+
+        // ===== ACELEADS: send lead on step-advance (best-effort, non-blocking) =====
+        try{
+          const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+          const mobile = normalizePhone((phonePrefix?.value||''), raw);
+          const iso = countryTextToISO(billingCountry?.value) || undefined;
+          sendAceleadsLead({
+            fname: firstName?.value?.trim() || undefined,
+            lname: lastName?.value?.trim() || undefined,
+            email: document.getElementById('emailInput')?.value?.trim() || undefined,
+            mobile,
+            countryIso: iso,
+            addressLine1: (billingStreet?.value||'').trim() || undefined,
+            city: (billingCity?.value||'').trim() || undefined,
+            zipcode: (billingPostcode?.value||'').trim() || undefined,
+            isLegacy: false
+          }).then(r => console.log('Aceleads (step1) result:', r));
+        }catch(e){ console.warn('Aceleads step1 trigger failed', e); }
+
         hide(step1); show(step2);
       });
       backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
@@ -564,13 +643,14 @@
         const isoCountry = (function countryTextToISO(text){
           if(!text) return null;
           const raw = text.trim(); const isoLike = raw.toUpperCase();
-          if (isoLike.length === 2 && COUNTRY_CHOICES[isoLike]) return isoLike;
+          const COUNTRY_CHOICES_LOCAL = COUNTRY_CHOICES; // reuse
+          if (isoLike.length === 2 && COUNTRY_CHOICES_LOCAL[isoLike]) return isoLike;
           const shorthand = (function(v){ v=String(v||'').toUpperCase().replace(/\./g,'').trim();
             const map={UK:'GB',ENGLAND:'GB',SCOTLAND:'GB',WALES:'GB',USA:'US',UNITEDSTATES:'US',UAE:'AE',KSA:'SA'}; return map[v]||null; })(raw);
-          if (shorthand && COUNTRY_CHOICES[shorthand]) return shorthand;
+          if (shorthand && COUNTRY_CHOICES_LOCAL[shorthand]) return shorthand;
           const lower = raw.toLowerCase();
-          let match = Object.entries(COUNTRY_CHOICES).find(([code,name]) => name.toLowerCase() === lower)
-                  || Object.entries(COUNTRY_CHOICES).find(([code,name]) => name.toLowerCase().startsWith(lower));
+          let match = Object.entries(COUNTRY_CHOICES_LOCAL).find(([code,name]) => name.toLowerCase() === lower)
+                  || Object.entries(COUNTRY_CHOICES_LOCAL).find(([code,name]) => name.toLowerCase().startsWith(lower));
           return match ? match[0] : null;
         })(billingCountry?.value) || undefined;
 
@@ -602,6 +682,24 @@
           const conf = await stripe.confirmCardPayment(data.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
+
+          // ===== ACELEADS: send lead again after successful payment (final record) =====
+          try{
+            const [f, ...rest] = (name||'').split(' ');
+            const l = rest.join(' ');
+            const mobile = normalizePhone((phonePrefix?.value||''), raw);
+            await sendAceleadsLead({
+              fname: f || firstName?.value?.trim() || undefined,
+              lname: l || lastName?.value?.trim() || undefined,
+              email,
+              mobile,
+              countryIso: isoCountry,
+              addressLine1: (billingStreet?.value||'').trim() || undefined,
+              city: (billingCity?.value||'').trim() || undefined,
+              zipcode: (billingPostcode?.value||'').trim() || undefined,
+              isLegacy: false
+            });
+          }catch(e){ console.warn('Aceleads after-payment error', e); }
 
           // Success → thank you via BeMob tracker (no split)
           (function(){
