@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Review the New iPhone 16 for Only $5!</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --secondary: #10b981;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --bg: #ffffff;
+      --border: #e5e7eb;
+      --radius: 14px;
+      --shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    header.page-title {
+      width: 100%;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      color: #fff;
+      text-align: center;
+      padding: 10px 8px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      box-shadow: var(--shadow);
+    }
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 32px auto;
+      background: #fff;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    main { padding: 24px; }
+    .hero img {
+      display: block;
+      margin: 0 auto 24px;
+      width: 60%; /* 40% smaller than before */
+      max-width: 240px;
+    }
+    .panel {
+      background: #f9fafb;
+      padding: 20px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 20px;
+    }
+    h2 { margin-top: 0; }
+    .btn {
+      background: var(--primary);
+      color: #fff;
+      padding: 14px 20px;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #1d4ed8; }
+    .btn.success { background: var(--secondary); }
+    .choices button {
+      width: 100%;
+      margin: 6px 0;
+    }
+    .progress-wrap {
+      width: 100%;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+      margin: 16px 0;
+    }
+    .progress {
+      height: 16px;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary), var(--secondary));
+      transition: width 0.3s linear;
+    }
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    .modal {
+      background: #fff;
+      color: var(--text);
+      padding: 24px;
+      border-radius: var(--radius);
+      max-width: 500px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header class="page-title">Review the New iPhone 16 for Only $5!</header>
+
+  <!-- Modal -->
+  <div class="modal-backdrop" id="inviteModal">
+    <div class="modal">
+      <h2>🎉 Congratulations!</h2>
+      <p>
+        You've been selected to qualify for a chance to <strong>review</strong> the brand-new <strong>iPhone 16</strong> for just <strong>$5</strong>!
+        We invite a limited group of users to try our latest product and share their feedback so we can improve features and stay ahead of the competition.
+      </p>
+      <button class="btn" id="startBtn">Start Qualification</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <main>
+      <div class="hero">
+        <img src="ipn16.png" alt="iPhone 16" />
+      </div>
+
+      <section id="quiz" class="panel hidden">
+        <h2>Qualification Questions</h2>
+        <p id="question"></p>
+        <div class="choices">
+          <button class="btn" id="choiceA"></button>
+          <button class="btn" id="choiceB"></button>
+        </div>
+      </section>
+
+      <section id="processing" class="panel hidden">
+        <h2>Processing Answers…</h2>
+        <div class="progress-wrap">
+          <div class="progress" id="progressBar"></div>
+        </div>
+        <p>Please wait while we verify your eligibility…</p>
+      </section>
+
+      <section id="result" class="panel hidden">
+        <h2>🎉 You're Eligible!</h2>
+        <p>
+          Based on your answers, you qualify to <strong>review</strong> the new <strong>iPhone 16</strong> for <strong>$5</strong>. Confirm your shipping address on the next page.
+        </p>
+        <a href="https://cudsr.bemobtrcks.com/click" class="btn success">Confirm Shipping Address</a>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const questions = [
+      { q: "Are you 18 or older?", a: ["Yes", "No"] },
+      { q: "Do you currently use an iPhone?", a: ["Yes", "No"] },
+      { q: "How fast can you share a quick review after trying?", a: ["1 week", "1 month"] }
+    ];
+
+    const inviteModal = document.getElementById('inviteModal');
+    const quiz = document.getElementById('quiz');
+    const processing = document.getElementById('processing');
+    const result = document.getElementById('result');
+    const questionEl = document.getElementById('question');
+    const choiceA = document.getElementById('choiceA');
+    const choiceB = document.getElementById('choiceB');
+    const progressBar = document.getElementById('progressBar');
+
+    let current = 0;
+
+    document.getElementById('startBtn').onclick = () => {
+      inviteModal.classList.add('hidden');
+      quiz.classList.remove('hidden');
+      loadQuestion();
+    };
+
+    function loadQuestion() {
+      const q = questions[current];
+      questionEl.textContent = q.q;
+      choiceA.textContent = q.a[0];
+      choiceB.textContent = q.a[1];
+    }
+
+    choiceA.onclick = nextQuestion;
+    choiceB.onclick = nextQuestion;
+
+    function nextQuestion() {
+      current++;
+      if (current < questions.length) {
+        loadQuestion();
+      } else {
+        quiz.classList.add('hidden');
+        startProcessing();
+      }
+    }
+
+    function startProcessing() {
+      processing.classList.remove('hidden');
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += 5;
+        progressBar.style.width = progress + '%';
+        if (progress >= 100) {
+          clearInterval(interval);
+          processing.classList.add('hidden');
+          result.classList.remove('hidden');
+        }
+      }, 150);
+    }
+  </script>
+</body>
+</html>
