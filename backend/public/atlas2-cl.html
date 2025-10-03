@@ -1,11 +1,11 @@
-<!DOCTYPE html> 
-<html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>الدفع الآمن</title>
+  <title>Pago seguro</title>
 
-  <!-- Google tag (unchanged) -->
+  <!-- Google tag (sin cambios) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -30,12 +30,12 @@
 
     .wrap{max-width:1100px; margin:0 auto; padding:18px 14px 60px}
 
-    /* Top safe strip */
+    /* Franja superior segura */
     .safe{
-      background:#0a0a0a; color:#fff; font-size:12px; padding:6px 10px; text-align:right;
+      background:#0a0a0a; color:#fff; font-size:12px; padding:6px 10px; text-align:left;
     }
 
-    /* Two-column layout like the screenshot */
+    /* Diseño de dos columnas */
     .grid{
       display:grid; grid-template-columns: minmax(0,1fr) 360px; gap:18px; align-items:start;
     }
@@ -44,10 +44,10 @@
     .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; }
 
     .page-title{
-      font-size:28px; font-weight:900; display:flex; align-items:center; gap:8px; margin:6px 0 14px; justify-content:flex-start;
+      font-size:28px; font-weight:900; display:flex; align-items:center; gap:8px; margin:6px 0 14px;
     }
     .stars{ color:#f6b80c; font-size:15px }
-    .reviews{ color:var(--muted); font-size:13px; margin-right:6px }
+    .reviews{ color:var(--muted); font-size:13px; margin-left:6px }
 
     .h2{ font-size:18px; font-weight:800; margin:10px 0 14px }
     .sub{ font-size:13px; color:#5b6b82; margin-top:-6px }
@@ -69,13 +69,13 @@
     .btn:disabled{opacity:.65; cursor:not-allowed}
     .btn.muted{ background:#f1f4f8; color:#20324d; border:1px solid var(--line); }
 
-    .logos{ display:flex; gap:10px; align-items:center; margin-top:12px; justify-content:flex-start }
+    .logos{ display:flex; gap:10px; align-items:center; margin-top:12px }
     .logos img{ height:20px; width:auto; display:block }
 
     .err{ display:none; background:#fff1f1; border:1px solid #f5bcbc; color:#9a1a1a; padding:10px; border-radius:10px; font-size:14px; margin-top:10px }
     .err[aria-hidden="false"]{ display:block }
 
-    /* Right column widgets */
+    /* Widgets de la columna derecha */
     .widget{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px }
     .widget + .widget{ margin-top:12px }
     .w-title{ font-weight:800; font-size:16px; margin:2px 0 10px }
@@ -92,16 +92,16 @@
     .trust{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
     .trust .box{ border:1px solid var(--line); border-radius:10px; padding:8px }
     .trust .big{ font-weight:900; font-size:18px }
-    .trust .small{ font-size:12px; color:var(--muted) }
+    .trust .small{ font-size:12px; color:#5b6b82 }
 
-    /* Steps (Information / Payment) */
+    /* Pasos (Información / Pago) */
     .step{ display:none }
     .step[aria-hidden="false"]{ display:block }
 
-    /* Stripe element shell to look native */
+    /* Contenedor de elementos de Stripe */
     .el{ padding:10px 12px; border-radius:10px; border:1px solid #cfd6e4 }
 
-    /* Loading overlay */
+    /* Capa de carga */
     .loading-overlay{ position:fixed; inset:0; background:rgba(246,249,252,.92);
       display:none; align-items:center; justify-content:center; z-index:9999; }
     .loading-overlay[aria-hidden="false"]{ display:flex }
@@ -114,81 +114,81 @@
   </style>
 </head>
 <body>
-  <div class="safe">دفع آمن عبر SSL</div>
+  <div class="safe">Pago seguro con SSL</div>
 
   <div class="wrap">
     <div class="page-title">
-      الدفع الآمن <span style="font-size:18px">🔒</span>
+      Pago seguro <span style="font-size:18px">🔒</span>
       <span class="stars">★★★★★</span>
-      <span class="reviews">(2777 مراجعة)</span>
+      <span class="reviews">(2777 reseñas)</span>
     </div>
 
     <div class="grid">
-      <!-- LEFT: FORM -->
+      <!-- IZQUIERDA: FORMULARIO -->
       <div class="card">
-        <!-- STEP 1: Information -->
+        <!-- PASO 1: Información -->
         <section id="step1" class="step" aria-hidden="false">
-          <!-- Affiliate dynamic hero (optional) -->
+          <!-- Hero dinámico de afiliado (opcional) -->
           <div id="hero" style="display:none; margin-bottom:8px; display:flex; align-items:center; gap:10px">
             <img id="heroImg" alt="" style="width:44px;height:44px;border-radius:8px;border:1px solid #e6eaf1;object-fit:cover">
             <div id="heroTitle" style="font-weight:900"></div>
           </div>
 
-          <div class="h2">١. المعلومات</div>
+          <div class="h2">1. Información</div>
 
           <div class="form-grid">
             <div>
-              <div class="label">الاسم الأول</div>
-              <input id="firstName" class="input" placeholder="مثال: جين" autocomplete="given-name">
+              <div class="label">Nombre</div>
+              <input id="firstName" class="input" placeholder="Jane" autocomplete="given-name">
             </div>
             <div>
-              <div class="label">اسم العائلة</div>
-              <input id="lastName" class="input" placeholder="دو" autocomplete="family-name">
+              <div class="label">Apellidos</div>
+              <input id="lastName" class="input" placeholder="Doe" autocomplete="family-name">
             </div>
           </div>
 
           <div class="form-grid">
             <div style="grid-column:1 / -1">
-              <div class="label">العنوان</div>
-              <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="العنوان">
+              <div class="label">Dirección</div>
+              <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Dirección">
             </div>
             <div>
-              <div class="label">الرمز البريدي</div>
-              <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="الرمز البريدي">
+              <div class="label">Código postal</div>
+              <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Código postal">
             </div>
             <div>
-              <div class="label">المدينة</div>
-              <input id="billingCity" class="input" autocomplete="address-level2" placeholder="المدينة">
+              <div class="label">Ciudad</div>
+              <input id="billingCity" class="input" autocomplete="address-level2" placeholder="Ciudad">
             </div>
           </div>
 
           <div class="form-grid">
             <div>
-              <div class="label">البريد الإلكتروني</div>
-              <input id="emailInput" class="input" placeholder="you@example.com" type="email" autocomplete="email" required>
+              <div class="label">Correo electrónico</div>
+              <input id="emailInput" class="input" placeholder="tú@ejemplo.com" type="email" autocomplete="email" required>
             </div>
             <div>
-              <div class="label">الدولة</div>
-              <!-- free text to keep your country→ISO conversion -->
-              <input id="billingCountry" class="input" placeholder="المملكة العربية السعودية" value="المملكة العربية السعودية">
+              <div class="label">País</div>
+              <!-- texto libre para mantener tu conversión país→ISO -->
+              <input id="billingCountry" class="input" placeholder="Chile" value="Chile">
             </div>
           </div>
 
           <div class="form-grid">
             <div>
-              <div class="label">رمز الاتصال الدولي</div>
-              <select id="phonePrefix" class="select" aria-label="Country calling code"></select>
+              <div class="label">Prefijo telefónico</div>
+              <select id="phonePrefix" class="select" aria-label="Prefijo telefónico"></select>
             </div>
             <div>
-              <div class="label">رقم الهاتف</div>
-              <input id="phoneNumber" class="input" inputmode="tel" placeholder="رقمك" autocomplete="tel-national">
+              <div class="label">Número de teléfono</div>
+              <input id="phoneNumber" class="input" inputmode="tel" placeholder="Tu número" autocomplete="tel-national">
             </div>
           </div>
 
-          <!-- Hidden full name field (keeps your existing payment code exactly the same) -->
+          <!-- Campo oculto de nombre completo (para Stripe) -->
           <input id="nameInput" class="input" style="display:none">
 
-          <button id="nextBtn" class="btn">متابعة</button>
+          <button id="nextBtn" class="btn">Continuar</button>
 
           <div class="logos">
             <img src="/visa.png" alt="Visa">
@@ -198,23 +198,23 @@
           </div>
         </section>
 
-        <!-- STEP 2: Payment -->
+        <!-- PASO 2: Pago -->
         <section id="step2" class="step" aria-hidden="true">
-          <div class="h2">٢. الدفع</div>
-          <p class="sub">يتم تشفير بيانات البطاقة ومعالجتها عبر سترايب.</p>
+          <div class="h2">2. Pago</div>
+          <p class="sub">Los datos de la tarjeta se cifran y procesan a través de Stripe.</p>
 
           <div class="form-grid-1">
             <div>
-              <div class="label">رقم البطاقة</div>
+              <div class="label">Número de tarjeta</div>
               <div id="card-number" class="el"></div>
             </div>
             <div class="form-grid">
               <div>
-                <div class="label">تاريخ الانتهاء</div>
+                <div class="label">Vencimiento</div>
                 <div id="card-expiry" class="el"></div>
               </div>
               <div>
-                <div class="label">رمز الأمان CVC</div>
+                <div class="label">CVC</div>
                 <div id="card-cvc" class="el"></div>
               </div>
             </div>
@@ -223,22 +223,22 @@
           <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
           <div style="display:flex; gap:10px; margin-top:12px">
-            <button id="backBtn" class="btn muted" style="width:40%">← رجوع</button>
-            <button id="payNow" class="btn" style="width:60%">ادفع بأمان</button>
+            <button id="backBtn" class="btn muted" style="width:40%">← Volver</button>
+            <button id="payNow" class="btn" style="width:60%">Pagar de forma segura</button>
           </div>
 
-          <p class="sub" style="text-align:center; margin-top:10px">🔒 حماية SSL 256-bit · بدعم من سترايب</p>
+          <p class="sub" style="text-align:center; margin-top:10px">🔒 SSL de 256 bits · Impulsado por Stripe</p>
         </section>
       </div>
 
-      <!-- RIGHT: SIDEBAR -->
+      <!-- DERECHA: LATERAL -->
       <aside>
         <div class="widget">
-          <div class="w-title" style="text-align:center">ماذا يقول عملاؤنا</div>
-          <div style="text-align:center; font-weight:700; margin-bottom:4px">فينيلّا لارا</div>
+          <div class="w-title" style="text-align:center">Lo que dicen nuestros clientes</div>
+          <div style="text-align:center; font-weight:700; margin-bottom:4px">Fenella Lara</div>
           <div style="text-align:center; color:#f6b80c; letter-spacing:1px">★★★★★</div>
           <p class="tiny" style="text-align:center; margin-top:8px">
-            استلمت منتجي أمس. خدمة عملاء سريعة وممتازة! شكرًا جزيلاً.
+            Recibí mi producto ayer. ¡Atención al cliente rápida y excelente! Muchas gracias.
           </p>
         </div>
 
@@ -246,37 +246,37 @@
           <div class="delivery">
             <img id="sidebarImg" alt="">
             <div>
-              <div style="font-weight:800">توصيل سريع إلى عنوانك</div>
-              <div class="tiny">٣–٥ أيام عمل</div>
+              <div style="font-weight:800">Envío rápido a tu dirección</div>
+              <div class="tiny">3–5 días hábiles</div>
             </div>
-            <div style="margin-left:auto; font-weight:800">مجاني</div>
+            <div style="margin-left:auto; font-weight:800">Gratis</div>
           </div>
 
-        <div class="w-title" style="margin-top:14px">ملخص الطلب</div>
-          <div class="order-row"><span>الإجمالي</span><span id="orderTotal">56.06 ر.س</span></div>
+          <div class="w-title" style="margin-top:14px">Resumen del pedido</div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">$14.95</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
-            🗃️ متبقي فقط 13 في المخزون<br>
-            👀 <span id="viewingNow">31</span> شخصًا يشاهدون هذا الآن<br>
-            ✅ <span id="recentBuyer">J****s</span> اشترى هذا (منذ 10 دقائق)<br>
-            💳 <span id="purchasedCount">715</span> شخصًا اشتروا هذا خلال آخر 7 أيام
+            🗃️ Solo quedan 13 en stock<br>
+            👀 <span id="viewingNow">31</span> personas están viendo esto ahora<br>
+            ✅ <span id="recentBuyer">J****s</span> lo compró (hace 10 minutos)<br>
+            💳 <span id="purchasedCount">715</span> personas lo compraron en los últimos 7 días
           </div>
         </div>
 
         <div class="widget">
-          <div class="w-title">متجر موثوق</div>
+          <div class="w-title">TIENDA DE CONFIANZA</div>
           <div class="trust">
             <div class="box">
               <div class="big">99%</div>
-              <div class="small">عملاء سعداء</div>
+              <div class="small">Clientes felices</div>
             </div>
             <div class="box">
-              <div class="big">آمن</div>
-              <div class="small">تشفير SSL</div>
+              <div class="big">Seguro</div>
+              <div class="small">Cifrado SSL</div>
             </div>
             <div class="box">
-              <div class="big">50,000ر.س</div>
-              <div class="small">حماية المشتري</div>
+              <div class="big">$10K</div>
+              <div class="small">Protección al comprador</div>
             </div>
           </div>
         </div>
@@ -284,12 +284,12 @@
     </div>
   </div>
 
-  <!-- Loading overlay -->
+  <!-- Capa de carga -->
   <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
     <div class="loading-box">
-      <div class="loading-title">جاري معالجة دفعتك…</div>
+      <div class="loading-title">Procesando tu pago…</div>
       <div class="progress-wrap"><div class="progress-bar"></div></div>
-      <p class="sub" style="margin-top:10px">يرجى الانتظار، قد يستغرق ذلك بضع ثوانٍ.</p>
+      <p class="sub" style="margin-top:10px">Espera, esto puede tardar unos segundos.</p>
     </div>
   </div>
 
@@ -313,33 +313,33 @@
 
       const billingStreet = document.getElementById('billingStreet');
       const billingCity = document.getElementById('billingCity');
-      const billingCountry = document.getElementById('billingCountry'); // free text (سنثبتها للسعودية)
+      const billingCountry = document.getElementById('billingCountry'); // texto libre (fijaremos Chile)
       const billingPostcode = document.getElementById('billingPostcode');
 
       const orderTotal = document.getElementById('orderTotal');
       const sidebarImg = document.getElementById('sidebarImg');
 
-      // Keep your existing endpoints / keys (UNCHANGED)
+      // Endpoints / claves (SIN CAMBIOS)
       const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // retained (unused)
+      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // retenido (no usado)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
-      // ---- السعر المعروض بالريال السعودي (تحويلي تقريبي: 1 USD ≈ 3.75 SAR) ----
-      const INTRO_PRICE_TEXT = '56.06 ر.س';
+      // Precio mostrado (solo cosmético)
+      const INTRO_PRICE_TEXT = '$14.95';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
-      // Loading overlay
+      // Capa de carga
       const overlay = document.getElementById('loading-overlay');
       function showLoading(){ overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); }
       function hideLoading(){ overlay.setAttribute('aria-hidden','true'); overlay.style.display='none'; }
       hideLoading();
 
-      // ===== Dynamic title + image via URL (affiliate-supplied) =====
+      // ===== Título/imagen dinámicos por URL (conservado) =====
       (function hydrateHeroFromURL(){
         const qs = new URLSearchParams(window.location.search);
         const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
@@ -356,7 +356,7 @@
             const decoded = decodeURIComponent(imgUrlRaw);
             if (/^https?:\/\//i.test(decoded)){
               heroImg.src = decoded;
-              sidebarImg.src = decoded;
+              sidebarImg.src = decoded; // misma imagen en el lateral
               showHero = true;
             }
           }catch{}
@@ -364,7 +364,7 @@
         if (showHero) hero.style.display = 'flex';
       })();
 
-      // ===== Country choices + calling codes (سنستخدمها فقط للسعودية) =====
+      // ===== Países y prefijos (listas completas conservadas) =====
       const COUNTRY_CHOICES = {
         GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland', CA:'Canada', AU:'Australia', NZ:'New Zealand',
         DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands', BE:'Belgium', CH:'Switzerland', AT:'Austria',
@@ -381,17 +381,17 @@
         HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972', GE:'+995'
       };
 
-      // --- حصر قائمة رموز الاتصال على السعودية فقط ---
+      // --- Limitar prefijo y país SOLO a Chile ---
       function populatePrefixOptions(){
         phonePrefix.innerHTML = '';
-        phonePrefix.append(new Option('+966 — المملكة العربية السعودية', '+966'));
-        phonePrefix.value = '+966';
+        phonePrefix.append(new Option('+56 — Chile', '+56'));
+        phonePrefix.value = '+56';
       }
       function setPrefixFromISO(cc){
         const code = CALLING_CODES[cc];
         if (!code) return;
         const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
-        if(!exists) phonePrefix.add(new Option(`${code} — ${cc==='SA' ? 'المملكة العربية السعودية' : (COUNTRY_CHOICES[cc]||cc)}`, code));
+        if(!exists) phonePrefix.add(new Option(`${code} — ${cc==='CL' ? 'Chile' : (COUNTRY_CHOICES[cc]||cc)}`, code));
         phonePrefix.value = code;
       }
       function setPrefixValue(code){
@@ -403,7 +403,7 @@
       }
       populatePrefixOptions();
 
-      // ===== URL prefill (kept) =====
+      // ===== Prefill por URL (conservado) =====
       const qs = new URLSearchParams(window.location.search);
       const urlPrefs = {
         first:   qs.get('sub3') || '',
@@ -416,7 +416,7 @@
         phone:   qs.get('sub10') || ''
       };
 
-      // will prevent IP from overriding if we already set a prefix from URL
+      // Evitar que la IP sobrescriba si el teléfono viene en la URL
       let prefixLockedFromURL = false;
 
       function applyContactPrefill(){
@@ -441,38 +441,32 @@
         if (urlPrefs.street){ billingStreet.value = decodeURIComponent(urlPrefs.street); }
         if (urlPrefs.post){   billingPostcode.value = decodeURIComponent(urlPrefs.post); }
         if (urlPrefs.city){   billingCity.value = decodeURIComponent(urlPrefs.city); }
-        // نُثبّت الدولة على السعودية بعد أي تهيئة
-        billingCountry.value = 'المملكة العربية السعودية';
-        setPrefixFromISO('SA');
+        // Fijar SIEMPRE el país en Chile y el prefijo en +56
+        billingCountry.value = 'Chile';
+        setPrefixFromISO('CL');
       }
 
       applyContactPrefill();
       applyAddressPrefill();
 
-      // ---- تجاهل IP: نُبقي الرمز على السعودية دائمًا ----
-      (function enforceSaudiPrefix(){
-        if (!prefixLockedFromURL) setPrefixFromISO('SA');
-      })();
-
-      // عند محاولة تغيير الدولة يدويًا، نعيدها للسعودية ونُزامن الرمز
-      function enforceSaudiCountry(){
-        billingCountry.value = 'المملكة العربية السعودية';
-        setPrefixFromISO('SA');
+      // Mantener siempre Chile aunque el usuario intente cambiarlo
+      function enforceChile(){
+        billingCountry.value = 'Chile';
+        if (!prefixLockedFromURL) setPrefixFromISO('CL');
       }
-      billingCountry.addEventListener('change', enforceSaudiCountry);
-      billingCountry.addEventListener('blur',   enforceSaudiCountry);
-      billingCountry.addEventListener('input',  enforceSaudiCountry);
-      // تعيين افتراضي
-      enforceSaudiCountry();
+      billingCountry.addEventListener('change', enforceChile);
+      billingCountry.addEventListener('input',  enforceChile);
+      billingCountry.addEventListener('blur',   enforceChile);
+      enforceChile();
 
-      // Step navigation — combine first/last into hidden full name for Stripe
+      // Navegación de pasos — combinar nombre/apellidos
       nextBtn?.addEventListener('click', () => {
         nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
         hide(step1); show(step2);
       });
       backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
-      // ===== Stripe (kept) =====
+      // ===== Stripe (conservado) =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
@@ -488,7 +482,7 @@
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
       document.getElementById('payNow')?.addEventListener('click', async ()=>{
-        if(!stripe){ alert('الدفع غير متاح مؤقتًا. يرجى المحاولة لاحقًا.'); return; }
+        if(!stripe){ alert('Pago temporalmente no disponible. Inténtalo de nuevo.'); return; }
         errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
         showLoading();
 
@@ -497,18 +491,16 @@
         const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
         const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
 
-        // نُرسل دائمًا SA كرمز دولة
-        const isoCountry = 'SA';
-
+        // Enviar SIEMPRE CL como país ISO
         const address = {
           line1: (billingStreet?.value||'').trim() || undefined,
           city: (billingCity?.value||'').trim() || undefined,
-          country: isoCountry,
+          country: 'CL',
           postal_code: (billingPostcode?.value||'').trim() || undefined
         };
 
         try{
-          // 1) Create a PaymentMethod
+          // 1) Crear PaymentMethod
           const pmRes = await stripe.createPaymentMethod({
             type:'card',
             card:cardNumber,
@@ -516,36 +508,51 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Start the $20 intro charge (kept)
+          // 2) Iniciar el cargo de introducción (conservado)
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
           });
           const data = await resp.json();
-          if(!data.clientSecret) throw new Error(data.error || 'فشل بدء عملية الدفع');
+          if(!data.clientSecret) throw new Error(data.error || 'No se pudo iniciar el pago');
 
-          // 3) Confirm the intro charge (handles 3DS/SCA)
+          // 3) Confirmar el pago (3DS/SCA)
           const conf = await stripe.confirmCardPayment(data.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
-          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('لم تكتمل عملية الدفع');
+          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('El pago no se completó');
 
-          // ✅ Success → redirect 100% to provided URL
+          // Éxito → redirección 100% al tracker (conservado del archivo anterior)
           (function(){
-            const redirectUrl = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
-            window.location.href = redirectUrl;
+            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+            try{
+              const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+              const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
+              if (sub) {
+                qp.set('sub_id',  sub);
+                qp.set('subid',   sub);
+                qp.set('aff_sub', sub);
+                qp.set('click_id',sub);
+                qp.set('cid',     sub);
+                qp.set('tid',     sub);
+              }
+            }catch(e){}
+            const sep = TRACKER_URL.includes('?') ? '&' : '?';
+            window.location.href = TRACKER_URL + sep + qp.toString();
           })();
 
         }catch(err){
-          if(errBox){ errBox.textContent = err.message || 'حدث خطأ ما.'; errBox.setAttribute('aria-hidden','false'); }
+          if(errBox){ errBox.textContent = err.message || 'Ha ocurrido un error.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
-          /* ONLY CHANGE: redirect on failure, matching blank.html */
+          /* SIN CAMBIOS: redirección en fallo */
           window.location.href = 'https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
         }
       });
     });
   </script>
 
-  <!-- GoAffPro loader (kept) -->
+  <!-- Cargador GoAffPro (sin cambios) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </body>
 </html>
