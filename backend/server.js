@@ -1897,7 +1897,7 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
 
     // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
-    const unitPence = 2500;               // £25 per item
+    const unitPence = 2699               // £26.99 per item
     const amount = unitPence * qty;       // total to charge now
 
     // Create (or reuse via email if you prefer) a Customer
