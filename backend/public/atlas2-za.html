@@ -170,7 +170,7 @@
             <div>
               <div class="label">Country</div>
               <!-- free text to keep your country→ISO conversion -->
-              <input id="billingCountry" class="input" placeholder="Country" value="ZA">
+              <input id="billingCountry" class="input" placeholder="Country" value="South Africa">
             </div>
           </div>
 
@@ -391,9 +391,9 @@
         if (showHero) hero.style.display = 'flex';
       })();
 
-      // ===== Country choices + calling codes (restricted) =====
+      // ===== Country choices + calling codes (ONLY ZA) =====
       const COUNTRY_CHOICES = {
-        XA:'XA' // only XA allowed for address country
+        ZA:'South Africa' // only ZA allowed for address country
       };
       const CALLING_CODES = {
         ZA:'+27' // only ZA calling code
@@ -406,7 +406,6 @@
         phonePrefix.value = code;
       }
       function setPrefixFromISO(cc){
-        // Keep only ZA as valid; anything else ignored.
         if (cc === 'ZA') {
           const code = CALLING_CODES.ZA;
           const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
@@ -416,23 +415,28 @@
       }
       function setPrefixValue(code){
         if(!phonePrefix || !code) return;
-        let c = String(code).trim(); if(!c.startsWith('+')) c = '+' + c.replace(/[^\d]/g,'');
-        // Force to ZA regardless
+        // Force ZA regardless of input
         phonePrefix.value = CALLING_CODES.ZA;
       }
       function normalizeCountryShorthand(val){
-        // with only XA supported, any shorthand maps to null
-        return null;
+        const v = String(val||'').toUpperCase().replace(/\./g,'').trim();
+        const map = { SA:'ZA', RSA:'ZA', SOUTHAFRICA:'ZA' };
+        return map[v] || null;
       }
       function countryTextToISO(text){
         if(!text) return null;
-        const raw = text.trim().toUpperCase();
-        if (raw === 'XA') return 'XA';
+        const raw = text.trim();
+        const isoLike = raw.toUpperCase();
+        if (isoLike === 'ZA') return 'ZA';
+        const shorthand = normalizeCountryShorthand(raw);
+        if (shorthand) return shorthand;
+        const lower = raw.toLowerCase();
+        if (lower === 'south africa') return 'ZA';
         return null;
       }
       populatePrefixOptions();
 
-      // ===== URL prefill (updated mapping kept) =====
+      // ===== URL prefill (kept) =====
       const qs = new URLSearchParams(window.location.search);
       const urlPrefs = {
         first:   qs.get('sub3') || '',
@@ -459,7 +463,6 @@
             const digits = rawPhone.replace(/[^\d]/g,'');
             const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
             if (m){
-              // lock to ZA regardless of provided code
               phoneNumber.value = m[2];
               prefixLockedFromURL = true;
               phonePrefix.value = CALLING_CODES.ZA;
@@ -470,7 +473,6 @@
             phonePrefix.value = CALLING_CODES.ZA;
           }
         } else {
-          // ensure ZA by default
           phonePrefix.value = CALLING_CODES.ZA;
         }
       }
@@ -481,43 +483,47 @@
         if (urlPrefs.city){   billingCity.value = decodeURIComponent(urlPrefs.city); }
         if (urlPrefs.country){
           const text = decodeURIComponent(urlPrefs.country);
-          // only XA is allowed; otherwise force XA
-          billingCountry.value = (String(text).trim().toUpperCase() === 'XA') ? 'XA' : 'XA';
+          // Only ZA is allowed; any other value becomes "South Africa"
+          billingCountry.value = (countryTextToISO(text) === 'ZA') ? 'South Africa' : 'South Africa';
         } else {
-          // if empty, keep XA prefilled
-          if (!billingCountry.value) billingCountry.value = 'XA';
+          if (!billingCountry.value) billingCountry.value = 'South Africa';
         }
-        // Always enforce ZA prefix irrespective of country
         phonePrefix.value = CALLING_CODES.ZA;
       }
 
       applyContactPrefill();
       applyAddressPrefill();
 
-      // ---- IP-based prefix hydrate kept but effectively no-op except enforcing ZA ----
+      // ---- IP-based prefix hydrate kept but enforces ZA ----
       (function hydratePrefixFromIP(){
         if (prefixLockedFromURL) return;
-        // Always enforce ZA
         phonePrefix.value = CALLING_CODES.ZA;
       })();
 
       // Sync prefix when user edits country — keep ZA only
       function maybeSyncPrefixFromCountry(){
-        // country limited to XA; prefix stays ZA
-        phonePrefix.value = CALLING_CODES.ZA;
-        if (String(billingCountry.value).trim().toUpperCase() !== 'XA') {
-          billingCountry.value = 'XA';
+        const iso = countryTextToISO(billingCountry.value);
+        if (iso !== 'ZA') {
+          billingCountry.value = 'South Africa';
         }
+        phonePrefix.value = CALLING_CODES.ZA;
       }
       billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
       billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
       // Step navigation — combine first/last into hidden full name for Stripe
-      nextBtn?.addEventListener('click', () => {
+      const nameInput = document.getElementById('nameInput');
+      document.getElementById('nextBtn')?.addEventListener('click', () => {
         nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
-        hide(step1); show(step2);
+        const iso = countryTextToISO(billingCountry.value);
+        if (iso !== 'ZA') billingCountry.value = 'South Africa';
+        document.getElementById('step1').setAttribute('aria-hidden','true');
+        document.getElementById('step2').setAttribute('aria-hidden','false');
       });
-      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+      document.getElementById('backBtn')?.addEventListener('click', ()=>{
+        document.getElementById('step2').setAttribute('aria-hidden','true');
+        document.getElementById('step1').setAttribute('aria-hidden','false');
+      });
 
       // ===== Stripe (kept) =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
@@ -536,20 +542,18 @@
 
       document.getElementById('payNow')?.addEventListener('click', async ()=>{
         if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
+        const errBox = document.getElementById('err');
         errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
-        showLoading();
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false');
 
         const name = nameInput.value.trim();
         const email = document.getElementById('emailInput')?.value.trim();
         const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
         const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
 
-        const isoCountry = (function countryTextToISO(text){
-          if(!text) return null;
-          const raw = text.trim().toUpperCase();
-          if (raw === 'XA') return 'XA';
-          return null;
-        })(billingCountry?.value) || undefined;
+        // Always resolve to ISO ZA for Stripe
+        const isoCountry = 'ZA';
 
         const address = {
           line1: (billingStreet?.value||'').trim() || undefined,
@@ -603,7 +607,7 @@
 
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
-          hideLoading();
+          overlay.setAttribute('aria-hidden','true'); overlay.style.display='none';
           /* ONLY CHANGE: redirect on failure, matching blank.html */
           window.location.href = 'https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
         }
