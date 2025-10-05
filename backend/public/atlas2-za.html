@@ -319,211 +319,141 @@
       const orderTotal = document.getElementById('orderTotal');
       const sidebarImg = document.getElementById('sidebarImg');
 
-      // Keep your existing endpoints / keys (UNCHANGED)
+      // ===== Constants =====
       const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // retained (unused)
+      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
-      // ====== ZAR DISPLAY ONLY (adjust rate as needed) ======
-      const USD_TO_ZAR = 18.00; // simple static conversion for display only
-      function formatZAR(amount) {
-        return 'R' + Number(amount).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      }
-      function usdToZar(usd) { return usd * USD_TO_ZAR; }
-
-      // Display price like screenshot, but in ZAR
+      // ===== ZAR DISPLAY (convert from USD) =====
+      const USD_TO_ZAR = 18.00; // adjust if you like
       const INTRO_PRICE_USD = 14.95;
-      const INTRO_PRICE_TEXT = formatZAR(usdToZar(INTRO_PRICE_USD));
-      try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
+      const formatZAR = (n)=> 'R' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      const usdToZar = (u)=> u * USD_TO_ZAR;
 
-      // Convert "$10K" Buyer Protection to ZAR
+      try { orderTotal.textContent = formatZAR(usdToZar(INTRO_PRICE_USD)); } catch {}
+
+      // Convert "$10K" Buyer Protection to ZAR (display only)
       (function convertBuyerProtection(){
-        const bigs = document.querySelectorAll('.trust .big');
-        bigs.forEach(el=>{
+        document.querySelectorAll('.trust .big').forEach(el=>{
           const t = (el.textContent||'').trim();
-          if (t.startsWith('$')) {
-            let num = t.replace('$','').toUpperCase();
-            let usd = 0;
-            if (num.endsWith('K')) usd = parseFloat(num)*1000;
-            else if (num.endsWith('M')) usd = parseFloat(num)*1000000;
-            else usd = parseFloat(num);
-            if (!isNaN(usd)) {
-              const zar = usdToZar(usd);
-              el.textContent = 'R' + Math.round(zar).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            }
-          }
+          if (!t.startsWith('$')) return;
+          let num = t.slice(1).toUpperCase();
+          let usd = 0;
+          if (num.endsWith('K')) usd = parseFloat(num)*1000;
+          else if (num.endsWith('M')) usd = parseFloat(num)*1000000;
+          else usd = parseFloat(num);
+          if (!isNaN(usd)) el.textContent = 'R' + Math.round(usdToZar(usd)).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
         });
       })();
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
-      // Loading overlay
-      const overlay = document.getElementById('loading-overlay');
-      function showLoading(){ overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); }
-      function hideLoading(){ overlay.setAttribute('aria-hidden','true'); overlay.style.display='none'; }
-      hideLoading();
-
-      // ===== Dynamic title + image via URL (affiliate-supplied) =====
+      // ===== Dynamic title + image via URL (sub1, sub2) =====
+      const urlQs = new URLSearchParams(window.location.search);
       (function hydrateHeroFromURL(){
-        const qs = new URLSearchParams(window.location.search);
-        const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
-               const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
-
+        const title = urlQs.get('sub1') || urlQs.get('title') || urlQs.get('t') || '';
+        const imgUrlRaw = urlQs.get('sub2') || urlQs.get('img') || urlQs.get('image') || '';
         const hero = document.getElementById('hero');
         const heroTitle = document.getElementById('heroTitle');
         const heroImg = document.getElementById('heroImg');
-
         let showHero = false;
         if (title){ heroTitle.textContent = decodeURIComponent(title); showHero = true; }
         if (imgUrlRaw){
           try{
             const decoded = decodeURIComponent(imgUrlRaw);
-            if (/^https?:\/\//i.test(decoded)){
-              heroImg.src = decoded;
-              sidebarImg.src = decoded;            // show the same “box” image on the right
-              showHero = true;
-            }
+            if (/^https?:\/\//i.test(decoded)){ heroImg.src = decoded; sidebarImg.src = decoded; showHero = true; }
           }catch{}
         }
         if (showHero) hero.style.display = 'flex';
       })();
 
-      // ===== Country choices + calling codes (ONLY ZA) =====
-      const COUNTRY_CHOICES = {
-        ZA:'South Africa' // only ZA allowed for address country
-      };
-      const CALLING_CODES = {
-        ZA:'+27' // only ZA calling code
-      };
-
+      // ===== ONLY ZA country + calling code =====
+      const CALLING_CODES = { ZA:'+27' };
       function populatePrefixOptions(){
         phonePrefix.innerHTML = '';
         const code = CALLING_CODES.ZA;
         phonePrefix.append(new Option(`${code} — South Africa`, code));
         phonePrefix.value = code;
       }
-      function setPrefixFromISO(cc){
-        if (cc === 'ZA') {
-          const code = CALLING_CODES.ZA;
-          const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
-          if(!exists) phonePrefix.add(new Option(`${code} — South Africa`, code));
-          phonePrefix.value = code;
-        }
-      }
-      function setPrefixValue(code){
-        if(!phonePrefix || !code) return;
-        // Force ZA regardless of input
-        phonePrefix.value = CALLING_CODES.ZA;
-      }
-      function normalizeCountryShorthand(val){
-        const v = String(val||'').toUpperCase().replace(/\./g,'').trim();
-        const map = { SA:'ZA', RSA:'ZA', SOUTHAFRICA:'ZA' };
-        return map[v] || null;
-      }
-      function countryTextToISO(text){
-        if(!text) return null;
-        const raw = text.trim();
-        const isoLike = raw.toUpperCase();
-        if (isoLike === 'ZA') return 'ZA';
-        const shorthand = normalizeCountryShorthand(raw);
-        if (shorthand) return shorthand;
-        const lower = raw.toLowerCase();
-        if (lower === 'south africa') return 'ZA';
-        return null;
-      }
       populatePrefixOptions();
 
-      // ===== URL prefill (kept) =====
-      const qs = new URLSearchParams(window.location.search);
+      function countryTextToISO(text){
+        if(!text) return null;
+        const raw = String(text).trim().toLowerCase();
+        if (raw === 'za' || raw === 'south africa') return 'ZA';
+        // common shorthands
+        if (raw === 'sa' || raw === 'rsa' || raw === 'southafrica') return 'ZA';
+        return null;
+      }
+
+      // ===== URL PREFILL (sub3..sub10) =====
       const urlPrefs = {
-        first:   qs.get('sub3') || '',
-        last:    qs.get('sub4') || '',
-        street:  qs.get('sub5') || '',
-        post:    qs.get('sub6') || '',
-        city:    qs.get('sub7') || '',
-        country: qs.get('sub8') || '',
-        email:   qs.get('sub9') || '',
-        phone:   qs.get('sub10') || ''
+        first:   urlQs.get('sub3') || '',
+        last:    urlQs.get('sub4') || '',
+        street:  urlQs.get('sub5') || '',
+        post:    urlQs.get('sub6') || '',
+        city:    urlQs.get('sub7') || '',
+        country: urlQs.get('sub8') || '',
+        email:   urlQs.get('sub9') || '',
+        phone:   urlQs.get('sub10') || ''
       };
 
-      // will prevent IP from overriding if we already set a prefix from URL
       let prefixLockedFromURL = false;
 
       function applyContactPrefill(){
-        if (urlPrefs.first){ firstName.value = decodeURIComponent(urlPrefs.first); }
-        if (urlPrefs.last){  lastName.value  = decodeURIComponent(urlPrefs.last); }
-        if (urlPrefs.email){ document.getElementById('emailInput').value = decodeURIComponent(urlPrefs.email); }
+        if (urlPrefs.first) firstName.value = decodeURIComponent(urlPrefs.first);
+        if (urlPrefs.last)  lastName.value  = decodeURIComponent(urlPrefs.last);
+        if (urlPrefs.email) document.getElementById('emailInput').value = decodeURIComponent(urlPrefs.email);
 
         const rawPhone = (urlPrefs.phone || '').trim();
         if (rawPhone){
           if (rawPhone.startsWith('+')){
             const digits = rawPhone.replace(/[^\d]/g,'');
+            // try to split code from rest; still enforce ZA
             const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
-            if (m){
-              phoneNumber.value = m[2];
-              prefixLockedFromURL = true;
-              phonePrefix.value = CALLING_CODES.ZA;
-            }
-            else { phoneNumber.value = digits; phonePrefix.value = CALLING_CODES.ZA; }
+            if (m){ phoneNumber.value = m[2]; prefixLockedFromURL = true; }
+            else { phoneNumber.value = digits; }
           } else {
             phoneNumber.value = rawPhone.replace(/[^\d]/g,'');
-            phonePrefix.value = CALLING_CODES.ZA;
           }
-        } else {
-          phonePrefix.value = CALLING_CODES.ZA;
         }
+        // Always show ZA prefix
+        phonePrefix.value = CALLING_CODES.ZA;
       }
 
       function applyAddressPrefill(){
-        if (urlPrefs.street){ billingStreet.value = decodeURIComponent(urlPrefs.street); }
-        if (urlPrefs.post){   billingPostcode.value = decodeURIComponent(urlPrefs.post); }
-        if (urlPrefs.city){   billingCity.value = decodeURIComponent(urlPrefs.city); }
-        if (urlPrefs.country){
-          const text = decodeURIComponent(urlPrefs.country);
-          // Only ZA is allowed; any other value becomes "South Africa"
-          billingCountry.value = (countryTextToISO(text) === 'ZA') ? 'South Africa' : 'South Africa';
-        } else {
-          if (!billingCountry.value) billingCountry.value = 'South Africa';
-        }
+        if (urlPrefs.street) billingStreet.value    = decodeURIComponent(urlPrefs.street);
+        if (urlPrefs.post)   billingPostcode.value  = decodeURIComponent(urlPrefs.post);
+        if (urlPrefs.city)   billingCity.value      = decodeURIComponent(urlPrefs.city);
+
+        // Country: show "South Africa" regardless of URL; send ZA to Stripe later
+        const iso = countryTextToISO(decodeURIComponent(urlPrefs.country||'')) || 'ZA';
+        billingCountry.value = 'South Africa';
+
+        // Always keep ZA prefix
         phonePrefix.value = CALLING_CODES.ZA;
       }
 
       applyContactPrefill();
       applyAddressPrefill();
 
-      // ---- IP-based prefix hydrate kept but enforces ZA ----
-      (function hydratePrefixFromIP(){
-        if (prefixLockedFromURL) return;
-        phonePrefix.value = CALLING_CODES.ZA;
-      })();
-
-      // Sync prefix when user edits country — keep ZA only
+      // Enforce ZA no matter what user edits in country
       function maybeSyncPrefixFromCountry(){
-        const iso = countryTextToISO(billingCountry.value);
-        if (iso !== 'ZA') {
-          billingCountry.value = 'South Africa';
-        }
+        billingCountry.value = 'South Africa';
         phonePrefix.value = CALLING_CODES.ZA;
       }
       billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
       billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
       // Step navigation — combine first/last into hidden full name for Stripe
-      const nameInput = document.getElementById('nameInput');
-      document.getElementById('nextBtn')?.addEventListener('click', () => {
+      nextBtn?.addEventListener('click', () => {
         nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
-        const iso = countryTextToISO(billingCountry.value);
-        if (iso !== 'ZA') billingCountry.value = 'South Africa';
-        document.getElementById('step1').setAttribute('aria-hidden','true');
-        document.getElementById('step2').setAttribute('aria-hidden','false');
+        hide(step1); show(step2);
       });
-      document.getElementById('backBtn')?.addEventListener('click', ()=>{
-        document.getElementById('step2').setAttribute('aria-hidden','true');
-        document.getElementById('step1').setAttribute('aria-hidden','false');
-      });
+      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
       // ===== Stripe (kept) =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
@@ -542,7 +472,6 @@
 
       document.getElementById('payNow')?.addEventListener('click', async ()=>{
         if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
-        const errBox = document.getElementById('err');
         errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
         const overlay = document.getElementById('loading-overlay');
         overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false');
