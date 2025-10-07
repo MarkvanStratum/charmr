@@ -38,7 +38,8 @@
     .subhead{color:#000;font-weight:700;margin:4px 0 8px}
     .subhead .pink{color:#ff69b4;font-weight:800}
     .card{background:#151518;border-radius:18px;box-shadow:var(--ring);overflow:hidden;border:1px solid #26262b}
-    .plan{position:relative;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .plan{position:relative;padding:14px;display:flex;align-items:center;justify-content:space-between;gap:12px;cursor:pointer}
+    .plan + .plan{border-top:1px solid #222229}
     .plan.selected{outline:2px solid var(--accent-2);background:linear-gradient(180deg,#1a1a1f,#141418)}
     .plan .sel{position:absolute;right:12px;top:12px;width:26px;height:26px;border-radius:999px;background:linear-gradient(180deg,#ffd76b,#ffb429);color:#111;font-weight:900;line-height:26px;text-align:center}
     .left{display:flex;flex-direction:column;gap:6px}
@@ -103,46 +104,89 @@
   <script>
     const CURRENCY = '£';
 
+    // Added the 1-month plan at £15 that links to blank-1500.html
     const planData = [
       {
         key: 'one_time',
         label: 'Lifetime Access',
         upfront: 25.00,
         upfrontLabel: 'one-time payment',
-        recurLabel: 'No subscription — pay once'
+        recurLabel: 'No subscription — pay once',
+        href: 'blank.html'
+      },
+      {
+        key: 'monthly_1m',
+        label: '1 Month Access',
+        upfront: 15.00,
+        upfrontLabel: '1 month access',
+        recurLabel: 'Full access for 30 days',
+        href: 'blank-1500.html'
       }
     ];
 
     const plansWrap = document.getElementById('plans');
+    const continueBtn = document.getElementById('continueBtn');
+    const perDayBadge = document.getElementById('perDayBadge');
+
+    let selectedKey = 'one_time'; // default selection
 
     function formatMoney(v){
       return CURRENCY + (Math.round(v*100)/100).toFixed(2);
     }
 
     function renderPlans(){
-      const p = planData[0];
-      const [pounds, cents] = formatMoney(p.upfront).replace(CURRENCY,'').split('.');
-      const row = document.createElement('div');
-      row.className = 'plan selected';
-      row.innerHTML = `
-        <div class="sel">✓</div>
-        <div class="left">
-          <div class="pname">${p.label}</div>
-          <div class="micro">${p.recurLabel}</div>
-        </div>
-        <div class="right" style="text-align:right">
-          <div class="pprice">
-            <span>${CURRENCY}<span class="big-zero">${pounds}</span><span class="small-cents">.${cents}</span></span>
-            <span class="perday-label">${p.upfrontLabel}</span>
+      plansWrap.innerHTML = '';
+      planData.forEach(p => {
+        const [pounds, cents] = formatMoney(p.upfront).replace(CURRENCY,'').split('.');
+        const row = document.createElement('div');
+        row.className = 'plan' + (p.key === selectedKey ? ' selected' : '');
+        row.setAttribute('data-key', p.key);
+        row.innerHTML = `
+          ${p.key === selectedKey ? '<div class="sel">✓</div>' : ''}
+          <div class="left">
+            <div class="pname">${p.label}</div>
+            <div class="micro">${p.recurLabel}</div>
           </div>
-        </div>
-      `;
-      plansWrap.appendChild(row);
+          <div class="right" style="text-align:right">
+            <div class="pprice">
+              <span>${CURRENCY}<span class="big-zero">${pounds}</span><span class="small-cents">.${cents}</span></span>
+              <span class="perday-label">${p.upfrontLabel}</span>
+            </div>
+          </div>
+        `;
+        row.addEventListener('click', () => selectPlan(p.key));
+        plansWrap.appendChild(row);
+      });
+      updateCTA();
     }
 
-    document.getElementById('continueBtn').addEventListener('click', ()=>{
-      window.location.href = 'blank.html';
-    });
+    function selectPlan(key){
+      selectedKey = key;
+      // toggle selected class + checkmark
+      Array.from(plansWrap.children).forEach(el => {
+        const k = el.getAttribute('data-key');
+        if (k === key){
+          el.classList.add('selected');
+          if (!el.querySelector('.sel')){
+            const dot = document.createElement('div');
+            dot.className = 'sel';
+            dot.textContent = '✓';
+            el.appendChild(dot);
+          }
+        } else {
+          el.classList.remove('selected');
+          const dot = el.querySelector('.sel');
+          if (dot) dot.remove();
+        }
+      });
+      updateCTA();
+    }
+
+    function updateCTA(){
+      const plan = planData.find(p => p.key === selectedKey) || planData[0];
+      perDayBadge.textContent = `${formatMoney(plan.upfront)} ${plan.upfrontLabel}`;
+      continueBtn.onclick = () => { window.location.href = plan.href; };
+    }
 
     document.getElementById('maybeLater').addEventListener('click', ()=>{
       window.location.href = 'profiles.html';
@@ -150,7 +194,7 @@
 
     (function init(){
       renderPlans();
-      document.getElementById('perDayBadge').textContent = "£25.00 one-time";
+      // keep original badge text if needed; otherwise updateCTA covers it
     })();
   </script>
 </body>
