@@ -1954,7 +1954,7 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
 });
 
 // CORS preflight for the £12.50 intro charge
-app.options('/api/stripe/intro-charge-1250', cors());
+app.options('/api/stripe/intro-charge-1500', cors());
 
 // £12.50 intro charge before starting the subscription (supports quantity)
 app.post('/api/stripe/intro-charge-1250', async (req, res) => {
@@ -1974,7 +1974,7 @@ app.post('/api/stripe/intro-charge-1250', async (req, res) => {
 
     // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
-    const unitPence = 1250;              // £12.50 per item
+    const unitPence = 1500;              // £15.00 per item
     const amount = unitPence * qty;      // total to charge now
 
     // Create (or reuse via email) a Customer (same as your 20 route)
