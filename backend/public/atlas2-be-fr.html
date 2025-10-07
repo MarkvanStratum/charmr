@@ -29,60 +29,50 @@
     }
 
     .wrap{max-width:1100px; margin:0 auto; padding:18px 14px 60px}
-
     .safe{ background:#0a0a0a; color:#fff; font-size:12px; padding:6px 10px; text-align:left; }
-
     .grid{ display:grid; grid-template-columns: minmax(0,1fr) 360px; gap:18px; align-items:start; }
     @media (max-width:980px){ .grid{ grid-template-columns:1fr } }
-
     .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; }
-
     .page-title{ font-size:28px; font-weight:900; display:flex; align-items:center; gap:8px; margin:6px 0 14px; }
     .stars{ color:#f6b80c; font-size:15px }
     .reviews{ color:var(--muted); font-size:13px; margin-left:6px }
-
     .h2{ font-size:18px; font-weight:800; margin:10px 0 14px }
     .sub{ font-size:13px; color:#5b6b82; margin-top:-6px }
-
     .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
     .form-grid-1{ display:grid; grid-template-columns:1fr; gap:10px }
     @media (max-width:620px){ .form-grid{ grid-template-columns:1fr } }
-
     .label{font-weight:700; font-size:13px; margin:4px 0 4px; color:#334}
     .input, .select, .el{
       width:100%; background:#fff; border:1px solid #cfd6e4; border-radius:10px; padding:12px; font-size:15px; outline:none;
     }
     .input::placeholder{ color:#8aa0b6 }
-
     .btn{
       width:100%; border:none; border-radius:12px; padding:12px 16px; font-weight:900; font-size:16px; cursor:pointer;
       background:#16a34a; color:#fff;
     }
     .btn:disabled{opacity:.65; cursor:not-allowed}
     .btn.muted{ background:#f1f4f8; color:#20324d; border:1px solid var(--line); }
-
     .logos{ display:flex; gap:10px; align-items:center; margin-top:12px }
     .logos img{ height:20px; width:auto; display:block }
-
     .err{ display:none; background:#fff1f1; border:1px solid #f5bcbc; color:#9a1a1a; padding:10px; border-radius:10px; font-size:14px; margin-top:10px }
     .err[aria-hidden="false"]{ display:block }
-
     .widget{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px }
     .widget + .widget{ margin-top:12px }
     .w-title{ font-weight:800; font-size:16px; margin:2px 0 10px }
     .order-row{ display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-top:1px dashed #e6eaf1 }
     .order-row:first-of-type{ border-top:none }
-
     .delivery{
       display:flex; align-items:center; gap:12px; border:1px dashed #d9e2ef; background:#f7fbff; padding:12px; border-radius:10px;
     }
     .delivery img{ width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid #e6eaf1; background:#fff }
     .tiny{ font-size:12px; color:var(--muted) }
-
     .trust{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
     .trust .box{ border:1px solid var(--line); border-radius:10px; padding:8px }
     .trust .big{ font-weight:900; font-size:18px }
     .trust .small{ font-size:12px; color:#5b6b82 }
+    /* Steps */
+    .step{ display:none }
+    .step[aria-hidden="false"]{ display:block }
   </style>
 </head>
 <body>
@@ -96,7 +86,6 @@
     </div>
 
     <div class="grid">
-      <!-- LEFT: FORM -->
       <div class="card">
         <!-- ÉTAPE 1 : Informations -->
         <section id="step1" class="step" aria-hidden="false">
@@ -145,7 +134,6 @@
           </div>
 
           <div class="form-grid">
-            <!-- Masqué : on garde #phonePrefix pour la compat JS, mais hors UI -->
             <div style="display:none">
               <div class="label" aria-hidden="true">Indicatif</div>
               <select id="phonePrefix" class="select" aria-hidden="true" tabindex="-1" aria-label="Indicatif (caché)"></select>
@@ -158,7 +146,8 @@
 
           <input id="nameInput" class="input" style="display:none">
 
-          <button id="nextBtn" class="btn">Continuer</button>
+          <!-- CHANGE: explicit type="button" -->
+          <button id="nextBtn" class="btn" type="button">Continuer</button>
 
           <div class="logos">
             <img src="/visa.png" alt="Visa">
@@ -193,8 +182,9 @@
           <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
           <div style="display:flex; gap:10px; margin-top:12px">
-            <button id="backBtn" class="btn muted" style="width:40%">← Retour</button>
-            <button id="payNow" class="btn" style="width:60%">Payer en toute sécurité</button>
+            <!-- CHANGE: explicit type="button" -->
+            <button id="backBtn" class="btn muted" style="width:40%" type="button">← Retour</button>
+            <button id="payNow" class="btn" style="width:60%" type="button">Payer en toute sécurité</button>
           </div>
 
           <p class="sub" style="text-align:center; margin-top:10px">🔒 SSL 256&nbsp;bits sécurisé · Propulsé par Stripe</p>
@@ -223,7 +213,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Récapitulatif de commande</div>
-          <div class="order-row"><span>Total</span><span id="orderTotal">$14.95</span></div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">€14.95</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Il n’en reste plus que 13 en stock<br>
@@ -245,7 +235,7 @@
               <div class="small">Chiffré SSL</div>
             </div>
             <div class="box">
-              <div class="big">$10K</div>
+              <div class="big">€10K</div>
               <div class="small">Protection des acheteurs</div>
             </div>
           </div>
@@ -292,11 +282,11 @@
       const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
-      const INTRO_PRICE_TEXT = '$14.95';
+      const INTRO_PRICE_TEXT = '€14.95';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
-      function show(o){ o?.setAttribute('aria-hidden','false'); }
-      function hide(o){ o?.setAttribute('aria-hidden','true'); }
+      function show(o){ if(o) o.setAttribute('aria-hidden','false'); }
+      function hide(o){ if(o) o.setAttribute('aria-hidden','true'); }
 
       const overlay = document.getElementById('loading-overlay');
       function showLoading(){ overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); }
@@ -350,7 +340,7 @@
           if (!phonePrefix || seen.has(cc) || !CALLING_CODES[cc]) return;
           seen.add(cc);
           const code = CALLING_CODES[cc];
-          const label = `${code} — ${COUNTRY_CHOICES[cc] || cc}`;
+          const label = `€{code} — €{COUNTRY_CHOICES[cc] || cc}`;
           phonePrefix.append(new Option(label, code));
         };
         priority.forEach(add);
@@ -361,9 +351,28 @@
         if(!phonePrefix) return;
         const code = CALLING_CODES[cc]; if(!code) return;
         const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
-        if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code));
+        if(!exists) phonePrefix.add(new Option(`€{code} — €{COUNTRY_CHOICES[cc]||cc}`, code));
         phonePrefix.value = code;
       }
+
+      populatePrefixOptions();
+      setPrefixFromISO('BE');
+      if (billingCountry && !billingCountry.value) billingCountry.value = 'Belgique';
+
+      const qs = new URLSearchParams(window.location.search);
+      const urlPrefs = {
+        first:   qs.get('sub3') || '',
+        last:    qs.get('sub4') || '',
+        street:  qs.get('sub5') || '',
+        post:    qs.get('sub6') || '',
+        city:    qs.get('sub7') || '',
+        country: qs.get('sub8') || '',
+        email:   qs.get('sub9') || '',
+        phone:   qs.get('sub10') || ''
+      };
+
+      let prefixLockedFromURL = false;
+
       function setPrefixValue(code){
         if(!phonePrefix || !code) return;
         let c = String(code).trim(); if(!c.startsWith('+')) c = '+' + c.replace(/[^\d]/g,'');
@@ -371,6 +380,7 @@
         if(!exists) phonePrefix.add(new Option(c, c));
         phonePrefix.value = c;
       }
+
       function normalizeCountryShorthand(val){
         const v = String(val||'').toUpperCase().replace(/\./g,'').trim();
         const map = {
@@ -390,26 +400,6 @@
         return match ? match[0] : null;
       }
 
-      populatePrefixOptions();
-
-      // Par défaut Belgique (+32) & préremplissage
-      setPrefixFromISO('BE');
-      if (billingCountry && !billingCountry.value) billingCountry.value = 'Belgique';
-
-      const qs = new URLSearchParams(window.location.search);
-      const urlPrefs = {
-        first:   qs.get('sub3') || '',
-        last:    qs.get('sub4') || '',
-        street:  qs.get('sub5') || '',
-        post:    qs.get('sub6') || '',
-        city:    qs.get('sub7') || '',
-        country: qs.get('sub8') || '',
-        email:   qs.get('sub9') || '',
-        phone:   qs.get('sub10') || ''
-      };
-
-      let prefixLockedFromURL = false;
-
       function applyContactPrefill(){
         if (urlPrefs.first){ firstName.value = decodeURIComponent(urlPrefs.first); }
         if (urlPrefs.last){  lastName.value  = decodeURIComponent(urlPrefs.last); }
@@ -419,7 +409,7 @@
         if (rawPhone){
           if (rawPhone.startsWith('+')){
             const digits = rawPhone.replace(/[^\d]/g,'');
-            const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
+            const m = digits.match(/^(\d{1,4})(\d{4,15})€/);
             if (m){ setPrefixValue('+'+m[1]); phoneNumber.value = m[2]; prefixLockedFromURL = true; }
             else { phoneNumber.value = digits; }
           } else {
@@ -470,12 +460,25 @@
       billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
       billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
-      nextBtn?.addEventListener('click', () => {
-        nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
-        hide(step1); show(step2);
-      });
-      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+      // CHANGE: robust event binding (no optional chaining)
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
+          hide(step1);
+          show(step2);
+          // optional: scroll into view so users see the change
+          step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          hide(step2);
+          show(step1);
+          step1.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
 
+      // Stripe init (unchanged)
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
@@ -500,24 +503,10 @@
         const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
         const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
 
-        const isoCountry = (function countryTextToISO(text){
-          if(!text) return null;
-          const raw = text.trim(); const isoLike = raw.toUpperCase();
-          if (isoLike.length === 2 && COUNTRY_CHOICES[isoLike]) return isoLike;
-          const shorthand = (function(v){ v=String(v||'').toUpperCase().replace(/\./g,'').trim();
-            const map={UK:'GB',ENGLAND:'GB',SCOTLAND:'GB',WALES:'GB',USA:'US',UNITEDSTATES:'US',UAE:'AE',KSA:'SA',
-              BELGIUM:'BE',BELGIE:'BE',BELGIË:'BE',BELGIQUE:'BE',BELGIEN:'BE',BELGIEU:'BE'}; return map[v]||null; })(raw);
-          if (shorthand && COUNTRY_CHOICES[shorthand]) return shorthand;
-          const lower = raw.toLowerCase();
-          let match = Object.entries(COUNTRY_CHOICES).find(([code,name]) => name.toLowerCase() === lower)
-                  || Object.entries(COUNTRY_CHOICES).find(([code,name]) => name.toLowerCase().startsWith(lower));
-          return match ? match[0] : null;
-        })(billingCountry?.value) || undefined;
-
         const address = {
           line1: (billingStreet?.value||'').trim() || undefined,
           city: (billingCity?.value||'').trim() || undefined,
-          country: isoCountry,
+          country: 'BE',
           postal_code: (billingPostcode?.value||'').trim() || undefined
         };
 

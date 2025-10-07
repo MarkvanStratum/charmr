@@ -83,6 +83,10 @@
     .trust .box{ border:1px solid var(--line); border-radius:10px; padding:8px }
     .trust .big{ font-weight:900; font-size:18px }
     .trust .small{ font-size:12px; color:#5b6b82 }
+
+    /* ADDED: step visibility controlled by aria-hidden */
+    .step{ display:none }
+    .step[aria-hidden="false"]{ display:block }
   </style>
 </head>
 <body>
@@ -158,7 +162,8 @@
 
           <input id="nameInput" class="input" style="display:none">
 
-          <button id="nextBtn" class="btn">Doorgaan</button>
+          <!-- ADDED: explicit type -->
+          <button id="nextBtn" class="btn" type="button">Doorgaan</button>
 
           <div class="logos">
             <img src="/visa.png" alt="Visa">
@@ -193,8 +198,9 @@
           <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
           <div style="display:flex; gap:10px; margin-top:12px">
-            <button id="backBtn" class="btn muted" style="width:40%">← Terug</button>
-            <button id="payNow" class="btn" style="width:60%">Veilig betalen</button>
+            <!-- ADDED: explicit type -->
+            <button id="backBtn" class="btn muted" style="width:40%" type="button">← Terug</button>
+            <button id="payNow" class="btn" style="width:60%" type="button">Veilig betalen</button>
           </div>
 
           <p class="sub" style="text-align:center; margin-top:10px">🔒 256-bit SSL beveiligd · Powered by Stripe</p>
@@ -223,7 +229,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Besteloverzicht</div>
-          <div class="order-row"><span>Totaal</span><span id="orderTotal">$14.95</span></div>
+          <div class="order-row"><span>Totaal</span><span id="orderTotal">€14.95</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Nog maar 13 op voorraad<br>
@@ -245,7 +251,7 @@
               <div class="small">SSL-versleuteld</div>
             </div>
             <div class="box">
-              <div class="big">$10K</div>
+              <div class="big">€10K</div>
               <div class="small">Kopersbescherming</div>
             </div>
           </div>
@@ -292,11 +298,11 @@
       const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
-      const INTRO_PRICE_TEXT = '$14.95';
+      const INTRO_PRICE_TEXT = '€14.95';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
-      function show(o){ o?.setAttribute('aria-hidden','false'); }
-      function hide(o){ o?.setAttribute('aria-hidden','true'); }
+      function show(o){ if(o) o.setAttribute('aria-hidden','false'); }
+      function hide(o){ if(o) o.setAttribute('aria-hidden','true'); }
 
       const overlay = document.getElementById('loading-overlay');
       function showLoading(){ overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); }
@@ -329,7 +335,7 @@
         GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland', CA:'Canada', AU:'Australia', NZ:'New Zealand',
         DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands', BE:'Belgium', CH:'Switzerland', AT:'Austria',
         DK:'Denmark', NO:'Norway', SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia', HU:'Hungary', RO:'Romania',
-        BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia', ZA:'South Africa',
+        BR:'Brazil', MX:'+52', AR:'Argentina', CL:'Chile', CO:'Colombia', ZA:'South Africa',
         IN:'India', SG:'Singapore', MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines',
         HK:'Hong Kong', JP:'Japan', KR:'South Korea',
         AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel'
@@ -349,7 +355,7 @@
           if (!phonePrefix || seen.has(cc) || !CALLING_CODES[cc]) return;
           seen.add(cc);
           const code = CALLING_CODES[cc];
-          const label = `${code} — ${COUNTRY_CHOICES[cc] || cc}`;
+          const label = `€{code} — €{COUNTRY_CHOICES[cc] || cc}`;
           phonePrefix.append(new Option(label, code));
         };
         priority.forEach(add);
@@ -360,7 +366,7 @@
         if(!phonePrefix) return;
         const code = CALLING_CODES[cc]; if(!code) return;
         const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
-        if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code));
+        if(!exists) phonePrefix.add(new Option(`€{code} — €{COUNTRY_CHOICES[cc]||cc}`, code));
         phonePrefix.value = code;
       }
       function setPrefixValue(code){
@@ -418,7 +424,7 @@
         if (rawPhone){
           if (rawPhone.startsWith('+')){
             const digits = rawPhone.replace(/[^\d]/g,'');
-            const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
+            const m = digits.match(/^(\d{1,4})(\d{4,15})€/);
             if (m){ setPrefixValue('+'+m[1]); phoneNumber.value = m[2]; prefixLockedFromURL = true; }
             else { phoneNumber.value = digits; }
           } else {
@@ -469,12 +475,24 @@
       billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
       billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
-      nextBtn?.addEventListener('click', () => {
-        nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
-        hide(step1); show(step2);
-      });
-      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+      // ADDED: robust event binding (no optional chaining) + scroll
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
+          hide(step1);
+          show(step2);
+          step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          hide(step2);
+          show(step1);
+          step1.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      }
 
+      // Stripe init (unchanged)
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
