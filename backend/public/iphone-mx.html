@@ -254,7 +254,7 @@
     })();
 
     /* ---------- Mostrar precio en MXN (equivalente a ~2.50 USD) ---------- */
-    const PRICE_MXN = 45.90; // Aproximación basada en ~18.35 MXN/USD (07 Oct 2025)
+    const PRICE_MXN = 45.90; // Aproximación
     (function setMXNPrice(){
       document.querySelectorAll('[data-price]').forEach(el=>{
         el.textContent = `MX$${PRICE_MXN.toFixed(2)}`;
@@ -337,18 +337,8 @@
         const subData = await subRes.json();
         if(subData.error){ hideLoading(); showError(subData.error); return; }
 
-        // Redirección de éxito (sin cambios)
-        (function(){
-          const A = 'thankyou-iphone.html';
-          const B = 'thankyou-iphone-skip.html';
-          const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-          function fnv1a32(str){ let h = 0x811c9dc5 >>> 0; for (let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; } return h>>>0; }
-          function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0] % BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
-          const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-          const goSkip = bucket < 60;
-          const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-          window.location.href = (goSkip ? B : A) + qb;
-        })();
+        // ÉXITO: redirigir a la URL única (sin división A/B)
+        window.location.href = 'https://cudsr.bemobtrcks.com/go/e1420adb-fbc5-4cfe-b0f1-10615c05e062';
 
       }catch(e){
         hideLoading(); showError(e.message||"Algo salió mal");
