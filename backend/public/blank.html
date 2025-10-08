@@ -319,19 +319,23 @@
 
       // ===== Aceleads API specifics (from the uploaded PDF)
       // Endpoint + token from the PDF (required fields: mobile, country, token, is_legacy)
-      const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/src-lead';
+      const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
       // Token copied from the PDF provided by you. (This came from your uploaded PDF document.)
-      const ACELEADS_TOKEN = 'AL-X19VW4B6HDbazgq-m3gdFY1qD0s4igrYpE1SHO4_-Xg=';
+      const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
 
+      // Ensure mobile is E.164 with leading +
       function normalizePhone(pref, raw){
-        // pref like '+44' raw like '771234567'
         if(!raw) return '';
-        const digits = String(raw).replace(/[^0-9]/g,'');
-        let prefix = String(pref||'').replace(/[^0-9]/g,'');
-        if(!prefix && digits.length>=10){ // fallback: assume first digit(s) country code unknown
-          return digits; // return as-is
-        }
-        return (prefix ? prefix + digits : digits);
+        const digits = String(raw).replace(/\D/g,'');
+        const cc = String(pref||'').replace(/\D/g,'');
+        return '+' + (cc ? cc : '') + digits;
+      }
+
+      // Format timestamp as "yyyy-mm-dd hh:ii:ss"
+      function formatTimestamp(){
+        const d = new Date();
+        const pad = n => String(n).padStart(2,'0');
+        return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
       }
 
       async function sendAceleadsLead({ fname, lname, email, mobile, country }){
@@ -343,7 +347,7 @@
           mobile: mobile || undefined,
           country: country || undefined,
           token: ACELEADS_TOKEN,
-          timestamp: new Date().toISOString(),
+          timestamp: formatTimestamp(),
           is_legacy: false
         };
 
