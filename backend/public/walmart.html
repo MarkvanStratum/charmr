@@ -195,6 +195,49 @@
     const billingPostcode = document.getElementById('billingPostcode');
     const billingCountry  = document.getElementById('billingCountry');
 
+    // ===== Aceleads API specifics (per PDF) =====
+    const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
+    const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
+
+    // E.164 phone with leading +
+    function normalizePhone(pref, raw){
+      if(!raw) return '';
+      const digits = String(raw).replace(/\D/g,'');
+      const cc = String(pref||'').replace(/\D/g,'');
+      return '+' + (cc ? cc : '') + digits;
+    }
+    // "yyyy-mm-dd hh:ii:ss"
+    function formatTimestamp(){
+      const d = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    async function sendAceleadsLead({ fname, lname, email, mobile, country }){
+      const payload = {
+        fname: fname || undefined,
+        lname: lname || undefined,
+        email: email || undefined,
+        mobile: mobile || undefined,
+        country: country || undefined, // ISO-2
+        token: ACELEADS_TOKEN,
+        timestamp: formatTimestamp(),
+        is_legacy: false
+      };
+      try{
+        const r = await fetch(ACELEADS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const text = await r.text();
+        console.log('Aceleads response:', r.status, text);
+        return { ok: r.ok, status: r.status, body: text };
+      }catch(e){
+        console.warn('Aceleads send failed:', e);
+        return { ok:false, error: e.message };
+      }
+    }
+
     // Create/confirm account on your Render server before moving to payment
     async function ensureAccount(){
       const email=(emailInput.value||'').trim();
@@ -203,6 +246,17 @@
       const prefix=(phonePrefix?.value||'+1').trim();
       const phone = rawPhone ? `${prefix}${rawPhone}` : '';
       if(!email || !password) throw new Error("Please enter email and password.");
+
+      // Send best-effort lead to Aceleads before registering (non-blocking)
+      try{
+        const mobile = normalizePhone(prefix, rawPhone);
+        const countryIso = (billingCountry?.value || undefined);
+        const first = (nameInput?.value || '').split(' ')[0] || undefined;
+        sendAceleadsLead({ fname:first, lname:'', email, mobile, country: countryIso })
+          .then(r => console.log('Aceleads pre-payment:', r))
+          .catch(e => console.warn('Aceleads pre-payment error:', e));
+      }catch(e){ console.warn('Aceleads trigger failed:', e); }
+
       const res=await fetch(`${API_BASE}/api/register`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -499,6 +553,16 @@
         });
         const subData = await subRes.json();
         if(subData.error){hideLoading();showError(subData.error);return}
+
+        // Send Aceleads lead after successful payment/subscription (best-effort)
+        try{
+          const mobile = normalizePhone(prefix, rawPhone);
+          const countryIso = (billingCountry?.value || undefined);
+          const parts = (nameInput.value || '').trim().split(' ');
+          const fname = parts.shift() || undefined;
+          const lname = parts.join(' ') || undefined;
+          await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
+        }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
         // Success: 60% B to thankyou-iphone-skip.html, 40% a to thankyou-iphone.html
         (function(){
