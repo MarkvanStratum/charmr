@@ -242,6 +242,7 @@
   <script src="https://js.stripe.com/v3"></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
+      // ----- Dropdown prefixes (unchanged) -----
       const phonePrefix = document.getElementById('phonePrefix');
       const CALLING_CODES = {
         FR:'+33', US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64',
@@ -267,7 +268,7 @@
       Object.keys(CALLING_CODES).filter(c=>!priority.includes(c)).sort().forEach(add);
       phonePrefix.value = '+33';
 
-      // ===== STEP NAV =====
+      // ----- Step nav -----
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');
       const nextBtn = document.getElementById('nextBtn');
@@ -275,18 +276,19 @@
       function show(el){ el?.setAttribute('aria-hidden','false'); }
       function hide(el){ el?.setAttribute('aria-hidden','true'); }
 
-      // ===== STRIPE: lazy mount on step 2 =====
+      // ----- Stripe (lazy mount + payment flow) -----
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      let stripe, elements, cardNumber, cardExpiry, cardCvc, mounted = false;
+      const SUBSCRIBE_URL  = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // your backend endpoint
+      let stripe, elements, cardNumber, cardExpiry, cardCvc, mounted=false;
 
       function mountStripeElements(){
         if (mounted) return;
         if (!window.Stripe) return console.warn('Stripe.js not loaded');
-        if (!stripe) stripe = Stripe(PUBLISHABLE_KEY, {locale: 'fr'});
-        if (!elements) elements = stripe.elements();
-        if (!cardNumber) cardNumber = elements.create('cardNumber');
-        if (!cardExpiry) cardExpiry = elements.create('cardExpiry');
-        if (!cardCvc)    cardCvc    = elements.create('cardCvc');
+        stripe   = Stripe(PUBLISHABLE_KEY, { locale: 'fr' });
+        elements = stripe.elements();
+        cardNumber = elements.create('cardNumber');
+        cardExpiry = elements.create('cardExpiry');
+        cardCvc    = elements.create('cardCvc');
         cardNumber.mount('#card-number');
         cardExpiry.mount('#card-expiry');
         cardCvc.mount('#card-cvc');
@@ -297,7 +299,7 @@
         e.preventDefault();
         hide(step1);
         show(step2);
-        mountStripeElements();           // <-- mount AFTER step 2 is visible
+        mountStripeElements();
         try{ step2.scrollIntoView({behavior:'smooth'}); }catch{}
       });
 
@@ -306,6 +308,68 @@
         hide(step2);
         show(step1);
         try{ step1.scrollIntoView({behavior:'smooth'}); }catch{}
+      });
+
+      // ----- Payment handler -----
+      const payNow   = document.getElementById('payNow');
+      const errBox   = document.getElementById('err');
+      const overlay  = document.getElementById('loading-overlay');
+
+      function showLoading(){ overlay?.setAttribute('aria-hidden','false'); overlay.style.display='flex'; }
+      function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); overlay.style.display='none'; }
+
+      function fullName(){
+        const f = (document.getElementById('firstName')?.value||'').trim();
+        const l = (document.getElementById('lastName')?.value||'').trim();
+        return (f+' '+l).trim();
+      }
+
+      payNow?.addEventListener('click', async (e)=>{
+        e.preventDefault();
+        if(!stripe || !cardNumber){ errBox.textContent='Paiement indisponible pour le moment.'; errBox.setAttribute('aria-hidden','false'); return; }
+        errBox.setAttribute('aria-hidden','true'); errBox.textContent='';
+        showLoading();
+
+        try{
+          // 1) Create PaymentMethod
+          const name  = fullName();
+          const email = (document.getElementById('emailInput')?.value||'').trim() || undefined;
+
+          const pm = await stripe.createPaymentMethod({
+            type:'card',
+            card: cardNumber,
+            billing_details:{
+              name: name || undefined,
+              email: email
+            }
+          });
+          if(pm.error) throw new Error(pm.error.message);
+
+          // 2) Ask your backend to create/return a PaymentIntent client_secret
+          const resp = await fetch(SUBSCRIBE_URL, {
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ paymentMethodId: pm.paymentMethod.id, name, email })
+          });
+          const data = await resp.json();
+          if(!resp.ok || !data.clientSecret) throw new Error(data.error || 'Impossible de démarrer le paiement.');
+
+          // 3) Confirm with Stripe (handles 3DS/SCA)
+          const result = await stripe.confirmCardPayment(data.clientSecret);
+          if(result.error) throw new Error(result.error.message);
+          if(!(result.paymentIntent && result.paymentIntent.status === 'succeeded')){
+            throw new Error('Paiement non complété.');
+          }
+
+          // Success → redirect or show success UI
+          window.location.href = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+
+        }catch(err){
+          errBox.textContent = err.message || 'Une erreur est survenue.';
+          errBox.setAttribute('aria-hidden','false');
+        }finally{
+          hideLoading();
+        }
       });
     });
   </script>
