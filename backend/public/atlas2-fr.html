@@ -251,7 +251,6 @@
         ZA:'+27', IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63',
         HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972', GE:'+995'
       };
-      // always ensure France shows first
       const priority = ['FR','US','GB','CA','DE','ES','IT','NL','SE','IN','JP'];
       const COUNTRY_CHOICES = { FR:'France', US:'États-Unis', GB:'Royaume-Uni', DE:'Allemagne', ES:'Espagne', IT:'Italie', NL:'Pays-Bas', SE:'Suède', IN:'Inde', JP:'Japon' };
 
@@ -267,6 +266,30 @@
       priority.forEach(add);
       Object.keys(CALLING_CODES).filter(c=>!priority.includes(c)).sort().forEach(add);
       phonePrefix.value = '+33';
+
+      // ===== STEP NAV (fix) =====
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+
+      function show(el){ el?.setAttribute('aria-hidden','false'); }
+      function hide(el){ el?.setAttribute('aria-hidden','true'); }
+
+      nextBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        hide(step1);
+        show(step2);
+        // Optional: scroll to top of form
+        try{ step2.scrollIntoView({behavior:'smooth', block:'start'}); }catch{}
+      });
+
+      backBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        hide(step2);
+        show(step1);
+        try{ step1.scrollIntoView({behavior:'smooth', block:'start'}); }catch{}
+      });
     });
   </script>
 </body>
