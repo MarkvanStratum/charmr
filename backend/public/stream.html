@@ -33,7 +33,8 @@
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
     @media (max-width:520px){ .grid{ grid-template-columns:1fr } }
 
-    .input, .select, .el{ width:100%; background:#0f131b; color:var(--text); border:1px solid #2b3140; border-radius:10px; padding:12px; font-size:15px; }
+    /* NOTE: removed .el from this selector so we don't fight Stripe's iframe */
+    .input, .select{ width:100%; background:#0f131b; color:var(--text); border:1px solid #2b3140; border-radius:10px; padding:12px; font-size:15px; }
     .input::placeholder{ color:#6f7a93 }
     .btn{ width:100%; border:none; border-radius:12px; padding:12px 16px; font-weight:900; font-size:16px; cursor:pointer; background:linear-gradient(180deg, #7aa3ff, #4572ff); color:#fff; margin-top:15px }
     .btn.muted{ background:#1f2532; color:#cbd3e6; border:1px solid #2b3140; box-shadow:none }
@@ -56,6 +57,33 @@
     .progress-wrap{ width:100%; height:10px; background:#1a2230; border-radius:999px; overflow:hidden; }
     .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+
+    /* ---------- Stripe Elements FIX ---------- */
+    .el{
+      background: transparent;        /* let Stripe handle visuals */
+      border: none;
+      padding: 0;
+      min-height: 46px;               /* bigger click target */
+      display: block;
+      position: relative;
+      z-index: 1;                     /* ensure nothing overlays the iframe */
+    }
+    /* Stripe’s mount container */
+    .StripeElement{
+      background:#0f131b;
+      border:1px solid #2b3140;
+      border-radius:10px;
+      padding:12px;
+      color:#eaeef6;
+    }
+    .StripeElement--focus{
+      border-color:#7aa3ff;
+      box-shadow:0 0 0 2px rgba(122,163,255,.25);
+    }
+    .StripeElement--invalid{
+      border-color:#e57373;
+    }
+    /* ---------------------------------------- */
   </style>
 </head>
 <body>
@@ -125,6 +153,7 @@
   <script src="https://js.stripe.com/v3"></script>
   <script>
   window.addEventListener('DOMContentLoaded', () => {
+    // ----- DOM -----
     const step1 = document.getElementById('step1');
     const step2 = document.getElementById('step2');
     const errBox = document.getElementById('err');
@@ -133,6 +162,7 @@
 
     const phonePrefix = document.getElementById('phonePrefix');
     const phoneNumber = document.getElementById('phoneNumber');
+
     const billingStreet = document.getElementById('billingStreet');
     const billingCity = document.getElementById('billingCity');
     const billingCountry = document.getElementById('billingCountry');
@@ -143,13 +173,15 @@
     const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
     const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
-    const overlay = document.getElementById('loading-overlay');
     const show = o => o?.setAttribute('aria-hidden','false');
     const hide = o => o?.setAttribute('aria-hidden','true');
+
+    // Loading overlay controls
+    const overlay = document.getElementById('loading-overlay');
     const showLoading = () => show(overlay);
     const hideLoading = () => hide(overlay);
 
-    // === Countries: US, UK, AU, NZ, CA ===
+    // ===== Countries: US, UK, AU, NZ, CA =====
     const COUNTRY_CHOICES = {
       US:'United States',
       GB:'United Kingdom',
@@ -173,6 +205,7 @@
         billingCountry.append(new Option(COUNTRY_CHOICES[code], code))
       );
     }
+
     function populatePrefixOptions(){
       phonePrefix.innerHTML = '';
       ['US','GB','AU','NZ','CA'].forEach(cc=>{
@@ -180,110 +213,150 @@
         const label=`${code} — ${COUNTRY_CHOICES[cc]}`;
         phonePrefix.append(new Option(label, code));
       });
-      if(!phonePrefix.value) phonePrefix.value = CALLING_CODES.US;
+      if (!phonePrefix.value) phonePrefix.value = CALLING_CODES.US;
     }
+
     function setPrefixFromISO(cc){
-      if(!ALLOWED_ISO.includes(cc)) return;
-      const code = CALLING_CODES[cc];
-      phonePrefix.value = code;
+      if (!ALLOWED_ISO.includes(cc)) return;
+      phonePrefix.value = CALLING_CODES[cc];
     }
+
     populateCountrySelect();
     populatePrefixOptions();
 
-    // Prefill from IP
-    const withTimeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
+    // ===== IP Prefill (only set if in allowed list; else default to US) =====
+    const withTimeout = (ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
+    function guessISO(){
+      const cc=(navigator.language||'').split('-')[1];
+      return cc?cc.toUpperCase():null;
+    }
     async function hydrateFromIP(){
       try{
-        const r = await withTimeout(2000, fetch('https://ipapi.co/json/').then(r=>r.json()));
-        let iso = r.country_code?.toUpperCase();
-        if(!ALLOWED_ISO.includes(iso)) iso='US';
-        billingCountry.value = iso;
-        setPrefixFromISO(iso);
-        if(r.city) billingCity.value=r.city;
+        const try1=()=>withTimeout(2000, fetch('https://ipapi.co/json/').then(r=>r.json()));
+        const try2=()=>withTimeout(2000, fetch('https://ipwho.is/?fields=city,country,country_code').then(r=>r.json()));
+        const try3=()=>withTimeout(2000, fetch('https://ipinfo.io/json').then(r=>r.json()));
+        let d=null; try{ d=await try1(); }catch{} if(!d||d.error){ try{ d=await try2(); }catch{} } if(!d||d.error){ try{ d=await try3(); }catch{} }
+
+        let iso = (d && (d.country_code || d.countryCode)) ? String(d.country_code || d.countryCode).toUpperCase() : null;
+        const city = d?.city || null;
+        if(!iso) iso = guessISO();
+
+        if(ALLOWED_ISO.includes(iso)){
+          billingCountry.value = iso;
+          setPrefixFromISO(iso);
+        } else {
+          billingCountry.value = 'US';
+          setPrefixFromISO('US');
+        }
+        if(city) billingCity.value = city;
       }catch{
-        billingCountry.value='US'; setPrefixFromISO('US');
+        billingCountry.value = 'US';
+        setPrefixFromISO('US');
       }
     }
     hydrateFromIP();
-    billingCountry.addEventListener('change', e=>setPrefixFromISO(e.target.value));
+    phoneNumber.addEventListener('focus', hydrateFromIP);
+    billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
 
-    nextBtn.addEventListener('click', async ()=>{
+    // ===== Stripe (dark appearance + safe styles) =====
+    let stripe, elements, cardNumber, cardExpiry, cardCvc;
+    try{
+      if(window.Stripe){
+        stripe = Stripe(PUBLISHABLE_KEY);
+
+        const appearance = { theme: 'night', labels: 'floating' };
+        elements = stripe.elements({ appearance });
+
+        const style = {
+          base: {
+            color: '#eaeef6',
+            fontSize: '16px',
+            '::placeholder': { color: '#97a0b3' }
+          },
+          invalid: { color: '#ffb1bd' }
+        };
+
+        cardNumber = elements.create('cardNumber', { style });
+        cardExpiry = elements.create('cardExpiry', { style });
+        cardCvc    = elements.create('cardCvc',    { style });
+
+        cardNumber.mount('#card-number');
+        cardExpiry.mount('#card-expiry');
+        cardCvc.mount('#card-cvc');
+      }
+    }catch(e){ console.warn('Stripe-initialisering oorgeslaan:', e); }
+
+    // ===== Step nav =====
+    nextBtn?.addEventListener('click', async ()=>{
       hide(step1); show(step2);
       try{ await ensureAccount(); }catch(e){
-        errBox.textContent='Kennisgewing oor rekeningopstelling: '+(e.message||'kontroleer asseblief besonderhede');
-        errBox.setAttribute('aria-hidden','false');
+        if(errBox){ errBox.textContent = 'Kennisgewing oor rekeningopstelling: ' + (e.message||'kontroleer asseblief besonderhede'); errBox.setAttribute('aria-hidden','false'); }
       }
     });
-    backBtn.addEventListener('click', ()=>{ hide(step2); show(step1); });
-
-    // Stripe setup
-    let stripe, elements, cardNumber, cardExpiry, cardCvc;
-    if(window.Stripe){
-      stripe = Stripe(PUBLISHABLE_KEY);
-      elements = stripe.elements();
-      cardNumber = elements.create('cardNumber');
-      cardExpiry = elements.create('cardExpiry');
-      cardCvc = elements.create('cardCvc');
-      cardNumber.mount('#card-number');
-      cardExpiry.mount('#card-expiry');
-      cardCvc.mount('#card-cvc');
-    }
+    backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
     async function ensureAccount(){
-      const email=document.getElementById('emailInput').value.trim();
-      const password=document.getElementById('passwordInput').value;
-      const prefix=phonePrefix.value||'';
-      const raw=(phoneNumber.value||'').replace(/[^0-9]/g,'');
-      const phone=raw?(prefix+raw):'';
-      if(!email||!password) throw new Error('E-pos en wagwoord vereis');
-      const r=await fetch(API_BASE+'/api/register',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({email,password,phone})
+      const email = document.getElementById('emailInput')?.value.trim();
+      const password = document.getElementById('passwordInput')?.value;
+      const prefix = phonePrefix?.value || '';
+      const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+      const phone = raw ? (prefix + raw) : '';
+      if(!email || !password) throw new Error('E-pos en wagwoord vereis');
+      const r = await fetch(API_BASE + '/api/register',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password, phone })
       });
       if(r.status===201) return true;
-      let data={};try{data=await r.json();}catch{}
-      if(r.status===400&&(data.error||'').toLowerCase().includes('exists'))return true;
-      throw new Error(data.error||'Registrasie het misluk');
+      let data={}; try{ data=await r.json(); }catch{}
+      if(r.status===400 && (data.error||'').toLowerCase().includes('exists')) return true;
+      throw new Error(data.error || 'Registrasie het misluk');
     }
 
-    document.getElementById('payNow').addEventListener('click',async()=>{
-      if(!stripe){alert('Betaling tans nie beskikbaar nie.');return;}
-      errBox.setAttribute('aria-hidden','true'); errBox.textContent='';
+    document.getElementById('payNow')?.addEventListener('click', async ()=>{
+      if(!stripe){ alert('Betaling tans nie beskikbaar nie. Kontroleer jou verbinding en probeer weer.'); return; }
+      errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
       showLoading();
 
-      const name=document.getElementById('nameInput').value.trim();
-      const email=document.getElementById('emailInput').value.trim();
-      const raw=(phoneNumber.value||'').replace(/[^0-9]/g,'');
-      const fullPhone=raw?((phonePrefix.value||'')+raw):undefined;
-      const isoCountry=billingCountry.value||undefined;
-      const address={
-        line1:(billingStreet.value||'').trim()||undefined,
-        city:(billingCity.value||'').trim()||undefined,
-        country:isoCountry,
-        postal_code:(billingPostcode.value||'').trim()||undefined
+      const name = document.getElementById('nameInput')?.value.trim();
+      const email = document.getElementById('emailInput')?.value.trim();
+      const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+      const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
+
+      const isoCountry = billingCountry.value || undefined;
+
+      const address = {
+        line1: (billingStreet?.value||'').trim() || undefined,
+        city: (billingCity?.value||'').trim() || undefined,
+        country: isoCountry,
+        postal_code: (billingPostcode?.value||'').trim() || undefined
       };
 
       try{
-        const pmRes=await stripe.createPaymentMethod({
+        const pmRes = await stripe.createPaymentMethod({
           type:'card',
           card:cardNumber,
-          billing_details:{name,email,phone:fullPhone,address}
+          billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
         });
         if(pmRes.error) throw new Error(pmRes.error.message);
-        const resp=await fetch(SUBSCRIBE_URL,{
-          method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({priceId:FIXED_PRICE_ID,paymentMethodId:pmRes.paymentMethod.id,name,email})
+
+        const resp = await fetch(SUBSCRIBE_URL,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ priceId: FIXED_PRICE_ID, paymentMethodId: pmRes.paymentMethod.id, name, email })
         });
-        const data=await resp.json();
-        if(!data.clientSecret) throw new Error(data.error||'Betaling kon nie begin nie');
-        const conf=await stripe.confirmCardPayment(data.clientSecret);
+        const data = await resp.json();
+        if(!data.clientSecret) throw new Error(data.error || 'Betaling kon nie begin nie');
+
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error) throw new Error(conf.error.message);
-        if(conf.paymentIntent?.status==='succeeded'){
+        if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
+          // ALWAYS send to single thank-you URL
           window.location.href='https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
-        } else throw new Error('Betaling nie voltooi nie');
+        } else {
+          throw new Error('Betaling nie voltooi nie');
+        }
       }catch(err){
-        errBox.textContent=err.message||'Iets het verkeerd geloop.';
-        errBox.setAttribute('aria-hidden','false');
+        if(errBox){ errBox.textContent = err.message || 'Iets het verkeerd geloop.'; errBox.setAttribute('aria-hidden','false'); }
         hideLoading();
       }
     });
