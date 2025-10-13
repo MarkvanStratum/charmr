@@ -236,5 +236,32 @@
 </script>
 
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <!-- === Only addition: fix any "$10" in popups to "10 zł" (without touching CSS/markup) === -->
+  <script>
+    (function(){
+      function replaceInNode(node){
+        if (node.nodeType === 3) { // text
+          const t = node.nodeValue;
+          if (t && t.indexOf('$10') !== -1) node.nodeValue = t.replace(/\$10\b/g, '10 zł');
+        } else if (node.nodeType === 1 && node.childNodes) {
+          node.childNodes.forEach(replaceInNode);
+        }
+      }
+      // Initial pass
+      replaceInNode(document.body);
+
+      // Watch for future injected popups/modals
+      const mo = new MutationObserver(muts=>{
+        muts.forEach(m=>{
+          m.addedNodes && m.addedNodes.forEach(n=>replaceInNode(n));
+          if (m.type === 'characterData' && m.target && m.target.nodeType === 3) {
+            replaceInNode(m.target);
+          }
+        });
+      });
+      mo.observe(document.documentElement, {subtree:true, childList:true, characterData:true});
+    })();
+  </script>
 </body>
 </html>
