@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
 <script>
@@ -69,7 +70,7 @@
 </head>
 <body>
 
-<!-- GoAffPro loader -->
+<!-- GoAffPro loader (keep this so the next page can track) -->
 <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
 <div class="shell">
@@ -88,12 +89,10 @@
     <div class="grid">
       <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required />
       <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
+      <!-- Password (left) + Phone (right) -->
       <input class="input" id="passwordInput" type="password" placeholder="Create a password" autocomplete="new-password" required />
       <div class="phone-wrap">
-        <!-- FIXED TO US ONLY -->
-        <select id="phonePrefix" class="input" aria-label="Country calling code">
-          <option value="+1" selected>+1 — United States</option>
-        </select>
+        <select id="phonePrefix" class="input" aria-label="Country calling code"></select>
         <input id="phoneNumber" class="input" inputmode="tel" placeholder="Phone number" autocomplete="tel-national" />
       </div>
     </div>
@@ -109,6 +108,7 @@
     <h2 class="title">Secure Payment</h2>
     <p class="sub">Your details are safe — powered by Stripe.</p>
 
+    <!-- NEW: Billing address -->
     <div class="label">Street address</div>
     <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address"/>
 
@@ -123,11 +123,8 @@
       </div>
     </div>
 
-    <!-- FIXED TO US ONLY -->
     <div class="label" style="margin-top:10px">Country</div>
-    <select id="billingCountry" class="input" autocomplete="country">
-      <option value="US" selected>United States</option>
-    </select>
+    <select id="billingCountry" class="input" autocomplete="country"></select>
 
     <div id="gpay-button" style="margin-top:8px"></div>
 
@@ -162,6 +159,7 @@
   </section>
 </div>
 
+<!-- Loading overlay -->
 <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
   <div class="loading-box">
     <div class="loading-title">Processing your payment…</div>
@@ -173,17 +171,397 @@
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3"></script>
 <script>
-// ✅ Force US-only for prefix & address
-document.addEventListener("DOMContentLoaded", () => {
-  const phonePrefix = document.getElementById("phonePrefix");
-  const billingCountry = document.getElementById("billingCountry");
-  if (phonePrefix) {
-    phonePrefix.innerHTML = '<option value="+1" selected>+1 — United States</option>';
+  /* ---------- Step navigation ---------- */
+
+  /* NEW: API base for local file testing */
+  const API_BASE = (() => {
+    if (location.protocol.startsWith('http')) return location.origin;
+    return "http://localhost:10000"; // change if your dev server runs elsewhere
+  })();
+
+  const step1=document.getElementById('step1'),step2=document.getElementById('step2');
+  const nameInput=document.getElementById('nameInput');
+  const emailInput=document.getElementById('emailInput');
+  const passwordInput=document.getElementById('passwordInput');
+  // NEW phone inputs
+  const phonePrefix=document.getElementById('phonePrefix');
+  const phoneNumber=document.getElementById('phoneNumber');
+
+  // NEW: billing address refs
+  const billingStreet   = document.getElementById('billingStreet');
+  const billingCity     = document.getElementById('billingCity');
+  const billingPostcode = document.getElementById('billingPostcode');
+  const billingCountry  = document.getElementById('billingCountry');
+
+  // Create/confirm account on your Render server before moving to payment
+  async function ensureAccount(){
+    const email=(emailInput.value||'').trim();
+    const password=passwordInput.value||'';
+    const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+    const prefix=(phonePrefix?.value||'+1').trim();
+    const phone = rawPhone ? `${prefix}${rawPhone}` : '';
+    if(!email || !password) throw new Error("Please enter email and password.");
+    const res=await fetch(`${API_BASE}/api/register`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({email,password,phone})
+    });
+    if(res.status===201) return true;
+    let data={}; try{ data=await res.json(); }catch{}
+    if(res.status===400 && /exists/i.test(data?.error||"")) return true;
+    throw new Error(data?.error||"Could not create account");
   }
-  if (billingCountry) {
-    billingCountry.innerHTML = '<option value="US" selected>United States</option>';
+
+  document.getElementById('nextBtn').onclick=async()=>{ 
+    if(!nameInput.value||!emailInput.value||!passwordInput.value){alert("Please enter your details");return}
+    try{
+      await ensureAccount();
+    }catch(e){
+      alert(e.message||"Problem creating your account. Please try again.");
+      return;
+    }
+    localStorage.setItem("checkout_name",nameInput.value);
+    localStorage.setItem("checkout_email",emailInput.value);
+    step1.setAttribute("aria-hidden","true");
+    step2.setAttribute("aria-hidden","false");
+  };
+  document.getElementById('backBtn').onclick=()=>{ 
+    step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
+  };
+
+  /* ---------- Calling code data + helper for phone prefix ---------- */
+  const CALLING_CODES = {
+    US: { code: '+1',  name: 'United States' },
+    CA: { code: '+1',  name: 'Canada' },
+    GB: { code: '+44', name: 'United Kingdom' },
+    IE: { code: '+353',name: 'Ireland' },
+    AU: { code: '+61', name: 'Australia' },
+    NZ: { code: '+64', name: 'New Zealand' },
+    DE: { code: '+49', name: 'Germany' },
+    FR: { code: '+33', name: 'France' },
+    ES: { code: '+34', name: 'Spain' },
+    IT: { code: '+39', name: 'Italy' },
+    NL: { code: '+31', name: 'Netherlands' },
+    SE: { code: '+46', name: 'Sweden' },
+    NO: { code: '+47', name: 'Norway' },
+    DK: { code: '+45', name: 'Denmark' },
+    FI: { code: '+358',name: 'Finland' },
+    BE: { code: '+32', name: 'Belgium' },
+    AT: { code: '+43', name: 'Austria' },
+    CH: { code: '+41', name: 'Switzerland' },
+    PT: { code: '+351',name: 'Portugal' },
+    PL: { code: '+48', name: 'Poland' },
+    RO: { code: '+40', name: 'Romania' },
+    CZ: { code: '+420',name: 'Czechia' },
+    SK: { code: '+421',name: 'Slovakia' },
+    HU: { code: '+36', name: 'Hungary' },
+    GR: { code: '+30', name: 'Greece' }
+  };
+  function buildPrefixOptions(selectEl, prefer) {
+    if(!selectEl) return;
+    selectEl.innerHTML = "";
+    const entries = Object.entries(CALLING_CODES);
+    if (prefer && CALLING_CODES[prefer]) {
+      const data = CALLING_CODES[prefer];
+      selectEl.append(new Option(`${data.code} — ${data.name}`, data.code, true, true));
+    }
+    const seen = new Set([prefer ? CALLING_CODES[prefer]?.code : '']);
+    for (const [cc, data] of entries) {
+      if (prefer === cc) continue;
+      const key = `${data.code}|${data.name}`;
+      if (seen.has(key)) continue;
+      selectEl.append(new Option(`${data.code} — ${data.name}`, data.code));
+      seen.add(key);
+    }
+    if (!selectEl.value) selectEl.value = '+1';
   }
-});
+
+  /* ---------- Currency & geo by IP (display + prefill) ---------- */
+  (function setCurrencyByIP(){
+    const EU = new Set([
+      'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
+      'LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE'
+    ]);
+    function symbolFor(cc){
+      if(cc==='US') return '$';
+      if(cc==='GB' || cc==='UK') return '£';
+      if(EU.has(cc)) return '€';
+      return '$';
+    }
+    function applyPriceSymbol(symbol){
+      document.querySelectorAll('[data-price]').forEach(el=>{
+        el.textContent = `${symbol}2.50`;
+      });
+      document.title = `Get The iPhone 16 Plus for ${symbol}2.50!`;
+    }
+
+    // Seed immediate fallbacks
+    applyPriceSymbol('$');
+    try { buildPrefixOptions(phonePrefix, 'US'); } catch {}
+
+    // Helper: fill country select with a single focused option + common fallbacks
+    function initCountrySelect(code, name) {
+      if (!billingCountry) return;
+      const opts = [];
+      function add(value, label, selected=false){
+        const o = new Option(label, value, selected, selected);
+        opts.push(o);
+      }
+      if (code) add(code.toUpperCase(), `${name || code.toUpperCase()}`, true);
+      [['US','United States'],['GB','United Kingdom'],['IE','Ireland'],['DE','Germany'],['FR','France'],['ES','Spain'],['IT','Italy'],['NL','Netherlands'],['AU','Australia'],['CA','Canada']].forEach(([c,n])=>{
+        if (!code || c.toUpperCase()!==code.toUpperCase()) add(c, n, false);
+      });
+      billingCountry.innerHTML='';
+      opts.forEach(o=>billingCountry.appendChild(o));
+    }
+
+    fetch('https://ipapi.co/json/')
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => {
+        const cc = ((data && (data.country || data.country_code)) || 'US').toUpperCase();
+        applyPriceSymbol(symbolFor(cc));
+
+        const apiCalling = (data && data.country_calling_code) || '';
+        const apiName    = (data && data.country_name) || '';
+        const city       = (data && data.city) || '';
+        if (apiCalling) {
+          try {
+            phonePrefix.innerHTML = '';
+            phonePrefix.append(new Option(`${apiCalling} — ${apiName || 'Your country'}`, apiCalling, true, true));
+            const seen = new Set([apiCalling]);
+            for (const [, info] of Object.entries(CALLING_CODES)) {
+              if (seen.has(info.code)) continue;
+              phonePrefix.append(new Option(`${info.code} — ${info.name}`, info.code));
+              seen.add(info.code);
+            }
+          } catch {}
+        } else {
+          try { buildPrefixOptions(phonePrefix, cc); } catch {}
+        }
+
+        try { initCountrySelect(cc, apiName); } catch {}
+        try { if (city && !billingCity.value) billingCity.value = city; } catch {}
+      })
+      .catch(() => {
+        try {
+          const loc = Intl.DateTimeFormat().resolvedOptions().locale || 'en-US';
+          const cc = (loc.split('-')[1] || 'US').toUpperCase();
+          applyPriceSymbol(symbolFor(cc));
+          try { buildPrefixOptions(phonePrefix, cc); } catch {}
+          try { initCountrySelect(cc, cc); } catch {}
+        } catch {}
+      });
+  })();
+
+  /* ---------- PREFILL from URL (email & phone) ---------- */
+  (function prefillFromQuery(){
+    try{
+      const qs = new URLSearchParams(location.search);
+
+      const emailParam = qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail');
+      if (emailParam && emailInput) {
+        emailInput.value = decodeURIComponent(emailParam).trim();
+      }
+
+      const prefixParam = qs.get('prefix') || qs.get('cc') || qs.get('dial');
+      const numberParam = qs.get('number') || qs.get('n');
+      const phoneParam  = qs.get('phone')  || qs.get('tel')  || qs.get('p') || qs.get('msisdn');
+
+      let desiredPrefix = null;
+      let desiredNumber = null;
+
+      if (phoneParam) {
+        let p = (phoneParam + '').replace(/[^\d+]/g,'');
+        if (p.startsWith('+')) {
+          const codes = Array.from(new Set(Object.values(CALLING_CODES).map(x=>x.code))).sort((a,b)=>b.length-a.length);
+          const hit = codes.find(code => p.startsWith(code));
+          if (hit) { desiredPrefix = hit; desiredNumber = p.slice(hit.length); }
+          else { desiredPrefix = '+1'; desiredNumber = p.replace(/^\+\d{1,3}/,''); }
+        } else {
+          desiredNumber = p;
+        }
+      }
+      if (numberParam) desiredNumber = (numberParam + '').replace(/[^\d]/g,'');
+      if (prefixParam) {
+        const cleaned = (prefixParam + '').replace(/[^\d+]/g,'');
+        desiredPrefix = cleaned.startsWith('+') ? cleaned : ('+' + cleaned);
+      }
+
+      if (desiredNumber && phoneNumber) phoneNumber.value = desiredNumber;
+
+      function applyPrefix(){
+        if (!desiredPrefix || !phonePrefix) return true;
+        const exists = Array.from(phonePrefix.options).some(o => o.value === desiredPrefix);
+        if (!exists) {
+          phonePrefix.insertBefore(new Option(`${desiredPrefix} — Your country`, desiredPrefix, true, true), phonePrefix.firstChild);
+        }
+        phonePrefix.value = desiredPrefix;
+        return phonePrefix.value === desiredPrefix;
+      }
+      if (!applyPrefix()){
+        let tries = 0;
+        const t = setInterval(() => {
+          tries++;
+          if (applyPrefix() || tries > 20) clearInterval(t);
+        }, 150);
+      }
+    }catch{}
+  })();
+
+  /* ---------- Dynamic product title + image from URL ---------- */
+  (function dynamicTitleAndImage(){
+    try{
+      const qs = new URLSearchParams(location.search);
+      const productRaw = qs.get('product') || qs.get('title') || qs.get('t');
+      const imgUrl     = qs.get('img')     || qs.get('image') || qs.get('image_url');
+      const esc = s => (s+'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+      const titleEl = document.querySelector('#step1 .title');
+      const subEl   = document.querySelector('#step1 .sub');
+      const imgEl   = document.querySelector('.img-wrap img');
+      const priceSpan = document.getElementById('priceHero');
+      const priceText = priceSpan ? priceSpan.textContent.trim() : '$2.50';
+      if (productRaw && titleEl) {
+        const product = esc(productRaw.trim());
+        titleEl.innerHTML = 'Get The ' + product + ' for <span id="priceHero" data-price>' + esc(priceText) + '</span>!';
+        if (subEl) subEl.textContent = 'Limited-time offer. Secure your new ' + product + ' today!';
+      }
+      if (imgUrl && imgEl) {
+        imgEl.src = imgUrl;
+        if (productRaw) imgEl.alt = productRaw + ' image';
+      }
+    }catch{}
+  })();
+
+  /* ---------- Stripe logic (now: straight to subscription) ---------- */
+  const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+  const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+  const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+  const stripe=Stripe(PUBLISHABLE_KEY),elements=stripe.elements();
+  const cardNumber=elements.create("cardNumber"),cardExpiry=elements.create("cardExpiry"),cardCvc=elements.create("cardCvc");
+  cardNumber.mount("#card-number");cardExpiry.mount("#card-expiry");cardCvc.mount("#card-cvc");
+  const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
+  function showError(m){$err.textContent=m;$err.style.display="block"}
+  function hideError(){$err.textContent="";$err.style.display="none"}
+  function showLoading(){overlay.setAttribute("aria-hidden","false")}
+  function hideLoading(){overlay.setAttribute("aria-hidden","true")}
+
+  // NEW: monthly price id for £5/30 days after the 30-day trial
+  const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
+
+  document.getElementById("payNow").onclick=async()=>{
+    hideError();showLoading();
+
+    const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+    const prefix=(phonePrefix?.value||'+1').trim();
+    const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
+
+    const addr = {
+      line1: (billingStreet?.value || '').trim() || undefined,
+      city: (billingCity?.value || '').trim() || undefined,
+      postal_code: (billingPostcode?.value || '').trim() || undefined,
+      country: (billingCountry?.value || '').trim() || undefined, // ISO 2-letter
+    };
+
+    const pm=await stripe.createPaymentMethod({
+      type:"card",
+      card:cardNumber,
+      billing_details:{
+        name:nameInput.value || undefined,
+        email:emailInput.value || undefined,
+        phone: fullPhone,
+        address: addr
+      }
+    });
+
+    if(pm.error){hideLoading();showError(pm.error.message);return}
+
+    try{
+      const res=await fetch(SUBSCRIBE_URL,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          paymentMethodId:pm.paymentMethod.id,
+          name:nameInput.value,
+          email:emailInput.value,
+          phone: fullPhone,
+          address: addr
+        })
+      });
+      const data=await res.json();
+      if(data.error){hideLoading();showError(data.error);return}
+      if(!data.clientSecret){hideLoading();showError("Payment failed");return}
+
+      const conf=await stripe.confirmCardPayment(data.clientSecret);
+      if(conf.error){hideLoading();showError(conf.error.message);return}
+      if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");return}
+
+      const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          paymentIntentId: data.paymentIntentId,
+          priceIdMonthly: MONTHLY_PRICE_ID
+        })
+      });
+      const subData = await subRes.json();
+      if(subData.error){hideLoading();showError(subData.error);return}
+
+      (function(){
+        const A = 'thankyou-iphone.html';
+        const B = 'thankyou-iphone-skip.html';
+        const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+        function fnv1a32(str){
+          let h = 0x811c9dc5 >>> 0;
+          for (let i = 0; i < str.length; i++){
+            h ^= str.charCodeAt(i);
+            h = Math.imul(h, 0x01000193) >>> 0;
+          }
+          return h >>> 0;
+        }
+        function cryptoRandInt(max){
+          try{
+            const u32 = new Uint32Array(1);
+            crypto.getRandomValues(u32);
+            return Number(u32[0] % BigInt(max));
+          }catch{ return Math.floor(Math.random()*max); }
+        }
+        const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
+        const goSkip = bucket < 60;
+        const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
+        window.location.href = (goSkip ? B : A) + qb;
+      })();
+
+    }catch(e){
+      hideLoading();showError(e.message||"Something went wrong");
+    }
+  };
+
+  /* ---------- US-only enforcement (prefix + country), without breaking anything ---------- */
+  (function lockUSOnly(){
+    const forceUS = () => {
+      try {
+        if (phonePrefix) {
+          phonePrefix.innerHTML = '';
+          phonePrefix.append(new Option('+1 — United States', '+1', true, true));
+        }
+        if (billingCountry) {
+          billingCountry.innerHTML = '';
+          billingCountry.append(new Option('United States', 'US', true, true));
+        }
+      } catch {}
+    };
+
+    // Run immediately…
+    forceUS();
+
+    // …and re-run any time scripts repopulate those selects
+    const mo = new MutationObserver(forceUS);
+    if (phonePrefix) mo.observe(phonePrefix, { childList:true, subtree:false });
+    if (billingCountry) mo.observe(billingCountry, { childList:true, subtree:false });
+
+    // Also re-run once DOM is fully ready
+    document.addEventListener('DOMContentLoaded', forceUS);
+  })();
 </script>
 </body>
 </html>
