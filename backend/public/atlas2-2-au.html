@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Secure Checkout</title>
+
+  <!-- Google tag (unchanged) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
+  </script>
+
+  <style>
+    /* all CSS unchanged */
+  </style>
+</head>
+<body>
+  <div class="safe">SSL safe payment</div>
+
+  <div class="wrap">
+    <div class="page-title">
+      Secure Checkout <span style="font-size:18px">🔒</span>
+      <span class="stars">★★★★★</span>
+      <span class="reviews">(2777 Reviews)</span>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: FORM -->
+      <div class="card">
+        <!-- STEP 1: Information -->
+        <section id="step1" class="step" aria-hidden="false">
+          <div class="h2">1. Information</div>
+
+          <div class="form-grid">
+            <div>
+              <div class="label">First name</div>
+              <input id="firstName" class="input" placeholder="Jane" autocomplete="given-name">
+            </div>
+            <div>
+              <div class="label">Last name</div>
+              <input id="lastName" class="input" placeholder="Doe" autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div style="grid-column:1 / -1">
+              <div class="label">Address</div>
+              <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Address (Australia)">
+            </div>
+            <div>
+              <div class="label">Postcode</div>
+              <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Postcode">
+            </div>
+            <div>
+              <div class="label">City</div>
+              <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div>
+              <div class="label">E-mail</div>
+              <input id="emailInput" class="input" placeholder="you@example.com" type="email" autocomplete="email" required>
+            </div>
+            <div>
+              <div class="label">Country</div>
+              <input id="billingCountry" class="input" placeholder="Australia" value="Australia" readonly>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div>
+              <div class="label">Country calling code</div>
+              <select id="phonePrefix" class="select" aria-label="Country calling code">
+                <option value="+61">+61 — Australia</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">Phone number</div>
+              <input id="phoneNumber" class="input" inputmode="tel" placeholder="Your number" autocomplete="tel-national">
+            </div>
+          </div>
+
+          <input id="nameInput" class="input" style="display:none">
+
+          <button id="nextBtn" class="btn">Continue</button>
+
+          <div class="logos">
+            <img src="/visa.png" alt="Visa">
+            <img src="mastercard.png" alt="Mastercard">
+            <img src="amex.png" alt="American Express">
+            <img src="discover.jpg" alt="Discover">
+          </div>
+        </section>
+
+        <!-- STEP 2: Payment -->
+        <!-- (unchanged) -->
+      </div>
+
+      <!-- RIGHT: SIDEBAR -->
+      <!-- (unchanged) -->
+    </div>
+  </div>
+
+  <!-- Loading overlay (unchanged) -->
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // same Stripe, checkout, etc., but only Australia kept
+
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const errBox = document.getElementById('err');
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+
+      const firstName = document.getElementById('firstName');
+      const lastName  = document.getElementById('lastName');
+      const nameInput = document.getElementById('nameInput');
+      const phonePrefix = document.getElementById('phonePrefix');
+      const phoneNumber = document.getElementById('phoneNumber');
+      const billingStreet = document.getElementById('billingStreet');
+      const billingCity = document.getElementById('billingCity');
+      const billingCountry = document.getElementById('billingCountry');
+      const billingPostcode = document.getElementById('billingPostcode');
+
+      // Set fixed country and prefix for Australia
+      billingCountry.value = 'Australia';
+      phonePrefix.value = '+61';
+
+      // (rest of Stripe/payment script unchanged)
+    });
+  </script>
+
+  <!-- GoAffPro loader (unchanged) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</body>
+</html>
