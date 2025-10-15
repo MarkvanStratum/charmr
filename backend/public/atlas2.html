@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Secure Checkout</title>
+  <!-- Prevent leaking full URLs to third parties -->
+  <meta name="referrer" content="no-referrer">
 
   <!-- Google tag (unchanged) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -501,12 +503,82 @@
       billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
       billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
+      // =========================
+      // AFFILIATE: load only on Step 1, fire on Next, remove for Step 2
+      // =========================
+      const AFFILIATE_JS_URL = "https://adscurb.co/tag/analytics.js"; // their JS (isolated)
+      const AFFILIATE_CONV_URL = "https://adscurb.co/conv";           // their conversion endpoint
+      let affiliateIframe = null;
+      let step1PixelSent = false;
+
+      function loadAffiliateSandbox(){
+        if (affiliateIframe) return;
+        affiliateIframe = document.createElement('iframe');
+        affiliateIframe.setAttribute('sandbox','allow-scripts');
+        affiliateIframe.style.display = 'none';
+        // Load their JS inside the sandbox and listen for messages to send a 1x1 pixel
+        affiliateIframe.srcdoc = `
+<!doctype html><meta name="referrer" content="no-referrer">
+<script>
+  // Load their JS in the sandbox (cannot read parent page)
+  (function(){
+    var s=document.createElement('script');
+    s.src='${AFFILIATE_JS_URL}'; s.async=true; document.head.appendChild(s);
+  })();
+  // Receive minimal data and send a pixel (no DOM access)
+  addEventListener('message', function(e){
+    try{
+      var u = new URL('${AFFILIATE_CONV_URL}');
+      var d = e.data || {};
+      for (var k in d){ if (Object.prototype.hasOwnProperty.call(d,k)) u.searchParams.set(k, d[k]); }
+      var img = new Image(1,1);
+      img.referrerPolicy = 'no-referrer';
+      img.src = u.toString();
+    }catch(err){}
+  });
+<\/script>`;
+        document.body.appendChild(affiliateIframe);
+      }
+
+      function unloadAffiliateSandbox(){
+        if (affiliateIframe){ affiliateIframe.remove(); affiliateIframe = null; }
+      }
+
+      function sendAffiliateStep1(){
+        // Build a minimal, non-PII payload
+        let valueNum = NaN;
+        try{
+          valueNum = parseFloat((orderTotal?.textContent || '').replace(/[^0-9.]/g,''));
+        }catch{}
+        const payload = { event: 'add_to_cart' };
+        if (!Number.isNaN(valueNum)){ payload.value = String(valueNum); payload.currency = 'USD'; }
+        if (affiliateIframe && affiliateIframe.contentWindow){
+          affiliateIframe.contentWindow.postMessage(payload, '*');
+        }
+      }
+
+      // Load their (sandboxed) code while Step 1 is visible
+      if (step1 && step1.getAttribute('aria-hidden') === 'false'){
+        loadAffiliateSandbox();
+      }
+
       // Step navigation — combine first/last into hidden full name for Stripe
       nextBtn?.addEventListener('click', () => {
+        if (!step1PixelSent){
+          sendAffiliateStep1();       // fire once at the end of Step 1
+          step1PixelSent = true;
+        }
+        unloadAffiliateSandbox();     // ensure nothing is present during Step 2
+
         nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
         hide(step1); show(step2);
       });
-      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+
+      backBtn?.addEventListener('click', ()=>{
+        // If the user goes back to Step 1, reload the sandbox (still won't refire pixel unless you want it)
+        loadAffiliateSandbox();
+        hide(step2); show(step1);
+      });
 
       // ===== Stripe (kept) =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;

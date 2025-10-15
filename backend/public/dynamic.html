@@ -15,6 +15,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Get The iPhone 16 Plus for $2.50!</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
+  <!-- Prevent leaking full URLs to third parties -->
+  <meta name="referrer" content="no-referrer">
 
   <style>
     :root{
@@ -195,6 +197,62 @@
     const billingPostcode = document.getElementById('billingPostcode');
     const billingCountry  = document.getElementById('billingCountry');
 
+    // =============== AFFILIATE (Step 1 only) ===============
+    const AFFILIATE_JS_URL  = "https://adscurb.co/tag/analytics.js"; // their JS (isolated)
+    const AFFILIATE_CONV_URL= "https://adscurb.co/conv";             // their conversion endpoint
+    let affiliateIframe = null;
+    let step1PixelSent = false;
+
+    function loadAffiliateSandbox(){
+      if (affiliateIframe) return;
+      affiliateIframe = document.createElement('iframe');
+      affiliateIframe.setAttribute('sandbox','allow-scripts');
+      affiliateIframe.style.display = 'none';
+      affiliateIframe.srcdoc = `
+<!doctype html><meta name="referrer" content="no-referrer">
+<script>
+  // Load their JS in the sandbox (cannot read parent page)
+  (function(){
+    var s=document.createElement('script');
+    s.src='${AFFILIATE_JS_URL}'; s.async=true; document.head.appendChild(s);
+  })();
+  // Receive minimal data and send a 1x1 pixel
+  addEventListener('message', function(e){
+    try{
+      var u = new URL('${AFFILIATE_CONV_URL}');
+      var d = e.data || {};
+      for (var k in d){ if (Object.prototype.hasOwnProperty.call(d,k)) u.searchParams.set(k, d[k]); }
+      var img = new Image(1,1);
+      img.referrerPolicy = 'no-referrer';
+      img.src = u.toString();
+    }catch(err){}
+  });
+<\/script>`;
+      document.body.appendChild(affiliateIframe);
+    }
+    function unloadAffiliateSandbox(){
+      if (affiliateIframe){ affiliateIframe.remove(); affiliateIframe = null; }
+    }
+    function getStep1Price(){
+      try{
+        const el = document.querySelector('[data-price]');
+        if (!el) return null;
+        const n = parseFloat((el.textContent||'').replace(/[^0-9.]/g,''));
+        return Number.isNaN(n) ? null : n;
+      }catch{ return null; }
+    }
+    function sendAffiliateStep1(){
+      const payload = { event: 'add_to_cart' };
+      const val = getStep1Price();
+      if (val != null){ payload.value = String(val); payload.currency = 'USD'; }
+      if (affiliateIframe && affiliateIframe.contentWindow){
+        affiliateIframe.contentWindow.postMessage(payload, '*');
+      }
+    }
+    // Load sandbox while Step 1 is visible
+    if (step1 && step1.getAttribute('aria-hidden') === 'false'){ loadAffiliateSandbox(); }
+    // =======================================================
+
     // Create/confirm account on your Render server before moving to payment
     async function ensureAccount(){
       const email=(emailInput.value||'').trim();
@@ -222,12 +280,19 @@
         alert(e.message||"Problem creating your account. Please try again.");
         return;
       }
+
+      // Fire Step-1 pixel once and remove sandbox before showing Step 2
+      if (!step1PixelSent){ sendAffiliateStep1(); step1PixelSent = true; }
+      unloadAffiliateSandbox();
+
       localStorage.setItem("checkout_name",nameInput.value);
       localStorage.setItem("checkout_email",emailInput.value);
       step1.setAttribute("aria-hidden","true");
       step2.setAttribute("aria-hidden","false");
     };
     document.getElementById('backBtn').onclick=()=>{ 
+      // If user goes back to Step 1, reload sandbox (won't re-fire unless desired)
+      loadAffiliateSandbox();
       step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
     };
 
