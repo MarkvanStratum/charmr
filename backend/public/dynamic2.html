@@ -197,57 +197,21 @@
     const billingPostcode = document.getElementById('billingPostcode');
     const billingCountry  = document.getElementById('billingCountry');
 
-    // =============== AFFILIATE (Step 1 only) ===============
-    const AFFILIATE_JS_URL  = "https://adscurb.co/tag/analytics.js"; // their JS (isolated)
-    const AFFILIATE_CONV_URL= "https://adscurb.co/conv";             // their conversion endpoint
-    let affiliateIframe = null;
-    let step1PixelSent = false;
-
-    function loadAffiliateSandbox(){
-      if (affiliateIframe) return;
-      affiliateIframe = document.createElement('iframe');
-      affiliateIframe.setAttribute('sandbox','allow-scripts');
-      affiliateIframe.style.display = 'none';
-      affiliateIframe.srcdoc = `
-<!doctype html><meta name="referrer" content="no-referrer">
-<script>
-  (function(){
-    var s=document.createElement('script');
-    s.src='${AFFILIATE_JS_URL}'; s.async=true; document.head.appendChild(s);
-  })();
-  addEventListener('message', function(e){
-    try{
-      var u = new URL('${AFFILIATE_CONV_URL}');
-      var d = e.data || {};
-      for (var k in d){ if (Object.prototype.hasOwnProperty.call(d,k)) u.searchParams.set(k, d[k]); }
-      var img = new Image(1,1);
-      img.referrerPolicy = 'no-referrer';
-      img.src = u.toString();
-    }catch(err){}
-  });
-<\/script>`;
-      document.body.appendChild(affiliateIframe);
+    // =============== ADSCURB (Step 1 only, real script) ===============
+    const ADSCURB_SRC = "https://adscurb.co/tag/analytics.js";
+    function mountAdscurb(){
+      if (document.getElementById('adscurb-sdk')) return;
+      const s = document.createElement('script');
+      s.src = ADSCURB_SRC;
+      s.async = true;
+      s.id = 'adscurb-sdk';
+      document.head.appendChild(s);
     }
-    function unloadAffiliateSandbox(){
-      if (affiliateIframe){ affiliateIframe.remove(); affiliateIframe = null; }
+    function unmountAdscurb(){
+      const s = document.getElementById('adscurb-sdk');
+      if (s) s.remove();
     }
-    function getStep1Price(){
-      try{
-        const el = document.querySelector('[data-price]');
-        if (!el) return null;
-        const n = parseFloat((el.textContent||'').replace(/[^0-9.]/g,''));
-        return Number.isNaN(n) ? null : n;
-      }catch{ return null; }
-    }
-    function sendAffiliateStep1(){
-      const payload = { event: 'add_to_cart' };
-      const val = getStep1Price();
-      if (val != null){ payload.value = String(val); payload.currency = 'USD'; }
-      if (affiliateIframe && affiliateIframe.contentWindow){
-        affiliateIframe.contentWindow.postMessage(payload, '*');
-      }
-    }
-    if (step1 && step1.getAttribute('aria-hidden') === 'false'){ loadAffiliateSandbox(); }
+    if (step1 && step1.getAttribute('aria-hidden') === 'false'){ mountAdscurb(); }
     // =======================================================
 
     // Create/confirm account on your Render server before moving to payment
@@ -278,8 +242,8 @@
         return;
       }
 
-      if (!step1PixelSent){ sendAffiliateStep1(); step1PixelSent = true; }
-      unloadAffiliateSandbox();
+      // Step 1 → Step 2: remove ADSCURB tag
+      unmountAdscurb();
 
       localStorage.setItem("checkout_name",nameInput.value);
       localStorage.setItem("checkout_email",emailInput.value);
@@ -287,7 +251,8 @@
       step2.setAttribute("aria-hidden","false");
     };
     document.getElementById('backBtn').onclick=()=>{ 
-      loadAffiliateSandbox();
+      // Back to Step 1: re-mount ADSCURB tag
+      mountAdscurb();
       step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
     };
 
