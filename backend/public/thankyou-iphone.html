@@ -114,5 +114,45 @@
     })(0);
   </script>
 
+  <!-- Dynamic Meta Pixel for affiliates (supports multiple IDs via ?pixel=ID or ?pixel=ID1,ID2) -->
+  <script>
+    (function(){
+      var qs = new URLSearchParams(location.search);
+      var pixelParam = qs.get('pixel') || qs.get('fb_pixel') || qs.get('fbp') || "";
+      if (!pixelParam) return;
+
+      var pixelIds = pixelParam.split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+      if (!pixelIds.length) return;
+
+      // Load Meta Pixel base once
+      !function(f,b,e,v,n,t,s){
+        if(f.fbq) return; n=f.fbq=function(){ n.callMethod ? n.callMethod.apply(n,arguments) : n.queue.push(arguments) };
+        if(!f._fbq) f._fbq=n; n.push=n; n.loaded=!0; n.version='2.0'; n.queue=[];
+        t=b.createElement(e); t.async=!0; t.src=v;
+        s=b.getElementsByTagName(e)[0]; s.parentNode.insertBefore(t,s);
+      }(window, document, 'script', 'https://connect.facebook.net/en_US/fbevents.js');
+
+      // Init all passed pixel IDs
+      pixelIds.forEach(function(id){
+        if (/^\d{10,20}$/.test(id)) {
+          fbq('init', id);
+        }
+      });
+
+      // Build purchase attributes from your existing page data
+      var amount   = (typeof goaffproOrder !== "undefined" && +goaffproOrder.total) || +(qs.get('amount') || qs.get('value') || 0);
+      var currency = (typeof goaffproOrder !== "undefined" && goaffproOrder.currency) || (qs.get('currency') || qs.get('cur') || 'USD');
+      var eid      = (typeof orderId !== "undefined" && orderId) || qs.get('order_id') || qs.get('oid') || ('TEST-' + Date.now());
+
+      // Avoid double-firing per order id
+      var fireKey = 'fb_purchase_' + eid;
+      try { if (localStorage.getItem(fireKey)) return; } catch(e){}
+
+      fbq('track', 'Purchase', { value: isFinite(amount) ? +amount : 0, currency: currency || 'USD' }, { eventID: String(eid) });
+
+      try { localStorage.setItem(fireKey, '1'); } catch(e){}
+    })();
+  </script>
+
   </body>
 </html>
