@@ -387,7 +387,7 @@
           if (seen.has(cc) || !CALLING_CODES[cc]) return;
           seen.add(cc);
           const code = CALLING_CODES[cc];
-          const label = `€{code} — €{COUNTRY_CHOICES[cc] || cc}`;
+          const label = `${code} — ${COUNTRY_CHOICES[cc] || cc}`;
           phonePrefix.append(new Option(label, code));
         };
         priority.forEach(add);
@@ -396,7 +396,7 @@
       }
       function setPrefixFromISO(cc){ const code = CALLING_CODES[cc]; if(!code) return;
         const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
-        if(!exists) phonePrefix.add(new Option(`€{code} — €{COUNTRY_CHOICES[cc]||cc}`, code));
+        if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code));
         phonePrefix.value = code;
       }
       function setPrefixValue(code){
@@ -455,7 +455,7 @@
         if (rawPhone){
           if (rawPhone.startsWith('+')){
             const digits = rawPhone.replace(/[^\d]/g,'');
-            const m = digits.match(/^(\d{1,4})(\d{4,15})€/);
+            const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
             if (m){ setPrefixValue('+'+m[1]); phoneNumber.value = m[2]; prefixLockedFromURL = true; }
             else { phoneNumber.value = digits; }
           } else {
@@ -608,7 +608,7 @@
           if(errBox){ errBox.textContent = err.message || 'Etwas ist schiefgelaufen.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
           /* ONLY CHANGE: redirect on failure, matching blank.html */
-          window.location.href = 'https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
+          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
       });
     });

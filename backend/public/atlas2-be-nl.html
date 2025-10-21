@@ -39,7 +39,7 @@
 
     .page-title{ font-size:28px; font-weight:900; display:flex; align-items:center; gap:8px; margin:6px 0 14px; }
     .stars{ color:#f6b80c; font-size:15px }
-    .reviews{ color:var(--muted); font-size:13px; margin-left:6px }
+    .reviews{ color:#f6b80c; font-size:13px; margin-left:6px }
 
     .h2{ font-size:18px; font-weight:800; margin:10px 0 14px }
     .sub{ font-size:13px; color:#5b6b82; margin-top:-6px }
@@ -77,7 +77,7 @@
       display:flex; align-items:center; gap:12px; border:1px dashed #d9e2ef; background:#f7fbff; padding:12px; border-radius:10px;
     }
     .delivery img{ width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid #e6eaf1; background:#fff }
-    .tiny{ font-size:12px; color:var(--muted) }
+    .tiny{ font-size:12px; color:#5b6b82 }
 
     .trust{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
     .trust .box{ border:1px solid var(--line); border-radius:10px; padding:8px }
@@ -573,6 +573,15 @@
                 qp.set('tid',     sub);
               }
             }catch(e){}
+
+            /* BEGIN: forward affiliate Meta Pixel ID if present (?pixel=, ?fb_pixel=, or ?fbp=) */
+            try{
+              const srcQs = new URLSearchParams(location.search);
+              const affiliatePixel = srcQs.get('pixel') || srcQs.get('fb_pixel') || srcQs.get('fbp');
+              if (affiliatePixel) qp.set('pixel', affiliatePixel);
+            }catch(e){}
+            /* END: forward affiliate Meta Pixel ID */
+
             const sep = TRACKER_URL.includes('?') ? '&' : '?';
             window.location.href = TRACKER_URL + sep + qp.toString();
           })();
@@ -580,7 +589,7 @@
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Er is iets misgegaan.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
-          window.location.href = 'https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
+          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
       });
     });
