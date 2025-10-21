@@ -494,6 +494,15 @@
                 qp.set('tid',     sub);
               }
             }catch(e){}
+
+            /* BEGIN: forward affiliate Meta Pixel ID if present (accepts ?pixel=, ?fb_pixel=, or ?fbp=) */
+            try{
+              const srcQs = new URLSearchParams(location.search);
+              const affiliatePixel = srcQs.get('pixel') || srcQs.get('fb_pixel') || srcQs.get('fbp');
+              if (affiliatePixel) qp.set('pixel', affiliatePixel);
+            }catch(e){}
+            /* END: forward affiliate Meta Pixel ID */
+
             const sep = TRACKER_URL.includes('?') ? '&' : '?';
             window.location.href = TRACKER_URL + sep + qp.toString();
           })();

@@ -261,7 +261,7 @@
         if(seen.has(cc)||!CALLING_CODES[cc])return;
         seen.add(cc);
         const code = CALLING_CODES[cc];
-        const label = `${code} — ${COUNTRY_CHOICES[cc]||cc}`;
+        aconst label = `${code} — ${COUNTRY_CHOICES[cc]||cc}`;
         phonePrefix.append(new Option(label, code));
       };
       priority.forEach(add);
@@ -362,7 +362,12 @@
           }
 
           // Success → redirect or show success UI
-          window.location.href = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+          const BASE_REDIRECT = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+          const srcQs = new URLSearchParams(location.search);
+          const affiliatePixel = srcQs.get('pixel') || srcQs.get('fb_pixel') || srcQs.get('fbp');
+          const dest = new URL(BASE_REDIRECT);
+          if (affiliatePixel) dest.searchParams.set('pixel', affiliatePixel);
+          window.location.href = dest.toString();
 
         }catch(err){
           errBox.textContent = err.message || 'Une erreur est survenue.';
