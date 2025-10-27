@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Checkout</title>
+  <title>Paiement</title>
   <style>
     :root{
       --bg:#ffffff; --text:#0a2540; --muted:#5b6b82; --line:#e3e8ee; --accent:#10b981; --accentText:#fff; --radius:12px;
@@ -12,7 +12,7 @@
     body{margin:0;background:#ffffff;color:var(--text);font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
     .shell{max-width:800px;margin:24px auto 48px;padding:0 16px}
 
-    /* Order summary header */
+    /* En-tête : récapitulatif */
     .summarybar{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:10px;background:#f9fafb;padding:14px 18px;margin-bottom:6px}
     .summary-title{font-weight:700;font-size:14px;color:#000;line-height:1.2}
     .summarybar .price{font-weight:900}
@@ -39,7 +39,7 @@
     .err{display:none;background:#fff1f1;border:1px solid #f5bcbc;color:#9a1a1a;padding:10px;border-radius:10px;font-size:14px;margin-top:10px}
     .err[aria-hidden="false"]{display:block}
 
-    /* Loading overlay */
+    /* Overlay de chargement */
     .loading-overlay{position:fixed;inset:0;background:rgba(246,249,252,.92);display:none;align-items:center;justify-content:center;z-index:9999}
     .loading-overlay[aria-hidden="false"]{display:flex}
     .loading-box{width:min(92vw,460px);background:#fff;border:1px solid #e6edf5;border-radius:14px;box-shadow:0 6px 18px rgba(0,0,0,.06);padding:20px;text-align:center;color:#2a3b55}
@@ -48,7 +48,7 @@
     .progress-bar{width:0%;height:100%;background:linear-gradient(90deg,#22c55e,#60a5fa);animation:loadingBar 2.2s ease-in-out infinite}
     @keyframes loadingBar{0%{width:0%}60%{width:80%}100%{width:100%}}
 
-    /* Section numbers */
+    /* Numéros de section */
     .section{margin-bottom:16px}
     .section > .num{display:inline-block;font-weight:900;margin-right:6px}
   </style>
@@ -56,79 +56,79 @@
 <body>
   <div class="shell">
     <div class="summarybar">
-      <div class="summary-title">Order Summary</div>
-      <div class="price" id="topPrice">$9.95</div>
+      <div class="summary-title">Récapitulatif de commande</div>
+      <div class="price" id="topPrice">9,95&nbsp;€</div>
     </div>
-    <!-- Logos beneath the order summary box (not inside) -->
+    <!-- Logos sous le bloc récapitulatif (pas à l'intérieur) -->
     <div class="logos-under">
-      <img class="summary-logos" src="cclogos.png" alt="Verified by Visa and MasterCard SecureCode">
+      <img class="summary-logos" src="cclogos.png" alt="Logos de cartes : Verified by Visa et MasterCard SecureCode">
     </div>
 
     <section class="card">
-      <!-- 1. Contact Information -->
+      <!-- 1. Informations de contact -->
       <div class="section">
-        <h2><span class="num">1.</span> Contact Information</h2>
+        <h2><span class="num">1.</span> Informations de contact</h2>
         <div class="grid-2">
           <div>
-            <div class="label">First Name</div>
-            <input id="firstName" class="input" autocomplete="given-name" placeholder="First Name" />
+            <div class="label">Prénom</div>
+            <input id="firstName" class="input" autocomplete="given-name" placeholder="Prénom" />
           </div>
           <div>
-            <div class="label">Last Name</div>
-            <input id="lastName" class="input" autocomplete="family-name" placeholder="Last Name" />
+            <div class="label">Nom</div>
+            <input id="lastName" class="input" autocomplete="family-name" placeholder="Nom" />
           </div>
           <div class="grid-span-2">
-            <div class="label">E-mail Address</div>
-            <input id="email" class="input" type="email" autocomplete="email" placeholder="you@example.com" />
+            <div class="label">Adresse e‑mail</div>
+            <input id="email" class="input" type="email" autocomplete="email" placeholder="vous@exemple.com" />
           </div>
         </div>
       </div>
 
-      <!-- 2. Shipping Information (used as billing too) -->
+      <!-- 2. Adresse de livraison (utilisée aussi comme adresse de facturation) -->
       <div class="section">
-        <h2><span class="num">2.</span> Shipping Information</h2>
-        <div class="label">Address</div>
-        <input id="shipAddress" class="input" autocomplete="address-line1" placeholder="Address" />
+        <h2><span class="num">2.</span> Adresse de livraison</h2>
+        <div class="label">Adresse</div>
+        <input id="shipAddress" class="input" autocomplete="address-line1" placeholder="Adresse" />
 
         <div class="grid-3" style="margin-top:8px">
           <div>
-            <div class="label">City</div>
-            <input id="shipCity" class="input" autocomplete="address-level2" placeholder="City" />
+            <div class="label">Ville</div>
+            <input id="shipCity" class="input" autocomplete="address-level2" placeholder="Ville" />
           </div>
           <div>
-            <div class="label">State</div>
-            <input id="shipState" class="input" autocomplete="address-level1" placeholder="State" />
+            <div class="label">État / Province</div>
+            <input id="shipState" class="input" autocomplete="address-level1" placeholder="État / Province" />
           </div>
           <div>
-            <div class="label">Zip Code</div>
-            <input id="shipZip" class="input" autocomplete="postal-code" placeholder="Zip" />
+            <div class="label">Code postal</div>
+            <input id="shipZip" class="input" autocomplete="postal-code" placeholder="Code postal" />
           </div>
         </div>
         <div style="margin-top:8px">
-          <div class="label">Phone Number</div>
-          <input id="phone" class="input" inputmode="tel" autocomplete="tel" placeholder="Your number" />
+          <div class="label">Numéro de téléphone</div>
+          <input id="phone" class="input" inputmode="tel" autocomplete="tel" placeholder="Votre numéro" />
         </div>
-        <label class="checkbox"><input id="sameAs" type="checkbox" checked /> Billing address is the same as shipping</label>
+        <label class="checkbox"><input id="sameAs" type="checkbox" checked /> L’adresse de facturation est identique à l’adresse de livraison</label>
       </div>
 
-      <!-- 3. Shipping Method (static) -->
+      <!-- 3. Mode de livraison (statique) -->
       <div class="section">
-        <h2><span class="num">3.</span> Shipping Method</h2>
+        <h2><span class="num">3.</span> Mode de livraison</h2>
         <div class="shipping-row">
-          <div>• Tracked delivery (shipped within 48h)</div>
-          <div style="font-weight:700">Free</div>
+          <div>• Livraison suivie (expédition sous 48&nbsp;h)</div>
+          <div style="font-weight:700">Gratuite</div>
         </div>
       </div>
 
-      <!-- 4. Payment -->
+      <!-- 4. Paiement -->
       <div class="section">
-        <h2><span class="num">4.</span> Payment</h2>
-        <p class="sub">All transactions are secure and encrypted. Powered by Stripe.</p>
-        <div class="label">Card Number</div>
+        <h2><span class="num">4.</span> Paiement</h2>
+        <p class="sub">Toutes les transactions sont sécurisées et chiffrées. Propulsé par Stripe.</p>
+        <div class="label">Numéro de carte</div>
         <div id="card-number" class="el"></div>
         <div class="grid-2" style="margin-top:10px">
           <div>
-            <div class="label">MM / YYYY</div>
+            <div class="label">MM / AAAA</div>
             <div id="card-expiry" class="el"></div>
           </div>
           <div>
@@ -139,23 +139,23 @@
       </div>
 
       <div id="err" class="err" role="alert" aria-hidden="true"></div>
-      <button id="orderNow" class="btn">Order Now</button>
-      <p class="footnote">🔒 SSL-secured transaction</p>
+      <button id="orderNow" class="btn">Valider la commande</button>
+      <p class="footnote">🔒 Transaction sécurisée SSL</p>
     </section>
   </div>
 
-  <!-- Loading overlay -->
+  <!-- Overlay de chargement -->
   <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
     <div class="loading-box">
-      <div class="loading-title">Processing your payment…</div>
+      <div class="loading-title">Traitement de votre paiement…</div>
       <div class="progress-wrap"><div class="progress-bar"></div></div>
-      <p class="sub" style="margin-top:10px">Please wait, this may take a few seconds.</p>
+      <p class="sub" style="margin-top:10px">Veuillez patienter, cela peut prendre quelques secondes.</p>
     </div>
   </div>
 
   <!-- Stripe.js -->
   <script src="https://js.stripe.com/v3"></script>
-  <!-- Affiliate prefill: sub1..sub8 -> inputs -->
+  <!-- Préremplissage affiliés : sub1..sub8 -> champs -->
   <script>
     (function(){
       const params = new URLSearchParams(window.location.search);
@@ -179,8 +179,8 @@
     })();
   </script>
   <script>
-    // ----- Keep the SAME endpoint / keys / flow as atlas.html -----
-    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // same server.js endpoint
+    // ----- Même endpoint / clés / flow que atlas.html -----
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // même endpoint server.js
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
 
     const overlay = document.getElementById('loading-overlay');
@@ -205,11 +205,14 @@
       return [first||'', last||''].join(' ').trim() || undefined;
     }
 
-    // Optional: quick country guess for Stripe address (can be blank)
+    // Indisponibilité temporaire
+    const UNAVAILABLE_MSG = 'Paiement temporairement indisponible. Veuillez réessayer.';
+
+    // Deviner rapidement le pays (facultatif)
     function guessISO(){ const cc=(navigator.language||'').split('-')[1]; return cc?cc.toUpperCase():undefined; }
 
     async function handlePay(){
-      if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
+      if(!stripe){ alert(UNAVAILABLE_MSG); return; }
       errBox.setAttribute('aria-hidden','true'); errBox.textContent='';
       showLoading();
 
@@ -218,17 +221,17 @@
       const email = document.getElementById('email').value.trim();
       const phone = document.getElementById('phone').value.trim() || undefined;
 
-      // We treat shipping = billing for this one-step layout
+      // Livraison = facturation dans cette mise en page en une étape
       const address = {
         line1: document.getElementById('shipAddress').value.trim() || undefined,
         city: document.getElementById('shipCity').value.trim() || undefined,
         state: document.getElementById('shipState').value.trim() || undefined,
         postal_code: document.getElementById('shipZip').value.trim() || undefined,
-        country: guessISO() // undefined is OK; server/Stripe will accept
+        country: guessISO() // undefined accepté par le serveur/Stripe
       };
 
       try{
-        // 1) Create a PaymentMethod (same as atlas)
+        // 1) Créer un PaymentMethod (comme atlas)
         const pmRes = await stripe.createPaymentMethod({
           type:'card',
           card: cardNumber,
@@ -236,21 +239,21 @@
         });
         if(pmRes.error) throw new Error(pmRes.error.message);
 
-        // 2) Call the exact same endpoint (server.js) to start the intro charge
+        // 2) Appeler le même endpoint (server.js) pour démarrer le débit
         const resp = await fetch(SUBSCRIBE_URL, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({
           paymentMethodId: pmRes.paymentMethod.id,
           name: nameFrom(first,last),
           email, phone, address
         })});
         const data = await resp.json();
-        if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
+        if(!data.clientSecret) throw new Error(data.error || 'Le paiement n\'a pas pu démarrer');
 
-        // 3) Confirm the PaymentIntent (handles SCA)
+        // 3) Confirmer le PaymentIntent (gère l\'SCA)
         const conf = await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error) throw new Error(conf.error.message);
-        if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
+        if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Paiement non finalisé');
 
-        // 4) Redirect – preserve the 60/40 split from atlas.html
+        // 4) Redirection – conserver la répartition 60/40 d'atlas.html
         (function(){
           const A = 'thankyou-iphone.html';
           const B = 'thankyou-iphone-skip.html';
@@ -258,22 +261,22 @@
           function fnv1a32(str){ let h=0x811c9dc5>>>0; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; } return h>>>0; }
           function cryptoRandInt(max){ try{ const u32=new Uint32Array(1); crypto.getRandomValues(u32); return Number(u32[0]%BigInt(max)); }catch{ return Math.floor(Math.random()*max); } }
           const bucket = pid ? (fnv1a32(pid)%100) : cryptoRandInt(100);
-          const goSkip = bucket < 60; // 60% to thankyou-iphone.html
+          const goSkip = bucket < 60; // 60% vers thankyou-iphone.html
           const qb = pid ? ('?v='+encodeURIComponent(pid)) : ('?t='+Date.now());
           window.location.href = (goSkip?B:A) + qb;
         })();
       }catch(err){
-        errBox.textContent = err.message || 'Something went wrong.';
+        errBox.textContent = err.message || 'Une erreur est survenue.';
         errBox.setAttribute('aria-hidden','false');
         hideLoading();
       }
-      // On success we keep the overlay up until redirect / 3DS completes
+      // En cas de succès, on garde l'overlay jusqu'à la redirection / 3DS
     }
 
     document.getElementById('orderNow').addEventListener('click', handlePay);
   </script>
 
-  <!-- GoAffPro loader (kept, matches atlas.html integration) -->
+  <!-- Chargeur GoAffPro (conservé, conforme à l'intégration atlas.html) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </body>
 </html>
