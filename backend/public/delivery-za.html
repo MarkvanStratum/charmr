@@ -17,6 +17,10 @@
     --radius:18px;
     --shadow:0 10px 28px rgba(17,24,39,.08);
     --soft:0 1px 0 rgba(0,0,0,.05), 0 8px 16px rgba(0,0,0,.06);
+    /* NEW: attention colors */
+    --attention:#fff4b8;       /* warm postal yellow */
+    --attention-ink:#7a5500;   /* readable on yellow */
+    --attention-border:#f1d25a;/* border for contrast */
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -59,9 +63,7 @@
     border:1px solid #e7e8ec; display:grid; place-items:center;
     box-shadow:0 1px 0 rgba(0,0,0,.04);
   }
-  .icon{
-    font-size:28px; user-select:none;
-  }
+  .icon{ font-size:28px; user-select:none; }
 
   /* ---------- Search + CTA ---------- */
   .search-wrap{max-width:1100px; margin:10px auto; padding:0 18px}
@@ -84,9 +86,7 @@
   }
 
   /* ---------- Hero banner ---------- */
-  .hero{
-    max-width:1100px; margin:0 auto; padding:0 18px;
-  }
+  .hero{ max-width:1100px; margin:0 auto; padding:0 18px; }
   .banner{
     margin-top:12px;
     display:grid; grid-template-columns:1fr 1fr; gap:0;
@@ -118,9 +118,7 @@
     color:#0b2a57; letter-spacing:.2px;
   }
   .sub{margin:0; color:#1f2937}
-  .rate{
-    display:flex; flex-direction:column; gap:8px; margin-top:8px
-  }
+  .rate{ display:flex; flex-direction:column; gap:8px; margin-top:8px }
   .pill{
     display:flex; justify-content:space-between; align-items:center;
     background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; font-weight:700;
@@ -148,18 +146,11 @@
   .bar{height:100%; width:0; background:linear-gradient(90deg,var(--brand),#ff4d5c); border-radius:inherit}
 
   /* ---------- Contact footer (like screenshot) ---------- */
-  .contact{
-    background:#686b70; color:#fff; margin-top:28px;
-  }
-  .contact-inner{
-    max-width:1100px; margin:0 auto; padding:22px 18px; text-align:center;
-  }
+  .contact{ background:#686b70; color:#fff; margin-top:28px; }
+  .contact-inner{ max-width:1100px; margin:0 auto; padding:22px 18px; text-align:center; }
   .contact .big{font-size:26px; font-weight:800}
   .contact .phone{margin-top:6px; font-size:22px}
-
-  .social{
-    display:flex; gap:14px; justify-content:center; padding:16px 0 26px;
-  }
+  .social{ display:flex; gap:14px; justify-content:center; padding:16px 0 26px; }
   .soc{
     height:42px; width:42px; border-radius:10px; background:#fff;
     display:grid; place-items:center; box-shadow:0 6px 14px rgba(0,0,0,.18);
@@ -170,6 +161,66 @@
   /* ---------- NEW: small image beside the headline ---------- */
   .headline-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
   .headline-inline-img{width:58px; height:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.15)}
+
+  /* =================== NEW: Attention treatments for the questionnaire =================== */
+  /* 1) Gentle yellow highlight, animated beacon ring, and label chip */
+  #card{
+    position:relative;
+    background:linear-gradient(180deg, var(--attention) 0%, #fffce6 60%, #fff 100%);
+    border:2px solid var(--attention-border);
+    box-shadow:0 10px 28px rgba(17,24,39,.08), 0 0 0 6px rgba(241,210,90,.18);
+  }
+  #card::before{ /* "Action required" chip */
+    content:"Action required: answer delivery questions";
+    position:absolute; top:-12px; left:18px;
+    background:#111827; color:#fff; font-weight:800; font-size:12px; letter-spacing:.3px;
+    padding:6px 10px; border-radius:999px; box-shadow:var(--soft);
+  }
+  /* Animated beacon dot in the corner */
+  #card::after{
+    content:""; position:absolute; right:18px; top:18px; width:10px; height:10px; border-radius:999px;
+    background:radial-gradient(circle,#ffbf00 35%, #ff9900 36%, #ff9900 100%);
+    box-shadow:0 0 0 0 rgba(255,184,0,.7);
+    animation: beacon 2s ease-out infinite;
+  }
+  @keyframes beacon{ 0%{ box-shadow:0 0 0 0 rgba(255,184,0,.7);} 70%{ box-shadow:0 0 0 12px rgba(255,184,0,0);} 100%{ box-shadow:0 0 0 0 rgba(255,184,0,0);} }
+
+  /* 2) Arrow nudge to direct eyes to the buttons */
+  .answers{ position:relative; }
+  .answers::before{
+    content:"↓ Choose an option";
+    position:absolute; top:-28px; left:0; font-weight:800; font-size:13px; color:var(--attention-ink);
+    text-shadow:0 1px 0 rgba(255,255,255,.6);
+    animation: floaty 2.8s ease-in-out infinite;
+  }
+  @keyframes floaty{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(2px) } }
+
+  /* 3) Stronger focus ring for accessibility */
+  .btn:focus{ outline:4px solid rgba(241,210,90,.65); outline-offset:2px }
+
+  /* 4) Subtle pulse of the question headline to draw attention */
+  .q h2{ color:#111827 }
+  .q h2.highlight-pulse{ animation: pulse 2s ease-in-out 2 }
+  @keyframes pulse{ 0%{ text-shadow:0 0 0 rgba(241,210,90,0) } 50%{ text-shadow:0 0 12px rgba(241,210,90,.9) } 100%{ text-shadow:0 0 0 rgba(241,210,90,0) } }
+
+  /* 5) Sticky bottom nudge when the card is off-screen */
+  .sticky-nudge{
+    position:fixed; left:12px; right:12px; bottom:12px; z-index:2000;
+    background:linear-gradient(180deg,#ffe991,#ffd24a); color:#111827; border:2px solid var(--attention-border);
+    border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.18);
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px;
+    transform:translateY(120%); transition:transform .3s ease;
+  }
+  .sticky-nudge.show{ transform:translateY(0) }
+  .nudge-text{ font-weight:800 }
+  .nudge-btn{
+    appearance:none; background:#111827; color:#fff; border:0; border-radius:10px; padding:10px 14px; font-weight:800; cursor:pointer;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion:reduce){
+    #card::after, .answers::before, .q h2.highlight-pulse{ animation:none }
+  }
 
   /* ---------- Responsive ---------- */
   @media (max-width:880px){
@@ -232,7 +283,7 @@
         <div class="rate">
           <div class="pill"><span>Standard handling</span><small>per parcel</small><strong>FREE</strong></div>
           <div class="pill"><span>Express window</span><small>per parcel</small><strong>R 95</strong></div>
-          <div class="pill"><span>Custome clearence</span><small>per parcel</small><strong>R 58</strong></div>
+          <div class="pill"><span>Customs clearence</span><small>per parcel</small><strong>R 58</strong></div>
         </div>
       </div>
     </div>
@@ -258,6 +309,12 @@
     </div>
   </footer>
 
+  <!-- Sticky bottom nudge (hidden by default) -->
+  <div class="sticky-nudge" id="nudge" role="dialog" aria-live="polite" aria-label="Answer delivery questions">
+    <span class="nudge-text">Finish delivery setup →</span>
+    <button class="nudge-btn" type="button" id="nudgeBtn">Answer now</button>
+  </div>
+
 <script>
   // ---------- Steps as requested ----------
   const STEPS = [
@@ -276,7 +333,7 @@
   function renderQuestion(){
     const s = STEPS[step];
     qEl.innerHTML = `
-      <h2>${s.prompt}</h2>
+      <h2 class="highlight-pulse">${s.prompt}</h2>
       <div class="answers">
         ${s.options.map(o=>`<button class="btn" data-answer="${o}" type="button">${o}</button>`).join("")}
       </div>
@@ -317,6 +374,35 @@
   }
 
   renderQuestion();
+
+  // ---------- NEW: sticky nudge that appears when the questionnaire is not visible ----------
+  const nudge = document.getElementById('nudge');
+  const nudgeBtn = document.getElementById('nudgeBtn');
+  const card = document.getElementById('card');
+
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      // If the card is out of view by at least 50%, show the nudge
+      if(entry.target === card){
+        if(entry.isIntersecting){ nudge.classList.remove('show'); }
+        else{ nudge.classList.add('show'); }
+      }
+    })
+  }, { threshold: 0.5 });
+
+  io.observe(card);
+
+  function scrollToCard(){
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // brief pulse of the headline when arriving
+    const h2 = card.querySelector('.q h2');
+    if(h2){ h2.classList.add('highlight-pulse'); setTimeout(()=>h2.classList.remove('highlight-pulse'), 2200); }
+  }
+
+  nudgeBtn.addEventListener('click', scrollToCard);
+
+  // Also allow clicking the entire nudge area
+  nudge.addEventListener('click', (e)=>{ if(e.target !== nudgeBtn) scrollToCard(); });
 </script>
 </body>
 </html>
