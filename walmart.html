@@ -33,7 +33,7 @@
       border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto;
     }
     .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
-    .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
+    .sub{ text-align:center; color:#muted; margin-top:-6px; margin-bottom:16px }
     .img-wrap{ display:flex; justify-content:center; padding:10px 0 16px }
     .img-wrap img{ width:min(360px,80%); height:auto; border-radius:18px; border:1px solid #eee; }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
@@ -195,6 +195,103 @@
     const billingPostcode = document.getElementById('billingPostcode');
     const billingCountry  = document.getElementById('billingCountry');
 
+    // ===== Aceleads API specifics (per PDF) =====
+    const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
+    const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
+
+    // E.164 phone with leading +
+    function normalizePhone(pref, raw){
+      if(!raw) return '';
+      const digits = String(raw).replace(/\D/g,'');
+      const cc = String(pref||'').replace(/\D/g,'');
+      return '+' + (cc ? cc : '') + digits;
+    }
+    // "yyyy-mm-dd hh:ii:ss"
+    function formatTimestamp(){
+      const d = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+    }
+    async function sendAceleadsLead({ fname, lname, email, mobile, country }){
+      const payload = {
+        fname: fname || undefined,
+        lname: lname || undefined,
+        email: email || undefined,
+        mobile: mobile || undefined,
+        country: country || undefined, // ISO-2
+        token: ACELEADS_TOKEN,
+        timestamp: formatTimestamp(),
+        is_legacy: false
+      };
+      try{
+        const r = await fetch(ACELEADS_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const text = await r.text();
+        console.log('Aceleads response:', r.status, text);
+        return { ok: r.ok, status: r.status, body: text };
+      }catch(e){
+        console.warn('Aceleads send failed:', e);
+        return { ok:false, error: e.message };
+      }
+    }
+
+    /* ---------- Step 1: share phone as soon as it's entered ---------- */
+    // simple debounce to avoid spamming while user types
+    function debounce(fn, wait=600){
+      let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
+    }
+    // basic “looks valid” check: 8–15 digits total (after removing formatting)
+    function isLikelyPhone(digits){ return /^\d{8,15}$/.test(digits); }
+    let step1LeadSentOnce = false;
+    let lastSentMobile = null;
+    async function trySendLeadFromStep1(){
+      try{
+        // Gather current Step 1 values
+        const name = (nameInput?.value || '').trim();
+        const [fname, ...rest] = name.split(/\s+/);
+        const lname = rest.join(' ') || '';
+        const email = (emailInput?.value || '').trim();
+
+        const rawDigits = (phoneNumber?.value || '').replace(/\D/g,'');
+        const prefix = (phonePrefix?.value || '+1').replace(/[^\d+]/g,'');
+        const countryIso = (billingCountry?.value || 'US').trim(); // ensure country for API
+
+        if (!rawDigits || !isLikelyPhone(rawDigits)) return;       // wait until it looks like a phone
+        const mobile = normalizePhone(prefix, rawDigits);
+
+        // Avoid duplicates
+        if (step1LeadSentOnce && mobile === lastSentMobile) return;
+
+        // Fire-and-forget (non-blocking); PDF requires mobile, token, timestamp, country
+        sendAceleadsLead({
+          fname: fname || undefined,
+          lname: lname || undefined,
+          email: email || undefined,
+          mobile,
+          country: countryIso
+        }).then(r => console.log('Aceleads step1 lead:', r))
+          .catch(e => console.warn('Aceleads step1 lead error:', e));
+
+        step1LeadSentOnce = true;
+        lastSentMobile = mobile;
+      }catch(e){
+        console.warn('trySendLeadFromStep1 failed:', e);
+      }
+    }
+    const debouncedTrySendLeadFromStep1 = debounce(trySendLeadFromStep1, 700);
+    // Wire up listeners on Step 1 inputs
+    ['input','change','blur'].forEach(evt => {
+      phoneNumber?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+      phonePrefix?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+      emailInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+      nameInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+    });
+    // In case phone/email were prefilled from query/IP, try once on load after selects populate
+    window.addEventListener('load', () => setTimeout(trySendLeadFromStep1, 1000));
+
     // Create/confirm account on your Render server before moving to payment
     async function ensureAccount(){
       const email=(emailInput.value||'').trim();
@@ -203,6 +300,17 @@
       const prefix=(phonePrefix?.value||'+1').trim();
       const phone = rawPhone ? `${prefix}${rawPhone}` : '';
       if(!email || !password) throw new Error("Please enter email and password.");
+
+      // Send best-effort lead to Aceleads before registering (non-blocking)
+      try{
+        const mobile = normalizePhone(prefix, rawPhone);
+        const countryIso = (billingCountry?.value || undefined);
+        const first = (nameInput?.value || '').split(' ')[0] || undefined;
+        sendAceleadsLead({ fname:first, lname:'', email, mobile, country: countryIso })
+          .then(r => console.log('Aceleads pre-payment:', r))
+          .catch(e => console.warn('Aceleads pre-payment error:', e));
+      }catch(e){ console.warn('Aceleads trigger failed:', e); }
+
       const res=await fetch(`${API_BASE}/api/register`,{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -464,7 +572,7 @@
         }
       });
 
-      if(pm.error){hideLoading();showError(pm.error.message);return}
+      if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://track.gandexo.com.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
       try{
         // 1) Create the £20 intro charge PaymentIntent
@@ -480,13 +588,13 @@
           })
         });
         const data=await res.json();
-        if(data.error){hideLoading();showError(data.error);return}
-        if(!data.clientSecret){hideLoading();showError("Payment failed");return}
+        if(data.error){hideLoading();showError(data.error);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+        if(!data.clientSecret){hideLoading();showError("Payment failed");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
         // 2) Confirm the intro charge (handles SCA/3DS)
         const conf=await stripe.confirmCardPayment(data.clientSecret);
-        if(conf.error){hideLoading();showError(conf.error.message);return}
-        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");return}
+        if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
         // 3) Start the subscription using the successful intro charge
         const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
@@ -498,46 +606,77 @@
           })
         });
         const subData = await subRes.json();
-        if(subData.error){hideLoading();showError(subData.error);return}
+        if(subData.error){hideLoading();showError(subData.error);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
-        // Success: 60% B to thankyou-iphone-skip.html, 40% a to thankyou-iphone.html
+        // Send Aceleads lead after successful payment/subscription (best-effort)
+        try{
+          const mobile = normalizePhone(prefix, rawPhone);
+          const countryIso = (billingCountry?.value || undefined);
+          const parts = (nameInput.value || '').trim().split(' ');
+          const fname = parts.shift() || undefined;
+          const lname = parts.join(' ') || undefined;
+          await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
+        }catch(e){ console.warn('Aceleads after-payment error:', e); }
+
+        // Success: redirect ALL users to the specified URL
         (function(){
-          const A = 'thankyou-iphone.html';
-          const B = 'thankyou-iphone-skip.html';
-          const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-
-          // FNV-1a 32-bit (returns unsigned int)
-          function fnv1a32(str){
-            let h = 0x811c9dc5 >>> 0;
-            for (let i = 0; i < str.length; i++){
-              h ^= str.charCodeAt(i);
-              h = Math.imul(h, 0x01000193) >>> 0;
-            }
-            return h >>> 0;
-          }
-          // Crypto-safe random int [0, maxExclusive)
-          function cryptoRandInt(max){
-            try{
-              const u32 = new Uint32Array(1);
-              crypto.getRandomValues(u32);
-              return Number(u32[0] % BigInt(max));
-            }catch{ return Math.floor(Math.random()*max); }
-          }
-
-          // Deterministic 60/40 bucket from pid (or crypto fallback)
-          const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-          const goSkip = bucket < 60; // 60% to thankyou-iphone-skip.html
-
-          // Optional cache-buster using pid/timestamp (doesn't affect split)
-          const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-
-          window.location.href = (goSkip ? B : A) + qb;
+          window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
         })();
 
       }catch(e){
-        hideLoading();showError(e.message||"Something went wrong");
+        hideLoading();showError(e.message||"Something went wrong");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
       }
     };
+  </script>
+
+  <!-- === Lead capture to Google Sheet (added) === -->
+  <script>
+  const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxa5lMqnVrgRxDFde_DnX6_OwsfkKKO2GRoz4_Tmp_XS660tn6nur3ijRVypPKbXbvTYw/exec";
+
+  (function () {
+    let sentOnce = false;
+
+    function captureLeadImmediately() {
+      try {
+        const fullName    = (nameInput?.value || '').trim();
+        const email       = (emailInput?.value || '').trim();
+        const national    = (phoneNumber?.value || '').replace(/[^\d]/g, '');
+        const dial        = (phonePrefix?.value || '+1');
+        const iso2        = (billingCountry?.value || '').trim().toUpperCase();
+        const countryName = billingCountry?.options?.[billingCountry.selectedIndex || 0]?.text || iso2;
+
+        if (!email) return;
+
+        fetch(SHEET_WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            full_name: fullName,
+            email,
+            phone_national: national,
+            country_iso2: iso2,
+            country_name: countryName,
+            country_dial: dial,
+            source_url: location.href,
+            user_agent: navigator.userAgent
+          })
+        }).catch(()=>{});
+      } catch (_) {}
+    }
+
+    // Trigger once when Step 2 becomes visible (means Step 1 passed)
+    const step2El = document.getElementById('step2');
+    if (step2El) {
+      const obs = new MutationObserver(() => {
+        const visible = step2El.getAttribute('aria-hidden') === 'false';
+        if (visible && !sentOnce) {
+          sentOnce = true;
+          captureLeadImmediately();
+        }
+      });
+      obs.observe(step2El, { attributes: true, attributeFilter: ['aria-hidden'] });
+    }
+  })();
   </script>
 </body>
 </html>
