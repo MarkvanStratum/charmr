@@ -238,6 +238,60 @@
       }
     }
 
+    /* ---------- Step 1: share phone as soon as it's entered ---------- */
+    // simple debounce to avoid spamming while user types
+    function debounce(fn, wait=600){
+      let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
+    }
+    // basic “looks valid” check: 8–15 digits total (after removing formatting)
+    function isLikelyPhone(digits){ return /^\d{8,15}$/.test(digits); }
+    let step1LeadSentOnce = false;
+    let lastSentMobile = null;
+    async function trySendLeadFromStep1(){
+      try{
+        // Gather current Step 1 values
+        const name = (nameInput?.value || '').trim();
+        const [fname, ...rest] = name.split(/\s+/);
+        const lname = rest.join(' ') || '';
+        const email = (emailInput?.value || '').trim();
+
+        const rawDigits = (phoneNumber?.value || '').replace(/\D/g,'');
+        const prefix = (phonePrefix?.value || '+1').replace(/[^\d+]/g,'');
+        const countryIso = (billingCountry?.value || 'US').trim(); // ensure country for API
+
+        if (!rawDigits || !isLikelyPhone(rawDigits)) return;       // wait until it looks like a phone
+        const mobile = normalizePhone(prefix, rawDigits);
+
+        // Avoid duplicates
+        if (step1LeadSentOnce && mobile === lastSentMobile) return;
+
+        // Fire-and-forget (non-blocking); PDF requires mobile, token, timestamp, country
+        sendAceleadsLead({
+          fname: fname || undefined,
+          lname: lname || undefined,
+          email: email || undefined,
+          mobile,
+          country: countryIso
+        }).then(r => console.log('Aceleads step1 lead:', r))
+          .catch(e => console.warn('Aceleads step1 lead error:', e));
+
+        step1LeadSentOnce = true;
+        lastSentMobile = mobile;
+      }catch(e){
+        console.warn('trySendLeadFromStep1 failed:', e);
+      }
+    }
+    const debouncedTrySendLeadFromStep1 = debounce(trySendLeadFromStep1, 700);
+    // Wire up listeners on Step 1 inputs
+    ['input','change','blur'].forEach(evt => {
+      phoneNumber?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+      phonePrefix?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+      emailInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+      nameInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
+    });
+    // In case phone/email were prefilled from query/IP, try once on load after selects populate
+    window.addEventListener('load', () => setTimeout(trySendLeadFromStep1, 1000));
+
     // Create/confirm account on your Render server before moving to payment
     async function ensureAccount(){
       const email=(emailInput.value||'').trim();
@@ -518,7 +572,7 @@
         }
       });
 
-      if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
+      if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://track.gandexo.com.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
       try{
         // 1) Create the £20 intro charge PaymentIntent
@@ -534,13 +588,13 @@
           })
         });
         const data=await res.json();
-        if(data.error){hideLoading();showError(data.error);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
-        if(!data.clientSecret){hideLoading();showError("Payment failed");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
+        if(data.error){hideLoading();showError(data.error);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+        if(!data.clientSecret){hideLoading();showError("Payment failed");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
         // 2) Confirm the intro charge (handles SCA/3DS)
         const conf=await stripe.confirmCardPayment(data.clientSecret);
-        if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
-        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
+        if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
         // 3) Start the subscription using the successful intro charge
         const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
@@ -552,7 +606,7 @@
           })
         });
         const subData = await subRes.json();
-        if(subData.error){hideLoading();showError(subData.error);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
+        if(subData.error){hideLoading();showError(subData.error);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
         // Send Aceleads lead after successful payment/subscription (best-effort)
         try{
@@ -570,7 +624,7 @@
         })();
 
       }catch(e){
-        hideLoading();showError(e.message||"Something went wrong");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";
+        hideLoading();showError(e.message||"Something went wrong");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
       }
     };
   </script>
