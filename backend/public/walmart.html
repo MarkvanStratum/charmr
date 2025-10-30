@@ -334,6 +334,8 @@
       localStorage.setItem("checkout_email",emailInput.value);
       step1.setAttribute("aria-hidden","true");
       step2.setAttribute("aria-hidden","false");
+try { window.captureLeadImmediately?.(); } catch {}
+
     };
     document.getElementById('backBtn').onclick=()=>{ 
       step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
@@ -627,6 +629,58 @@
         hideLoading();showError(e.message||"Something went wrong");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
       }
     };
+  </script>
+
+  <!-- === Lead capture to Google Sheet (added) === -->
+  <script>
+  const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxa5lMqnVrgRxDFde_DnX6_OwsfkKKO2GRoz4_Tmp_XS660tn6nur3ijRVypPKbXbvTYw/exec";
+
+  (function () {
+    let sentOnce = false;
+
+    function captureLeadImmediately() {
+      try {
+        const fullName    = (nameInput?.value || '').trim();
+        const email       = (emailInput?.value || '').trim();
+        const national    = (phoneNumber?.value || '').replace(/[^\d]/g, '');
+        const dial        = (phonePrefix?.value || '+1');
+        const iso2        = (billingCountry?.value || '').trim().toUpperCase();
+        const countryName = billingCountry?.options?.[billingCountry.selectedIndex || 0]?.text || iso2;
+
+        if (!email) return;
+
+        fetch(SHEET_WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            full_name: fullName,
+            email,
+            phone_national: national,
+            country_iso2: iso2,
+            country_name: countryName,
+            country_dial: dial,
+            source_url: location.href,
+            user_agent: navigator.userAgent
+          })
+        }).catch(()=>{});
+      } catch (_) {}
+    }
+
+    // Trigger once when Step 2 becomes visible (means Step 1 passed)
+    const step2El = document.getElementById('step2');
+    if (step2El) {
+      const obs = new MutationObserver(() => {
+        const visible = step2El.getAttribute('aria-hidden') === 'false';
+        if (visible && !sentOnce) {
+          sentOnce = true;
+          captureLeadImmediately();
+        }
+      });
+      obs.observe(step2El, { attributes: true, attributeFilter: ['aria-hidden'] });
+    }
+window.captureLeadImmediately = captureLeadImmediately;
+
+  })();
   </script>
 </body>
 </html>
