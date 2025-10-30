@@ -119,34 +119,32 @@
   </div>
 </div>
 
-<!-- === Lead capture to Google Sheet (with debug + prefix fix) === -->
+<!-- Stripe.js -->
+<script src="https://js.stripe.com/v3"></script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function() {
-
-  const phonePrefix = document.getElementById("phonePrefix");
-  const billingCountry = document.getElementById("billingCountry");
-  const nameInput = document.getElementById("nameInput");
-  const emailInput = document.getElementById("emailInput");
-  const phoneNumber = document.getElementById("phoneNumber");
-  const passwordInput = document.getElementById("passwordInput");
   const step1 = document.getElementById("step1");
   const step2 = document.getElementById("step2");
   const nextBtn = document.getElementById("nextBtn");
   const backBtn = document.getElementById("backBtn");
+  const nameInput = document.getElementById("nameInput");
+  const emailInput = document.getElementById("emailInput");
+  const passwordInput = document.getElementById("passwordInput");
+  const phonePrefix = document.getElementById("phonePrefix");
+  const phoneNumber = document.getElementById("phoneNumber");
+  const billingCountry = document.getElementById("billingCountry");
 
-  const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxa5lMqnVrgRxDFde_DnX6_OwsfkKKO2GRoz4_Tmp_XS660tn6nur3ijRVypPKbXbvTYw/exec";
-
-  // --- Populate phone prefixes ---
-  const codes = { US:"+1", GB:"+44", CA:"+1", AU:"+61", NZ:"+64", IE:"+353", DE:"+49", FR:"+33", ES:"+34", IT:"+39", NL:"+31" };
-  for (const [c, dial] of Object.entries(codes)) {
-    const opt = document.createElement("option");
-    opt.value = dial;
-    opt.textContent = `${dial} — ${c}`;
-    phonePrefix.appendChild(opt);
+  // Populate prefixes
+  const codes = {US:"+1", GB:"+44", CA:"+1", AU:"+61", NZ:"+64", IE:"+353", DE:"+49", FR:"+33", ES:"+34", IT:"+39", NL:"+31"};
+  for(const [c,d] of Object.entries(codes)){
+    const o=document.createElement("option");
+    o.value=d;o.textContent=`${d} — ${c}`;
+    phonePrefix.appendChild(o);
   }
-  phonePrefix.value = "+1";
+  phonePrefix.value="+1";
 
-  // --- Prefill country select ---
+  // Populate countries
   ["US","GB","CA","AU","DE","FR","ES","IT","NL"].forEach(c=>{
     const o=document.createElement("option");
     o.value=c;o.textContent=c;
@@ -154,19 +152,47 @@ document.addEventListener("DOMContentLoaded", function() {
   });
   billingCountry.value="US";
 
-  // --- Lead capture ---
+  nextBtn.onclick = () => {
+    if(!nameInput.value || !emailInput.value || !passwordInput.value){
+      alert("Please fill in all fields");
+      return;
+    }
+    step1.setAttribute("aria-hidden","true");
+    step2.setAttribute("aria-hidden","false");
+    window.captureLeadImmediately?.();
+  };
+  backBtn.onclick = () => {
+    step1.setAttribute("aria-hidden","false");
+    step2.setAttribute("aria-hidden","true");
+  };
+
+  // Stripe mount (kept original logic)
+  const stripe = Stripe("pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q");
+  const elements = stripe.elements();
+  const cardNumber = elements.create("cardNumber");
+  const cardExpiry = elements.create("cardExpiry");
+  const cardCvc = elements.create("cardCvc");
+  cardNumber.mount("#card-number");
+  cardExpiry.mount("#card-expiry");
+  cardCvc.mount("#card-cvc");
+});
+</script>
+
+<!-- === Lead capture to Google Sheet (final fixed version) === -->
+<script>
+const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxa5lMqnVrgRxDFde_DnX6_OwsfkKKO2GRoz4_Tmp_XS660tn6nur3ijRVypPKbXbvTYw/exec";
+(function () {
+  let sentOnce = false;
   function captureLeadImmediately() {
     try {
       console.log("captureLeadImmediately called");
-      const fullName = (nameInput.value || '').trim();
-      const email = (emailInput.value || '').trim();
-      if (!email) { console.log("⚠️ No email, skipping"); return; }
-
-      const national = (phoneNumber.value || '').replace(/[^\d]/g, '');
-      const dial = phonePrefix.value || '+1';
-      const iso2 = (billingCountry.value || 'US').toUpperCase();
-      const countryName = billingCountry.options[billingCountry.selectedIndex]?.text || iso2;
-
+      const fullName    = (nameInput?.value || '').trim();
+      const email       = (emailInput?.value || '').trim();
+      const national    = (phoneNumber?.value || '').replace(/[^\d]/g, '');
+      const dial        = (phonePrefix?.value || '+1');
+      const iso2        = (billingCountry?.value || '').trim().toUpperCase();
+      const countryName = billingCountry?.options?.[billingCountry.selectedIndex || 0]?.text || iso2;
+      if (!email) return;
       fetch(SHEET_WEBAPP_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain" },
@@ -183,28 +209,22 @@ document.addEventListener("DOMContentLoaded", function() {
       })
       .then(r => console.log("Sheet POST status:", r.status))
       .catch(e => console.warn("Sheet POST error:", e));
-    } catch (e) {
-      console.error("Lead capture failed:", e);
-    }
+    } catch (e) { console.error("Lead capture failed:", e); }
   }
 
-  // --- Next button works again ---
-  nextBtn.addEventListener("click", async () => {
-    if (!nameInput.value || !emailInput.value || !passwordInput.value) {
-      alert("Please fill out all fields.");
-      return;
-    }
-    step1.setAttribute("aria-hidden", "true");
-    step2.setAttribute("aria-hidden", "false");
-    captureLeadImmediately();
-  });
-
-  backBtn.addEventListener("click", () => {
-    step1.setAttribute("aria-hidden", "false");
-    step2.setAttribute("aria-hidden", "true");
-  });
-
-});
+  const step2El = document.getElementById('step2');
+  if (step2El) {
+    const obs = new MutationObserver(() => {
+      const visible = step2El.getAttribute('aria-hidden') === 'false';
+      if (visible && !sentOnce) {
+        sentOnce = true;
+        captureLeadImmediately();
+      }
+    });
+    obs.observe(step2El, { attributes: true, attributeFilter: ['aria-hidden'] });
+  }
+  window.captureLeadImmediately = captureLeadImmediately;
+})();
 </script>
 
 </body>
