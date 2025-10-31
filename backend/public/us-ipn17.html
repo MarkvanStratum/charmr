@@ -31,6 +31,7 @@
     flex-direction:column;
     align-items:center;
     min-height:100vh;
+    color-scheme: light; /* FIX: avoid auto-dark inversion making options unreadable */
   }
   /* Top full-width image bar (same header art) */
   .topbar{ position:sticky; top:0; left:0; width:100%; z-index:5 }
@@ -56,6 +57,14 @@
 
   .input,.el,select{ width:100%; padding:12px 14px; border:2px solid var(--line); border-radius:12px; background:#fff; color:#000 }
   .input:focus,.el:focus,select:focus{ outline:none; border-color:#7fb3ff; box-shadow:0 0 0 3px rgba(15,107,214,.2) }
+
+  /* FIX: ensure native menu stays readable and above other UI */
+  select{
+    background-color:#fff; color:#000;
+    appearance:auto; -webkit-appearance:menulist;
+    position:relative; z-index:10; line-height:1.3;
+  }
+  option{ background:#fff; color:#000; }
 
   .btn{ appearance:none; border:2px solid #000; background:#fff; color:#000; padding:12px 18px; border-radius:12px; cursor:pointer; font-weight:800; transition:.2s }
   .btn:hover{ background:#000; color:#fff }
@@ -251,14 +260,96 @@
 
     /* ---------- Calling codes ---------- */
     const CALLING_CODES = { ZA:{code:'+27',name:'South Africa'}, US:{code:'+1',name:'United States'}, CA:{code:'+1',name:'Canada'}, GB:{code:'+44',name:'United Kingdom'}, IE:{code:'+353',name:'Ireland'}, AU:{code:'+61',name:'Australia'}, NZ:{code:'+64',name:'New Zealand'}, DE:{code:'+49',name:'Germany'}, FR:{code:'+33',name:'France'}, ES:{code:'+34',name:'Spain'}, IT:{code:'+39',name:'Italy'}, NL:{code:'+31',name:'Netherlands'}, SE:{code:'+46',name:'Sweden'}, NO:{code:'+47',name:'Norway'}, DK:{code:'+45',name:'Denmark'}, FI:{code:'+358',name:'Finland'}, BE:{code:'+32',name:'Belgium'}, AT:{code:'+43',name:'Austria'}, CH:{code:'+41',name:'Switzerland'}, PT:{code:'+351',name:'Portugal'}, PL:{code:'+48',name:'Poland'}, RO:{code:'+40',name:'Romania'}, CZ:{code:'+420',name:'Czechia'}, SK:{code:'+421',name:'Slovakia'}, HU:{code:'+36',name:'Hungary'}, GR:{code:'+30',name:'Greece'} };
-    function buildPrefixOptions(selectEl, preferCode){ if(!selectEl) return; selectEl.innerHTML=""; const entries=Object.entries(CALLING_CODES); const prefer=CALLING_CODES[preferCode]?preferCode:'ZA'; const first=CALLING_CODES[prefer]||CALLING_CODES.US; selectEl.append(new Option(`${first.code} — ${first.name}`, first.code, true, true)); const seen=new Set([first.code]); for(const [,data] of entries){ if(seen.has(data.code)) continue; selectEl.append(new Option(`${data.code} — ${data.name}`, data.code)); seen.add(data.code); } if(!selectEl.value) selectEl.value=first.code; }
-    buildPrefixOptions(phonePrefix,'ZA');
+
+    function buildPrefixOptions(selectEl, preferCode){
+      if(!selectEl) return;
+      selectEl.innerHTML="";
+      const entries=Object.entries(CALLING_CODES);
+      const prefer=CALLING_CODES[preferCode]?preferCode:'US';    /* FIX: safer universal default */
+      const first=CALLING_CODES[prefer]||CALLING_CODES.US;
+      // Put preferred first and selected
+      selectEl.append(new Option(`${first.code} — ${first.name}`, first.code, true, true));
+      const seen=new Set([first.code]);
+      for(const [,data] of entries){
+        if(seen.has(data.code)) continue;
+        selectEl.append(new Option(`${data.code} — ${data.name}`, data.code));
+        seen.add(data.code);
+      }
+      if(!selectEl.value) selectEl.value=first.code;
+    }
+
+    // --- FIX: robust, fast IP country lookup with timeout & fallbacks
+    async function fetchWithTimeout(url, ms=2500){
+      const ctrl = new AbortController();
+      const t = setTimeout(()=>ctrl.abort(), ms);
+      try{
+        const res = await fetch(url, {signal: ctrl.signal});
+        return res;
+      }finally{
+        clearTimeout(t);
+      }
+    }
+    async function detectCountryCodeFromIP(){
+      // 1) GeoJS (very reliable, no key)
+      try{
+        const r = await fetchWithTimeout('https://get.geojs.io/v1/ip/country.json');
+        if(r && r.ok){
+          const j = await r.json();
+          if(j && typeof j.country === 'string' && j.country.length===2){
+            return j.country.toUpperCase();
+          }
+        }
+      }catch(_){}
+      // 2) ipapi.co
+      try{
+        const r = await fetchWithTimeout('https://ipapi.co/json/');
+        if(r && r.ok){
+          const j = await r.json();
+          if(j && typeof j.country_code === 'string' && j.country_code.length===2){
+            return j.country_code.toUpperCase();
+          }
+        }
+      }catch(_){}
+      // 3) ipwho.is
+      try{
+        const r = await fetchWithTimeout('https://ipwho.is/');
+        if(r && r.ok){
+          const j = await r.json();
+          if(j && j.success !== false && typeof j.country_code === 'string'){
+            return j.country_code.toUpperCase();
+          }
+        }
+      }catch(_){}
+      // 4) Last-ditch: try browser locale (e.g., en-US)
+      try{
+        const loc = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+        const m = /-([A-Z]{2})$/i.exec(loc);
+        if(m) return m[1].toUpperCase();
+      }catch(_){}
+      return 'US';
+    }
+
+    // Populate immediately so control is visible, then refine with detected country
+    buildPrefixOptions(phonePrefix,'US');
 
     /* ---------- Prefill country and price symbol (minimal) ---------- */
     (function setInitial(){
       document.querySelectorAll('[data-price]').forEach(el=> el.textContent='$22');
       if(billingCountry){
-        ['ZA','US','GB','IE','DE','FR','ES','IT','NL','AU','CA'].forEach((cc,i)=>{ const names={ZA:'South Africa',US:'United States',GB:'United Kingdom',IE:'Ireland',DE:'Germany',FR:'France',ES:'Spain',IT:'Italy',NL:'Netherlands',AU:'Australia',CA:'Canada'}; billingCountry.appendChild(new Option(names[cc], cc, i===0, i===0)); });
+        ['ZA','US','GB','IE','DE','FR','ES','IT','NL','AU','CA'].forEach((cc,i)=>{
+          const names={ZA:'South Africa',US:'United States',GB:'United Kingdom',IE:'Ireland',DE:'Germany',FR:'France',ES:'Spain',IT:'Italy',NL:'Netherlands',AU:'Australia',CA:'Canada'};
+          billingCountry.appendChild(new Option(names[cc], cc, i===0, i===0));
+        });
+      }
+    })();
+
+    // Apply detected country to prefix (and billing dropdown if available)
+    (async ()=>{
+      const cc = await detectCountryCodeFromIP();   // e.g., "GB"
+      buildPrefixOptions(phonePrefix, cc);
+      if(billingCountry){
+        const opt = Array.from(billingCountry.options).find(o => o.value === cc);
+        if(opt) billingCountry.value = cc;
       }
     })();
 
@@ -280,7 +371,7 @@
     document.getElementById("payNow").onclick = async () => {
       hideError(); showLoading();
       const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
-      const prefix=(phonePrefix?.value||'+27').trim();
+      const prefix=(phonePrefix?.value||'+1').trim(); /* FIX: stays aligned with detected default */
       const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
       const addr = { line1:(billingStreet?.value||'').trim()||undefined, city:(billingCity?.value||'').trim()||undefined, postal_code:(billingPostcode?.value||'').trim()||undefined, country:(billingCountry?.value||'').trim()||undefined };
 
