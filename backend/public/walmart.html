@@ -13,7 +13,7 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Get your $750 Walmart Gift Card for $750!</title>
+  <title>Get your $2.50 Walmart Gift Card for $2.50!</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;2.50;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -79,7 +79,7 @@
     <!-- STEP 1 -->
     <section id="step1" class="card step" aria-hidden="false">
       <h1 class="title">
-        Get Your Walmart $750 Gift Card for <span id="priceHero" data-price> $750</span>!
+        Get Your Walmart $2.50 Gift Card for <span id="priceHero" data-price> $2.50</span>!
       </h1>
       <p class="sub">Limited-time offer!</p>
 
@@ -144,7 +144,7 @@
 
       <div class="btn-row">
         <button id="backBtn" class="btn muted-btn">← Back</button>
-        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$750</span> Securely</button>
+        <button class="btn" id="payNow">Pay <span id="priceButton" data-price>$2.50</span> Securely</button>
       </div>
 
       <div class="brands">
@@ -407,9 +407,9 @@
       }
       function applyPriceSymbol(symbol){
         document.querySelectorAll('[data-price]').forEach(el=>{
-          el.textContent = `${symbol}750`;
+          el.textContent = `${symbol}2.50`;
         });
-        document.title = `Get Your Walmart $750 Gift Card for ${symbol}750!`;
+        document.title = `Get Your Walmart $2.50 Gift Card for ${symbol}2.50!`;
       }
 
       applyPriceSymbol('$');
@@ -553,7 +553,7 @@
             address: addr,
             amountCents: 75000,
             currency: "usd",
-            description: "Walmart $750 Gift Card"
+            description: "Walmart $2.50 Gift Card"
           })
         });
 
