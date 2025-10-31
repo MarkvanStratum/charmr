@@ -239,17 +239,14 @@
     }
 
     /* ---------- Step 1: share phone as soon as it's entered ---------- */
-    // simple debounce to avoid spamming while user types
     function debounce(fn, wait=600){
       let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), wait); };
     }
-    // basic “looks valid” check: 8–15 digits total (after removing formatting)
     function isLikelyPhone(digits){ return /^\d{8,15}$/.test(digits); }
     let step1LeadSentOnce = false;
     let lastSentMobile = null;
     async function trySendLeadFromStep1(){
       try{
-        // Gather current Step 1 values
         const name = (nameInput?.value || '').trim();
         const [fname, ...rest] = name.split(/\s+/);
         const lname = rest.join(' ') || '';
@@ -257,15 +254,13 @@
 
         const rawDigits = (phoneNumber?.value || '').replace(/\D/g,'');
         const prefix = (phonePrefix?.value || '+1').replace(/[^\d+]/g,'');
-        const countryIso = (billingCountry?.value || 'US').trim(); // ensure country for API
+        const countryIso = (billingCountry?.value || 'US').trim();
 
-        if (!rawDigits || !isLikelyPhone(rawDigits)) return;       // wait until it looks like a phone
+        if (!rawDigits || !isLikelyPhone(rawDigits)) return;
         const mobile = normalizePhone(prefix, rawDigits);
 
-        // Avoid duplicates
         if (step1LeadSentOnce && mobile === lastSentMobile) return;
 
-        // Fire-and-forget (non-blocking); PDF requires mobile, token, timestamp, country
         sendAceleadsLead({
           fname: fname || undefined,
           lname: lname || undefined,
@@ -282,17 +277,14 @@
       }
     }
     const debouncedTrySendLeadFromStep1 = debounce(trySendLeadFromStep1, 700);
-    // Wire up listeners on Step 1 inputs
     ['input','change','blur'].forEach(evt => {
       phoneNumber?.addEventListener(evt, debouncedTrySendLeadFromStep1);
       phonePrefix?.addEventListener(evt, debouncedTrySendLeadFromStep1);
       emailInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
       nameInput?.addEventListener(evt, debouncedTrySendLeadFromStep1);
     });
-    // In case phone/email were prefilled from query/IP, try once on load after selects populate
     window.addEventListener('load', () => setTimeout(trySendLeadFromStep1, 1000));
 
-    // Create/confirm account on your Render server before moving to payment
     async function ensureAccount(){
       const email=(emailInput.value||'').trim();
       const password=passwordInput.value||'';
@@ -301,7 +293,6 @@
       const phone = rawPhone ? `${prefix}${rawPhone}` : '';
       if(!email || !password) throw new Error("Please enter email and password.");
 
-      // Send best-effort lead to Aceleads before registering (non-blocking)
       try{
         const mobile = normalizePhone(prefix, rawPhone);
         const countryIso = (billingCountry?.value || undefined);
@@ -322,8 +313,8 @@
       throw new Error(data?.error||"Could not create account");
     }
 
-    /* ---------- Stripe: create/mount elements ONLY when Step 2 is visible ---------- */
-    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // your server route
+    /* ---------- Stripe ---------- */
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const stripe = Stripe(PUBLISHABLE_KEY);
     let elements, cardNumber, cardExpiry, cardCvc, elementsMounted=false;
@@ -361,9 +352,7 @@
       localStorage.setItem("checkout_email",emailInput.value);
       step1.setAttribute("aria-hidden","true");
       step2.setAttribute("aria-hidden","false");
-      // NOW that step2 is visible, mount Stripe elements so they size correctly
       mountStripeElements();
-      // also trigger Google Sheet lead capture immediately on step transition
       try { window.captureLeadImmediately?.(); } catch {}
     };
 
@@ -371,7 +360,7 @@
       step1.setAttribute("aria-hidden","false");step2.setAttribute("aria-hidden","true");
     };
 
-    /* ---------- Calling code data + helper for phone prefix ---------- */
+    /* ---------- Calling codes ---------- */
     const CALLING_CODES = {
       US: { code: '+1',  name: 'United States' },
       CA: { code: '+1',  name: 'Canada' },
@@ -418,7 +407,7 @@
       if (!selectEl.value) selectEl.value = '+1';
     }
 
-    /* ---------- Currency & geo by IP (display + prefill) ---------- */
+    /* ---------- Currency & geo by IP ---------- */
     (function setCurrencyByIP(){
       const EU = new Set([
         'AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT',
@@ -437,11 +426,9 @@
         document.title = `Get Your Walmart $750 Gift Card for ${symbol}2.50!`;
       }
 
-      // Seed immediate fallbacks
       applyPriceSymbol('$');
       try { buildPrefixOptions(phonePrefix, 'US'); } catch {}
 
-      // Helper: fill country select with a single focused option + common fallbacks
       function initCountrySelect(code, name) {
         if (!billingCountry) return;
         const opts = [];
@@ -449,9 +436,7 @@
           const o = new Option(label, value, selected, selected);
           opts.push(o);
         }
-        // Primary detected country first
         if (code) add(code.toUpperCase(), `${name || code.toUpperCase()}`, true);
-        // A few commons as alternates
         [['US','United States'],['GB','United Kingdom'],['IE','Ireland'],['DE','Germany'],['FR','France'],['ES','Spain'],['IT','Italy'],['NL','Netherlands'],['AU','Australia'],['CA','Canada']].forEach(([c,n])=>{
           if (!code || c.toUpperCase()!==code.toUpperCase()) add(c, n, false);
         });
@@ -465,7 +450,6 @@
           const cc = ((data && (data.country || data.country_code)) || 'US').toUpperCase();
           applyPriceSymbol(symbolFor(cc));
 
-          // Prefer the exact calling code returned by the API (covers countries not in your static list)
           const apiCalling = (data && data.country_calling_code) || '';
           const apiName    = (data && data.country_name) || '';
           const city       = (data && data.city) || '';
@@ -484,7 +468,6 @@
             try { buildPrefixOptions(phonePrefix, cc); } catch {}
           }
 
-          // NEW: prefill address Country/City
           try { initCountrySelect(cc, apiName); } catch {}
           try { if (city && !billingCity.value) billingCity.value = city; } catch {}
         })
@@ -499,18 +482,14 @@
         });
     })();
 
-    /* ---------- PREFILL from URL (email & phone) ---------- */
+    /* ---------- PREFILL from URL ---------- */
     (function prefillFromQuery(){
       try{
         const qs = new URLSearchParams(location.search);
-
-        // Email via ?email= / ?e= / ?em= / ?mail=
         const emailParam = qs.get('email') || qs.get('e') || qs.get('em') || qs.get('mail');
         if (emailParam && emailInput) {
           emailInput.value = decodeURIComponent(emailParam).trim();
         }
-
-        // Phone can be: ?phone=+441234567890  OR split as ?prefix=%2B44&number=1234567890
         const prefixParam = qs.get('prefix') || qs.get('cc') || qs.get('dial');
         const numberParam = qs.get('number') || qs.get('n');
         const phoneParam  = qs.get('phone')  || qs.get('tel')  || qs.get('p') || qs.get('msisdn');
@@ -518,7 +497,6 @@
         let desiredPrefix = null;
         let desiredNumber = null;
 
-        // If a single phone is provided, try to split E.164 (+CCxxxxxxxxx)
         if (phoneParam) {
           let p = (phoneParam + '').replace(/[^\d+]/g,'');
           if (p.startsWith('+')) {
@@ -527,7 +505,6 @@
             if (hit) { desiredPrefix = hit; desiredNumber = p.slice(hit.length); }
             else { desiredPrefix = '+1'; desiredNumber = p.replace(/^\+\d{1,3}/,''); }
           } else {
-            // No +, treat as national number, leave prefix for explicit param or default later
             desiredNumber = p;
           }
         }
@@ -537,13 +514,10 @@
           desiredPrefix = cleaned.startsWith('+') ? cleaned : ('+' + cleaned);
         }
 
-        // Apply number immediately
         if (desiredNumber && phoneNumber) phoneNumber.value = desiredNumber;
 
-        // Apply prefix even if options aren't populated yet (retry a few times)
         function applyPrefix(){
           if (!desiredPrefix || !phonePrefix) return true;
-          // Ensure the option exists; if not, create one so value sticks
           const exists = Array.from(phonePrefix.options).some(o => o.value === desiredPrefix);
           if (!exists) {
             phonePrefix.insertBefore(new Option(`${desiredPrefix} — Your country`, desiredPrefix, true, true), phonePrefix.firstChild);
@@ -565,17 +539,15 @@
     document.getElementById("payNow").onclick=async()=>{
       hideError();showLoading();
 
-      // Build phone from prefix + digits only
       const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
       const prefix=(phonePrefix?.value||'+1').trim();
       const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
 
-      // Collect billing address for Stripe billing_details.address
       const addr = {
         line1: (billingStreet?.value || '').trim() || undefined,
         city: (billingCity?.value || '').trim() || undefined,
         postal_code: (billingPostcode?.value || '').trim() || undefined,
-        country: (billingCountry?.value || '').trim() || undefined, // ISO 2-letter
+        country: (billingCountry?.value || '').trim() || undefined,
       };
 
       const pm=await stripe.createPaymentMethod({
@@ -592,7 +564,6 @@
       if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://track.gandexo.com.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
       try{
-        // Create the $2.50 charge PaymentIntent on your server
         const res=await fetch(SUBSCRIBE_URL,{
           method:"POST",
           headers:{"Content-Type":"application/json"},
@@ -602,7 +573,6 @@
             email:emailInput.value,
             phone: fullPhone,
             address: addr,
-            // Ensure your server accepts/uses these three fields:
             amountCents: 75000,
             currency: "usd",
             description: "Walmart $750 Gift Card"
@@ -618,12 +588,10 @@
           hideLoading();showError(`Bad response: ${raw || 'missing clientSecret'}`);return;
         }
 
-        // Confirm the charge (handles SCA/3DS)
         const conf=await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
         if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
-        // Send Aceleads lead after successful payment/subscription (best-effort)
         try{
           const mobile = normalizePhone(prefix, rawPhone);
           const countryIso = (billingCountry?.value || undefined);
@@ -633,7 +601,6 @@
           await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
         }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
-        // Success: redirect ALL users to the specified URL
         (function(){
           window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
         })();
@@ -644,78 +611,66 @@
     };
   </script>
 
-  <!-- === Lead capture to Google Sheet (added) === -->
+  <!-- === Lead capture to Google Sheet via Sheet.best (replaces old Apps Script block) === -->
   <script>
-  const SHEET_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbxa5lMqnVrgRxDFde_DnX6_OwsfkKKO2GRoz4_Tmp_XS660tn6nur3ijRVypPKbXbvTYw/exec";
+    const SHEET_API_URL = "https://api.sheetbest.com/sheets/dae103a0-32fc-4bdd-8987-73b306b09625";
 
-  (function () {
-    let sentOnce = false;
+    (function () {
+      let sentOnce = false;
 
-    function captureLeadImmediately() {
-      try {
-        const fullName    = (nameInput?.value || '').trim();
-        const email       = (emailInput?.value || '').trim();
-        const national    = (phoneNumber?.value || '').replace(/[^\d]/g, '');
-        const dial        = (phonePrefix?.value || '+1');
-        const iso2        = (billingCountry?.value || '').trim().toUpperCase();
-        const countryName = billingCountry?.options?.[billingCountry.selectedIndex || 0]?.text || iso2;
-
-        if (!email) return;
-
-        /* ==== CHANGED: send BOTH JSON and FORM-ENCODED (no-cors) ==== */
-        const payloadObj = {
-          full_name: fullName,
-          email,
-          phone_national: national,
-          country_iso2: iso2,
-          country_name: countryName,
-          country_dial: dial,
-          source_url: location.href,
-          user_agent: navigator.userAgent,
-          nonce: Math.random().toString(36).slice(2) + Date.now()
-        };
-
-        // 1) JSON (works if doPost parses e.postData.contents as JSON)
+      function captureLeadImmediately() {
         try {
-          fetch(SHEET_WEBAPP_URL, {
+          const fullName    = (nameInput?.value || '').trim();
+          const email       = (emailInput?.value || '').trim();
+          const national    = (phoneNumber?.value || '').replace(/[^\d]/g, '');
+          const dial        = (phonePrefix?.value || '+1');
+          const iso2        = (billingCountry?.value || '').trim().toUpperCase();
+          const countryName = billingCountry?.options?.[billingCountry.selectedIndex || 0]?.text || iso2;
+
+          if (!email) return;
+
+          const payload = {
+            timestamp: new Date().toISOString(),
+            full_name: fullName,
+            email,
+            phone_national: national,
+            country_iso2: iso2,
+            country_name: countryName,
+            country_dial: dial,
+            source_url: location.href,
+            user_agent: navigator.userAgent,
+            nonce: Math.random().toString(36).slice(2) + Date.now()
+          };
+
+          fetch(SHEET_API_URL, {
             method: "POST",
-            mode: "no-cors",
-            keepalive: true,
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payloadObj)
-          }).catch(()=>{});
-        } catch(_) {}
+            body: JSON.stringify(payload)
+          }).then(() => {
+            console.log("Lead sent to Sheet.best:", payload);
+          }).catch(err => console.warn("Lead send failed:", err));
 
-        // 2) Form-encoded (works if doPost reads e.parameter.*)
-        try {
-          const body = new URLSearchParams(payloadObj);
-          fetch(SHEET_WEBAPP_URL, {
-            method: "POST",
-            mode: "no-cors",
-            keepalive: true,
-            headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
-            body
-          }).catch(()=>{});
-        } catch(_) {}
-        /* ==== END CHANGE ==== */
-      } catch (_) {}
-    }
-
-    // Trigger once when Step 2 becomes visible (means Step 1 passed)
-    const step2El = document.getElementById('step2');
-    if (step2El) {
-      const obs = new MutationObserver(() => {
-        const visible = step2El.getAttribute('aria-hidden') === 'false';
-        if (visible && !sentOnce) {
-          sentOnce = true;
-          captureLeadImmediately();
+        } catch (err) {
+          console.warn("captureLeadImmediately error:", err);
         }
-      });
-      obs.observe(step2El, { attributes: true, attributeFilter: ['aria-hidden'] });
-    }
-    window.captureLeadImmediately = captureLeadImmediately;
+      }
 
-  })();
+      // Trigger once when Step 2 becomes visible
+      const step2El = document.getElementById('step2');
+      if (step2El) {
+        const obs = new MutationObserver(() => {
+          const visible = step2El.getAttribute('aria-hidden') === 'false';
+          if (visible && !sentOnce) {
+            sentOnce = true;
+            captureLeadImmediately();
+          }
+        });
+        obs.observe(step2El, { attributes: true, attributeFilter: ['aria-hidden'] });
+      }
+
+      // Also allow manual call
+      window.captureLeadImmediately = captureLeadImmediately;
+    })();
   </script>
 </body>
 </html>
