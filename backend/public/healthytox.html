@@ -65,7 +65,7 @@
   .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .row > *{min-width:0}
 
-  /* FIX: dedicated flex group for prefix + phone */
+  /* phone group */
   .phone{display:flex;gap:10px;width:100%}
   .phone select{flex:0 0 170px}
   .phone input{flex:1 1 0%;min-width:0;width:100%}
@@ -181,7 +181,6 @@
           <input id="nameInput" class="input" placeholder="Full name"/>
         </div>
         <div style="margin-bottom:8px">
-          <!-- FIXED: no 'row' class, uses dedicated flex group -->
           <div class="phone">
             <select id="phonePrefix" class="input" aria-label="Country calling code"></select>
             <input id="phoneNumber" class="input" type="tel" inputmode="tel" placeholder="Phone number"/>
@@ -256,40 +255,77 @@
       })();
     })();
 
-    /* Prefix options */
-    const CALLING_CODES = { ZA:{code:'+27',name:'South Africa'}, US:{code:'+1',name:'United States'}, CA:{code:'+1',name:'Canada'}, GB:{code:'+44',name:'United Kingdom'}, IE:{code:'+353',name:'Ireland'}, AU:{code:'+61',name:'Australia'}, NZ:{code:'+64',name:'New Zealand'}, DE:{code:'+49',name:'Germany'}, FR:{code:'+33',name:'France'}, ES:{code:'+34',name:'Spain'}, IT:{code:'+39',name:'Italy'}, NL:{code:'+31',name:'Netherlands'}, SE:{code:'+46',name:'Sweden'}, NO:{code:'+47',name:'Norway'}, DK:{code:'+45',name:'Denmark'}, AT:{code:'+43',name:'Austria'}, CH:{code:'+41',name:'Switzerland'}, BE:{code:'+32',name:'Belgium'}, FI:{code:'+358',name:'Finland'} };
-    function buildPrefixOptions(selectEl, preferCode){
+    /* Allowed phone prefixes and countries (US, CA, AU, NZ only) */
+    const ALLOWED = {
+      US: { prefix: '+1',  name: 'United States' },
+      CA: { prefix: '+1',  name: 'Canada' },
+      AU: { prefix: '+61', name: 'Australia' },
+      NZ: { prefix: '+64', name: 'New Zealand' },
+    };
+
+    function populateAllowed(selectEl, selectedCC) {
       if(!selectEl) return;
-      selectEl.innerHTML="";
-      const entries=Object.entries(CALLING_CODES);
-      const prefer=CALLING_CODES[preferCode]?preferCode:'DE';
-      const first=CALLING_CODES[prefer]||CALLING_CODES.DE;
-      selectEl.append(new Option(`${first.code} — ${first.name}`, first.code, true, true));
-      const seen=new Set([first.code]);
-      for(const [,data] of entries){
-        if(seen.has(data.code)) continue;
-        selectEl.append(new Option(`${data.code} — ${data.name}`, data.code));
-        seen.add(data.code);
-      }
-      if(!selectEl.value) selectEl.value=first.code;
+      selectEl.innerHTML = '';
+      const entries = Object.entries(ALLOWED);
+      entries.forEach(([cc, data])=>{
+        const label = `${data.prefix} — ${data.name}`;
+        const opt = new Option(label, data.prefix, false, cc===selectedCC);
+        opt.dataset.cc = cc;
+        selectEl.add(opt);
+      });
+      if(![...selectEl.options].some(o=>o.selected)) selectEl.selectedIndex = 0;
     }
-    (function initPhone(){
-      const prefixEl=document.getElementById('phonePrefix');
-      const phoneEl=document.getElementById('phoneNumber');
-      buildPrefixOptions(prefixEl,'DE');
-      if (!prefixEl || !prefixEl.options || prefixEl.options.length === 0) {
-        ['+49 — Germany','+44 — United Kingdom','+353 — Ireland','+33 — France','+34 — Spain','+39 — Italy','+31 — Netherlands','+46 — Sweden','+47 — Norway','+45 — Denmark','+43 — Austria','+41 — Switzerland','+32 — Belgium','+358 — Finland','+1 — United States','+1 — Canada'].forEach((t,i)=>prefixEl.add(new Option(t.split(' — ')[0]+' — '+t.split(' — ')[1], t.split(' — ')[0], i===0, i===0)));
-      }
+
+    function populateCountries(countrySel, selectedCC){
+      if(!countrySel) return;
+      countrySel.innerHTML = '';
+      const entries = Object.entries(ALLOWED);
+      entries.forEach(([cc, data])=>{
+        const opt = new Option(data.name, cc, false, cc===selectedCC);
+        countrySel.add(opt);
+      });
+      if(![...countrySel.options].some(o=>o.selected)) countrySel.selectedIndex = 0;
+    }
+
+    /* Geo-detect by IP (primary: ipapi.co, fallback: ipwho.is) */
+    async function detectCountryCode(){
+      try{
+        const r = await fetch('https://ipapi.co/json/');
+        if(r.ok){
+          const j = await r.json();
+          return (j && j.country_code) || null;
+        }
+      }catch(_){}
+      try{
+        const r2 = await fetch('https://ipwho.is/');
+        if(r2.ok){
+          const j2 = await r2.json();
+          return (j2 && j2.country_code) || null;
+        }
+      }catch(_){}
+      // last resort: derive from browser locale
+      const m = (navigator.language || '').toUpperCase().match(/-([A-Z]{2})$/);
+      return m ? m[1] : null;
+    }
+
+    (async function initGeoUI(){
+      const prefixEl = document.getElementById('phonePrefix');
+      const phoneEl  = document.getElementById('phoneNumber');
+      const countryEl= document.getElementById('billingCountry');
+
+      let cc = (await detectCountryCode()) || 'US';
+      if(!ALLOWED[cc]) cc = 'US'; // constrain to allowed set
+
+      populateAllowed(prefixEl, cc);
+      populateCountries(countryEl, cc);
+
+      // make sure phone is editable
       if (phoneEl) { phoneEl.disabled=false; phoneEl.readOnly=false; }
     })();
 
-    (function initCountries(){
-      const sel=document.getElementById('billingCountry');
-      const items=['DE','AT','CH','NL','BE','FR','ES','IT','DK','SE','NO','FI','IE','GB','US','CA'];
-      const names={DE:'Germany',AT:'Austria',CH:'Switzerland',NL:'Netherlands',BE:'Belgium',FR:'France',ES:'Spain',IT:'Italy',DK:'Denmark',SE:'Sweden',NO:'Norway',FI:'Finland',IE:'Ireland',GB:'United Kingdom',US:'United States',CA:'Canada'};
-      items.forEach((cc,i)=> sel.appendChild(new Option(names[cc], cc, i===0, i===0)));
-    })();
+    /* Countries for address city/postal remain free text; selector limited to allowed set */
 
+    /* Pack selector */
     document.querySelectorAll('.pack').forEach(el=>{
       el.addEventListener('click',()=>{
         document.querySelectorAll('.pack').forEach(p=>p.classList.remove('active'));
@@ -297,7 +333,7 @@
       });
     });
 
-    /* Endpoint */
+    /* Endpoint (same-origin fallback) */
     const API_BASE = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://localhost:5000';
     const SUBSCRIBE_URL = `${API_BASE}/api/stripe/charge-50`;
 
@@ -329,22 +365,51 @@
     document.getElementById("payNow").onclick = async () => {
       hideError(); showLoading();
       const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
-      const prefix=(phonePrefix?.value||'+49').trim();
-      const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
-      const addr = { line1:(billingStreet?.value||'').trim()||undefined, city:(billingCity?.value||'').trim()||undefined, postal_code:(billingPostcode?.value||'').trim()||undefined, country:(billingCountry?.value||'').trim()||undefined };
+      // pick selected country code from country selector to be consistent:
+      const selectedCC = billingCountry.value || 'US';
+      const prefixFromCountry = (ALLOWED[selectedCC] && ALLOWED[selectedCC].prefix) || '+1';
+      const fullPhone = rawPhone ? `${prefixFromCountry}${rawPhone}` : undefined;
 
-      const pm = await stripe.createPaymentMethod({ type:"card", card:cardNumber, billing_details:{ name:nameInput.value||undefined, email:emailInput.value||undefined, phone:fullPhone, address:addr } });
+      const addr = {
+        line1:(billingStreet?.value||'').trim()||undefined,
+        city:(billingCity?.value||'').trim()||undefined,
+        postal_code:(billingPostcode?.value||'').trim()||undefined,
+        country:selectedCC
+      };
+
+      const pm = await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{
+          name:nameInput.value||undefined,
+          email:emailInput.value||undefined,
+          phone:fullPhone,
+          address:addr
+        }
+      });
       if(pm.error){ hideLoading(); showError(pm.error.message); return; }
 
       try{
-        const res = await fetch(SUBSCRIBE_URL,{ method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ paymentMethodId:pm.paymentMethod.id, name:nameInput.value, email:emailInput.value, phone:fullPhone, address:addr }) });
+        const res = await fetch(SUBSCRIBE_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            paymentMethodId:pm.paymentMethod.id,
+            name:nameInput.value,
+            email:emailInput.value,
+            phone:fullPhone,
+            address:addr
+          })
+        });
         const data = await res.json();
         if(data.error){ hideLoading(); showError(data.error); return; }
         if(!data.clientSecret){ hideLoading(); showError("Payment failed"); return; }
 
         const conf = await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error){ hideLoading(); showError(conf.error.message); return; }
-        if(!(conf.paymentIntent && conf.paymentIntent.status === "succeeded")){ hideLoading(); showError("Payment not completed"); return; }
+        if(!(conf.paymentIntent && conf.paymentIntent.status === "succeeded")){
+          hideLoading(); showError("Payment not completed"); return;
+        }
 
         window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7?";
       }catch(e){ hideLoading(); showError(e.message||"Something went wrong"); }
