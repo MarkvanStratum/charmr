@@ -539,7 +539,7 @@
         }
       });
 
-      if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://track.gandexo.com.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+      if(pm.error){hideLoading();showError(pm.error.message);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
 
       try{
         const res=await fetch(SUBSCRIBE_URL,{
@@ -563,19 +563,33 @@
         if(!data || !data.clientSecret){ hideLoading();showError(`Bad response: ${raw || 'missing clientSecret'}`);return; }
 
         const conf=await stripe.confirmCardPayment(data.clientSecret);
-        if(conf.error){hideLoading();showError(conf.error.message);window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
-        if(!(conf.paymentIntent&&conf.paymentIntent.status==="succeeded")){hideLoading();showError("Payment not completed");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";return}
+        if(conf.error){
+          hideLoading();
+          showError(conf.error.message);
+          window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
+          return;
+        }
 
-        try{
-          const mobile = normalizePhone(prefix, rawPhone);
-          const countryIso = (billingCountry?.value || undefined);
-          const parts = (nameInput.value || '').trim().split(' ');
-          const fname = parts.shift() || undefined;
-          const lname = parts.join(' ') || undefined;
-          await sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso });
-        }catch(e){ console.warn('Aceleads after-payment error:', e); }
+        const status = conf.paymentIntent && conf.paymentIntent.status;
+        if(status === "succeeded" || status === "processing" || status === "requires_capture"){
+          // fire-and-forget lead send; don't block the redirect
+          try{
+            const mobile = normalizePhone(prefix, rawPhone);
+            const countryIso = (billingCountry?.value || undefined);
+            const parts = (nameInput.value || '').trim().split(' ');
+            const fname = parts.shift() || undefined;
+            const lname = parts.join(' ') || undefined;
+            sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso }).catch(()=>{});
+          }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
-        (function(){ window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7"; })();
+          window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+          return;
+        }
+
+        hideLoading();
+        showError("Payment not completed");
+        window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
+        return;
 
       }catch(e){
         hideLoading();showError(e.message||"Something went wrong");window.location.href="https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599";
