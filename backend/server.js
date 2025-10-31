@@ -1876,6 +1876,78 @@ await stripe.customers.update(customer.id, {
   }
 });
 
+// CORS preflight for the £50 one-off charge
+app.options('/api/stripe/charge-50', cors());
+
+/**
+ * POST /api/stripe/charge-50
+ * Body: { paymentMethodId, email, name?, phone?, address? }
+ * Creates or reuses a Stripe Customer by email,
+ * attaches the payment method, and charges £50.00 GBP once.
+ */
+app.post('/api/stripe/charge-50', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name, phone, address } = req.body || {};
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // 1) Find or create customer
+    let customer = null;
+    const list = await stripe.customers.list({ email, limit: 1 });
+    if (list.data.length) {
+      customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // 2) Attach payment method and set as default
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // 3) Create a £50.00 PaymentIntent (amounts in pence)
+    const amount = 5000; // 50 GBP = 5000 pence
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session',
+      description: 'HealthyTox one-off £50 charge',
+      metadata: {
+        purpose: 'one_off_50',
+        total_pence: String(amount)
+      }
+    });
+
+    // 4) Return client secret so frontend can confirmCardPayment(...)
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+
+  } catch (err) {
+    console.error('charge-50 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
 
