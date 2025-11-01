@@ -23,21 +23,11 @@
     min-height:100vh;
   }
 
-  .topbar{
-    position:absolute;
-    top:0; left:0; width:100%;
-  }
-  .topbar img{
-    width:100%;
-    height:auto;
-    display:block;
-  }
-
   .wrap{
     width:100%;
     max-width:860px;
     padding:0 16px;
-    margin-top:100px;
+    margin-top:60px;
   }
   .card{
     background:rgba(255,255,255,0.88);
@@ -132,10 +122,6 @@
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <img src="bar1.png" alt="Top bar graphic">
-  </div>
-
   <div class="wrap">
     <div class="card" id="card">
       <p class="title">Find out if you qualify!</p>
@@ -147,7 +133,7 @@
     <div class="modal">
       <h3>Welcome!</h3>
       <p>You may qualify to test the new <strong>Segway-Ninebot MAX G2</strong> for FREE!</p>
-      <p>We regularly select participants to test and review our latest mobility products. Your feedback helps us improve and promote them. If you’d like to be considered, please continue below.</p>
+      <p>We regularly select participants to test and review our latest electric scooters. Your feedback helps us improve and promote our products. If you’d like to be considered, please continue below.</p>
       <button class="btn primary" id="startBtn" type="button">START SURVEY</button>
     </div>
   </div>
@@ -155,7 +141,7 @@
 <script>
   const STEPS = [
     { prompt: "Do you live in South Africa?", options: ["Yes", "No"] },
-    { prompt: "Have you ever owned or tried an electric scooter, like a Segway?", options: ["Yes", "No, but I’d like to try"] },
+    { prompt: "Have you ever owned or tried an electric scooter, like a Segway?", options: ["Yes", "No, but I’d love to try one"] },
     { prompt: "After participating, when could you share your feedback?", options: ["After one week", "After a month"] }
   ];
 
@@ -204,7 +190,7 @@
   function renderSuccess(){
     qEl.innerHTML = `
       <h2 style="margin-bottom:6px;">CONGRATULATIONS!</h2>
-      <p style="margin:0 0 10px">You qualify to join our tester group for the Segway-Ninebot MAX G2! To receive your unit, please provide your delivery details on the next page and pay the Post Office shipping fee of R58.</p>
+      <p style="margin:0 0 10px">You qualify to join our tester group for the Segway-Ninebot MAX G2! To receive your scooter, please provide your delivery details on the next page and pay the Post Office shipping fee of R58.</p>
       <div class="answers">
         <a class="btn primary" href="${FINAL_DESTINATION}" target="_blank" rel="noopener noreferrer">CONTINUE</a>
       </div>
