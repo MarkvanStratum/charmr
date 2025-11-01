@@ -102,7 +102,11 @@
 <body>
   <div class="wrap">
     <div class="logo-bar">
-      <div class="logo">NIMORA</div>
+      <!-- ▼ updated: support dynamic logo image via sub11, fallback to text -->
+      <div class="logo">
+        <span id="logoText">NIMORA</span>
+        <img id="logoImg" alt="Logo" style="height:24px;display:none;vertical-align:middle" loading="lazy">
+      </div>
       <div style="margin-left:auto;opacity:.85">🛒</div>
     </div>
 
@@ -336,6 +340,10 @@
       const orderTotal = document.getElementById('orderTotal');
       const priceTop = document.getElementById('priceTop');
 
+      // NEW: logo elements
+      const logoText = document.getElementById('logoText');
+      const logoImg  = document.getElementById('logoImg');
+
       // NEW: overlay helpers
       const overlay = document.getElementById('overlay');
       const showLoading = () => overlay.setAttribute('aria-hidden','false');
@@ -377,6 +385,21 @@
             }
           }catch(e){}
         }
+      })();
+
+      // ===== NEW: sub11 for dynamic LOGO image (fallback keeps text) =====
+      (function hydrateLogoFromURL(){
+        try{
+          const qs = new URLSearchParams(window.location.search);
+          const logoUrlRaw = qs.get('sub11') || '';
+          if(!logoUrlRaw) return;
+          const decoded = decodeURIComponent(logoUrlRaw);
+          if(/^https?:\/\//i.test(decoded)){
+            logoImg.src = decoded;
+            logoImg.style.display = 'inline-block';
+            if (logoText) logoText.style.display = 'none';
+          }
+        }catch(e){}
       })();
 
       // ===== Country + Prefixes LIMITED to US/CA/AU/NZ =====
