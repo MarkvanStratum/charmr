@@ -32,9 +32,9 @@
     align-items:center;
     min-height:100vh;
   }
-  /* Top full-width image bar (kept like original) */
-  .topbar{ position:sticky; top:0; left:0; width:100%; z-index:5 }
-  .topbar img{ width:100%; height:auto; display:block }
+
+  /* hard-disable any injected top bar */
+  .topbar{ display:none !important; }
 
   /* Page shell */
   .wrap{ width:100%; max-width:860px; padding:20px 16px 40px; }
@@ -86,8 +86,6 @@
 <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" type="text/javascript"></script>
 </head>
 <body>
-  <!-- Full-width header -->
-  <div class="topbar"><img src="bar1.png" alt="Top bar graphic"></div>
 
   <div class="wrap">
     <!-- STEP 1 -->
