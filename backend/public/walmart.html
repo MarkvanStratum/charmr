@@ -74,6 +74,26 @@
   <!-- GoAffPro loader (keep this so the next page can track) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
+  <!-- ADDED: Persist affiliate ID on landing -->
+  <script>
+  (function() {
+    try {
+      const qs = new URLSearchParams(location.search);
+      const keys = ['sub_id','subid','aff_sub','click_id','cid','tid'];
+      for (const k of keys) {
+        if (qs.has(k)) {
+          const v = qs.get(k);
+          if (v) {
+            localStorage.setItem('aff_sub_id', v);
+            document.cookie = 'aff_sub_id=' + encodeURIComponent(v) + '; path=/; max-age=31536000; SameSite=Lax';
+            break;
+          }
+        }
+      }
+    } catch (_) {}
+  })();
+  </script>
+
   <div class="shell">
 
     <!-- STEP 1 -->
@@ -582,7 +602,19 @@
             sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso }).catch(()=>{});
           }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
-          window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+          /* ADDED: Append stored affiliate sub_id to BeMob redirect */
+          (function(){
+            try {
+              const storedId = localStorage.getItem('aff_sub_id') || (document.cookie.match(/(?:^|;\s*)aff_sub_id=([^;]+)/)||[])[1];
+              let url = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+              if (storedId) {
+                url += (url.includes('?') ? '&' : '?') + 'sub_id=' + encodeURIComponent(storedId);
+              }
+              window.location.href = url;
+            } catch(_) {
+              window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+            }
+          })();
           return;
         }
 
