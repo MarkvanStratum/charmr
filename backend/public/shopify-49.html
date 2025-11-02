@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Secure Checkout</title>
@@ -494,26 +495,27 @@
             const prbWrap = document.getElementById('prb-wrap');
             const paymentRequest = stripe.paymentRequest({
               country: 'PT',
-              currency: 'eur',
+              currency: 'gbp',
               total: { label: 'Total', amount: 4999 },
               requestPayerName: true,
               requestPayerEmail: true,
               requestPayerPhone: true
             });
+
+            // FIX: only render when canMakePayment() returns applePay true
             paymentRequest.canMakePayment().then(function(result){
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-  // Always show in Safari for testing; only show elsewhere if canMakePayment() returns true
-  if (result || isSafari) {
-    const prButton = elements.create('paymentRequestButton', {
-      paymentRequest,
-      style: { paymentRequestButton: { theme: 'dark', height: '44px' } }
-    });
-    prButton.mount('#payment-request-button');
-    prbWrap.style.display = 'block';
-  } else {
-    console.log('Wallet not available or not Safari – button hidden');
-  }
-});
+              if (result && result.applePay) {
+                const prButton = elements.create('paymentRequestButton', {
+                  paymentRequest,
+                  style: { paymentRequestButton: { theme: 'dark', height: '44px' } }
+                });
+                prButton.mount('#payment-request-button');
+                prbWrap.style.display = 'block';
+              } else {
+                prbWrap.style.display = 'none';
+                console.log('PRB not eligible:', result);
+              }
+            });
 
             paymentRequest.on('paymentmethod', async function(ev){
               showLoading();
@@ -599,7 +601,7 @@
           if(pmRes.error) throw new Error(pmRes.error.message);
 
           const resp = await fetch(SUBSCRIBE_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })});
+            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone:fullPhone, address })});
           const data = await resp.json();
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
 
