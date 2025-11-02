@@ -493,20 +493,28 @@
           try{
             const prbWrap = document.getElementById('prb-wrap');
             const paymentRequest = stripe.paymentRequest({
-              country: billingCountrySel.value || 'US',
-              currency: 'usd',
+              country: 'PT',
+              currency: 'eur',
               total: { label: 'Total', amount: 4999 },
               requestPayerName: true,
               requestPayerEmail: true,
               requestPayerPhone: true
             });
             paymentRequest.canMakePayment().then(function(result){
-              if(result){
-                const prButton = elements.create('paymentRequestButton', { paymentRequest });
-                prButton.mount('#payment-request-button');
-                prbWrap.style.display = 'block';
-              }
-            });
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  // Always show in Safari for testing; only show elsewhere if canMakePayment() returns true
+  if (result || isSafari) {
+    const prButton = elements.create('paymentRequestButton', {
+      paymentRequest,
+      style: { paymentRequestButton: { theme: 'dark', height: '44px' } }
+    });
+    prButton.mount('#payment-request-button');
+    prbWrap.style.display = 'block';
+  } else {
+    console.log('Wallet not available or not Safari – button hidden');
+  }
+});
+
             paymentRequest.on('paymentmethod', async function(ev){
               showLoading();
               try{
