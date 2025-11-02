@@ -2,32 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ALURA – Alura Planner</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
   <style>
     :root{--ink:#0b1323;--muted:#5a6475;--sand:#efe6dc;--shadow:0 10px 30px rgba(0,0,0,.08);--max:1220px;--radius:28px;}
-    *{box-sizing:border-box} html,body{margin:0;font-family:Inter,sans-serif;color:var(--ink);background:#fff}
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Inter,sans-serif;color:var(--ink);background:#fff;line-height:1.6}
     a{color:inherit;text-decoration:none}
     .topbar{background:#f4efe8;text-align:center;padding:.6rem 1rem;font-weight:700}
     header{position:sticky;top:0;background:#fff;border-bottom:1px solid #eee;z-index:10}
     .nav{max-width:var(--max);margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:1rem}
     .logo{font-family:'Playfair Display',serif;font-size:48px;font-weight:900;letter-spacing:.08em}
-    .product{max-width:var(--max);margin:2rem auto;display:grid;grid-template-columns:1.1fr .9fr;gap:2rem;padding:0 1rem;align-items:start}
-    .panel{background:var(--sand);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)}
+    /* PRODUCT */
+    .product{max-width:var(--max);margin:2rem auto;display:flex;gap:2rem;align-items:flex-start;padding:0 1rem}
+    .panel{flex:1;background:var(--sand);border-radius:var(--radius);padding:1.25rem;box-shadow:var(--shadow)}
     .panel img{width:100%;display:block;border-radius:20px}
     .thumbs{display:flex;gap:.65rem;margin:.75rem 0 0;overflow:auto}
     .thumbs img{height:78px;border-radius:18px;border:2px solid rgba(0,0,0,0)}
     .thumbs img.selected{border-color:#111}
+    .info{flex:1;min-width:300px}
     .title{font-family:'Playfair Display',serif;font-weight:900;font-size:58px;line-height:1.05;margin:.25rem 0 1rem}
     .rating{display:flex;gap:.5rem;align-items:center;margin:.25rem 0 1rem}
     .stars{color:#f59e0b;letter-spacing:.12rem}
     .price{font-size:2rem;font-weight:900;margin:.25rem 0 1rem}
-    .bullets{display:grid;gap:.85rem}
-    .bullet{display:flex;gap:.8rem;align-items:flex-start}
-    .chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.75rem}
+    .bullets{display:grid;gap:.85rem;margin:.75rem 0 1rem}
+    .chips{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.25rem}
     .chip{border:1px solid #ddd;border-radius:999px;padding:.5rem 1rem;font-weight:700}
     .btn{background:#0f172a;color:#fff;border:0;border-radius:12px;padding:.9rem 1.25rem;font-weight:800;cursor:pointer;display:inline-block;margin-top:1rem}
+    /* sections */
     .dark{max-width:var(--max);margin:3rem auto;background:#0f0f10;color:#efe7dd;border-radius:28px;padding:3.5rem 2rem;text-align:center}
     .h1{font-family:'Playfair Display',serif;font-size:52px;line-height:1.1;margin:0 0 1rem}
     .section{max-width:var(--max);margin:3rem auto;padding:0 1rem}
@@ -36,9 +39,45 @@
     .frame img{display:block;width:100%}
     .versus{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
     .col{background:#f6efe8;border-radius:24px;padding:1rem}
+    .col h3{margin:.25rem 0 0}
     .cta{text-align:center;background:#000;color:#eee;padding:2.75rem 1rem;margin:3rem 0}
     .cta .h1{color:#efe7dd;margin-bottom:.5rem}
-    @media(max-width:1024px){.product,.grid-2,.versus{grid-template-columns:1fr} .title{font-size:44px} .h1{font-size:40px}}
+    footer{text-align:center;color:#6b7280;border-top:1px solid #eee;padding:2rem 1rem}
+    /* MOBILE */
+    .mobile-only{display:none}
+    @media (max-width: 768px){
+      .product{flex-direction:column}
+      .info{order:1}
+      .panel{order:2}
+      .title{font-size:40px;margin-top:.25rem}
+      .price{font-size:1.8rem}
+      /* Hide thumbs on mobile to remove tiny strip */
+      .thumbs{display:none}
+      /* Versus: keep only the first column (Hearth Display), stack full width */
+      .versus{grid-template-columns:1fr}
+      .versus .col.col-paper{display:none}
+      /* Organized section: replace image with a left Hearth block (40%) next to text (60%) */
+      .organized{display:flex;gap:1rem;align-items:flex-start}
+      .organized .hearth-inline{display:block;flex:0 0 40%}
+      .organized .text-inline{flex:1}
+      /* Hide the desktop image in this section on mobile */
+      .organized .frame.alura2{display:none}
+      .mobile-only{display:block}
+    }
+    /* very small screens: lightly center */
+    @media (max-width: 380px){
+      .organized{gap:.75rem}
+      .organized .hearth-inline{flex-basis:42%}
+    }
+    /* TABLET */
+    @media (min-width:769px) and (max-width:1024px){
+      .product{flex-direction:column}
+      .info{order:1}
+      .panel{order:2}
+      .title{font-size:46px}
+      /* Hide tiny thumbs on tablet too */
+      .thumbs{display:none}
+    }
   </style>
 </head>
 <body>
@@ -52,10 +91,28 @@
   </header>
 
   <section class="product">
+    <div class="info">
+      <h1 class="title">Alura Planner</h1>
+      <div class="rating"><div class="stars">★★★★★</div> <div style="color:#5a6475">(6,724 Reviews)</div></div>
+      <div class="price">$49.95 USD</div>
+      <p style="color:#5a6475">Easily keep your family's routines on track, share responsibilities, and help everyone become more independent with our simple digital tool.</p>
+      <div class="bullets">
+        <div>🗓️ &nbsp; Syncs with your favorite calendars</div>
+        <div>👨‍👩‍👧‍👦 &nbsp; Profiles for everyone in the family</div>
+        <div>📝 &nbsp; Easy-to-use to-do lists</div>
+        <div>📱 &nbsp; Access everything on the go with our app</div>
+        <div>🌤️ &nbsp; Check the weather at a glance</div>
+      </div>
+      <div class="chips">
+        <span><strong>Size – 29 inch</strong></span>
+        <span class="chip">29 inch</span>
+        <span class="chip">32 inch</span>
+      </div>
+      <a class="btn" href="https://www.charmr.xyz/shopify-49.html?ref=HAZ&sub1=Alura%20Planner&sub2=https://cdn.shopify.com/s/files/1/0789/3142/7572/files/featureImage.jpg?v=1761937782">Buy Now</a>
+    </div>
+
     <div class="panel">
-      <!-- MAIN image now alura1.png -->
       <img src="alura1.png" alt="Alura hero main">
-      <!-- Thumbnails: first beneath is alura2.png -->
       <div class="thumbs">
         <img class="selected" src="alura2.png" alt="thumb alura2 (beneath main)">
         <img src="alura1.png" alt="thumb alura1">
@@ -64,25 +121,6 @@
         <img src="alura6.png" alt="thumb alura6">
       </div>
     </div>
-    <div>
-      <h1 class="title">Alura Planner</h1>
-      <div class="rating"><div class="stars">★★★★★</div> <div style="color:#5a6475">(6,724 Reviews)</div></div>
-      <div class="price">$49.95 USD</div>
-      <p style="color:#5a6475">Easily keep your family’s routines on track, share responsibilities, and help everyone become more independent with our simple digital tool.</p>
-      <div class="bullets">
-        <div class="bullet">🗓️ &nbsp; Syncs with your favorite calendars</div>
-        <div class="bullet">👨‍👩‍👧‍👦 &nbsp; Profiles for everyone in the family</div>
-        <div class="bullet">📝 &nbsp; Easy-to-use to-do lists</div>
-        <div class="bullet">📱 &nbsp; Access everything on the go with our app</div>
-        <div class="bullet">🌤️ &nbsp; Check the weather at a glance</div>
-      </div>
-      <div class="chips">
-        <span><strong>Size – 29 inch</strong></span>
-        <span class="chip">29 inch</span>
-        <span class="chip">32 inch</span>
-      </div>
-      <a class="btn" target="_blank" href="https://www.charmr.xyz/shopify-49.html?ref=HAZ&sub1=Alura%20Planner&sub2=https://cdn.shopify.com/s/files/1/0789/3142/7572/files/featureImage.jpg?v=1761937782">Buy Now</a>
-    </div>
   </section>
 
   <div class="dark">
@@ -90,25 +128,29 @@
     <p style="color:#d6d6d6">Imagine having one place where all your family’s schedules and to-dos come together—easy, right? That’s exactly what Alura Planner does. It’s super simple to use and makes organizing a breeze.</p>
   </div>
 
-  <section class="section">
-    <div class="grid-2">
-      <div>
-        <h2 class="h1">Keep Your Weekends Free</h2>
-        <p style="color:#5a6475">Use Alura Planner to organize your weekend adventures. Input your plans, and let it handle the reminders and schedule coordination. You handle the adventure essentials like snacks and tunes.</p>
-        <p style="color:#5a6475">Alura Planner pulls all your schedules into one spot. Now, everyone knows the plan without the fuss.</p>
-      </div>
-      <div class="frame"><img src="alura3.png" alt="Hear From Hearth Home"></div>
-    </div>
-  </section>
+  <section class="section organized">
+    <!-- Desktop/tablet image (hidden on mobile) -->
+    <div class="frame alura2"><img src="alura2.png" alt="Everything your family need"></div>
 
-  <section class="section">
-    <div class="grid-2">
-      <div class="frame"><img src="alura2.png" alt="Everything your family need"></div>
-      <div>
-        <h2 class="h1">Keep Your Family Organized, the Easy Way</h2>
-        <p style="color:#5a6475">Imagine all your schedules, to-dos, and daily routines in one spot, ready to go. That’s Alura Planner for you—making every day smoother, no sweat.</p>
-        <p style="color:#5a6475">Everyone's calendars, tasks, and routines all neatly lined up in one place. With Alura Planner, it's that simple to keep the whole family on track and stress-free.</p>
+    <!-- Mobile-only Hearth Display on the LEFT -->
+    <div class="hearth-inline mobile-only">
+      <div class="col" style="background:#f6efe8;border-radius:24px;padding:1rem">
+        <h3>Hearth Display</h3>
+        <div class="frame" style="margin:.5rem 0 1rem"><img src="alura5.png" alt="Hearth display"></div>
+        <ul style="color:#5a6475">
+          <li>Everything in one place</li>
+          <li>Transform habits into routine</li>
+          <li>Streamline household tasks</li>
+          <li>Super charge your calendar</li>
+        </ul>
       </div>
+    </div>
+
+    <!-- Text block (on mobile this is the RIGHT 60%) -->
+    <div class="text-inline">
+      <h2 class="h1">Keep Your Family Organized, the Easy Way</h2>
+      <p style="color:#5a6475">Imagine all your schedules, to-dos, and daily routines in one spot, ready to go. That’s Alura Planner for you—making every day smoother, no sweat.</p>
+      <p style="color:#5a6475">Everyone's calendars, tasks, and routines all neatly lined up in one place. With Alura Planner, it's that simple to keep the whole family on track and stress-free.</p>
     </div>
   </section>
 
@@ -119,7 +161,7 @@
         <p style="color:#5a6475">Spend less time worrying about what needs to be done and more time enjoying life, knowing everything is neatly organized and easily accessible.</p>
       </div>
       <div class="versus">
-        <div class="col">
+        <div class="col col-hearth">
           <h3>Hearth Display</h3>
           <div class="frame" style="margin:.5rem 0 1rem"><img src="alura5.png" alt="Hearth display"></div>
           <ul style="color:#5a6475">
@@ -129,7 +171,7 @@
             <li>Super charge your calendar</li>
           </ul>
         </div>
-        <div class="col">
+        <div class="col col-paper">
           <h3>Paper Calendar</h3>
           <div class="frame" style="margin:.5rem 0 1rem"><img src="alura6.png" alt="Paper calendar"></div>
           <ul style="color:#5a6475">
@@ -146,7 +188,7 @@
   <section class="cta">
     <h2 class="h1">Love It or Your Money Back</h2>
     <p>We stand by the quality of our products. If you're not completely satisfied with your Alura Planner return it within 30 days for a full refund. Your comfort and happiness are our top priority.</p>
-    <a class="btn" target="_blank" href="https://www.charmr.xyz/shopify-49.html?ref=HAZ&sub1=Alura%20Planner&sub2=https://cdn.shopify.com/s/files/1/0789/3142/7572/files/featureImage.jpg?v=1761937782">Buy Now</a>
+    <a class="btn" href="https://www.charmr.xyz/shopify-49.html?ref=HAZ&sub1=Alura%20Planner&sub2=https://cdn.shopify.com/s/files/1/0789/3142/7572/files/featureImage.jpg?v=1761937782">Buy Now</a>
   </section>
 
   <footer>© 2025 Alura. All rights reserved.</footer>
