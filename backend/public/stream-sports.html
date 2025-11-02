@@ -145,7 +145,10 @@
     const billingCountry = document.getElementById('billingCountry');
     const billingPostcode = document.getElementById('billingPostcode');
 
-    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    /* ⬇️ CHANGED: use the same endpoint as segway.html */
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+    /* ⬆️ CHANGED ONLY THIS LINE */
+
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
     const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
