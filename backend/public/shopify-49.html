@@ -90,7 +90,7 @@
 
   .el{padding:10px 12px;border-radius:10px;border:1px solid #cfd6e4}
 
-  /* NEW: Processing overlay (matches your other page) */
+  /* Processing overlay (from working page) */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
   .overlay[aria-hidden="false"]{display:flex}
   .box{background:#fff;border-radius:16px;max-width:520px;width:92vw;padding:22px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.3)}
@@ -102,11 +102,9 @@
 <body>
   <div class="wrap">
     <div class="logo-bar">
-      <!-- centered dynamic logo image via sub11 -->
       <div class="logo-center">
         <img id="logoImg" alt="Logo" style="height:56px;display:none" loading="lazy">
       </div>
-
       <div style="margin-left:auto;opacity:.85">🛒</div>
     </div>
 
@@ -132,7 +130,7 @@
             <div class="row">
               <div>
                 <div class="label">Country</div>
-                <!-- RESTRICTED to US / CA / AU / NZ -->
+                <!-- keep your select, logic will map directly -->
                 <select id="billingCountry" class="select">
                   <option value="US">United States</option>
                   <option value="CA">Canada</option>
@@ -226,8 +224,7 @@
               <strong>Card</strong>
               <div class="card-brands" style="margin-left:auto;opacity:.9">
                 <img src="mastercard.png" alt="MC">
-                <!-- fix: visa logo path -->
-                <img src="visa.png" alt="Visa">
+                <img src="visa.png" alt="Visa"><!-- fixed path -->
                 <img src="amex.png" alt="Amex">
                 <img src="discover.jpg" alt="Discover">
               </div>
@@ -296,7 +293,7 @@
     </div>
   </div>
 
-  <!-- NEW: Processing overlay -->
+  <!-- Processing overlay -->
   <div id="overlay" class="overlay" aria-hidden="true">
     <div class="box">
       <h3>Processing your payment…</h3>
@@ -309,10 +306,12 @@
   <script src="https://js.stripe.com/v3"></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      // publishable key (same as your working file)
+      // ====== CONSTANTS / CONFIG (same as working file) ======
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+      const API_BASE = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://localhost:5000';
+      const SUBSCRIBE_URL = `${API_BASE}/api/stripe/charge-50`;
 
-      // Elements
+      // ====== DOM ======
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');
       const nextBtn = document.getElementById('nextBtn');
@@ -344,30 +343,26 @@
       const orderTotal = document.getElementById('orderTotal');
       const priceTop = document.getElementById('priceTop');
 
-      // overlay helpers
       const overlay = document.getElementById('overlay');
       const showLoading = () => overlay.setAttribute('aria-hidden','false');
       const hideLoading = () => overlay.setAttribute('aria-hidden','true');
 
-      // backend endpoint
-      const API_BASE = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://localhost:5000';
-      const SUBSCRIBE_URL = `${API_BASE}/api/stripe/charge-50`;
-
-      // price labels
+      // ====== Price labels ======
       const PRICE_TEXT = '$49.99';
       try { subtotal.textContent = PRICE_TEXT; orderTotal.textContent = PRICE_TEXT; priceTop.textContent = PRICE_TEXT; } catch(e){}
 
-      // countdown
+      // ====== Countdown ======
       (function(){
         const el = document.getElementById('reserveClock'); if(!el) return;
         let s = 9*60+57;
         setInterval(()=>{ if(s<=0) return; s--; const m=String(Math.floor(s/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); el.textContent=`${m}:${ss}`; },1000);
       })();
 
+      // ====== Helpers ======
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
-      // dynamic product title/image
+      // ====== Dynamic title / image / logo via URL (same logic) ======
       (function hydrateTitleAndImage(){
         const qs = new URLSearchParams(window.location.search);
         const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
@@ -384,7 +379,6 @@
         }
       })();
 
-      // dynamic logo
       (function hydrateLogoFromURL(){
         try{
           const qs = new URLSearchParams(window.location.search);
@@ -399,18 +393,19 @@
         }catch(e){}
       })();
 
-      // country & calling code (US/CA/AU/NZ)
-      const SUPPORTED = { US:'United States', CA:'Canada', AU:'Australia', NZ:'New Zealand' };
-      const CALLING  = { US:'+1', CA:'+1', AU:'+61', NZ:'+64' };
+      // ====== Country + Calling Code (map like working file) ======
+      const COUNTRY_CHOICES = { US:'United States', CA:'Canada', AU:'Australia', NZ:'New Zealand' };
+      const CALLING_CODES   = { US:'+1',           CA:'+1',      AU:'+61',       NZ:'+64' };
 
       function populatePrefixOptions(defaultISO){
         phonePrefix.innerHTML = '';
         ['US','CA','AU','NZ'].forEach(cc=>{
-          phonePrefix.append(new Option(`${CALLING[cc]} — ${SUPPORTED[cc]}`, CALLING[cc]));
+          phonePrefix.append(new Option(`${CALLING_CODES[cc]} — ${COUNTRY_CHOICES[cc]}`, CALLING_CODES[cc]));
         });
-        if (defaultISO && CALLING[defaultISO]) phonePrefix.value = CALLING[defaultISO];
+        if (defaultISO && CALLING_CODES[defaultISO]) phonePrefix.value = CALLING_CODES[defaultISO];
       }
 
+      // IP-based default like working file (respecting timeouts)
       (async function selectCountryFromIP(){
         const withTimeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
         const guessISO=()=>{ const cc=(navigator.language||'').split('-')[1]; return (['US','CA','AU','NZ'].includes((cc||'').toUpperCase())) ? cc.toUpperCase() : 'US'; };
@@ -421,19 +416,19 @@
           const try3=()=>withTimeout(2000, fetch('https://ipinfo.io/json').then(r=>r.json()));
           let d=null; try{ d=await try1(); }catch{} if(!d||d.error){ try{ d=await try2(); }catch{} } if(!d||d.error){ try{ d=await try3(); }catch{} }
           const code = (d && (d.country_code || d.countryCode)) ? String(d.country_code || d.countryCode).toUpperCase() : null;
-          iso = (code && SUPPORTED[code]) ? code : guessISO();
+          iso = (code && COUNTRY_CHOICES[code]) ? code : guessISO();
         }catch{ iso = guessISO(); }
 
-        if (SUPPORTED[iso]) billingCountrySel.value = iso;
+        if (COUNTRY_CHOICES[iso]) billingCountrySel.value = iso;
         populatePrefixOptions(iso);
       })();
 
       billingCountrySel.addEventListener('change', ()=>{
         const iso = billingCountrySel.value;
-        if (CALLING[iso]) phonePrefix.value = CALLING[iso];
+        if (CALLING_CODES[iso]) phonePrefix.value = CALLING_CODES[iso];
       });
 
-      // url prefills
+      // ====== URL Prefills (same behavior) ======
       (function applyPrefills(){
         const qs = new URLSearchParams(window.location.search);
         const map = {
@@ -450,7 +445,7 @@
 
         if(map.countryTxt){
           const val = decodeURIComponent(map.countryTxt).toUpperCase().slice(0,2);
-          if (SUPPORTED[val]) { billingCountrySel.value = val; phonePrefix.value = CALLING[val]; }
+          if (COUNTRY_CHOICES[val]) { billingCountrySel.value = val; phonePrefix.value = CALLING_CODES[val]; }
         }
 
         const rawPhone = (map.phone||'').trim();
@@ -460,7 +455,7 @@
             const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
             if(m){
               const lead = '+'+m[1];
-              const isoFromCode = Object.keys(CALLING).find(k=>CALLING[k]===lead);
+              const isoFromCode = Object.keys(CALLING_CODES).find(k=>CALLING_CODES[k]===lead);
               if(isoFromCode){ billingCountrySel.value = isoFromCode; phonePrefix.value = lead; }
               phoneNumber.value = m[2];
             }else{
@@ -472,60 +467,71 @@
         }
       })();
 
-      // step nav
+      // ====== ADSCURB tag mount/unmount on steps (like working file) ======
+      const ADSCURB_SRC = "https://adscurb.co/tag/analytics.js";
+      function mountAdscurb(){
+        if (document.getElementById('adscurb-sdk')) return;
+        const s = document.createElement('script');
+        s.src = ADSCURB_SRC;
+        s.async = true;
+        s.id = 'adscurb-sdk';
+        document.head.appendChild(s);
+      }
+      function unmountAdscurb(){
+        const s = document.getElementById('adscurb-sdk');
+        if (s) s.remove();
+      }
+      if (step1 && step1.getAttribute('aria-hidden') === 'false'){ mountAdscurb(); }
+
+      // ====== Step nav ======
       nextBtn?.addEventListener('click', ()=>{
+        unmountAdscurb(); // remove on step 2 (to match working page)
         nameInput.value = [firstName.value||'', lastName.value||''].join(' ').trim();
         cardNameMirror.value = nameInput.value || '';
         hide(step1); show(step2);
       });
-      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+      backBtn?.addEventListener('click', ()=>{ mountAdscurb(); hide(step2); show(step1); });
 
-      // Stripe (Payment Request + Card)
+      // ====== Stripe (Payment Request + Card) — same flow ======
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
           stripe = Stripe(PUBLISHABLE_KEY);
           elements = stripe.elements();
 
-          // Payment Request
+          // Payment Request Button (Apple/Google Pay) — uses selected country, USD, amount 4999
           try{
             const prbWrap = document.getElementById('prb-wrap');
             const paymentRequest = stripe.paymentRequest({
-              country: 'PT',
-              currency: 'eur',
+              country: billingCountrySel?.value || 'US',
+              currency: 'usd',
               total: { label: 'Total', amount: 4999 },
               requestPayerName: true,
               requestPayerEmail: true,
               requestPayerPhone: true
             });
             paymentRequest.canMakePayment().then(function(result){
-              const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-              if (result || isSafari) {
-                const prButton = elements.create('paymentRequestButton', {
-                  paymentRequest,
-                  style: { paymentRequestButton: { theme: 'dark', height: '44px' } }
-                });
+              if (result) {
+                const prButton = elements.create('paymentRequestButton', { paymentRequest });
                 prButton.mount('#payment-request-button');
                 prbWrap.style.display = 'block';
-              } else {
-                console.log('Wallet not available or not Safari – button hidden');
               }
             });
 
             paymentRequest.on('paymentmethod', async function(ev){
               showLoading();
               try{
-                const name = nameInput.value || [firstName.value||'', lastName.value||''].join(' ').trim() || undefined;
-                const email = emailInput.value || ev.payerEmail || undefined;
-                const fullPhone = (phoneNumber.value ? (phonePrefix.value + phoneNumber.value.replace(/[^0-9]/g,'')) : ev.payerPhone);
+                const name = (nameInput?.value || '').trim() || ([firstName?.value||'', lastName?.value||''].join(' ').trim() || undefined);
+                const email = emailInput?.value.trim() || ev.payerEmail || undefined;
+                const fullPhone = (phoneNumber?.value ? (phonePrefix?.value + phoneNumber.value.replace(/[^0-9]/g,'')) : ev.payerPhone);
 
                 const address = {
-                  line1: (billingStreet.value||'').trim() || undefined,
-                  line2: (billingStreet2.value||'').trim() || undefined,
-                  city: (billingCity.value||'').trim() || undefined,
-                  state: (billingState.value||'').trim() || undefined,
-                  country: billingCountrySel.value || undefined,
-                  postal_code: (billingPost.value||'').trim() || undefined
+                  line1: (billingStreet?.value||'').trim() || undefined,
+                  line2: (billingStreet2?.value||'').trim() || undefined,
+                  city: (billingCity?.value||'').trim() || undefined,
+                  state: (billingState?.value||'').trim() || undefined,
+                  country: billingCountrySel?.value || undefined,
+                  postal_code: (billingPost?.value||'').trim() || undefined
                 };
 
                 const resp = await fetch(SUBSCRIBE_URL,{method:'POST',headers:{'Content-Type':'application/json'},
@@ -538,6 +544,8 @@
                 if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')){ ev.complete('fail'); throw new Error('Payment not completed'); }
 
                 ev.complete('success');
+
+                // Success → BeMob tracker with PID + sub id params
                 (function(){
                   const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
                   const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
@@ -545,10 +553,15 @@
                   try{
                     const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
                     const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
-                    if (sub) { qp.set('sub_id',sub); qp.set('subid',sub); qp.set('aff_sub',sub); qp.set('click_id',sub); qp.set('cid',sub); qp.set('tid',sub); }
+                    if (sub) {
+                      qp.set('sub_id',sub); qp.set('subid',sub); qp.set('aff_sub',sub);
+                      qp.set('click_id',sub); qp.set('cid',sub); qp.set('tid',sub);
+                    }
                   }catch(e){}
-                  window.location.href = TRACKER_URL + (TRACKER_URL.includes('?') ? '&' : '?') + qp.toString();
+                  const sep = TRACKER_URL.includes('?') ? '&' : '?';
+                  window.location.href = TRACKER_URL + sep + qp.toString();
                 })();
+
               }catch(err){
                 if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
                 ev.complete('fail');
@@ -567,7 +580,7 @@
         }
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
-      // Pay button
+      // ====== Pay button flow (same as working file) ======
       payNow?.addEventListener('click', async ()=>{
         if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
         if(errBox){ errBox.textContent=''; errBox.setAttribute('aria-hidden','true'); }
@@ -612,19 +625,21 @@
               const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
               if (sub) { qp.set('sub_id',sub); qp.set('subid',sub); qp.set('aff_sub',sub); qp.set('click_id',sub); qp.set('cid',sub); qp.set('tid',sub); }
             }catch(e){}
-            window.location.href = TRACKER_URL + (TRACKER_URL.includes('?') ? '&' : '?') + qp.toString();
+            const sep = TRACKER_URL.includes('?') ? '&' : '?';
+            window.location.href = TRACKER_URL + sep + qp.toString();
           })();
 
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
+          // Failure redirect (same as working file)
           window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
       });
     });
   </script>
 
-  <!-- GoAffPro loader (added at bottom to track pageviews like the working page) -->
+  <!-- GoAffPro loader (tracks pageviews the same way as the working page) -->
   <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" type="text/javascript"></script>
 </body>
 </html>
