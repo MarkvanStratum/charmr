@@ -311,7 +311,32 @@
   <!-- Stripe -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    /* rest of your JS unchanged */
+    // Minimal step wiring (rest unchanged)
+    document.addEventListener('DOMContentLoaded', function () {
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+
+      const firstName = document.getElementById('firstName');
+      const lastName  = document.getElementById('lastName');
+      const nameInput = document.getElementById('nameInput');
+      const cardNameMirror = document.getElementById('cardNameMirror');
+
+      const show = (el) => el && el.setAttribute('aria-hidden','false');
+      const hide = (el) => el && el.setAttribute('aria-hidden','true');
+
+      nextBtn?.addEventListener('click', () => {
+        const full = ((firstName?.value || '') + ' ' + (lastName?.value || '')).trim();
+        if (nameInput) nameInput.value = full;
+        if (cardNameMirror) cardNameMirror.value = full;
+        hide(step1); show(step2);
+      });
+
+      backBtn?.addEventListener('click', () => {
+        hide(step2); show(step1);
+      });
+    });
   </script>
 </body>
 </html>
