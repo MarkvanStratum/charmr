@@ -416,6 +416,9 @@
         phone:   qs.get('sub10') || ''
       };
 
+      // NEW: capture ?ref= value from URL
+      const ref = (qs.get('ref') || '').trim();
+
       // will prevent IP from overriding if we already set a prefix from URL
       let prefixLockedFromURL = false;
 
@@ -493,59 +496,4 @@
         showLoading();
 
         const name = nameInput.value.trim();
-        const email = document.getElementById('emailInput')?.value.trim();
-        const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
-        const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
-
-        // نُرسل دائمًا SA كرمز دولة
-        const isoCountry = 'SA';
-
-        const address = {
-          line1: (billingStreet?.value||'').trim() || undefined,
-          city: (billingCity?.value||'').trim() || undefined,
-          country: isoCountry,
-          postal_code: (billingPostcode?.value||'').trim() || undefined
-        };
-
-        try{
-          // 1) Create a PaymentMethod
-          const pmRes = await stripe.createPaymentMethod({
-            type:'card',
-            card:cardNumber,
-            billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
-          });
-          if(pmRes.error) throw new Error(pmRes.error.message);
-
-          // 2) Start the $20 intro charge (kept)
-          const resp = await fetch(SUBSCRIBE_URL,{
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
-          });
-          const data = await resp.json();
-          if(!data.clientSecret) throw new Error(data.error || 'فشل بدء عملية الدفع');
-
-          // 3) Confirm the intro charge (handles 3DS/SCA)
-          const conf = await stripe.confirmCardPayment(data.clientSecret);
-          if(conf.error) throw new Error(conf.error.message);
-          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('لم تكتمل عملية الدفع');
-
-          // ✅ Success → redirect 100% to provided URL
-          (function(){
-            const redirectUrl = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
-            window.location.href = redirectUrl;
-          })();
-
-        }catch(err){
-          if(errBox){ errBox.textContent = err.message || 'حدث خطأ ما.'; errBox.setAttribute('aria-hidden','false'); }
-          hideLoading();
-          /* ONLY CHANGE: redirect on failure, matching blank.html */
-          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
-        }
-      });
-    });
-  </script>
-
-  <!-- GoAffPro loader (kept) -->
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-</body>
-</html>
+        const email = document.getElementById('em
