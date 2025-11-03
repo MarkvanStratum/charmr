@@ -320,41 +320,7 @@ main.addEventListener('touchend',e=>{const dx=e.changedTouches[0].clientX-startX
 setActive(0);
 </script>
 
-<!-- GoAffPro Tracking Script -->
-<script type="text/javascript">
-(function(g,a,p){
-  g._gaq=g._gaq||[];
-  g._gaq.push(["_setAccount",p]);
-  var s=a.createElement("script");
-  s.type="text/javascript";s.async=true;s.src="//cdn.goaffpro.com/track.js";
-  var x=a.getElementsByTagName("script")[0];x.parentNode.insertBefore(s,x);
-})(window,document,"YOUR_GOAFFPRO_ID_HERE");
+<script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" type="text/javascript"></script>
 
-// Ensure a pageview is sent even if the SDK loads late
-(function ensureGoAffProPageview(){
-  try{
-    if (window.goaffpro && typeof window.goaffpro.pageview === 'function') {
-      window.goaffpro.pageview();
-      console.log('[GoAffPro] pageview() sent');
-      return;
-    }
-    if (window.GoAffPro && typeof window.GoAffPro.pageview === 'function') {
-      window.GoAffPro.pageview();
-      console.log('[GoAffPro] pageview() sent (GoAffPro)');
-      return;
-    }
-    if (Array.isArray(window.goaffpro_q)) {
-      window.goaffpro_q.push(['pageview']);
-      console.log('[GoAffPro] queued pageview');
-    } else {
-      // create the queue if it doesn't exist yet
-      window.goaffpro_q = [['pageview']];
-      console.log('[GoAffPro] created queue & queued pageview');
-    }
-  }catch(e){
-    console.warn('[GoAffPro] manual pageview call failed', e);
-  }
-})();
-</script>
 </body>
 </html>
