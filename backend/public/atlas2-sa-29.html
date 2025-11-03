@@ -203,6 +203,12 @@
           <div class="h2">٢. الدفع</div>
           <p class="sub">يتم تشفير بيانات البطاقة ومعالجتها عبر سترايب.</p>
 
+          <!-- ⭐ Apple Pay / Payment Request Button (added) -->
+          <div id="apple-pay-wrap" style="margin:10px 0; display:none">
+            <div id="apple-pay-button"></div>
+            <div class="tiny" style="margin-top:6px">أو أدخل تفاصيل بطاقتك يدويًا أدناه</div>
+          </div>
+
           <div class="form-grid-1">
             <div>
               <div class="label">رقم البطاقة</div>
@@ -484,6 +490,83 @@
           cardNumber.mount('#card-number');
           cardExpiry.mount('#card-expiry');
           cardCvc.mount('#card-cvc');
+
+          // ==== Apple Pay / Payment Request Button (added) ====
+          const appleWrap = document.getElementById('apple-pay-wrap');
+          const appleBtn  = document.getElementById('apple-pay-button');
+
+          // Keep backend as-is: it creates a $20 USD PaymentIntent.
+          const DISPLAY_LABEL = 'الدفع الآمن';
+          const CURRENCY = 'usd';  // match your PaymentIntent currency
+          const COUNTRY  = 'SA';   // store country for Apple Pay sheet
+          const AMOUNT   = 2000;   // $20 in cents
+
+          const paymentRequest = stripe.paymentRequest({
+            country: COUNTRY,
+            currency: CURRENCY,
+            total: { label: DISPLAY_LABEL, amount: AMOUNT },
+            requestPayerName: true,
+            requestPayerEmail: true,
+            requestPayerPhone: true
+          });
+
+          const prButton = elements.create('paymentRequestButton', {
+            paymentRequest,
+            style: { paymentRequestButton: { type: 'buy', theme: 'black', height: '44px' } }
+          });
+
+          paymentRequest.canMakePayment().then(result => {
+            if (result && (result.applePay || result.googlePay)) {
+              appleWrap.style.display = 'block';
+              prButton.mount('#apple-pay-button');
+            }
+          });
+
+          paymentRequest.on('paymentmethod', async (ev) => {
+            try {
+              showLoading();
+              const name  = (document.getElementById('nameInput')?.value || '').trim();
+              const email = (document.getElementById('emailInput')?.value || '').trim();
+
+              // Ask your server for a PI client_secret (same endpoint you use for cards)
+              const resp = await fetch(SUBSCRIBE_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  paymentMethodId: ev.paymentMethod.id,
+                  name,
+                  email
+                })
+              });
+              const data = await resp.json();
+              if (!data.clientSecret) throw new Error(data.error || 'فشل إنشاء عملية الدفع');
+
+              const { error, paymentIntent } = await stripe.confirmCardPayment(
+                data.clientSecret,
+                { payment_method: ev.paymentMethod.id }
+              );
+
+              if (error) {
+                ev.complete('fail');
+                throw error;
+              } else if (paymentIntent?.status === 'succeeded') {
+                ev.complete('success');
+                window.location.href = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+                return;
+              } else {
+                ev.complete('fail');
+                throw new Error('لم تكتمل عملية الدفع');
+              }
+            } catch (err) {
+              if (errBox) {
+                errBox.textContent = err.message || 'حدث خطأ ما.';
+                errBox.setAttribute('aria-hidden','false');
+              }
+              hideLoading();
+              window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
+            }
+          });
+          // ==== end Apple Pay block ====
         }
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
