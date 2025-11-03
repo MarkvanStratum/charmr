@@ -1955,13 +1955,15 @@ app.options('/api/stripe/intro-charge-20', cors());
 app.post('/api/stripe/intro-charge-20', async (req, res) => {
   try {
     const {
-      paymentMethodId,
-      email,
-      name,
-      phone,
-      address,   // { line1, line2, city, state, postal_code, country }
-      quantity   // number of items selected
-    } = req.body || {};
+  paymentMethodId,
+  email,
+  name,
+  phone,
+  address,   // { line1, line2, city, state, postal_code, country }
+  quantity,  // number of items selected
+  ref        // ✅ NEW
+} = req.body || {};
+
 
     if (!paymentMethodId || !email) {
       return res.status(400).json({ error: 'paymentMethodId and email are required' });
@@ -1999,20 +2001,26 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
 
     // Create the PaymentIntent for £25 × quantity
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'gbp',
-      customer: customer.id,
-      payment_method: paymentMethodId,
-      confirmation_method: 'automatic',
-      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
-      description: `Intro charge (iPhone flow) x${qty} @ £25`,
-      metadata: {
-        purpose: 'intro_charge_25',
-        quantity: String(qty),
-        unit_pence: String(unitPence),
-        total_pence: String(amount)
-      }
-    });
+  amount,
+  currency: 'gbp',
+  customer: customer.id,
+  payment_method: paymentMethodId,
+  confirmation_method: 'automatic',
+  setup_future_usage: 'off_session', // reuse for subsequent payments if needed
+
+ 
+  description: ref
+  ? `Intro charge (iPhone flow) x${qty} @ £25 — ref ${ref}`
+  : `Intro charge (iPhone flow) x${qty} @ £25`,
+metadata: {
+  purpose: 'intro_charge_25',
+  quantity: String(qty),
+  unit_pence: String(unitPence),
+  total_pence: String(amount),
+  ...(ref ? { ref: String(ref) } : {}) // ✅ add ref once, conditionally
+}
+});
+
 
     res.json({
       clientSecret: paymentIntent.client_secret,
