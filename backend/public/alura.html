@@ -109,8 +109,10 @@ footer{text-align:center;color:#6b7280;border-top:1px solid #eee;padding:2rem 1r
   .header-icons{position:absolute;right:16px;top:12px}
 
   .product{flex-direction:column}
-  .info{order:1}
-  .panel{order:2}
+  /* Put the gallery above the title/content on mobile */
+.panel{order:1; margin-bottom:1rem;}
+.info{order:2}
+
   .title{font-size:40px;margin-top:.25rem}
   .price{font-size:1.8rem}
 
