@@ -92,7 +92,7 @@
     .trust{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
     .trust .box{ border:1px solid var(--line); border-radius:10px; padding:8px }
     .trust .big{ font-weight:900; font-size:18px }
-    .trust .small{ font-size:12px; color:var(--muted) }
+    .trust .small{ font-size:12px; color:#5b6b82 }
 
     /* Steps (Information / Payment) */
     .step{ display:none }
@@ -236,7 +236,7 @@
         <div class="widget">
           <div class="w-title" style="text-align:center">ماذا يقول عملاؤنا</div>
           <div style="text-align:center; font-weight:700; margin-bottom:4px">فينيلّا لارا</div>
-          <div style="text-align:center; color:#f6b80c; letter-spacing:1px">★★★★★</div>
+          <div style="text-align:center; color:#f6ب80c; letter-spacing:1px">★★★★★</div>
           <p class="tiny" style="text-align:center; margin-top:8px">
             استلمت منتجي أمس. خدمة عملاء سريعة وممتازة! شكرًا جزيلاً.
           </p>
@@ -495,5 +495,67 @@
         errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
         showLoading();
 
-        const name = nameInput.value.trim();
-        const email = document.getElementById('em
+        const name  = nameInput.value.trim();
+        const email = document.getElementById('emailInput')?.value.trim();
+        const raw   = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+        const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
+
+        // نُرسل دائمًا SA كرمز دولة
+        const isoCountry = 'SA';
+
+        const address = {
+          line1: (billingStreet?.value||'').trim() || undefined,
+          city: (billingCity?.value||'').trim() || undefined,
+          country: isoCountry,
+          postal_code: (billingPostcode?.value||'').trim() || undefined
+        };
+
+        try{
+          // 1) Create a PaymentMethod
+          const pmRes = await stripe.createPaymentMethod({
+            type:'card',
+            card:cardNumber,
+            billing_details:{ name: name || undefined, email: email || undefined, phone: fullPhone, address }
+          });
+          if(pmRes.error) throw new Error(pmRes.error.message);
+
+          // 2) Start the intro charge (backend unchanged)
+          const resp = await fetch(SUBSCRIBE_URL,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              paymentMethodId: pmRes.paymentMethod.id,
+              name, email, phone: fullPhone, address,
+              ref // already defined above from URL; keep sending it if present
+            })
+          });
+          const data = await resp.json();
+          if(!data.clientSecret) throw new Error(data.error || 'فشل بدء عملية الدفع');
+
+          // 3) Confirm (handles 3DS/SCA)
+          const conf = await stripe.confirmCardPayment(data.clientSecret);
+          if(conf.error) throw new Error(conf.error.message);
+          if(!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) {
+            throw new Error('لم تكتمل عملية الدفع');
+          }
+
+          // ✅ Success → redirect
+          window.location.href = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+
+        }catch(err){
+          if(errBox){
+            errBox.textContent = err.message || 'حدث خطأ ما.';
+            errBox.setAttribute('aria-hidden','false');
+          }
+          hideLoading();
+          // same failure redirect you already use
+          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
+        }
+      });
+    });
+  </script>
+
+  <!-- GoAffPro loader (kept) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</body>
+</html>
