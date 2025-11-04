@@ -1999,6 +1999,42 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethodId }
     });
 
+// CORS preflight for the Payment Element endpoint (SAR 123)
+app.options('/api/stripe/create-intent-pe', cors());
+
+// Payment Element endpoint for the checkout page (SAR 123.00)
+app.post('/api/stripe/create-intent-pe', async (req, res) => {
+  try {
+    // Always enforce the amount/currency server-side (ignore client)
+    const AMOUNT_MINOR = 12300; // 123 SAR -> 12300 (halalas)
+    const CURRENCY = 'sar';
+
+    // Pass through optional metadata from the client (safe keys only)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      // Enables Apple Pay & Google Pay inside the Payment Element
+      automatic_payment_methods: { enabled: true },
+      // Play nice with SCA/3DS
+      payment_method_options: { card: { request_three_d_secure: 'automatic' } },
+      metadata: safeMeta,
+    });
+
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('create-intent-pe error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
     // Create the PaymentIntent for £25 × quantity
     const paymentIntent = await stripe.paymentIntents.create({
   amount,
@@ -2008,20 +2044,17 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
   confirmation_method: 'automatic',
   setup_future_usage: 'off_session', // reuse for subsequent payments if needed
 
-  // ↓ Replace this line:
-  // description: `Intro charge (iPhone flow) x${qty} @ £25`,
+ 
   description: ref
-    ? `Intro charge (iPhone flow) x${qty} @ £25 — ref ${ref}`
-    : `Intro charge (iPhone flow) x${qty} @ £25`,
-
-  // ↓ Replace ONLY the contents of the existing metadata object (don’t add a 2nd one)
-  metadata: {
-    purpose: 'intro_charge_25',
-    quantity: String(qty),
-    unit_pence: String(unitPence),
-    total_pence: String(amount),
-    ...(ref ? { ref: String(ref) } : {}) // ← add ref once, conditionally
-  }
+  ? `Intro charge (iPhone flow) x${qty} @ £25 — ref ${ref}`
+  : `Intro charge (iPhone flow) x${qty} @ £25`,
+metadata: {
+  purpose: 'intro_charge_25',
+  quantity: String(qty),
+  unit_pence: String(unitPence),
+  total_pence: String(amount),
+  ...(ref ? { ref: String(ref) } : {}) // ✅ add ref once, conditionally
+}
 });
 
 
