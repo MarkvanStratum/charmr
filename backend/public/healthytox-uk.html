@@ -35,7 +35,7 @@
   .hero .wrap{max-width:1200px;margin:0 auto;padding:30px 16px;display:grid;grid-template-columns:1.2fr 1fr;gap:24px;align-items:center}
   .brand{display:flex;align-items:center;gap:10px;font-weight:900;font-size:40px}
   .leaf{width:28px;height:28px;border-radius:50%;background:var(--brand-2);display:inline-block;position:relative}
-  .leaf:after{content:"";position:absolute;inset:6px 10px 6px 6px;border-radius:50% 10% 50% 50%/50% 10% 50% 50%;background:#fff;transform:rotate(-35deg}
+  .leaf:after{content:"";position:absolute;inset:6px 10px 6px 6px;border-radius:50% 10% 50% 50%/50% 10% 50% 50%;background:#fff;transform:rotate(-35deg)}
   .hero h1{font-size:36px;margin:14px 0 10px}
   .badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
   .badge{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center}
@@ -255,7 +255,7 @@
       })();
     })();
 
-    /* Allowed phone prefixes and countries (UK only) */
+    /* Allowed phone prefixes and countries */
     const ALLOWED = {
       GB: { prefix: '+44', name: 'United Kingdom' },
     };
@@ -284,7 +284,7 @@
       if(![...countrySel.options].some(o=>o.selected)) countrySel.selectedIndex = 0;
     }
 
-    /* Geo-detect by IP (kept, but restricted to GB fallback) */
+    /* Geo-detect by IP (primary: ipapi.co, fallback: ipwho.is) */
     async function detectCountryCode(){
       try{
         const r = await fetch('https://ipapi.co/json/');
