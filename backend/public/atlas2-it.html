@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Secure Checkout</title>
+  <title>Pagamento Sicuro</title>
 
   <!-- Google tag (unchanged) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -108,13 +108,13 @@
   </style>
 </head>
 <body>
-  <div class="safe">SSL safe payment</div>
+  <div class="safe">Pagamento sicuro SSL</div>
 
   <div class="wrap">
     <div class="page-title">
-      Secure Checkout <span style="font-size:18px">🔒</span>
+      Pagamento Sicuro <span style="font-size:18px">🔒</span>
       <span class="stars">★★★★★</span>
-      <span class="reviews">(2777 Reviews)</span>
+      <span class="reviews">(2777 Recensioni)</span>
     </div>
 
     <div class="grid">
@@ -128,63 +128,63 @@
             <div id="heroTitle" style="font-weight:900"></div>
           </div>
 
-          <div class="h2">1. Information</div>
+          <div class="h2">1. Informazioni</div>
 
           <div class="form-grid">
             <div>
-              <div class="label">First name</div>
-              <input id="firstName" class="input" placeholder="Jane" autocomplete="given-name">
+              <div class="label">Nome</div>
+              <input id="firstName" class="input" placeholder="Giulia" autocomplete="given-name">
             </div>
             <div>
-              <div class="label">Last name</div>
-              <input id="lastName" class="input" placeholder="Doe" autocomplete="family-name">
+              <div class="label">Cognome</div>
+              <input id="lastName" class="input" placeholder="Rossi" autocomplete="family-name">
             </div>
           </div>
 
           <div class="form-grid">
             <div style="grid-column:1 / -1">
-              <div class="label">Address</div>
-              <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Address (Canada)">
+              <div class="label">Indirizzo</div>
+              <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Indirizzo (Italia)">
             </div>
             <div>
-              <div class="label">Postcode</div>
-              <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Postcode">
+              <div class="label">CAP</div>
+              <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="CAP">
             </div>
             <div>
-              <div class="label">City</div>
-              <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City">
+              <div class="label">Città</div>
+              <input id="billingCity" class="input" autocomplete="address-level2" placeholder="Città">
             </div>
           </div>
 
           <div class="form-grid">
             <div>
               <div class="label">E-mail</div>
-              <input id="emailInput" class="input" placeholder="you@example.com" type="email" autocomplete="email" required>
+              <input id="emailInput" class="input" placeholder="tuo@esempio.com" type="email" autocomplete="email" required>
             </div>
             <div>
-              <div class="label">Country</div>
+              <div class="label">Paese</div>
               <!-- free text to keep your country→ISO conversion -->
-              <input id="billingCountry" class="input" placeholder="Canada" value="Canada" readonly>
+              <input id="billingCountry" class="input" placeholder="Italia" value="Italia" readonly>
             </div>
           </div>
 
           <div class="form-grid">
             <div>
-              <div class="label">Country calling code</div>
-              <select id="phonePrefix" class="select" aria-label="Country calling code">
-                <option value="+1">+1 — Canada</option>
+              <div class="label">Prefisso internazionale</div>
+              <select id="phonePrefix" class="select" aria-label="Prefisso internazionale">
+                <option value="+39">+39 — Italia</option>
               </select>
             </div>
             <div>
-              <div class="label">Phone number</div>
-              <input id="phoneNumber" class="input" inputmode="tel" placeholder="Your number" autocomplete="tel-national">
+              <div class="label">Numero di telefono</div>
+              <input id="phoneNumber" class="input" inputmode="tel" placeholder="Il tuo numero" autocomplete="tel-national">
             </div>
           </div>
 
           <!-- Hidden full name field (keeps your existing payment code exactly the same) -->
           <input id="nameInput" class="input" style="display:none">
 
-          <button id="nextBtn" class="btn">Continue</button>
+          <button id="nextBtn" class="btn">Continua</button>
 
           <div class="logos">
             <img src="/visa.png" alt="Visa">
@@ -196,17 +196,17 @@
 
         <!-- STEP 2: Payment -->
         <section id="step2" class="step" aria-hidden="true">
-          <div class="h2">2. Payment</div>
-          <p class="sub">Card details are encrypted and processed by Stripe.</p>
+          <div class="h2">2. Pagamento</div>
+          <p class="sub">I dati della carta sono crittografati e processati da Stripe.</p>
 
           <div class="form-grid-1">
             <div>
-              <div class="label">Card number</div>
+              <div class="label">Numero carta</div>
               <div id="card-number" class="el"></div>
             </div>
             <div class="form-grid">
               <div>
-                <div class="label">Expiration</div>
+                <div class="label">Scadenza</div>
                 <div id="card-expiry" class="el"></div>
               </div>
               <div>
@@ -219,22 +219,22 @@
           <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
           <div style="display:flex; gap:10px; margin-top:12px">
-            <button id="backBtn" class="btn muted" style="width:40%">← Back</button>
-            <button id="payNow" class="btn" style="width:60%">Pay securely</button>
+            <button id="backBtn" class="btn muted" style="width:40%">← Indietro</button>
+            <button id="payNow" class="btn" style="width:60%">Paga in modo sicuro</button>
           </div>
 
-          <p class="sub" style="text-align:center; margin-top:10px">🔒 256-bit SSL Secured · Powered by Stripe</p>
+          <p class="sub" style="text-align:center; margin-top:10px">🔒 SSL a 256 bit · Gestito da Stripe</p>
         </section>
       </div>
 
       <!-- RIGHT: SIDEBAR -->
       <aside>
         <div class="widget">
-          <div class="w-title" style="text-align:center">What our customers say</div>
+          <div class="w-title" style="text-align:center">Cosa dicono i nostri clienti</div>
           <div style="text-align:center; font-weight:700; margin-bottom:4px">Fenella Lara</div>
           <div style="text-align:center; color:#f6b80c; letter-spacing:1px">★★★★★</div>
           <p class="tiny" style="text-align:center; margin-top:8px">
-            I received my product yesterday. Fast and outstanding customer service! Thanks a lot.
+            Ho ricevuto il mio prodotto ieri. Assistenza clienti rapida ed eccellente! Grazie mille.
           </p>
         </div>
 
@@ -242,37 +242,37 @@
           <div class="delivery">
             <img id="sidebarImg" alt="">
             <div>
-              <div style="font-weight:800">Fast delivery to your address</div>
-              <div class="tiny">3–5 working days</div>
+              <div style="font-weight:800">Consegna rapida al tuo indirizzo</div>
+              <div class="tiny">3–5 giorni lavorativi</div>
             </div>
-            <div style="margin-left:auto; font-weight:800">Free</div>
+            <div style="margin-left:auto; font-weight:800">Gratis</div>
           </div>
 
-          <div class="w-title" style="margin-top:14px">Order Summary</div>
-          <div class="order-row"><span>Total</span><span id="orderTotal">$9.99</span></div>
+          <div class="w-title" style="margin-top:14px">Riepilogo ordine</div>
+          <div class="order-row"><span>Totale</span><span id="orderTotal">€9,99</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
-            🗃️ Only 13 left in stock<br>
-            👀 <span id="viewingNow">31</span> people are viewing this right now<br>
-            ✅ <span id="recentBuyer">J****s</span> got this (10 minutes ago)<br>
-            💳 <span id="purchasedCount">715</span> people purchased this in the last 7 days
+            🗃️ Solo 13 pezzi rimasti<br>
+            👀 <span id="viewingNow">31</span> persone stanno visualizzando in questo momento<br>
+            ✅ <span id="recentBuyer">J****s</span> ha acquistato questo (10 minuti fa)<br>
+            💳 <span id="purchasedCount">715</span> persone hanno acquistato questo negli ultimi 7 giorni
           </div>
         </div>
 
         <div class="widget">
-          <div class="w-title">TRUSTED STORE</div>
+          <div class="w-title">NEGOZIO AFFIDABILE</div>
           <div class="trust">
             <div class="box">
               <div class="big">99%</div>
-              <div class="small">Happy Customers</div>
+              <div class="small">Clienti soddisfatti</div>
             </div>
             <div class="box">
-              <div class="big">Secure</div>
-              <div class="small">SSL Encrypted</div>
+              <div class="big">Sicuro</div>
+              <div class="small">Crittografia SSL</div>
             </div>
             <div class="box">
-              <div class="big">$10K</div>
-              <div class="small">Buyer Protection</div>
+              <div class="big">€10.000</div>
+              <div class="small">Protezione acquirenti</div>
             </div>
           </div>
         </div>
@@ -283,9 +283,9 @@
   <!-- Loading overlay -->
   <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
     <div class="loading-box">
-      <div class="loading-title">Processing your payment…</div>
+      <div class="loading-title">Elaborazione del pagamento…</div>
       <div class="progress-wrap"><div class="progress-bar"></div></div>
-      <p class="sub" style="margin-top:10px">Please wait, this may take a few seconds.</p>
+      <p class="sub" style="margin-top:10px">Attendi, potrebbero volerci alcuni secondi.</p>
     </div>
   </div>
 
@@ -309,7 +309,7 @@
 
       const billingStreet = document.getElementById('billingStreet');
       const billingCity = document.getElementById('billingCity');
-      const billingCountry = document.getElementById('billingCountry'); // fixed to Canada
+      const billingCountry = document.getElementById('billingCountry'); // fissato su Italia
       const billingPostcode = document.getElementById('billingPostcode');
 
       const orderTotal = document.getElementById('orderTotal');
@@ -323,7 +323,7 @@
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
       // Display price like screenshot (purely cosmetic)
-      const INTRO_PRICE_TEXT = '$9.99';
+      const INTRO_PRICE_TEXT = '€9,99';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -360,21 +360,21 @@
         if (showHero) hero.style.display = 'flex';
       })();
 
-      // ===== Phone/Country: force Canada only =====
-      // Ensure the UI stays on Canada +1 even if URL/IP logic tries to modify it
-      function lockToCanada(){
-        if (billingCountry) billingCountry.value = 'Canada';
+      // ===== Phone/Country: force Italy only =====
+      // Ensure the UI stays on Italia +39 even if URL/IP logic tries to modify it
+      function lockToItaly(){
+        if (billingCountry) billingCountry.value = 'Italia';
         if (phonePrefix){
-          if (!Array.from(phonePrefix.options).some(o => o.value === '+1')) {
-            phonePrefix.add(new Option('+1 — Canada', '+1'));
+          if (!Array.from(phonePrefix.options).some(o => o.value === '+39')) {
+            phonePrefix.add(new Option('+39 — Italia', '+39'));
           }
-          phonePrefix.value = '+1';
+          phonePrefix.value = '+39';
         }
       }
-      lockToCanada();
+      lockToItaly();
 
       // Remove/ignore any auto-sync from IP or URL by overriding after any potential changes
-      setTimeout(lockToCanada, 0);
+      setTimeout(lockToItaly, 0);
 
       // Step navigation — combine first/last into hidden full name for Stripe
       nextBtn?.addEventListener('click', () => {
@@ -399,7 +399,7 @@
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
       document.getElementById('payNow')?.addEventListener('click', async ()=>{
-        if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
+        if(!stripe){ alert('Pagamento temporaneamente non disponibile. Riprova.'); return; }
         errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
         showLoading();
 
@@ -408,11 +408,11 @@
         const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
         const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
 
-        // Hardcode ISO country to CA for Stripe address
+        // Hardcode ISO country to IT for Stripe address
         const address = {
           line1: (billingStreet?.value||'').trim() || undefined,
           city: (billingCity?.value||'').trim() || undefined,
-          country: 'CA',
+          country: 'IT',
           postal_code: (billingPostcode?.value||'').trim() || undefined
         };
 
@@ -429,11 +429,11 @@
             body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
           });
           const data = await resp.json();
-          if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
+          if(!data.clientSecret) throw new Error(data.error || 'Impossibile avviare il pagamento');
 
           const conf = await stripe.confirmCardPayment(data.clientSecret);
           if(conf.error) throw new Error(conf.error.message);
-          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
+          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Pagamento non completato');
 
           (function(){
             const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
@@ -465,7 +465,7 @@
           })();
 
         }catch(err){
-          if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
+          if(errBox){ errBox.textContent = err.message || 'Qualcosa è andato storto.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
           window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
