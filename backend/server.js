@@ -2038,44 +2038,6 @@ metadata: {
 
 
 // CORS preflight for the £12.50 intro charge
-// CORS preflight for the Payment Element endpoint (SAR 123)
-app.options('/api/stripe/create-intent-pe', cors());
-
-// Payment Element endpoint for the checkout page (SAR 123.00)
-app.post('/api/stripe/create-intent-pe', async (req, res) => {
-  try {
-    // Always enforce the amount/currency server-side (ignore client)
-    const AMOUNT_MINOR = 12300; // 123 SAR -> 12300 (halalas)
-    const CURRENCY = 'sar';
-
-    // Pass through optional metadata from the client (safe keys only)
-    const safeMeta = {};
-    if (req.body && typeof req.body.metadata === 'object') {
-      for (const k of ['ref', 'billing_city', 'country_locked']) {
-        if (k in req.body.metadata) {
-          safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
-        }
-      }
-    }
-
-    const intent = await stripe.paymentIntents.create({
-      amount: AMOUNT_MINOR,
-      currency: CURRENCY,
-      // Enables Apple Pay & Google Pay inside the Payment Element
-      automatic_payment_methods: { enabled: true },
-      // Play nice with SCA/3DS
-      payment_method_options: { card: { request_three_d_secure: 'automatic' } },
-      metadata: safeMeta
-    });
-
-    // Respond with the PaymentIntent client secret
-    res.json({ clientSecret: intent.client_secret });
-  } catch (err) {
-    console.error('create-intent-pe error:', err);
-    res.status(400).json({ error: err.message || 'Unknown error' });
-  }
-});
-
 app.options('/api/stripe/intro-charge-1500', cors());
 
 // £12.50 intro charge before starting the subscription (supports quantity)
@@ -2199,7 +2161,33 @@ app.post('/api/stripe/trial-charge-intent', async (req, res) => {
   }
 });
 
-// (Removed incomplete Payment Element endpoint; a complete version is defined above)
+// CORS preflight for the Payment Element endpoint (SAR 123)
+app.options('/api/stripe/create-intent-pe', cors());
+
+// Payment Element endpoint for the checkout page (SAR 123.00)
+app.post('/api/stripe/create-intent-pe', async (req, res) => {
+  try {
+    const AMOUNT_MINOR = 12300; // 123 SAR -> 12300 (halalas)
+    const CURRENCY = 'sar';
+
+    // Pass through optional metadata from the client (safe keys only)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      automatic_payment_methods: { enabled: true },
+      payment_method_options: { card: { request_three_d_secure: 'automatic' } },
+      metadata: safeMeta,
+    });
+
+   
+
 
 // After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
 app.options('/api/stripe/start-monthly-after-trial', cors());
@@ -2436,7 +2424,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 
 
 // 🔹 KEEP your existing webhook at /webhook (credits, etc.)
-import bodyParser from "body-parser"; // Add this at the top if not present
+// (Removed unused bodyParser import; express.raw is used for webhook)
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
