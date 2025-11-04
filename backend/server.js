@@ -2103,6 +2103,17 @@ app.post('/api/stripe/intro-charge-1250', async (req, res) => {
       }
     });
 
+    // Send the PaymentIntent details back to the client
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error('intro-charge-1250 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
 
 // Create the £2.50 trial PaymentIntent and return client_secret for 3DS
 app.options('/api/stripe/trial-charge-intent', cors());
@@ -2186,8 +2197,13 @@ app.post('/api/stripe/create-intent-pe', async (req, res) => {
       metadata: safeMeta,
     });
 
-   
-
+    // Return the client secret for the Payment Element
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('create-intent-pe error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
 
 // After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
 app.options('/api/stripe/start-monthly-after-trial', cors());
