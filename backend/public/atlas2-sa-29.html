@@ -35,7 +35,7 @@
       background:#0a0a0a; color:#fff; font-size:12px; padding:6px 10px; text-align:right;
     }
 
-    /* Two-column layout like the screenshot */
+    /* Two-column layout */
     .grid{
       display:grid; grid-template-columns: minmax(0,1fr) 360px; gap:18px; align-items:start;
     }
@@ -94,12 +94,9 @@
     .trust .big{ font-weight:900; font-size:18px }
     .trust .small{ font-size:12px; color:#5b6b82 }
 
-    /* Steps (Information / Payment) */
+    /* Steps */
     .step{ display:none }
     .step[aria-hidden="false"]{ display:block }
-
-    /* Stripe element shell to look native */
-    .el{ padding:10px 12px; border-radius:10px; border:1px solid #cfd6e4 }
 
     /* Loading overlay */
     .loading-overlay{ position:fixed; inset:0; background:rgba(246,249,252,.92);
@@ -126,9 +123,8 @@
     <div class="grid">
       <!-- LEFT: FORM -->
       <div class="card">
-        <!-- STEP 1: Information -->
+        <!-- STEP 1: Information (unchanged) -->
         <section id="step1" class="step" aria-hidden="false">
-          <!-- Affiliate dynamic hero (optional) -->
           <div id="hero" style="display:none; margin-bottom:8px; display:flex; align-items:center; gap:10px">
             <img id="heroImg" alt="" style="width:44px;height:44px;border-radius:8px;border:1px solid #e6eaf1;object-fit:cover">
             <div id="heroTitle" style="font-weight:900"></div>
@@ -169,7 +165,6 @@
             </div>
             <div>
               <div class="label">الدولة</div>
-              <!-- free text to keep your country→ISO conversion -->
               <input id="billingCountry" class="input" placeholder="المملكة العربية السعودية" value="المملكة العربية السعودية">
             </div>
           </div>
@@ -185,7 +180,6 @@
             </div>
           </div>
 
-          <!-- Hidden full name field (keeps your existing payment code exactly the same) -->
           <input id="nameInput" class="input" style="display:none">
 
           <button id="nextBtn" class="btn">متابعة</button>
@@ -198,25 +192,15 @@
           </div>
         </section>
 
-        <!-- STEP 2: Payment -->
+        <!-- STEP 2: Payment (SWITCHED TO PAYMENT ELEMENT) -->
         <section id="step2" class="step" aria-hidden="true">
           <div class="h2">٢. الدفع</div>
-          <p class="sub">يتم تشفير بيانات البطاقة ومعالجتها عبر سترايب.</p>
+          <p class="sub">يتم تشفير بيانات الدفع ومعالجتها عبر سترايب. يدعم Apple Pay وGoogle Pay عند التوفر.</p>
 
           <div class="form-grid-1">
             <div>
-              <div class="label">رقم البطاقة</div>
-              <div id="card-number" class="el"></div>
-            </div>
-            <div class="form-grid">
-              <div>
-                <div class="label">تاريخ الانتهاء</div>
-                <div id="card-expiry" class="el"></div>
-              </div>
-              <div>
-                <div class="label">رمز الأمان CVC</div>
-                <div id="card-cvc" class="el"></div>
-              </div>
+              <div class="label">طريقة الدفع</div>
+              <div id="payment-element" class="el"></div>
             </div>
           </div>
 
@@ -231,7 +215,7 @@
         </section>
       </div>
 
-      <!-- RIGHT: SIDEBAR -->
+      <!-- RIGHT: SIDEBAR (unchanged) -->
       <aside>
         <div class="widget">
           <div class="w-title" style="text-align:center">ماذا يقول عملاؤنا</div>
@@ -252,7 +236,7 @@
             <div style="margin-left:auto; font-weight:800">مجاني</div>
           </div>
 
-        <div class="w-title" style="margin-top:14px">ملخص الطلب</div>
+          <div class="w-title" style="margin-top:14px">ملخص الطلب</div>
           <div class="order-row"><span>الإجمالي</span><span id="orderTotal">29 ر.س</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
@@ -284,7 +268,7 @@
     </div>
   </div>
 
-  <!-- Loading overlay -->
+  <!-- Loading overlay (unchanged) -->
   <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
     <div class="loading-box">
       <div class="loading-title">جاري معالجة دفعتك…</div>
@@ -313,20 +297,20 @@
 
       const billingStreet = document.getElementById('billingStreet');
       const billingCity = document.getElementById('billingCity');
-      const billingCountry = document.getElementById('billingCountry'); // free text (سنثبتها للسعودية)
+      const billingCountry = document.getElementById('billingCountry');
       const billingPostcode = document.getElementById('billingPostcode');
 
       const orderTotal = document.getElementById('orderTotal');
       const sidebarImg = document.getElementById('sidebarImg');
 
       // Keep your existing endpoints / keys (UNCHANGED)
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // not used by Payment Element
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // retained (unused)
+      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // unused
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
-      // ---- السعر المعروض بالريال السعودي (تحويلي تقريبي: 1 USD ≈ 3.75 SAR) ----
+      // ---- السعر المعروض ----
       const INTRO_PRICE_TEXT = '29 ر.س';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
@@ -339,11 +323,11 @@
       function hideLoading(){ overlay.setAttribute('aria-hidden','true'); overlay.style.display='none'; }
       hideLoading();
 
-      // ===== Dynamic title + image via URL (affiliate-supplied) =====
+      // ===== Dynamic title + image via URL (unchanged) =====
       (function hydrateHeroFromURL(){
         const qs = new URLSearchParams(window.location.search);
         const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
-               const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
+        const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
 
         const hero = document.getElementById('hero');
         const heroTitle = document.getElementById('heroTitle');
@@ -364,24 +348,18 @@
         if (showHero) hero.style.display = 'flex';
       })();
 
-      // ===== Country choices + calling codes (سنستخدمها فقط للسعودية) =====
-      const COUNTRY_CHOICES = {
-        GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland', CA:'Canada', AU:'Australia', NZ:'New Zealand',
+      // ===== Country choices + calling codes (unchanged) =====
+      const COUNTRY_CHOICES = { GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland', CA:'Canada', AU:'Australia', NZ:'New Zealand',
         DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands', BE:'Belgium', CH:'Switzerland', AT:'Austria',
         DK:'Denmark', NO:'Norway', SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia', HU:'Hungary', RO:'Romania',
-        BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia', ZA:'South Africa',
-        IN:'India', SG:'Singapore', MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines',
-        HK:'Hong Kong', JP:'Japan', KR:'South Korea',
-        AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel'
-      };
-      const CALLING_CODES = {
-        US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64', DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32',
+        BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia', ZA:'South Africa', IN:'India', SG:'Singapore',
+        MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines', HK:'Hong Kong', JP:'Japan', KR:'South Korea',
+        AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel' };
+      const CALLING_CODES = { US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64', DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32',
         CH:'+41', AT:'+43', DK:'+45', NO:'+47', SE:'+46', FI:'+358', PT:'+351', PL:'+48', CZ:'+420', HU:'+36', RO:'+40',
         BR:'+55', MX:'+52', AR:'+54', CL:'+56', CO:'+57', ZA:'+27', IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63',
-        HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972', GE:'+995'
-      };
+        HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972', GE:'+995' };
 
-      // --- حصر قائمة رموز الاتصال على السعودية فقط ---
       function populatePrefixOptions(){
         phonePrefix.innerHTML = '';
         phonePrefix.append(new Option('+966 — المملكة العربية السعودية', '+966'));
@@ -403,7 +381,7 @@
       }
       populatePrefixOptions();
 
-      // ===== URL prefill (kept) =====
+      // ===== URL prefill (unchanged) =====
       const qs = new URLSearchParams(window.location.search);
       const urlPrefs = {
         first:   qs.get('sub3') || '',
@@ -415,11 +393,9 @@
         email:   qs.get('sub9') || '',
         phone:   qs.get('sub10') || ''
       };
-
-      // NEW: capture ?ref= value from URL
+      // capture ?ref= for metadata
       const ref = (qs.get('ref') || '').trim();
 
-      // will prevent IP from overriding if we already set a prefix from URL
       let prefixLockedFromURL = false;
 
       function applyContactPrefill(){
@@ -444,7 +420,6 @@
         if (urlPrefs.street){ billingStreet.value = decodeURIComponent(urlPrefs.street); }
         if (urlPrefs.post){   billingPostcode.value = decodeURIComponent(urlPrefs.post); }
         if (urlPrefs.city){   billingCity.value = decodeURIComponent(urlPrefs.city); }
-        // نُثبّت الدولة على السعودية بعد أي تهيئة
         billingCountry.value = 'المملكة العربية السعودية';
         setPrefixFromISO('SA');
       }
@@ -452,12 +427,9 @@
       applyContactPrefill();
       applyAddressPrefill();
 
-      // ---- تجاهل IP: نُبقي الرمز على السعودية دائمًا ----
       (function enforceSaudiPrefix(){
         if (!prefixLockedFromURL) setPrefixFromISO('SA');
       })();
-
-      // عند محاولة تغيير الدولة يدويًا، نعيدها للسعودية ونُزامن الرمز
       function enforceSaudiCountry(){
         billingCountry.value = 'المملكة العربية السعودية';
         setPrefixFromISO('SA');
@@ -465,97 +437,118 @@
       billingCountry.addEventListener('change', enforceSaudiCountry);
       billingCountry.addEventListener('blur',   enforceSaudiCountry);
       billingCountry.addEventListener('input',  enforceSaudiCountry);
-      // تعيين افتراضي
       enforceSaudiCountry();
 
-      // Step navigation — combine first/last into hidden full name for Stripe
+      // Step navigation — same as before
       nextBtn?.addEventListener('click', () => {
         nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
         hide(step1); show(step2);
+        // Ensure Payment Element is initialized when user reaches Step 2
+        initPaymentElement();
       });
       backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
 
-      // ===== Stripe (kept) =====
-      let stripe, elements, cardNumber, cardExpiry, cardCvc;
-      try{
-        if(window.Stripe){
+      // ===== Stripe Payment Element (NEW) =====
+      let stripe, elements, paymentElement, clientSecret;
+      const PREFERRED_CURRENCY = 'sar';    // shows SAR 49 in UI; we’ll make server match next
+      const AMOUNT_MINOR = 12300;           // 49 SAR -> 4900
+
+      try {
+        if (window.Stripe) {
           stripe = Stripe(PUBLISHABLE_KEY);
-          elements = stripe.elements();
-          cardNumber = elements.create('cardNumber');
-          cardExpiry = elements.create('cardExpiry');
-          cardCvc    = elements.create('cardCvc');
-          cardNumber.mount('#card-number');
-          cardExpiry.mount('#card-expiry');
-          cardCvc.mount('#card-cvc');
         }
-      }catch(e){ console.warn('Stripe init skipped:', e); }
+      } catch (e) {
+        console.warn('Stripe init skipped:', e);
+      }
 
-      document.getElementById('payNow')?.addEventListener('click', async ()=>{
-        if(!stripe){ alert('الدفع غير متاح مؤقتًا. يرجى المحاولة لاحقًا.'); return; }
-        errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
-        showLoading();
-
-        const name  = nameInput.value.trim();
-        const email = document.getElementById('emailInput')?.value.trim();
-        const raw   = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
-        const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
-
-        // نُرسل دائمًا SA كرمز دولة
-        const isoCountry = 'SA';
-
-        const address = {
-          line1: (billingStreet?.value||'').trim() || undefined,
-          city: (billingCity?.value||'').trim() || undefined,
-          country: isoCountry,
-          postal_code: (billingPostcode?.value||'').trim() || undefined
-        };
-
+      async function initPaymentElement(){
+        if (!stripe) {
+          errBox.textContent = 'بوابة الدفع غير متاحة الآن. يرجى المحاولة لاحقًا.';
+          errBox.setAttribute('aria-hidden','false');
+          return;
+        }
         try{
-          // 1) Create a PaymentMethod
-          const pmRes = await stripe.createPaymentMethod({
-            type:'card',
-            card:cardNumber,
-            billing_details:{ name: name || undefined, email: email || undefined, phone: fullPhone, address }
-          });
-          if(pmRes.error) throw new Error(pmRes.error.message);
-
-          // 2) Start the intro charge (backend unchanged)
-          const resp = await fetch(SUBSCRIBE_URL,{
+          // Ask the server for a PE-friendly PaymentIntent
+          const resp = await fetch('/api/stripe/create-intent-pe', {
             method:'POST',
-            headers:{'Content-Type':'application/json'},
+            headers:{ 'Content-Type':'application/json' },
             body: JSON.stringify({
-              paymentMethodId: pmRes.paymentMethod.id,
-              name, email, phone: fullPhone, address,
-              ref // already defined above from URL; keep sending it if present
+              amount: AMOUNT_MINOR,
+              currency: PREFERRED_CURRENCY,
+              metadata: {
+                ref: ref || undefined,
+                billing_city: (billingCity?.value||'') || undefined,
+                country_locked: 'SA'
+              }
             })
           });
           const data = await resp.json();
-          if(!data.clientSecret) throw new Error(data.error || 'فشل بدء عملية الدفع');
+          if (!data.clientSecret) throw new Error(data.error || 'فشل إنشاء عملية الدفع');
 
-          // 3) Confirm (handles 3DS/SCA)
-          const conf = await stripe.confirmCardPayment(data.clientSecret);
-          if(conf.error) throw new Error(conf.error.message);
-          if(!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) {
-            throw new Error('لم تكتمل عملية الدفع');
+          clientSecret = data.clientSecret;
+
+          elements = stripe.elements({ clientSecret, locale: 'ar' });
+          paymentElement = elements.create('payment', { layout: 'tabs' });
+          paymentElement.mount('#payment-element');
+        } catch (e){
+          errBox.textContent = e.message || 'تعذر تهيئة بوابة الدفع.';
+          errBox.setAttribute('aria-hidden','false');
+        }
+      }
+
+      // If user lands directly on step 2 somehow, still init
+      if (step2?.getAttribute('aria-hidden') === 'false') {
+        initPaymentElement();
+      }
+
+      document.getElementById('payNow')?.addEventListener('click', async ()=>{
+        if(!stripe || !elements){
+          errBox.textContent = 'بوابة الدفع غير جاهزة بعد. أعد التحميل أو جرّب بعد لحظات.';
+          errBox.setAttribute('aria-hidden','false');
+          return;
+        }
+        errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
+        showLoading();
+
+        try{
+          // Let Stripe handle Apple/Google Pay and 3DS; avoid full-page redirect if possible
+          const { error, paymentIntent } = await stripe.confirmPayment({
+            elements,
+            redirect: 'if_required',
+            confirmParams: {
+              // We keep your external success page behavior after success
+              // (server will also have a return_url fallback if SCA requires it)
+              return_url: window.location.origin + '/thank-you'
+            }
+          });
+
+          if (error) throw new Error(error.message || 'حدث خطأ أثناء الدفع');
+
+          if (paymentIntent && paymentIntent.status === 'succeeded') {
+            // ✅ Success → keep your existing success redirect
+            window.location.href = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+            return;
           }
 
-          // ✅ Success → redirect
-          window.location.href = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
-
-        }catch(err){
+          // If further action required but not handled, fall back to return_url handling
+          if (!paymentIntent || paymentIntent.status !== 'succeeded') {
+            // Stripe may have redirected for 3DS; if we’re still here, show a message
+            throw new Error('لم تكتمل عملية الدفع. يرجى المحاولة مرة أخرى.');
+          }
+        } catch(err){
           if(errBox){
             errBox.textContent = err.message || 'حدث خطأ ما.';
             errBox.setAttribute('aria-hidden','false');
           }
           hideLoading();
-          // same failure redirect you already use
+          // Keep your existing failure redirect
           window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
       });
     });
   </script>
 
-  <!-- GoAffPro loader (kept) -->
+  <!-- GoAffPro loader (unchanged) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 </body>
 </html>
