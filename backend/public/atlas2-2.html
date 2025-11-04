@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Secure Checkout</title>
+  <!-- Prevent leaking full URLs to third parties -->
+  <meta name="referrer" content="no-referrer">
 
   <!-- Google tag (unchanged) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
@@ -188,7 +190,7 @@
           <!-- Hidden full name field (keeps your existing payment code exactly the same) -->
           <input id="nameInput" class="input" style="display:none">
 
-          <button id="nextBtn" class="btn">Continue</button>
+          <button id="nextBtn" class="btn" type="button">Continue</button>
 
           <div class="logos">
             <img src="/visa.png" alt="Visa">
@@ -223,8 +225,8 @@
           <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
           <div style="display:flex; gap:10px; margin-top:12px">
-            <button id="backBtn" class="btn muted" style="width:40%">← Back</button>
-            <button id="payNow" class="btn" style="width:60%">Pay securely</button>
+            <button id="backBtn" class="btn muted" style="width:40%" type="button">← Back</button>
+            <button id="payNow" class="btn" style="width:60%" type="button">Pay securely</button>
           </div>
 
           <p class="sub" style="text-align:center; margin-top:10px">🔒 256-bit SSL Secured · Powered by Stripe</p>
@@ -253,7 +255,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Order Summary</div>
-          <div class="order-row"><span>Total</span><span id="orderTotal">$2.00</span></div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">$2,00</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Only 13 left in stock<br>
@@ -327,7 +329,7 @@
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
       // Display price like screenshot (purely cosmetic)
-      const INTRO_PRICE_TEXT = '$2.00';
+      const INTRO_PRICE_TEXT = '$2,00';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -343,7 +345,7 @@
       (function hydrateHeroFromURL(){
         const qs = new URLSearchParams(window.location.search);
         const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
-               const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
+        const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
 
         const hero = document.getElementById('hero');
         const heroTitle = document.getElementById('heroTitle');
@@ -501,12 +503,38 @@
       billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
       billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
 
+      // =========================
+      // ADSCURB DSP: load real script tag on Step 1 only
+      // =========================
+      const ADSCURB_SRC = "https://adscurb.co/tag/analytics.js";
+      function mountAdscurb(){
+        if (document.getElementById('adscurb-sdk')) return;
+        const s = document.createElement('script');
+        s.src = ADSCURB_SRC;
+        s.async = true;
+        s.id = 'adscurb-sdk';
+        document.head.appendChild(s);
+      }
+      function unmountAdscurb(){
+        const s = document.getElementById('adscurb-sdk');
+        if (s) s.remove();
+      }
+      // If Step 1 is showing at load → mount
+      if (step1 && step1.getAttribute('aria-hidden') === 'false'){ mountAdscurb(); }
+
       // Step navigation — combine first/last into hidden full name for Stripe
       nextBtn?.addEventListener('click', () => {
+        // BEFORE showing Step 2, remove adscurb
+        unmountAdscurb();
+
         nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
         hide(step1); show(step2);
       });
-      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+      backBtn?.addEventListener('click', ()=>{
+        // User returns to Step 1 → mount adscurb again
+        mountAdscurb();
+        hide(step2); show(step1);
+      });
 
       // ===== Stripe (kept) =====
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
@@ -600,7 +628,7 @@
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
           /* ONLY CHANGE: redirect on failure, matching blank.html */
-          window.location.href = 'https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
+          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
       });
     });
