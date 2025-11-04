@@ -1999,6 +1999,8 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethodId }
     });
 
+
+
     // Create the PaymentIntent for £25 × quantity
     const paymentIntent = await stripe.paymentIntents.create({
   amount,
@@ -2033,7 +2035,47 @@ metadata: {
   }
 });
 
+
+
 // CORS preflight for the £12.50 intro charge
+// CORS preflight for the Payment Element endpoint (SAR 123)
+app.options('/api/stripe/create-intent-pe', cors());
+
+// Payment Element endpoint for the checkout page (SAR 123.00)
+app.post('/api/stripe/create-intent-pe', async (req, res) => {
+  try {
+    // Always enforce the amount/currency server-side (ignore client)
+    const AMOUNT_MINOR = 12300; // 123 SAR -> 12300 (halalas)
+    const CURRENCY = 'sar';
+
+    // Pass through optional metadata from the client (safe keys only)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) {
+          safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+        }
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      // Enables Apple Pay & Google Pay inside the Payment Element
+      automatic_payment_methods: { enabled: true },
+      // Play nice with SCA/3DS
+      payment_method_options: { card: { request_three_d_secure: 'automatic' } },
+      metadata: safeMeta
+    });
+
+    // Respond with the PaymentIntent client secret
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('create-intent-pe error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
 app.options('/api/stripe/intro-charge-1500', cors());
 
 // £12.50 intro charge before starting the subscription (supports quantity)
@@ -2099,18 +2141,6 @@ app.post('/api/stripe/intro-charge-1250', async (req, res) => {
       }
     });
 
-    res.json({
-      clientSecret: paymentIntent.client_secret,
-      paymentIntentId: paymentIntent.id,
-      customerId: customer.id
-    });
-  } catch (err) {
-    console.error('intro-charge-1250 error:', err);
-    res.status(400).json({ error: err.message || 'Unknown error' });
-  }
-});
-
-
 
 // Create the £2.50 trial PaymentIntent and return client_secret for 3DS
 app.options('/api/stripe/trial-charge-intent', cors());
@@ -2168,6 +2198,8 @@ app.post('/api/stripe/trial-charge-intent', async (req, res) => {
     res.status(400).json({ error: err.message || 'Unknown error' });
   }
 });
+
+// (Removed incomplete Payment Element endpoint; a complete version is defined above)
 
 // After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
 app.options('/api/stripe/start-monthly-after-trial', cors());
