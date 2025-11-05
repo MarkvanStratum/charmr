@@ -255,7 +255,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Shrnutí objednávky</div>
-          <div class="order-row"><span>Celkem</span><span id="orderTotal">249&nbsp;Kč</span></div>
+          <div class="order-row"><span>Celkem</span><span id="orderTotal">50&nbsp;Kč</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Skladem už jen 13 ks<br>
@@ -321,15 +321,15 @@
       const orderTotal = document.getElementById('orderTotal');
       const sidebarImg = document.getElementById('sidebarImg');
 
-      // Zachováno: vaše endpointy / klíče
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+      // Zachováno: vaše endpointy / klíče (aktualizované)
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-1250";
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
       const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // ponecháno (nepoužité)
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
-      // Zobrazení ceny (kosmetické). Přepočet 1 USD ≈ 25 Kč
-      const INTRO_PRICE_TEXT = '50\u00A0Kč'; // $2.00 → ~50 Kč
+      // Zobrazení ceny (kosmetické). Přepočet $2 → ~50 Kč
+      const INTRO_PRICE_TEXT = '50\u00A0Kč';
       try { orderTotal.textContent = orderTotal.textContent?.trim() ? orderTotal.textContent : INTRO_PRICE_TEXT; } catch {}
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -345,7 +345,7 @@
       (function hydrateHeroFromURL(){
         const qs = new URLSearchParams(window.location.search);
         const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
-        const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
+               const imgUrlRaw = qs.get('sub2') || qs.get('img') || qs.get('image') || '';
 
         const hero = document.getElementById('hero');
         const heroTitle = document.getElementById('heroTitle');
@@ -590,7 +590,7 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Spusť úvodní platbu $20 (ponecháno – serverová logika)
+          // 2) Spusť úvodní platbu (aktualizovaný endpoint)
           const resp = await fetch(SUBSCRIBE_URL,{
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
@@ -603,9 +603,9 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Platba nebyla dokončena');
 
-          // Úspěch → přesměrování přes BeMob tracker
+          // Úspěch → přesměrování (aktualizovaná finální URL)
           (function(){
-            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/e1420adb-fbc5-4cfe-b0f1-10615c05e062?';
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
             const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
             try{
