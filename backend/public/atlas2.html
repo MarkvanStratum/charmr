@@ -255,7 +255,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Order Summary</div>
-          <div class="order-row"><span>Total</span><span id="orderTotal">$14.95</span></div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">$9.95</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Only 13 left in stock<br>
@@ -329,7 +329,7 @@
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
       // Display price like screenshot (purely cosmetic)
-      const INTRO_PRICE_TEXT = '$14.95';
+      const INTRO_PRICE_TEXT = '$9.95';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
 
       function show(o){ o?.setAttribute('aria-hidden','false'); }
@@ -368,22 +368,14 @@
 
       // ===== Country choices + calling codes =====
       const COUNTRY_CHOICES = {
-        GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland', CA:'Canada', AU:'Australia', NZ:'New Zealand',
-        DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands', BE:'Belgium', CH:'Switzerland', AT:'Austria',
-        DK:'Denmark', NO:'Norway', SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia', HU:'Hungary', RO:'Romania',
-        BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia', ZA:'South Africa',
-        IN:'India', SG:'Singapore', MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines',
-        HK:'Hong Kong', JP:'Japan', KR:'South Korea',
-        AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel'
+        US:'United States', CA:'Canada', AU:'Australia', NZ:'New Zealand'
       };
-      const CALLING_CODES = { US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64', DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32',
-        CH:'+41', AT:'+43', DK:'+45', NO:'+47', SE:'+46', FI:'+358', PT:'+351', PL:'+48', CZ:'+420', HU:'+36', RO:'+40',
-        BR:'+55', MX:'+52', AR:'+54', CL:'+56', CO:'+57', ZA:'+27', IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63',
-        HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972', GE:'+995'
+      const CALLING_CODES = {
+        US:'+1', CA:'+1', AU:'+61', NZ:'+64'
       };
       function populatePrefixOptions(){
         phonePrefix.innerHTML = '';
-        const priority = ['US','GB','CA','AU','DE','FR','ES','IT','NL','SE','IN','JP'];
+        const priority = ['US','CA','AU','NZ'];
         const seen = new Set();
         const add = (cc) => {
           if (seen.has(cc) || !CALLING_CODES[cc]) return;
