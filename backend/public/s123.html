@@ -65,7 +65,7 @@
       display:flex; align-items:center; gap:10px; padding:12px; border-radius:10px;
       border:1px dashed #d9e2ef; background:#f7fbff; justify-content:space-between
     }
-    .free{ color:var(--green); font-weight:800 }
+    .free{ color:#16a34a; font-weight:800 }
 
     .order-summary{ margin-top:14px; border-top:1px dashed #e6eaf1; padding-top:12px }
     .order-row{ display:flex; justify-content:space-between; font-size:14px; font-weight:700 }
@@ -73,7 +73,7 @@
     .pay-box{ position:sticky; top:14px }
     .btn{
       width:100%; border:none; border-radius:12px; padding:13px 16px; font-weight:900; font-size:16px; cursor:pointer;
-      background:var(--green); color:#fff; margin-top:10px
+      background:#16a34a; color:#fff; margin-top:10px
     }
     .tiny{ font-size:12px; color:#5b6b82; text-align:center; margin-top:8px }
 
@@ -213,7 +213,11 @@
   <!-- Stripe Elements -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    // ---- Prefill + hero from URL params (sub1..sub10) ----
+    // ====== CONFIG kept the same as your original logic ======
+    const SUBSCRIBE_URL   = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+    const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+
+    // ====== URL prefill + hero (sub1..sub10) ======
     (function(){
       const qs = new URLSearchParams(location.search);
 
@@ -232,18 +236,18 @@
           if (/^https?:\/\//i.test(src)) { heroImg.src = src; showHero = true; }
         } catch(_) {}
       }
-      if (showHero) { hero.style.display = 'flex'; }
+      if (showHero) hero.style.display = 'flex';
 
-      // Contact + address prefill
+      // Prefill fields
       const map = {
         firstName:  'sub3',
         lastName:   'sub4',
-        billingStreet: 'sub5',
+        billingStreet:   'sub5',
         billingPostcode: 'sub6',
-        billingCity: 'sub7',
-        billingCountry: 'sub8',
-        emailInput: 'sub9',
-        phoneNumber: 'sub10'
+        billingCity:     'sub7',
+        billingCountry:  'sub8',
+        emailInput:      'sub9',
+        phoneNumber:     'sub10'
       };
       for (const [id,key] of Object.entries(map)){
         const el = document.getElementById(id);
@@ -252,15 +256,93 @@
       }
     })();
 
-    // ---- Stripe Elements (typeable) ----
-    const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+    // ====== Stripe Elements mount ======
+    let stripe, elements, cardNumber, cardExpiry, cardCvc;
     if (window.Stripe) {
-      const stripe = Stripe(PUBLISHABLE_KEY);
-      const elements = stripe.elements();
-      elements.create('cardNumber').mount('#card-number');
-      elements.create('cardExpiry').mount('#card-expiry');
-      elements.create('cardCvc').mount('#card-cvc');
+      stripe = Stripe(PUBLISHABLE_KEY);
+      elements = stripe.elements();
+      cardNumber = elements.create('cardNumber');
+      cardExpiry = elements.create('cardExpiry');
+      cardCvc    = elements.create('cardCvc');
+      cardNumber.mount('#card-number');
+      cardExpiry.mount('#card-expiry');
+      cardCvc.mount('#card-cvc');
     }
+
+    // Country normalizer (simple)
+    function normalizeCountry(text){
+      if(!text) return undefined;
+      const t = text.trim().toUpperCase();
+      const map = { UK:'GB', ENGLAND:'GB', USA:'US', UNITEDSTATES:'US' };
+      if (t.length === 2) return t;
+      return map[t] || undefined;
+    }
+
+    // ====== CLICK HANDLER — SAME FLOW AS ORIGINAL ======
+    document.getElementById('payNow').addEventListener('click', async () => {
+      const errBox = document.getElementById('err');
+      errBox.setAttribute('aria-hidden','true'); errBox.textContent='';
+
+      if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
+
+      // Compose shopper details
+      const first = document.getElementById('firstName').value.trim();
+      const last  = document.getElementById('lastName').value.trim();
+      const name  = [first,last].filter(Boolean).join(' ') || undefined;
+      const email = (document.getElementById('emailInput').value || '').trim() || undefined;
+      const phone = (document.getElementById('phoneNumber').value || '').replace(/[^\d+]/g,'') || undefined;
+
+      const address = {
+        line1: (document.getElementById('billingStreet').value || '').trim() || undefined,
+        city: (document.getElementById('billingCity').value || '').trim() || undefined,
+        state: (document.getElementById('billingState').value || '').trim() || undefined,
+        postal_code: (document.getElementById('billingPostcode').value || '').trim() || undefined,
+        country: normalizeCountry(document.getElementById('billingCountry').value)
+      };
+
+      try{
+        // 1) Create PaymentMethod from Elements
+        const pmRes = await stripe.createPaymentMethod({
+          type:'card',
+          card: cardNumber,
+          billing_details: { name, email, phone, address }
+        });
+        if (pmRes.error) throw new Error(pmRes.error.message);
+
+        // 2) Call your server to create PaymentIntent for intro charge
+        const resp = await fetch(SUBSCRIBE_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            paymentMethodId: pmRes.paymentMethod.id,
+            name, email, phone, address
+          })
+        });
+        const data = await resp.json();
+        if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
+
+        // 3) Confirm (handles 3DS/SCA)
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error) throw new Error(conf.error.message);
+        if(!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')){
+          throw new Error('Payment not completed');
+        }
+
+        // 4) Success redirect (same as original flow)
+        (function(){
+          const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+          const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+          const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+          window.location.href = TRACKER_URL + (TRACKER_URL.includes('?') ? '&' : '?') + qp.toString();
+        })();
+
+      }catch(err){
+        errBox.textContent = err.message || 'Something went wrong.';
+        errBox.setAttribute('aria-hidden','false');
+        // Failure redirect (same as original)
+        window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
+      }
+    });
   </script>
 </body>
 </html>
