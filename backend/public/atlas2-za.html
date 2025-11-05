@@ -253,7 +253,7 @@
           </div>
 
           <div class="w-title" style="margin-top:14px">Order Summary</div>
-          <div class="order-row"><span>Total</span><span id="orderTotal">ZAR 99</span></div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">R35</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
             🗃️ Only 13 left in stock<br>
@@ -332,7 +332,8 @@
       const formatZAR = (n)=> 'R' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
       const usdToZar = (u)=> u * USD_TO_ZAR;
 
-      try { orderTotal.textContent = formatZAR(usdToZar(INTRO_PRICE_USD)); } catch {}
+      try { orderTotal.textContent = 'R35'; } catch {}
+
 
       // Convert "$10K" Buyer Protection to ZAR (display only)
       (function convertBuyerProtection(){
@@ -538,7 +539,7 @@
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           overlay.setAttribute('aria-hidden','true'); overlay.style.display='none';
           /* ONLY CHANGE: redirect on failure, matching blank.html */
-          window.location.href = 'https://track.crugate.info/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
+          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
       });
     });
