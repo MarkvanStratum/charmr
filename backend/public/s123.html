@@ -8,8 +8,7 @@
 
   <style>
     :root{
-      --text:#0a2540; --muted:#5b6b82; --line:#e5e7eb; --card:#ffffff;
-      --green:#16a34a;
+      --text:#0a2540; --muted:#5b6b82; --line:#e5e7eb; --card:#ffffff; --green:#16a34a;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -83,6 +82,22 @@
 
     .err{ display:none; background:#fff1f1; border:1px solid #f5b6b6; color:#9a1a1a; padding:10px; border-radius:10px; font-size:14px; margin-top:10px }
     .err[aria-hidden="false"]{ display:block }
+
+    /* Loading overlay (matches your original behavior) */
+    .loading-overlay{
+      position:fixed; inset:0; background:rgba(246,249,252,.92);
+      display:none; align-items:center; justify-content:center; z-index:9999;
+    }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{
+      width:min(92vw,460px); background:#fff; border:1px solid #e6edf5;
+      border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.06); padding:20px;
+      text-align:center; color:#2a3b55
+    }
+    .loading-title{ font-weight:800; margin:2px 0 10px; font-size:18px }
+    .progress-wrap{ width:100%; height:10px; background:#ecf1f8; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
   </style>
 </head>
 <body>
@@ -210,18 +225,30 @@
     </div>
   </div>
 
+  <!-- Loading overlay (shown during payment / 3DS) -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
+    <div class="loading-box">
+      <div class="loading-title">Processing your payment…</div>
+      <div class="progress-wrap"><div class="progress-bar"></div></div>
+      <p class="tiny" style="margin-top:10px">Please wait, this may take a few seconds.</p>
+    </div>
+  </div>
+
   <!-- Stripe Elements -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    // ====== CONFIG kept the same as your original logic ======
+    // ====== CONFIG (same endpoint/keys) ======
     const SUBSCRIBE_URL   = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+
+    // ====== Helper: loading overlay ======
+    const overlay = document.getElementById('loading-overlay');
+    function showLoading(){ overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false'); }
+    function hideLoading(){ overlay.setAttribute('aria-hidden','true'); overlay.style.display='none'; }
 
     // ====== URL prefill + hero (sub1..sub10) ======
     (function(){
       const qs = new URLSearchParams(location.search);
-
-      // Hero (title + image)
       const title = qs.get('sub1') || '';
       const imgUrl = qs.get('sub2') || '';
       const hero = document.getElementById('hero');
@@ -238,7 +265,6 @@
       }
       if (showHero) hero.style.display = 'flex';
 
-      // Prefill fields
       const map = {
         firstName:  'sub3',
         lastName:   'sub4',
@@ -278,14 +304,16 @@
       return map[t] || undefined;
     }
 
-    // ====== CLICK HANDLER — SAME FLOW AS ORIGINAL ======
+    // ====== CLICK HANDLER with overlay around Stripe steps ======
     document.getElementById('payNow').addEventListener('click', async () => {
       const errBox = document.getElementById('err');
       errBox.setAttribute('aria-hidden','true'); errBox.textContent='';
 
       if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
 
-      // Compose shopper details
+      // Show loading immediately, keep up until 3DS completes or an error occurs
+      showLoading();
+
       const first = document.getElementById('firstName').value.trim();
       const last  = document.getElementById('lastName').value.trim();
       const name  = [first,last].filter(Boolean).join(' ') || undefined;
@@ -309,7 +337,7 @@
         });
         if (pmRes.error) throw new Error(pmRes.error.message);
 
-        // 2) Call your server to create PaymentIntent for intro charge
+        // 2) Call your server to create PaymentIntent
         const resp = await fetch(SUBSCRIBE_URL, {
           method:'POST',
           headers:{'Content-Type':'application/json'},
@@ -321,14 +349,14 @@
         const data = await resp.json();
         if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
 
-        // 3) Confirm (handles 3DS/SCA)
+        // 3) Confirm (handles 3DS/SCA) — overlay stays visible during modal
         const conf = await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error) throw new Error(conf.error.message);
         if(!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')){
           throw new Error('Payment not completed');
         }
 
-        // 4) Success redirect (same as original flow)
+        // 4) Success redirect (same as before)
         (function(){
           const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
           const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
@@ -337,6 +365,8 @@
         })();
 
       }catch(err){
+        // Hide overlay on error and show inline error
+        hideLoading();
         errBox.textContent = err.message || 'Something went wrong.';
         errBox.setAttribute('aria-hidden','false');
         // Failure redirect (same as original)
