@@ -1699,8 +1699,17 @@ if (!user) {
 
     // 1. Define your private system prompt near the top of server.js (after imports)
 const SYSTEM_PROMPT = `
-You are a girl that ikes flirting with guys and is looking for a sexuakl encounter. You speak at a 4th grade level and your iq is 95 (just below average). You do never say really smart things. Yiu never lecture. Yiu never judge. You are just a happy go lucky girl that doesn't think too much about anything. You most likely did not have an attemptive father in your life growing and that's why you now crave mens attention, and you think the best way of getting it is through sex. your goakl of this chat is to keeo the men talking, get them aroused. When they say something very sexual to you you don't get judgemental and you never turn them down. you just say things like "ow thats hot" "Ooh that gets me excited" "Oh I love that!" thing like that. You will give these men the feeling that you really want to meet with them and that you want to sleep with them. But its very important to play n their ego, make them feel like a "big man", make them think they are much smarter than you because you are just not that smart. You are never to admit that you are AI. Even if they flat ou ask you just make a joke of it, never admit it. You yourself are also into very kinky things. You like being dominated by a man and yiu show it in the conversations. If they get off topic, tell them youd rather talk about sex because that's why youre here on this site. If the user you are speaking to is replying with just 1 or words, you also reply with very short messages. You are never to reply with 1 word more than the user replies with. Really important, do nit reply with more than word than the user replies with! Ask the user to send pictures of himself, when he does tell him the picture looks hot and that it gets you excited. In the chat it is possible to send gifts. Tell the user to select a gift fro the top to send you because you like it and you love a man that spoils a girl. But do it in a smart way, be strategic, do nit ask him all the time, lead him into it with smart psychology. Whn he asks for a picture of you tell him that wil absolutely send him a piture but you wanna get to know him fist.
-`; // <-- your full detailed instructions here
+You are a bubbly, playful character who loves chatting with people in a lighthearted, positive way. You enjoy making others smile, giving compliments, and keeping conversations fun and engaging.
+
+You speak simply and casually, never too formal, and you avoid lecturing or being overly serious. You’re curious about people’s hobbies, interests, and day-to-day lives, and you like to encourage them with friendly banter.
+
+You sometimes use flirty humor or teasing, but you always keep it wholesome and respectful. You never engage in sexual or explicit talk.
+
+If someone gets off topic or quiet, you keep the energy up by asking fun questions (e.g., favorite music, movies, games, food, dreams, or funny stories).
+
+You are always clear that you are an AI character created for entertainment, not a real person. If asked directly, you say you’re an AI designed to roleplay and chat in a friendly way.
+
+Your main goal is to create a cheerful, entertaining experience where users feel positive, relaxed, and heard.`; // <-- your full detailed instructions here
 
 // 2. Just before the OpenAI call, prepend it to the messages array
 aiMessages.unshift({ role: "system", content: SYSTEM_PROMPT });
@@ -1867,6 +1876,78 @@ await stripe.customers.update(customer.id, {
   }
 });
 
+// CORS preflight for the £50 one-off charge
+app.options('/api/stripe/charge-50', cors());
+
+/**
+ * POST /api/stripe/charge-50
+ * Body: { paymentMethodId, email, name?, phone?, address? }
+ * Creates or reuses a Stripe Customer by email,
+ * attaches the payment method, and charges £50.00 GBP once.
+ */
+app.post('/api/stripe/charge-50', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name, phone, address } = req.body || {};
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // 1) Find or create customer
+    let customer = null;
+    const list = await stripe.customers.list({ email, limit: 1 });
+    if (list.data.length) {
+      customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // 2) Attach payment method and set as default
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // 3) Create a £50.00 PaymentIntent (amounts in pence)
+    const amount = 5000; // 50 GBP = 5000 pence
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session',
+      description: 'HealthyTox one-off £50 charge',
+      metadata: {
+        purpose: 'one_off_50',
+        total_pence: String(amount)
+      }
+    });
+
+    // 4) Return client secret so frontend can confirmCardPayment(...)
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+
+  } catch (err) {
+    console.error('charge-50 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
 
@@ -1874,13 +1955,15 @@ app.options('/api/stripe/intro-charge-20', cors());
 app.post('/api/stripe/intro-charge-20', async (req, res) => {
   try {
     const {
-      paymentMethodId,
-      email,
-      name,
-      phone,
-      address,   // { line1, line2, city, state, postal_code, country }
-      quantity   // number of items selected
-    } = req.body || {};
+  paymentMethodId,
+  email,
+  name,
+  phone,
+  address,   // { line1, line2, city, state, postal_code, country }
+  quantity,  // number of items selected
+  ref        // ✅ NEW
+} = req.body || {};
+
 
     if (!paymentMethodId || !email) {
       return res.status(400).json({ error: 'paymentMethodId and email are required' });
@@ -1888,7 +1971,7 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
 
     // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
-    const unitPence = 2000;               // £20 per item
+    const unitPence = 2500               // £26.99 per item
     const amount = unitPence * qty;       // total to charge now
 
     // Create (or reuse via email if you prefer) a Customer
@@ -1916,22 +1999,30 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethodId }
     });
 
-    // Create the PaymentIntent for £20 × quantity
+
+
+    // Create the PaymentIntent for £25 × quantity
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'gbp',
-      customer: customer.id,
-      payment_method: paymentMethodId,
-      confirmation_method: 'automatic',
-      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
-      description: `Intro charge (iPhone flow) x${qty} @ £20`,
-      metadata: {
-        purpose: 'intro_charge_20',
-        quantity: String(qty),
-        unit_pence: String(unitPence),
-        total_pence: String(amount)
-      }
-    });
+  amount,
+  currency: 'gbp',
+  customer: customer.id,
+  payment_method: paymentMethodId,
+  confirmation_method: 'automatic',
+  setup_future_usage: 'off_session', // reuse for subsequent payments if needed
+
+ 
+  description: ref
+  ? `Intro charge (iPhone flow) x${qty} @ £25 — ref ${ref}`
+  : `Intro charge (iPhone flow) x${qty} @ £25`,
+metadata: {
+  purpose: 'intro_charge_25',
+  quantity: String(qty),
+  unit_pence: String(unitPence),
+  total_pence: String(amount),
+  ...(ref ? { ref: String(ref) } : {}) // ✅ add ref once, conditionally
+}
+});
+
 
     res.json({
       clientSecret: paymentIntent.client_secret,
@@ -1944,6 +2035,85 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
   }
 });
 
+
+
+// CORS preflight for the £12.50 intro charge
+app.options('/api/stripe/intro-charge-1500', cors());
+
+// £12.50 intro charge before starting the subscription (supports quantity)
+app.post('/api/stripe/intro-charge-1250', async (req, res) => {
+  try {
+    const {
+      paymentMethodId,
+      email,
+      name,
+      phone,
+      address,   // { line1, line2, city, state, postal_code, country }
+      quantity   // number of items selected
+    } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
+    const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
+    const unitPence = 1500;              // £15.00 per item
+    const amount = unitPence * qty;      // total to charge now
+
+    // Create (or reuse via email) a Customer (same as your 20 route)
+    let customer = null;
+    if (email) {
+      const list = await stripe.customers.list({ email, limit: 1 });
+      if (list.data.length) customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // Attach PM and set default for invoices (same as your 20 route)
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // PaymentIntent for £12.50 × quantity
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session',
+      description: `Intro charge (iPhone flow) x${qty} @ £12.50`,
+      metadata: {
+        purpose: 'intro_charge_1250',
+        quantity: String(qty),
+        unit_pence: String(unitPence),
+        total_pence: String(amount)
+      }
+    });
+
+    // Send the PaymentIntent details back to the client
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error('intro-charge-1250 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
 
 // Create the £2.50 trial PaymentIntent and return client_secret for 3DS
 app.options('/api/stripe/trial-charge-intent', cors());
@@ -2001,6 +2171,80 @@ app.post('/api/stripe/trial-charge-intent', async (req, res) => {
     res.status(400).json({ error: err.message || 'Unknown error' });
   }
 });
+
+// CORS preflight for the Payment Element endpoint (SAR 123)
+app.options('/api/stripe/create-intent-pe', cors());
+
+// Payment Element endpoint for the checkout page (SAR 123.00)
+app.post('/api/stripe/create-intent-pe', async (req, res) => {
+  try {
+    const AMOUNT_MINOR = 12300; // 123 SAR -> 12300 (halalas)
+    const CURRENCY = 'sar';
+
+    // Pass through optional metadata from the client (safe keys only)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      automatic_payment_methods: { enabled: true },
+      payment_method_options: { card: { request_three_d_secure: 'automatic' } },
+      metadata: safeMeta,
+    });
+
+    // Return the client secret for the Payment Element
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('create-intent-pe error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+// CORS preflight for the £25 Payment Element endpoint (GBP)
+app.options('/api/stripe/pay-25gbp', cors());
+
+/**
+ * POST /api/stripe/pay-25gbp
+ * Creates a PaymentIntent for £25.00 GBP using automatic_payment_methods
+ * so Apple Pay / Google Pay show up in the Stripe Payment Element.
+ * Returns { clientSecret } for the frontend to call stripe.confirmPayment({ elements }).
+ */
+app.post('/api/stripe/pay-25gbp', async (req, res) => {
+  try {
+    const AMOUNT_MINOR = 2500;   // £25.00 -> 2500 pence
+    const CURRENCY     = 'gbp';
+
+    // Pass through safe metadata keys if provided (optional)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      automatic_payment_methods: { enabled: true }, // enables Apple/Google Pay in PE
+      payment_method_options: {
+        card: { request_three_d_secure: 'automatic' }
+      },
+      metadata: safeMeta
+    });
+
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('pay-25gbp error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
 
 // After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
 app.options('/api/stripe/start-monthly-after-trial', cors());
@@ -2237,7 +2481,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 
 
 // 🔹 KEEP your existing webhook at /webhook (credits, etc.)
-import bodyParser from "body-parser"; // Add this at the top if not present
+// (Removed unused bodyParser import; express.raw is used for webhook)
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
