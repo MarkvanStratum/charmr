@@ -57,7 +57,6 @@
     .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
 
-    /* Stripe Elements Fix */
     .el{ background: transparent; border: none; padding: 0; min-height: 46px; display: block; position: relative; z-index: 1; }
     .StripeElement{ background:#0f131b; border:1px solid #2b3140; border-radius:10px; padding:12px; color:#eaeef6; }
     .StripeElement--focus{ border-color:#7aa3ff; box-shadow:0 0 0 2px rgba(122,163,255,.25); }
@@ -101,23 +100,23 @@
 
       <!-- STEP 2 -->
       <div id="step2" class="step" aria-hidden="true">
-        <h2 class="panel-title">Secure Payment <span class="price-pill">£25.00 GBP</span></h2>
+        <h2 class="panel-title">Secure Payment <span class="price-pill"></span></h2>
         <p class="small">Apple Pay, Google Pay, and cards are securely processed by Stripe.</p>
 
-        <!-- Optional address fields (kept from your original UI) -->
+        <!-- (Keep your address fields if you want them) -->
         <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address">
         <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City">
         <select id="billingCountry" class="select" aria-label="Country"></select>
         <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Postcode">
 
-        <!-- Payment Element (replaces cardNumber/expiry/cvc) -->
+        <!-- Payment Element (wallets + cards) -->
         <div class="label">Payment method</div>
         <div id="payment-element" class="el"></div>
 
         <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
         <button id="backBtn" class="btn muted">← Back</button>
-        <button id="payNow" class="btn">Pay £25 securely</button>
+        <button id="payNow" class="btn">Pay securely</button>
       </div>
     </section>
   </main>
@@ -147,7 +146,6 @@
     const billingCountry  = document.getElementById('billingCountry');
     const billingPostcode = document.getElementById('billingPostcode');
 
-    // IMPORTANT: you updated server.js -> /api/stripe/create-intent-pe to charge £25 GBP
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const API_BASE        = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
@@ -158,6 +156,7 @@
     const showLoading = () => show(overlay);
     const hideLoading = () => hide(overlay);
 
+    // Country code helper (kept from your original)
     const COUNTRY_CHOICES = { US:'United States', GB:'United Kingdom', AU:'Australia', NZ:'New Zealand', CA:'Canada' };
     const CALLING_CODES = { US:'+1', GB:'+44', AU:'+61', NZ:'+64', CA:'+1' };
     const ALLOWED_ISO = Object.keys(COUNTRY_CHOICES);
@@ -167,7 +166,6 @@
       billingCountry.append(new Option('Select a country', '', true, true));
       Object.entries(COUNTRY_CHOICES).forEach(([code,name]) => billingCountry.append(new Option(name, code)));
     }
-
     function populatePrefixOptions(){
       phonePrefix.innerHTML = '';
       Object.entries(CALLING_CODES).forEach(([cc,code]) => {
@@ -176,7 +174,6 @@
       });
       phonePrefix.value = CALLING_CODES.US;
     }
-
     function setPrefixFromISO(cc){ if(ALLOWED_ISO.includes(cc)) phonePrefix.value = CALLING_CODES[cc]; }
 
     populateCountrySelect();
@@ -195,19 +192,20 @@
 
     billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
 
-    // ===== Stripe Payment Element (Apple/Google Pay enabled) =====
+    // ===== Stripe Payment Element (same flow as atlas2) =====
     const stripe = window.Stripe(PUBLISHABLE_KEY);
     let elements, paymentElement, clientSecret;
 
     async function initPaymentElement(){
       try {
-        // Your server now creates a GBP £25 PaymentIntent here
-        const resp = await fetch(API_BASE + '/api/stripe/create-intent-pe', {
+        // Your server's PE endpoint MUST create a PaymentIntent like:
+        // { amount: 2500, currency: 'gbp', automatic_payment_methods: { enabled: true } }
+        const resp = await fetch(API_BASE + '/api/stripe/pay-25gbp', {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
           // Optional: server can ignore these and use its own constants
           body: JSON.stringify({
-            amount: 2500, // minor units
+            amount: 2500,        // £25.00 in pence
             currency: 'gbp',
             metadata: { ref: 'movies-join' }
           })
@@ -225,7 +223,7 @@
       }
     }
 
-    // Step control + account creation (kept from your original flow)
+    // Step control (like atlas2: init PE only when user reaches step 2)
     nextBtn.addEventListener('click', async ()=>{
       hide(step1); show(step2);
       try{
@@ -255,17 +253,16 @@
       throw new Error(data.error || 'Registration failed');
     }
 
-    // Confirm payment (wallets + cards)
+    // Confirm payment (wallets + cards); mirrors atlas2 behaviour
     document.getElementById('payNow').addEventListener('click', async ()=>{
-      if(!stripe || !elements){ errBox.textContent = 'Payment not initialized.'; show(errBox); return; }
+      if(!stripe || !elements){ errBox.textContent = 'Payment not initialized.'; errBox.setAttribute('aria-hidden','false'); return; }
       errBox.setAttribute('aria-hidden','true'); errBox.textContent=''; showLoading();
 
       try{
-        // Optionally pass customer details to help with receipts
         const name  = document.getElementById('nameInput').value.trim();
         const email = document.getElementById('emailInput').value.trim();
 
-        const result = await stripe.confirmPayment({
+        const { error, paymentIntent } = await stripe.confirmPayment({
           elements,
           redirect: 'if_required',
           confirmParams: {
@@ -281,21 +278,17 @@
                 }
               }
             },
-            // Fallback if a redirect is required by the method
-            return_url: window.location.href
+            return_url: window.location.origin + '/thank-you'
           }
         });
 
-        if(result.error){
-          throw new Error(result.error.message || 'Payment failed');
-        }
+        if (error) throw new Error(error.message || 'Payment failed');
 
-        const pi = result.paymentIntent;
-        if (pi && pi.status === 'succeeded') {
-          // Success redirect: preserves your existing tracking behavior
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+          // keep your current success redirect/tracking
           (function(){
             const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
-            const pid = (pi && pi.id) || '';
+            const pid = paymentIntent.id || '';
             const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
             try{
               const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
@@ -315,7 +308,6 @@
         } else {
           throw new Error('Payment not completed');
         }
-
       }catch(err){
         errBox.textContent = err.message || 'Something went wrong.';
         errBox.setAttribute('aria-hidden','false');
