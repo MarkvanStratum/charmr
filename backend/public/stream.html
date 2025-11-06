@@ -145,10 +145,10 @@
     const billingCountry = document.getElementById('billingCountry');
     const billingPostcode = document.getElementById('billingPostcode');
 
-    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/subscribe-notrial";
+    /* === CHANGED to match atlas2.html === */
+    const SUBSCRIBE_URL   = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-    const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
-    const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
+    const API_BASE        = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
     const show = o => o?.setAttribute('aria-hidden','false');
     const hide = o => o?.setAttribute('aria-hidden','true');
@@ -257,9 +257,10 @@
         });
         if(pmRes.error) throw new Error(pmRes.error.message);
 
+        /* === CHANGED: body matches atlas2 (no priceId) === */
         const resp = await fetch(SUBSCRIBE_URL,{
           method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ priceId: FIXED_PRICE_ID, paymentMethodId: pmRes.paymentMethod.id, name, email })
+          body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
         });
         const data = await resp.json();
         if(!data.clientSecret) throw new Error(data.error || 'Payment could not start');
@@ -267,7 +268,26 @@
         const conf = await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error) throw new Error(conf.error.message);
         if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
-          window.location.href='https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+          /* === CHANGED: success redirect matches atlas2 === */
+          (function(){
+            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
+            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+            try{
+              const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+              const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
+              if (sub) {
+                qp.set('sub_id',  sub);
+                qp.set('subid',   sub);
+                qp.set('aff_sub', sub);
+                qp.set('click_id',sub);
+                qp.set('cid',     sub);
+                qp.set('tid',     sub);
+              }
+            }catch(e){}
+            const sep = TRACKER_URL.includes('?') ? '&' : '?';
+            window.location.href = TRACKER_URL + sep + qp.toString();
+          })();
         } else {
           throw new Error('Payment not completed');
         }
