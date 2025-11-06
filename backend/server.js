@@ -2178,7 +2178,8 @@ app.options('/api/stripe/create-intent-pe', cors());
 // Payment Element endpoint for the checkout page (SAR 123.00)
 app.post('/api/stripe/create-intent-pe', async (req, res) => {
   try {
-    const AMOUNT_MINOR = 2500;  // £25.00 -> 2500 (pence) const CURRENCY = 'gbp';
+    const AMOUNT_MINOR = 2500;  // £25.00 -> 2500 (pence)
+    const CURRENCY = 'gbp';
 
     // Pass through optional metadata from the client (safe keys only)
     const safeMeta = {};
