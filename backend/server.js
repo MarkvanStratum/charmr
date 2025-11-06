@@ -2178,8 +2178,7 @@ app.options('/api/stripe/create-intent-pe', cors());
 // Payment Element endpoint for the checkout page (SAR 123.00)
 app.post('/api/stripe/create-intent-pe', async (req, res) => {
   try {
-    const AMOUNT_MINOR = 12300; // 123 SAR -> 12300 (halalas)
-    const CURRENCY = 'sar';
+    const AMOUNT_MINOR = 2500;  // £25.00 -> 2500 (pence) const CURRENCY = 'gbp';
 
     // Pass through optional metadata from the client (safe keys only)
     const safeMeta = {};
@@ -2204,6 +2203,47 @@ app.post('/api/stripe/create-intent-pe', async (req, res) => {
     res.status(400).json({ error: err.message || 'Unknown error' });
   }
 });
+
+// CORS preflight for the £25 Payment Element endpoint (GBP)
+app.options('/api/stripe/pay-25gbp', cors());
+
+/**
+ * POST /api/stripe/pay-25gbp
+ * Creates a PaymentIntent for £25.00 GBP using automatic_payment_methods
+ * so Apple Pay / Google Pay show up in the Stripe Payment Element.
+ * Returns { clientSecret } for the frontend to call stripe.confirmPayment({ elements }).
+ */
+app.post('/api/stripe/pay-25gbp', async (req, res) => {
+  try {
+    const AMOUNT_MINOR = 2500;   // £25.00 -> 2500 pence
+    const CURRENCY     = 'gbp';
+
+    // Pass through safe metadata keys if provided (optional)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      automatic_payment_methods: { enabled: true }, // enables Apple/Google Pay in PE
+      payment_method_options: {
+        card: { request_three_d_secure: 'automatic' }
+      },
+      metadata: safeMeta
+    });
+
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('pay-25gbp error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
 
 // After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
 app.options('/api/stripe/start-monthly-after-trial', cors());
