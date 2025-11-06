@@ -57,11 +57,13 @@
     .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
     @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
 
-    /* Stripe Elements Fix */
     .el{ background: transparent; border: none; padding: 0; min-height: 46px; display: block; position: relative; z-index: 1; }
     .StripeElement{ background:#0f131b; border:1px solid #2b3140; border-radius:10px; padding:12px; color:#eaeef6; }
     .StripeElement--focus{ border-color:#7aa3ff; box-shadow:0 0 0 2px rgba(122,163,255,.25); }
     .StripeElement--invalid{ border-color:#e57373; }
+
+    .price-pill{ display:inline-block; background:#13203a; border:1px solid #2b3140; padding:6px 10px; border-radius:999px; color:#cfe1ff; font-weight:700; font-size:13px; }
+    .label{ font-size:14px; color:#9fb0d6; margin:8px 0 6px; }
   </style>
 </head>
 <body>
@@ -98,24 +100,23 @@
 
       <!-- STEP 2 -->
       <div id="step2" class="step" aria-hidden="true">
-        <h2 class="panel-title">Secure Payment</h2>
-        <p class="small">Card details are encrypted and processed by Stripe.</p>
+        <h2 class="panel-title">Secure Payment <span class="price-pill">£25.00 GBP</span></h2>
+        <p class="small">Apple Pay, Google Pay, and cards are securely processed by Stripe.</p>
 
+        <!-- (Keep your address fields if you want them) -->
         <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address">
         <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City">
         <select id="billingCountry" class="select" aria-label="Country"></select>
         <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Postcode">
 
-        <div id="card-number" class="el"></div>
-        <div class="grid">
-          <div><div id="card-expiry" class="el"></div></div>
-          <div><div id="card-cvc" class="el"></div></div>
-        </div>
+        <!-- Payment Element (wallets + cards) -->
+        <div class="label">Payment method</div>
+        <div id="payment-element" class="el"></div>
 
         <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
         <button id="backBtn" class="btn muted">← Back</button>
-        <button id="payNow" class="btn">Start Streaming Securely</button>
+        <button id="payNow" class="btn">Pay £25 securely</button>
       </div>
     </section>
   </main>
@@ -137,16 +138,14 @@
     const nextBtn = document.getElementById('nextBtn');
     const backBtn = document.getElementById('backBtn');
 
-    const phonePrefix = document.getElementById('phonePrefix');
-    const phoneNumber = document.getElementById('phoneNumber');
+    const phonePrefix   = document.getElementById('phonePrefix');
+    const phoneNumber   = document.getElementById('phoneNumber');
 
-    const billingStreet = document.getElementById('billingStreet');
-    const billingCity = document.getElementById('billingCity');
-    const billingCountry = document.getElementById('billingCountry');
+    const billingStreet   = document.getElementById('billingStreet');
+    const billingCity     = document.getElementById('billingCity');
+    const billingCountry  = document.getElementById('billingCountry');
     const billingPostcode = document.getElementById('billingPostcode');
 
-    /* === CHANGED to match atlas2.html === */
-    const SUBSCRIBE_URL   = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const API_BASE        = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
 
@@ -157,6 +156,7 @@
     const showLoading = () => show(overlay);
     const hideLoading = () => hide(overlay);
 
+    // Country code helper (kept from your original)
     const COUNTRY_CHOICES = { US:'United States', GB:'United Kingdom', AU:'Australia', NZ:'New Zealand', CA:'Canada' };
     const CALLING_CODES = { US:'+1', GB:'+44', AU:'+61', NZ:'+64', CA:'+1' };
     const ALLOWED_ISO = Object.keys(COUNTRY_CHOICES);
@@ -166,7 +166,6 @@
       billingCountry.append(new Option('Select a country', '', true, true));
       Object.entries(COUNTRY_CHOICES).forEach(([code,name]) => billingCountry.append(new Option(name, code)));
     }
-
     function populatePrefixOptions(){
       phonePrefix.innerHTML = '';
       Object.entries(CALLING_CODES).forEach(([cc,code]) => {
@@ -175,7 +174,6 @@
       });
       phonePrefix.value = CALLING_CODES.US;
     }
-
     function setPrefixFromISO(cc){ if(ALLOWED_ISO.includes(cc)) phonePrefix.value = CALLING_CODES[cc]; }
 
     populateCountrySelect();
@@ -194,22 +192,44 @@
 
     billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
 
-    // Stripe Elements - Dark Mode
-    let stripe, elements, cardNumber, cardExpiry, cardCvc;
-    if(window.Stripe){
-      stripe = Stripe(PUBLISHABLE_KEY);
-      const appearance = { theme: 'night', labels: 'floating' };
-      elements = stripe.elements({ appearance });
-      const style = { base:{ color:'#eaeef6', fontSize:'16px', '::placeholder':{ color:'#97a0b3' } }, invalid:{ color:'#ffb1bd' } };
-      cardNumber = elements.create('cardNumber', { style });
-      cardExpiry = elements.create('cardExpiry', { style });
-      cardCvc = elements.create('cardCvc', { style });
-      cardNumber.mount('#card-number'); cardExpiry.mount('#card-expiry'); cardCvc.mount('#card-cvc');
+    // ===== Stripe Payment Element (same flow as atlas2) =====
+    const stripe = window.Stripe(PUBLISHABLE_KEY);
+    let elements, paymentElement, clientSecret;
+
+    async function initPaymentElement(){
+      try {
+        // Your server's PE endpoint MUST create a PaymentIntent like:
+        // { amount: 2500, currency: 'gbp', automatic_payment_methods: { enabled: true } }
+        const resp = await fetch(API_BASE + '/api/stripe/create-intent-pe', {
+          method:'POST',
+          headers:{ 'Content-Type':'application/json' },
+          // Optional: server can ignore these and use its own constants
+          body: JSON.stringify({
+            amount: 2500,        // £25.00 in pence
+            currency: 'gbp',
+            metadata: { ref: 'movies-join' }
+          })
+        });
+        const data = await resp.json();
+        if (!data.clientSecret) throw new Error(data.error || 'Could not start payment');
+        clientSecret = data.clientSecret;
+
+        elements = stripe.elements({ clientSecret, appearance: { theme:'night', labels:'floating' } });
+        paymentElement = elements.create('payment', { layout: 'tabs' });
+        paymentElement.mount('#payment-element');
+      } catch(e){
+        errBox.textContent = e.message || 'Payment gateway is unavailable.';
+        errBox.setAttribute('aria-hidden','false');
+      }
     }
 
+    // Step control (like atlas2: init PE only when user reaches step 2)
     nextBtn.addEventListener('click', async ()=>{
       hide(step1); show(step2);
-      try{ await ensureAccount(); }catch(e){
+      try{
+        await ensureAccount();
+        await initPaymentElement();
+      }catch(e){
         errBox.textContent = 'Account setup notice: ' + (e.message||'Please check your details.');
         errBox.setAttribute('aria-hidden','false');
       }
@@ -233,45 +253,42 @@
       throw new Error(data.error || 'Registration failed');
     }
 
+    // Confirm payment (wallets + cards); mirrors atlas2 behaviour
     document.getElementById('payNow').addEventListener('click', async ()=>{
-      if(!stripe){ alert('Payment currently unavailable. Please check your connection and try again.'); return; }
+      if(!stripe || !elements){ errBox.textContent = 'Payment not initialized.'; errBox.setAttribute('aria-hidden','false'); return; }
       errBox.setAttribute('aria-hidden','true'); errBox.textContent=''; showLoading();
 
-      const name = document.getElementById('nameInput').value.trim();
-      const email = document.getElementById('emailInput').value.trim();
-      const raw = (phoneNumber.value || '').replace(/[^0-9]/g,'');
-      const fullPhone = raw ? ((phonePrefix.value||'') + raw) : undefined;
-      const isoCountry = billingCountry.value || undefined;
-
-      const address = {
-        line1: billingStreet.value.trim() || undefined,
-        city: billingCity.value.trim() || undefined,
-        country: isoCountry,
-        postal_code: billingPostcode.value.trim() || undefined
-      };
-
       try{
-        const pmRes = await stripe.createPaymentMethod({
-          type:'card', card:cardNumber,
-          billing_details:{ name,email,phone:fullPhone,address }
-        });
-        if(pmRes.error) throw new Error(pmRes.error.message);
+        const name  = document.getElementById('nameInput').value.trim();
+        const email = document.getElementById('emailInput').value.trim();
 
-        /* === CHANGED: body matches atlas2 (no priceId) === */
-        const resp = await fetch(SUBSCRIBE_URL,{
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
+        const { error, paymentIntent } = await stripe.confirmPayment({
+          elements,
+          redirect: 'if_required',
+          confirmParams: {
+            payment_method_data: {
+              billing_details: {
+                name,
+                email,
+                address: {
+                  line1: (billingStreet.value || undefined),
+                  city: (billingCity.value || undefined),
+                  country: (billingCountry.value || undefined),
+                  postal_code: (billingPostcode.value || undefined)
+                }
+              }
+            },
+            return_url: window.location.origin + '/thank-you'
+          }
         });
-        const data = await resp.json();
-        if(!data.clientSecret) throw new Error(data.error || 'Payment could not start');
 
-        const conf = await stripe.confirmCardPayment(data.clientSecret);
-        if(conf.error) throw new Error(conf.error.message);
-        if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
-          /* === CHANGED: success redirect matches atlas2 === */
+        if (error) throw new Error(error.message || 'Payment failed');
+
+        if (paymentIntent && paymentIntent.status === 'succeeded') {
+          // keep your current success redirect/tracking
           (function(){
             const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
-            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            const pid = paymentIntent.id || '';
             const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
             try{
               const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
@@ -297,6 +314,7 @@
         hideLoading();
       }
     });
+
   });
   </script>
 </body>
