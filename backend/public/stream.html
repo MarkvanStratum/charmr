@@ -28,7 +28,7 @@
 
     .form-panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:24px; }
     .panel-title{ font-size:20px; font-weight:900; margin-bottom:12px; text-align:center }
-    .small{ font-size:13px; color:var(--muted); margin-bottom:18px; text-align:center }
+    .small{ font-size:13px; color:#97a0b3; margin-bottom:18px; text-align:center }
 
     .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px }
     @media (max-width:520px){ .grid{ grid-template-columns:1fr } }
@@ -116,7 +116,7 @@
         <div id="err" class="err" role="alert" aria-hidden="true"></div>
 
         <button id="backBtn" class="btn muted">← Back</button>
-        <button id="payNow" class="btn">Pay £25 securely</button>
+        <button id="payNow" class="btn">Pay securely</button>
       </div>
     </section>
   </main>
@@ -198,14 +198,11 @@
 
     async function initPaymentElement(){
       try {
-        // Your server's PE endpoint MUST create a PaymentIntent like:
-        // { amount: 2500, currency: 'gbp', automatic_payment_methods: { enabled: true } }
-        const resp = await fetch(API_BASE + '/api/stripe/create-intent-pe', {
+        const resp = await fetch(API_BASE + '/api/stripe/pay-25gbp', {
           method:'POST',
           headers:{ 'Content-Type':'application/json' },
-          // Optional: server can ignore these and use its own constants
           body: JSON.stringify({
-            amount: 2500,        // £25.00 in pence
+            amount: 2500,
             currency: 'gbp',
             metadata: { ref: 'movies-join' }
           })
@@ -223,7 +220,7 @@
       }
     }
 
-    // Step control (like atlas2: init PE only when user reaches step 2)
+    // Step control (init PE only when user reaches step 2)
     nextBtn.addEventListener('click', async ()=>{
       hide(step1); show(step2);
       try{
@@ -253,7 +250,7 @@
       throw new Error(data.error || 'Registration failed');
     }
 
-    // Confirm payment (wallets + cards); mirrors atlas2 behaviour
+    // Confirm payment (wallets + cards)
     document.getElementById('payNow').addEventListener('click', async ()=>{
       if(!stripe || !elements){ errBox.textContent = 'Payment not initialized.'; errBox.setAttribute('aria-hidden','false'); return; }
       errBox.setAttribute('aria-hidden','true'); errBox.textContent=''; showLoading();
@@ -285,7 +282,6 @@
         if (error) throw new Error(error.message || 'Payment failed');
 
         if (paymentIntent && paymentIntent.status === 'succeeded') {
-          // keep your current success redirect/tracking
           (function(){
             const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
             const pid = paymentIntent.id || '';
