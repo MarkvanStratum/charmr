@@ -305,7 +305,7 @@
   <!-- GoAffPro loader (neschimbat) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <!-- Minimal step switcher: toggles steps and fills hidden full name -->
+  <!-- Minimal step switcher + Stripe Elements reflow fix -->
   <script>
     (function () {
       const nextBtn = document.getElementById('nextBtn');
@@ -316,6 +316,14 @@
       const firstName = document.getElementById('firstName');
       const lastName = document.getElementById('lastName');
 
+      function reflowStripeElements() {
+        // Nudge Stripe Elements to recalc size after being revealed
+        window.dispatchEvent(new Event('resize'));
+        // Ensure iframes stretch full width (helps when initially measured at 0)
+        const iframes = step2.querySelectorAll('iframe');
+        iframes.forEach((f) => { try { f.style.width = '100%'; } catch(e){} });
+      }
+
       if (nextBtn) nextBtn.addEventListener('click', function () {
         if (nameInput && firstName && lastName) {
           const fn = firstName.value.trim();
@@ -324,6 +332,11 @@
         }
         step1.setAttribute('aria-hidden', 'true');
         step2.setAttribute('aria-hidden', 'false');
+
+        // Reflow immediately and once more after the browser paints
+        reflowStripeElements();
+        setTimeout(reflowStripeElements, 50);
+
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
 
