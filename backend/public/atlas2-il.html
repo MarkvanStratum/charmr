@@ -304,5 +304,35 @@
 
   <!-- GoAffPro loader (neschimbat) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <!-- Minimal step switcher: toggles steps and fills hidden full name -->
+  <script>
+    (function () {
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const nameInput = document.getElementById('nameInput');
+      const firstName = document.getElementById('firstName');
+      const lastName = document.getElementById('lastName');
+
+      if (nextBtn) nextBtn.addEventListener('click', function () {
+        if (nameInput && firstName && lastName) {
+          const fn = firstName.value.trim();
+          const ln = lastName.value.trim();
+          nameInput.value = [fn, ln].filter(Boolean).join(' ');
+        }
+        step1.setAttribute('aria-hidden', 'true');
+        step2.setAttribute('aria-hidden', 'false');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      if (backBtn) backBtn.addEventListener('click', function () {
+        step2.setAttribute('aria-hidden', 'true');
+        step1.setAttribute('aria-hidden', 'false');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+    })();
+  </script>
 </body>
 </html>
