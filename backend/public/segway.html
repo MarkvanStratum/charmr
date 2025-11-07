@@ -222,6 +222,9 @@
     }
 
     document.getElementById('nextBtn').onclick=async()=>{ 
+      // subtle click sound
+      clickTick();
+
       if(!nameInput.value||!emailInput.value||!phoneNumber.value){
         alert("Please enter your name, email and phone number");
         return;
@@ -245,9 +248,13 @@
           leadPixelFired = true;
         }catch(_e){}
       }
+
+      // success chime when showing payment step
+      successChime();
     };
 
     document.getElementById('backBtn').onclick=()=>{ 
+      clickTick();
       step1.setAttribute("aria-hidden","false");
       step2.setAttribute("aria-hidden","true");
     };
@@ -265,6 +272,57 @@
       }
     })();
 
+    /* ---------- Simple Web Audio sound effects ---------- */
+    let audioCtx;
+    function getAudioCtx(){
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return null;
+        audioCtx = new Ctx();
+      }
+      return audioCtx;
+    }
+
+    function beep(freq=800, duration=0.08, volume=0.3){
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    }
+
+    function clickTick(){
+      beep(900, 0.04, 0.25);
+    }
+
+    function successChime(){
+      const freqs = [900, 1200, 1500];
+      freqs.forEach((f, i) => {
+        setTimeout(() => beep(f, 0.09, 0.35), i * 90);
+      });
+    }
+
+    function errorBuzz(){
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "sawtooth";
+      osc.frequency.setValueAtTime(260, ctx.currentTime);
+      osc.frequency.linearRampToValueAtTime(140, ctx.currentTime + 0.18);
+      gain.gain.value = 0.25;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.2);
+    }
+
     /* ---------- Stripe logic (same endpoints as original) ---------- */
     const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
@@ -275,12 +333,22 @@
     cardNumber.mount("#card-number"); cardExpiry.mount("#card-expiry"); cardCvc.mount("#card-cvc");
 
     const $err=document.getElementById("err"), overlay=document.getElementById("loading-overlay");
-    function showError(m){ $err.textContent=m; $err.style.display="block"; $err.setAttribute('aria-hidden','false'); }
-    function hideError(){ $err.textContent=""; $err.style.display="none"; $err.setAttribute('aria-hidden','true'); }
+    function showError(m){
+      $err.textContent=m;
+      $err.style.display="block";
+      $err.setAttribute('aria-hidden','false');
+      errorBuzz();
+    }
+    function hideError(){
+      $err.textContent="";
+      $err.style.display="none";
+      $err.setAttribute('aria-hidden','true');
+    }
     function showLoading(){ overlay.setAttribute("aria-hidden","false"); }
     function hideLoading(){ overlay.setAttribute("aria-hidden","true"); }
 
     document.getElementById("payNow").onclick = async () => {
+      clickTick();
       hideError(); showLoading();
       const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
       const prefix=(phonePrefix?.value||'+27').trim();
@@ -359,6 +427,8 @@
           return;
         }
 
+        // success sound before redirect
+        successChime();
         window.location.href = "thankyou-iphone.html";
       }catch(e){
         hideLoading();

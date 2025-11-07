@@ -1,0 +1,720 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>iPhone 17 Spin — 3 Free Spins</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --maxw: 420px;
+      --ring: 10px;
+      --transition: 3.2s cubic-bezier(0.12,0.64,0.05,1);
+      --bg-top:#020817;
+      --bg-bottom:#020817;
+      --apple:#111827;
+      --accent:#22c55e;
+      --accent2:#38bdf8;
+      --gold:#facc15;
+      --purple:#4f46e5;
+      --pink:#ec4899;
+      --text:#f9fafb;
+      --muted:#9ca3af;
+    }
+    * { box-sizing:border-box; }
+
+    body {
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(148,163,253,0.22), transparent 55%),
+        linear-gradient(to bottom,var(--bg-top),var(--bg-bottom));
+      color:var(--text);
+      -webkit-tap-highlight-color:transparent;
+    }
+
+    .wrap {
+      min-height:100svh;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+
+    header {
+      width:100%;
+      max-width:var(--maxw);
+      padding:24px 16px 4px;
+      text-align:center;
+    }
+    h1 {
+      margin:0;
+      font-size:30px;
+      font-weight:900;
+      letter-spacing:0.08em;
+      text-transform:uppercase;
+      color:#e5e7eb;
+      text-shadow:0 3px 14px rgba(0,0,0,.9);
+    }
+    .sub {
+      margin-top:4px;
+      font-size:13px;
+      color:var(--muted);
+    }
+    .sub b {
+      color:var(--accent2);
+    }
+
+    .main {
+      width:100%;
+      max-width:var(--maxw);
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:14px;
+      padding:0 16px 14px;
+    }
+
+    /* Pointer */
+    .pointer {
+      position:relative;
+      width:100%;
+      display:flex;
+      justify-content:center;
+      margin-bottom:0;
+      z-index:10;
+    }
+    .pointer:after {
+      content:"";
+      position:absolute;
+      top:0;
+      width:0; height:0;
+      border-left:18px solid transparent;
+      border-right:18px solid transparent;
+      border-bottom:30px solid var(--gold);
+      filter:drop-shadow(0 3px 6px rgba(0,0,0,.9));
+    }
+    .pointer:before {
+      content:"";
+      position:absolute;
+      top:28px;
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:radial-gradient(circle at 30% 20%,#fefce8,#fed7aa,#b45309);
+      box-shadow:0 2px 4px rgba(0,0,0,.7);
+    }
+
+    /* Wheel wrapper */
+    .wheel-wrap {
+      position:relative;
+      width:min(74vw,var(--maxw));
+      height:min(74vw,var(--maxw));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .wheel-halo {
+      position:absolute;
+      inset:-14px;
+      border-radius:50%;
+      background:radial-gradient(circle, rgba(148,163,253,0.16), transparent 70%);
+      filter:blur(2px);
+      z-index:0;
+    }
+
+    .wheel {
+      position:absolute;
+      inset:0;
+      margin:auto;
+      border-radius:50%;
+      overflow:hidden;
+      border:var(--ring) solid #fef3c7;
+      box-shadow:
+        0 18px 40px rgba(0,0,0,.95),
+        0 0 0 5px #1f2937,
+        0 0 0 8px #facc15;
+      background:#111827;
+      transform:rotate(0deg);
+      z-index:2;
+    }
+    .wheel.spinning {
+      transition:transform var(--transition);
+    }
+
+    /* Bulb lights */
+    .bulb {
+      position:absolute;
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:#fef3c7;
+      box-shadow:0 0 8px rgba(250,250,210,.95);
+      z-index:3;
+    }
+
+    /* Generic label wrapper */
+    .seg-label-item {
+      position:absolute;
+      pointer-events:none;
+      z-index:4;
+      transform-origin:center center;
+    }
+
+    .seg-label-stack {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      line-height:1.05;
+    }
+
+    .seg-label-amount {
+      font-family:'Bangers', system-ui, sans-serif;
+      font-size:16px;
+      font-weight:900;
+      letter-spacing:0.02em;
+      color:#ffffff;
+      text-shadow:
+        -1px -1px 0 #111827,
+         1px -1px 0 #111827,
+        -1px  1px 0 #111827,
+         1px  1px 0 #111827;
+    }
+
+    .seg-label-sub {
+      font-size:9px;
+      font-weight:700;
+      text-transform:uppercase;
+      color:#bbf7d0;
+      text-shadow:
+        -1px -1px 0 #111827,
+         1px -1px 0 #111827,
+        -1px  1px 0 #111827,
+         1px  1px 0 #111827;
+    }
+
+    .seg-label-zero {
+      font-family:'Bangers', system-ui, sans-serif;
+      font-size:18px;
+      font-weight:900;
+      color:#111827;
+      text-shadow:
+        -1px -1px 0 #f9fafb,
+         1px -1px 0 #f9fafb,
+        -1px  1px 0 #f9fafb,
+         1px  1px 0 #f9fafb;
+    }
+
+    /* Jackpot image label */
+    .seg-label-img {
+      width:80px;
+      height:80px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .seg-label-img img {
+      max-width:100%;
+      max-height:100%;
+      display:block;
+      filter:drop-shadow(0 3px 8px rgba(0,0,0,.9));
+    }
+
+    .cap {
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      z-index:5;
+    }
+    .cap div {
+      width:22%;
+      height:22%;
+      border-radius:50%;
+      background:radial-gradient(circle at 30% 20%, #111827, #111827, #000);
+      box-shadow:
+        inset 0 2px 5px rgba(0,0,0,.45),
+        0 3px 8px rgba(0,0,0,.9);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      font-weight:900;
+      color:#22c55e;
+    }
+
+    /* Stand */
+    .stand {
+      position:relative;
+      width:52%;
+      max-width:200px;
+      height:52px;
+      margin-top:2px;
+      background:linear-gradient(to bottom,#111827,#020817);
+      border-radius:0 0 32px 32px;
+      box-shadow:0 -4px 10px rgba(0,0,0,.8);
+      clip-path:polygon(18% 0,82% 0,100% 75%,0 75%);
+      z-index:1;
+    }
+    .stand-base {
+      position:relative;
+      margin-top:-2px;
+      width:70%;
+      height:10px;
+      background:linear-gradient(to right,#111827,#4b5563,#111827);
+      border-radius:999px;
+      box-shadow:0 6px 14px rgba(0,0,0,.9);
+      z-index:0;
+    }
+
+    .btn {
+      width:100%;
+      max-width:var(--maxw);
+      margin-top:4px;
+      padding:14px 18px;
+      border:none;
+      border-radius:999px;
+      font-weight:900;
+      font-size:17px;
+      text-transform:uppercase;
+      letter-spacing:0.06em;
+      background:linear-gradient(to right,var(--accent2),var(--accent));
+      color:#020817;
+      box-shadow:0 12px 26px rgba(56,189,248,.45);
+    }
+    .btn:disabled {
+      background:#6b7280;
+      color:#e5e7eb;
+      box-shadow:none;
+    }
+
+    .msg {
+      text-align:center;
+      font-size:13px;
+      color:#e5e7eb;
+      text-shadow:0 1px 3px rgba(0,0,0,.85);
+    }
+    .hint {
+      text-align:center;
+      font-size:10px;
+      color:var(--muted);
+    }
+
+    footer {
+      width:100%;
+      max-width:var(--maxw);
+      padding:0 16px 16px;
+      text-align:center;
+      font-size:9px;
+      color:#6b7280;
+    }
+
+    /* Result popup: centered overlay */
+    .result-popup {
+      position:fixed;
+      left:50%;
+      top:50%;
+      transform:translate(-50%, 10px) scale(0.96);
+      padding:12px 22px;
+      border-radius:18px;
+      background:rgba(9,9,11,0.98);
+      color:#e5e7eb;
+      font-size:15px;
+      box-shadow:0 16px 40px rgba(0,0,0,.9);
+      z-index:50;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .25s ease, transform .25s ease;
+    }
+    .result-popup.show {
+      opacity:1;
+      transform:translate(-50%, -50%) scale(1);
+    }
+    .result-popup.jackpot {
+      background:linear-gradient(to right,#22c55e,#15803d);
+      color:#f9fafb;
+      font-weight:800;
+      box-shadow:0 18px 48px rgba(34,197,94,.8);
+    }
+
+    /* Final screen */
+    .final {
+      min-height:100svh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:40px 16px;
+      background:
+        radial-gradient(circle at top, rgba(148,163,253,0.16), transparent 55%),
+        linear-gradient(to bottom,#020817,#000);
+      color:#f9fafb;
+      text-align:center;
+    }
+    .card {
+      width:100%;
+      max-width:var(--maxw);
+      background:radial-gradient(circle at top,#020817,#000814);
+      border-radius:22px;
+      padding:26px 20px;
+      box-shadow:0 18px 40px rgba(0,0,0,.95);
+      border:1px solid rgba(250,250,250,.08);
+    }
+    .card img {
+      max-width:120px;
+      display:block;
+      margin:8px auto 4px;
+      filter:drop-shadow(0 6px 18px rgba(0,0,0,.9));
+    }
+    .cta {
+      display:block;
+      margin-top:16px;
+      padding:14px 18px;
+      border-radius:16px;
+      font-weight:800;
+      background:linear-gradient(to right,#22c55e,#a3e635);
+      color:#020817;
+      text-decoration:none;
+      box-shadow:0 10px 24px rgba(34,197,94,.6);
+    }
+    .hide { display:none; }
+
+    @media (max-width:360px){
+      .seg-label-amount { font-size:13px; }
+      .seg-label-sub { font-size:8px; }
+      .seg-label-img { width:70px; height:70px; }
+    }
+  </style>
+</head>
+<body>
+  <!-- GAME SCREEN -->
+  <section id="game" class="wrap">
+    <header>
+      <h1>iPhone 17 Spin</h1>
+      <div class="sub">
+        3 free spins to unlock <b>Apple discounts</b> or hit the
+        <b>iPhone 17</b> jackpot.
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="pointer"></div>
+
+      <div class="wheel-wrap">
+        <div class="wheel-halo"></div>
+        <div id="wheel" class="wheel"></div>
+        <div class="cap"><div>17</div></div>
+      </div>
+
+      <div class="stand"></div>
+      <div class="stand-base"></div>
+
+      <button id="spinBtn" class="btn">Spin the wheel</button>
+      <div id="msg" class="msg">You have 3 free spins.</div>
+      <div class="hint">Spin 1: Apple discount • Spin 2: 0 • Spin 3: iPhone 17 Jackpot</div>
+    </main>
+
+    <footer>Demo only. Visual odds and prizes are illustrative.</footer>
+  </section>
+
+  <!-- Spin result popup -->
+  <div id="spinResult" class="result-popup hide"></div>
+
+  <!-- FINAL JACKPOT SCREEN -->
+  <section id="final" class="final hide">
+    <div class="card">
+      <div style="font-size:54px; line-height:1">🎉</div>
+      <h2 style="margin:10px 0 6px; font-size:26px; font-weight:800; letter-spacing:0.04em; text-transform:uppercase;">
+        JACKPOT WINNER
+      </h2>
+      <img src="ipn17.png" alt="iPhone 17">
+      <p style="margin:4px 0 12px; font-size:17px;">
+        You’ve won a brand new <b>iPhone 17</b>!
+      </p>
+      <a class="cta" href="https://www.google.com">
+        Click here to claim your prize
+      </a>
+      <div style="font-size:10px; color:#9ca3af; margin-top:6px;">
+        (Google used as placeholder claim URL)
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Segments: Apple discounts & zeros as text; jackpot uses ipn17.png
+    const segments = [
+      { amount: "R200", sub: "Apple discount", type: "discount" },
+      { type: "zero" },
+      { amount: "R300", sub: "Apple discount", type: "discount" },
+      { type: "zero" },
+      { amount: "R400", sub: "Apple discount", type: "discount" },
+      { type: "zero" },
+      { amount: "R250", sub: "Apple discount", type: "discount" },
+      { type: "zero" },
+      { amount: "R350", sub: "Apple discount", type: "discount" },
+      { type: "zero" },
+      { amount: "R500", sub: "Apple discount", type: "discount" },
+      { label: "iPhone 17", type: "jackpot", img: "ipn17.png" },
+    ];
+
+    const SEGMENT_COUNT = segments.length;
+    const DEG_PER = 360 / SEGMENT_COUNT;
+
+    const wheel = document.getElementById("wheel");
+
+    // Colors: jackpot wedge white, others colorful
+    const colors = [
+      "#f97316","#22c55e","#60a5fa","#facc15",
+      "#ec4899","#38bdf8","#a855f7","#fb7185"
+    ];
+    const stops = segments.map((seg, i) => {
+      const start = (i / SEGMENT_COUNT) * 100;
+      const end   = ((i + 1) / SEGMENT_COUNT) * 100;
+      const c =
+        (seg.type === "jackpot" && seg.img)
+          ? "#ffffff"
+          : colors[i % colors.length];
+      return `${c} ${start}% ${end}%`;
+    }).join(",");
+    wheel.style.background = `conic-gradient(${stops})`;
+
+    // Bulbs (aligned circle)
+    (function addBulbs(){
+      const bulbCount = 36;
+      const rect = wheel.getBoundingClientRect();
+      const center = rect.width / 2;
+      const radius = center + 14;
+      for (let i = 0; i < bulbCount; i++) {
+        const angle = (i / bulbCount) * 2 * Math.PI;
+        const x = center + Math.cos(angle) * radius;
+        const y = center + Math.sin(angle) * radius;
+        const b = document.createElement("div");
+        b.className = "bulb";
+        b.style.left = x + "px";
+        b.style.top  = y + "px";
+        wheel.parentElement.appendChild(b);
+      }
+    })();
+
+    // Labels: consistent position in each wedge
+    (function placeLabels(){
+      const rect = wheel.getBoundingClientRect();
+      const radius = rect.width / 2;
+      const rText = radius - 34;
+      const rImg  = radius - 64;
+
+      segments.forEach((seg, i) => {
+        const angleDeg = i * DEG_PER + DEG_PER / 2;
+        const angleRad = angleDeg * Math.PI / 180;
+
+        if (seg.type === "jackpot" && seg.img) {
+          const xImg = radius + Math.sin(angleRad) * rImg;
+          const yImg = radius - Math.cos(angleRad) * rImg;
+
+          const wrap = document.createElement("div");
+          wrap.className = "seg-label-item seg-label-img";
+          wrap.style.left = xImg + "px";
+          wrap.style.top  = yImg + "px";
+          wrap.style.transform = `translate(-50%, -50%) rotate(${angleDeg}deg)`;
+
+          const img = document.createElement("img");
+          img.src = seg.img;
+          img.alt = seg.label || "iPhone 17";
+
+          wrap.appendChild(img);
+          wheel.appendChild(wrap);
+        } else {
+          const x = radius + Math.sin(angleRad) * rText;
+          const y = radius - Math.cos(angleRad) * rText;
+
+          const wrap = document.createElement("div");
+          wrap.className = "seg-label-item";
+          wrap.style.left = x + "px";
+          wrap.style.top  = y + "px";
+          wrap.style.transform = `translate(-50%, -50%) rotate(${angleDeg}deg)`;
+
+          if (seg.type === "zero") {
+            const span = document.createElement("div");
+            span.className = "seg-label-zero";
+            span.textContent = "0";
+            wrap.appendChild(span);
+          } else if (seg.type === "discount" && seg.amount) {
+            const stack = document.createElement("div");
+            stack.className = "seg-label-stack";
+
+            const amt = document.createElement("div");
+            amt.className = "seg-label-amount";
+            amt.textContent = seg.amount;
+
+            const sub = document.createElement("div");
+            sub.className = "seg-label-sub";
+            sub.textContent = seg.sub || "Apple discount";
+
+            stack.appendChild(amt);
+            stack.appendChild(sub);
+            wrap.appendChild(stack);
+          }
+
+          wheel.appendChild(wrap);
+        }
+      });
+    })();
+
+    // --- Simple Web Audio sounds ---
+    let audioCtx;
+    function getAudioCtx(){
+      if (!audioCtx) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return null;
+        audioCtx = new Ctx();
+      }
+      return audioCtx;
+    }
+    function beep(freq=800, duration=0.06, volume=0.25){
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.value = freq;
+      gain.gain.value = volume;
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    }
+    function spinSound(){
+      const ctx = getAudioCtx();
+      if (!ctx) return;
+      for (let i=0;i<12;i++){
+        setTimeout(()=>beep(260 + i*30,0.03,0.18), i*40);
+      }
+    }
+    function winSound(){
+      [900,1200,1500].forEach((f,i)=> setTimeout(()=>beep(f,0.08,0.35), i*90));
+    }
+    function loseSound(){
+      beep(400,0.08,0.22);
+      setTimeout(()=>beep(260,0.1,0.22),90);
+    }
+    function jackpotSound(){
+      const notes=[900,1200,1500,1800,1500,1200];
+      notes.forEach((f,i)=> setTimeout(()=>beep(f,0.09,0.45), i*80));
+    }
+    // Extra chime when the final jackpot screen appears
+    function finalPopupSound(){
+      const notes=[1200,1500,1800,2100];
+      notes.forEach((f,i)=> setTimeout(()=>beep(f,0.08,0.4), i*70));
+    }
+
+    // Deterministic outcomes: discount -> zero -> jackpot
+    const TYPE_INDEXES = segments.reduce((acc, seg, i) => {
+      (acc[seg.type] ||= []).push(i);
+      return acc;
+    }, {});
+    const SEQUENCE = ["discount","zero","jackpot"];
+
+    let spinCount = 0;
+    let rotation = 0;
+
+    const btn        = document.getElementById("spinBtn");
+    const msg        = document.getElementById("msg");
+    const game       = document.getElementById("game");
+    const final      = document.getElementById("final");
+    const spinResult = document.getElementById("spinResult");
+
+    function pickIndex(type){
+      const arr = TYPE_INDEXES[type] || [0];
+      return arr[spinCount % arr.length];
+    }
+
+    function showResultPopup(text, isJackpot=false) {
+      spinResult.textContent = text;
+      spinResult.classList.remove("hide","jackpot");
+      if (isJackpot) spinResult.classList.add("jackpot");
+      void spinResult.offsetWidth;
+      spinResult.classList.add("show");
+
+      const duration = isJackpot ? 1600 : 1000;
+      setTimeout(() => {
+        spinResult.classList.remove("show","jackpot");
+        spinResult.classList.add("hide");
+      }, duration);
+    }
+
+    function spin(){
+      if (btn.disabled) return;
+      if (spinCount >= 3) return;
+
+      const outcomeType = SEQUENCE[spinCount];
+      const targetIndex = pickIndex(outcomeType);
+      const targetCenter = targetIndex * DEG_PER + DEG_PER / 2;
+      const fullTurns = 7 + spinCount * 2;
+
+      // Ensure the chosen wedge ends exactly at the pointer (top)
+      const currentNorm = ((rotation % 360) + 360) % 360;
+      const extra = (currentNorm + targetCenter) % 360;
+      const nextRotation = rotation - (fullTurns * 360 + extra);
+
+      btn.disabled = true;
+      btn.textContent = "Spinning…";
+      msg.textContent = "Spinning…";
+      wheel.classList.add("spinning");
+
+      spinSound();
+
+      requestAnimationFrame(() => {
+        wheel.style.transform = `rotate(${nextRotation}deg)`;
+      });
+
+      const onEnd = () => {
+        wheel.removeEventListener("transitionend", onEnd);
+        wheel.classList.remove("spinning");
+        rotation = nextRotation;
+        spinCount++;
+
+        const seg = segments[targetIndex];
+        let text;
+        let isJackpot = false;
+
+        if (outcomeType === "zero") {
+          text = "No prize this time. Try again!";
+          loseSound();
+        } else if (outcomeType === "jackpot") {
+          text = "JACKPOT! You’ve won an iPhone 17!";
+          isJackpot = true;
+          jackpotSound();
+        } else {
+          text = `You’ve won a ${seg.amount} ${seg.sub || "Apple discount"}!`;
+          winSound();
+        }
+
+        msg.textContent = text;
+        showResultPopup(text, isJackpot);
+
+        if (spinCount >= 3) {
+          setTimeout(() => {
+            game.classList.add("hide");
+            final.classList.remove("hide");
+            // Play celebratory sound when final jackpot screen appears
+            finalPopupSound();
+          }, 2000);
+          btn.textContent = "Spins used";
+          btn.disabled = true;
+        } else {
+          btn.disabled = false;
+          btn.textContent = "Spin the wheel";
+        }
+      };
+
+      wheel.addEventListener("transitionend", onEnd);
+    }
+
+    btn.addEventListener("click", spin);
+  </script>
+</body>
+</html>
