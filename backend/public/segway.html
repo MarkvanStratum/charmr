@@ -259,7 +259,7 @@
 
     /* ---------- Prefill country and price symbol ---------- */
     (function setInitial(){
-      document.querySelectorAll('[data-price]').forEach(el=> el.textContent='R58');
+      document.querySelectorAll('[data-price]').forEach(el=> el.textContent='R199');
       if(billingCountry){
         ['ZA','US','GB','IE','DE','FR','ES','IT','NL','AU','CA'].forEach((cc,i)=>{ const names={ZA:'South Africa',US:'United States',GB:'United Kingdom',IE:'Ireland',DE:'Germany',FR:'France',ES:'Spain',IT:'Italy',NL:'Netherlands',AU:'Australia',CA:'Canada'}; billingCountry.appendChild(new Option(names[cc], cc, i===0, i===0)); });
       }
@@ -285,38 +285,84 @@
       const rawPhone=(phoneNumber?.value||'').replace(/[^\d]/g,'');
       const prefix=(phonePrefix?.value||'+27').trim();
       const fullPhone = rawPhone ? `${prefix}${rawPhone}` : undefined;
-      const addr = { line1:(billingStreet?.value||'').trim()||undefined, city:(billingCity?.value||'').trim()||undefined, postal_code:(billingPostcode?.value||'').trim()||undefined, country:(billingCountry?.value||'').trim()||undefined };
+      const addr = {
+        line1:(billingStreet?.value||'').trim()||undefined,
+        city:(billingCity?.value||'').trim()||undefined,
+        postal_code:(billingPostcode?.value||'').trim()||undefined,
+        country:(billingCountry?.value||'').trim()||undefined
+      };
 
-      const pm = await stripe.createPaymentMethod({ type:"card", card:cardNumber, billing_details:{ name:nameInput.value||undefined, email:emailInput.value||undefined, phone:fullPhone, address:addr } });
-      if(pm.error){ hideLoading(); showError(pm.error.message); return; }
+      const pm = await stripe.createPaymentMethod({
+        type:"card",
+        card:cardNumber,
+        billing_details:{
+          name:nameInput.value||undefined,
+          email:emailInput.value||undefined,
+          phone:fullPhone,
+          address:addr
+        }
+      });
+      if(pm.error){
+        hideLoading();
+        showError(pm.error.message);
+        return;
+      }
 
       try{
         const res = await fetch(SUBSCRIBE_URL,{
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({ paymentMethodId:pm.paymentMethod.id, name:nameInput.value, email:emailInput.value, phone:fullPhone, address:addr })
+          body:JSON.stringify({
+            paymentMethodId:pm.paymentMethod.id,
+            name:nameInput.value,
+            email:emailInput.value,
+            phone:fullPhone,
+            address:addr
+          })
         });
         const data = await res.json();
-        if(data.error){ hideLoading(); showError(data.error); return; }
-        if(!data.clientSecret){ hideLoading(); showError("Payment failed"); return; }
+        if(data.error){
+          hideLoading();
+          showError(data.error);
+          return;
+        }
+        if(!data.clientSecret){
+          hideLoading();
+          showError("Payment failed");
+          return;
+        }
 
         const conf = await stripe.confirmCardPayment(data.clientSecret);
-        if(conf.error){ hideLoading(); showError(conf.error.message); return; }
-        if(!(conf.paymentIntent && conf.paymentIntent.status === "succeeded")){ hideLoading(); showError("Payment not completed"); return; }
+        if(conf.error){
+          hideLoading();
+          showError(conf.error.message);
+          return;
+        }
+        if(!(conf.paymentIntent && conf.paymentIntent.status === "succeeded")){
+          hideLoading();
+          showError("Payment not completed");
+          return;
+        }
 
-        // Keep same follow-up call as original flow
         const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
           method:"POST",
           headers:{"Content-Type":"application/json"},
-          body:JSON.stringify({ paymentIntentId:data.paymentIntentId, priceIdMonthly:MONTHLY_PRICE_ID })
+          body:JSON.stringify({
+            paymentIntentId:data.paymentIntentId,
+            priceIdMonthly:MONTHLY_PRICE_ID
+          })
         });
         const subData = await subRes.json();
-        if(subData.error){ hideLoading(); showError(subData.error); return; }
+        if(subData.error){
+          hideLoading();
+          showError(subData.error);
+          return;
+        }
 
-        // Final redirect (same thank-you URL as original)
         window.location.href = "thankyou-iphone.html";
       }catch(e){
-        hideLoading(); showError(e.message||"Something went wrong");
+        hideLoading();
+        showError(e.message||"Something went wrong");
       }
     };
   </script>
