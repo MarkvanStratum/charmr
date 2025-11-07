@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es-AR">
 <head>
   <meta charset="utf-8" />
@@ -16,7 +16,6 @@
   </script>
 
   <style>
-    /* estilos sin cambios (pegados del original) */
     :root{
       --bg:#fafafa; --text:#0a2540; --muted:#5b6b82; --line:#e5e7eb; --card:#ffffff;
       --green:#18a957; --accent:#0f9d58; --accent2:#2dd4bf; --warn:#d30000;
@@ -88,11 +87,8 @@
     </div>
 
     <div class="grid">
-      <!-- IZQUIERDA: FORMULARIO -->
       <div class="card">
-        <!-- PASO 1: Información -->
         <section id="step1" class="step" aria-hidden="false">
-          <!-- Héroe afiliado (opcional) -->
           <div id="hero" style="display:none; margin-bottom:8px; display:flex; align-items:center; gap:10px">
             <img id="heroImg" alt="" style="width:44px;height:44px;border-radius:8px;border:1px solid #e6eaf1;object-fit:cover">
             <div id="heroTitle" style="font-weight:900"></div>
@@ -150,7 +146,6 @@
             </div>
           </div>
 
-          <!-- Campo oculto (nombre completo) -->
           <input id="nameInput" class="input" style="display:none">
 
           <button id="nextBtn" class="btn" type="button">Continuar</button>
@@ -163,7 +158,6 @@
           </div>
         </section>
 
-        <!-- PASO 2: Pago -->
         <section id="step2" class="step" aria-hidden="true">
           <div class="h2">2. Pago</div>
           <p class="sub">Los datos de tu tarjeta se encriptan y se procesan con Stripe.</p>
@@ -196,7 +190,6 @@
         </section>
       </div>
 
-      <!-- DERECHA: LATERAL -->
       <aside>
         <div class="widget">
           <div class="w-title" style="text-align:center">Qué dicen nuestros clientes</div>
@@ -249,7 +242,6 @@
     </div>
   </div>
 
-  <!-- Capa de carga -->
   <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
     <div class="loading-box">
       <div class="loading-title">Procesando tu pago…</div>
@@ -258,10 +250,8 @@
     </div>
   </div>
 
-  <!-- Stripe.js (sin cambios) -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
-    /* ÚNICO CAMBIO: usar el endpoint y la URL de éxito del archivo subido */
     window.addEventListener('DOMContentLoaded', () => {
       const errBox = document.getElementById('err');
       const nameInput = document.getElementById('nameInput');
@@ -271,8 +261,38 @@
       const phonePrefix = document.getElementById('phonePrefix');
       const phoneNumber = document.getElementById('phoneNumber');
 
-      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // from uploaded file
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-1250"; 
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+
+      // FIXED NAVIGATION
+      if (nextBtn) {
+        nextBtn.addEventListener('click', () => {
+          const firstName = (document.getElementById('firstName')?.value || '').trim();
+          const lastName = (document.getElementById('lastName')?.value || '').trim();
+          const email = (document.getElementById('emailInput')?.value || '').trim();
+          if (!firstName || !lastName || !email) {
+            alert('Completá tu nombre, apellido y correo electrónico para continuar.');
+            return;
+          }
+          if (nameInput) nameInput.value = `${firstName} ${lastName}`.trim();
+          step1.setAttribute('aria-hidden', 'true');
+          step2.setAttribute('aria-hidden', 'false');
+          const cardNumberEl = document.querySelector('#card-number iframe');
+          if (cardNumberEl) cardNumberEl.focus?.();
+        });
+      }
+
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          step2.setAttribute('aria-hidden', 'true');
+          step1.setAttribute('aria-hidden', 'false');
+        });
+      }
 
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try {
@@ -289,74 +309,4 @@
       } catch (e) { console.warn('Stripe init skipped:', e); }
 
       document.getElementById('payNow')?.addEventListener('click', async ()=> {
-        if (!stripe) { alert('Pago no disponible temporalmente. Intentá de nuevo.'); return; }
-        errBox?.setAttribute('aria-hidden','true'); if (errBox) errBox.textContent='';
-        const overlay = document.getElementById('loading-overlay');
-        overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false');
-
-        const name = (nameInput?.value || '').trim();
-        const email = document.getElementById('emailInput')?.value.trim();
-        const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
-        const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
-
-        const address = {
-          line1: (billingStreet?.value||'').trim() || undefined,
-          city: (billingCity?.value||'').trim() || undefined,
-          country: 'AR',
-          postal_code: (billingPostcode?.value||'').trim() || undefined
-        };
-
-        try{
-          const pmRes = await stripe.createPaymentMethod({
-            type:'card',
-            card:cardNumber,
-            billing_details:{ name: name || undefined, email: email || undefined, phone: fullPhone, address }
-          });
-          if (pmRes.error) throw new Error(pmRes.error.message);
-
-          const resp = await fetch(SUBSCRIBE_URL, {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
-          });
-          const data = await resp.json();
-          if (!data.clientSecret) throw new Error(data.error || 'No se pudo iniciar el pago');
-
-          const conf = await stripe.confirmCardPayment(data.clientSecret);
-          if (conf.error) throw new Error(conf.error.message);
-          if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')) throw new Error('El pago no se completó');
-
-          // ÉXITO: redirigir a la URL "diferente" del archivo subido
-          (function(){
-            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/e1420adb-fbc5-4cfe-b0f1-10615c05e062'; // from uploaded file
-            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-            const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
-            try{
-              const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
-              const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
-              if (sub) {
-                qp.set('sub_id',  sub);
-                qp.set('subid',   sub);
-                qp.set('aff_sub', sub);
-                qp.set('click_id',sub);
-                qp.set('cid',     sub);
-                qp.set('tid',     sub);
-              }
-            }catch(e){}
-            const sep = TRACKER_URL.includes('?') ? '&' : '?';
-            window.location.href = TRACKER_URL + sep + qp.toString();
-          })();
-
-        }catch(err){
-          if (errBox){ errBox.textContent = err.message || 'Algo salió mal.'; errBox.setAttribute('aria-hidden','false'); }
-          overlay.setAttribute('aria-hidden','true'); overlay.style.display='none';
-          // redirección de fallo sin cambios
-          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
-        }
-      });
-    });
-  </script>
-
-  <!-- GoAffPro (sin cambios) -->
-  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-</body>
-</html>
+        if (!stripe) { alert('Pago no
