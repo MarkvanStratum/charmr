@@ -52,7 +52,6 @@
   .badges{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px}
   .badge{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;text-align:center;box-shadow:0 8px 26px rgba(1,119,255,.06)}
   .badge b{display:block;margin-top:6px}
-  /* UPDATED: use --product-bg so the field matches the bottle image background */
   .product-hero{min-height:300px;border-radius:22px;border:1px solid var(--line);background:var(--product-bg) url('gluco.jpg') center/contain no-repeat;box-shadow:0 18px 50px rgba(1,119,255,.08)}
 
   /* Flashy headline bar */
@@ -372,8 +371,8 @@
       if (phoneEl) { phoneEl.disabled=false; phoneEl.readOnly=false; }
     })();
 
-    /* ENDPOINT: match atlas3-fr.html */
-    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20"; // same as atlas3-fr.html :contentReference[oaicite:1]{index=1}
+    /* ENDPOINT: match atlas-style intro-charge */
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
 
     const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
     const stripe = Stripe(PUBLISHABLE_KEY);
@@ -448,13 +447,43 @@
           hideLoading(); showError("Payment not completed"); return;
         }
 
-        window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7?";
-      }catch(e){ hideLoading(); showError(e.message||"Something went wrong"); }
+        // Success → BeMob tracker with atlas2-style params
+        (function(){
+          const TRACKER_URL = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+          const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || "";
+          const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+
+          try{
+            const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+            const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem("aff_sub_id") || "");
+            if (sub) {
+              qp.set("sub_id",  sub);
+              qp.set("subid",   sub);
+              qp.set("aff_sub", sub);
+              qp.set("click_id",sub);
+              qp.set("cid",     sub);
+              qp.set("tid",     sub);
+            }
+          }catch(e){}
+
+          // Forward affiliate Meta Pixel ID if present
+          try{
+            const srcQs = new URLSearchParams(location.search);
+            const affiliatePixel = srcQs.get("pixel") || srcQs.get("fb_pixel") || srcQs.get("fbp");
+            if (affiliatePixel) qp.set("pixel", affiliatePixel);
+          }catch(e){}
+
+          const sep = TRACKER_URL.includes("?") ? "&" : "?";
+          window.location.href = TRACKER_URL + sep + qp.toString();
+        })();
+
+      }catch(e){
+        hideLoading();
+        showError(e.message||"Something went wrong");
+      }
     };
   </script>
-<!-- GoAffPro loader (kept, matches atlas.html integration) -->
+  <!-- GoAffPro loader (kept, matches atlas.html integration) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
-</body>
-</html>
 </body>
 </html>

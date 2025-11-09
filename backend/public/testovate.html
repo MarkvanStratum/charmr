@@ -444,11 +444,42 @@
         const conf = await stripe.confirmCardPayment(data.clientSecret);
         if(conf.error){ hideLoading(); showError(conf.error.message); return; }
         if(!(conf.paymentIntent && conf.paymentIntent.status === "succeeded")){
-          hideLoading(); showError("Payment not completed"); return;
-        }
+          hideLoading(); showError("Payment not completed"); return; }
 
-        window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7?";
-      }catch(e){ hideLoading(); showError(e.message||"Something went wrong"); }
+        // Success → BeMob tracker with atlas2-style params
+        (function(){
+          const TRACKER_URL = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+          const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || "";
+          const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+
+          try{
+            const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+            const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem("aff_sub_id") || "");
+            if (sub) {
+              qp.set("sub_id",  sub);
+              qp.set("subid",   sub);
+              qp.set("aff_sub", sub);
+              qp.set("click_id",sub);
+              qp.set("cid",     sub);
+              qp.set("tid",     sub);
+            }
+          }catch(e){}
+
+          // Forward affiliate Meta Pixel ID if present
+          try{
+            const srcQs = new URLSearchParams(location.search);
+            const affiliatePixel = srcQs.get("pixel") || srcQs.get("fb_pixel") || srcQs.get("fbp");
+            if (affiliatePixel) qp.set("pixel", affiliatePixel);
+          }catch(e){}
+
+          const sep = TRACKER_URL.includes("?") ? "&" : "?";
+          window.location.href = TRACKER_URL + sep + qp.toString();
+        })();
+
+      }catch(e){
+        hideLoading();
+        showError(e.message||"Something went wrong");
+      }
     };
   </script>
 
