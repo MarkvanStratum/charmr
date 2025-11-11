@@ -1,0 +1,543 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Pago Seguro</title>
+
+  <!-- Google tag (unchanged) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
+  </script>
+
+  <style>
+    :root{
+      --bg:#fafafa; --text:#0a2540; --muted:#5b6b82; --line:#e5e7eb; --card:#ffffff;
+      --green:#18a957; --accent:#0f9d58; --accent2:#2dd4bf; --warn:#d30000;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--text);
+      font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+    }
+
+    .wrap{max-width:1100px; margin:0 auto; padding:18px 14px 60px}
+
+    /* Top safe strip */
+    .safe{
+      background:#0a0a0a; color:#fff; font-size:12px; padding:6px 10px; text-align:left;
+    }
+
+    /* Two-column layout like the screenshot */
+    .grid{
+      display:grid; grid-template-columns: minmax(0,1fr) 360px; gap:18px; align-items:start;
+    }
+    @media (max-width:980px){ .grid{ grid-template-columns:1fr } }
+
+    .card{ background:var(--card); border:1px solid var(--line); border-radius:12px; padding:22px; }
+
+    .page-title{
+      font-size:28px; font-weight:900; display:flex; align-items:center; gap:8px; margin:6px 0 14px;
+    }
+    .stars{ color:#f6b80c; font-size:15px }
+    .reviews{ color:var(--muted); font-size:13px; margin-left:6px }
+
+    .h2{ font-size:18px; font-weight:800; margin:10px 0 14px }
+    .sub{ font-size:13px; color:#5b6b82; margin-top:-6px }
+
+    .form-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px }
+    .form-grid-1{ display:grid; grid-template-columns:1fr; gap:10px }
+    @media (max-width:620px){ .form-grid{ grid-template-columns:1fr } }
+
+    .label{font-weight:700; font-size:13px; margin:4px 0 4px; color:#334}
+    .input, .select, .el{
+      width:100%; background:#fff; border:1px solid #cfd6e4; border-radius:10px; padding:12px; font-size:15px; outline:none;
+    }
+    .input::placeholder{ color:#8aa0b6 }
+
+    .btn{
+      width:100%; border:none; border-radius:12px; padding:12px 16px; font-weight:900; font-size:16px; cursor:pointer;
+      background:#16a34a; color:#fff;
+    }
+    .btn:disabled{opacity:.65; cursor:not-allowed}
+    .btn.muted{ background:#f1f4f8; color:#20324d; border:1px solid var(--line); }
+
+    .logos{ display:flex; gap:10px; align-items:center; margin-top:12px }
+    .logos img{ height:20px; width:auto; display:block }
+
+    .err{ display:none; background:#fff1f1; border:1px solid #f5bcbc; color:#9a1a1a; padding:10px; border-radius:10px; font-size:14px; margin-top:10px }
+    .err[aria-hidden="false"]{ display:block }
+
+    /* Right column widgets */
+    .widget{ background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px }
+    .widget + .widget{ margin-top:12px }
+    .w-title{ font-weight:800; font-size:16px; margin:2px 0 10px }
+    .order-row{ display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-top:1px dashed #e6eaf1 }
+    .order-row:first-of-type{ border-top:none }
+    .green{ color:var(--green) }
+
+    .delivery{
+      display:flex; align-items:center; gap:12px; border:1px dashed #d9e2ef; background:#f7fbff; padding:12px; border-radius:10px;
+    }
+    .delivery img{ width:52px; height:52px; border-radius:8px; object-fit:cover; border:1px solid #e6eaf1; background:#fff }
+    .tiny{ font-size:12px; color:var(--muted) }
+
+    .trust{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center; }
+    .trust .box{ border:1px solid var(--line); border-radius:10px; padding:8px }
+    .trust .big{ font-weight:900; font-size:18px }
+    .trust .small{ font-size:12px; color:#5b6b82 }
+
+    /* Steps (Information / Payment) */
+    .step{ display:none }
+    .step[aria-hidden="false"]{ display:block }
+
+    /* Stripe element shell to look native */
+    .el{ padding:10px 12px; border-radius:10px; border:1px solid #cfd6e4 }
+
+    /* Loading overlay */
+    .loading-overlay{ position:fixed; inset:0; background:rgba(246,249,252,.92);
+      display:none; align-items:center; justify-content:center; z-index:9999; }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{ width:min(92vw,460px); background:#fff; border:1px solid #e6edf5;
+      border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.06); padding:20px; text-align:center; color:#2a3b55 }
+    .loading-title{ font-weight:800; margin:2px 0 10px; font-size:18px }
+    .progress-wrap{ width:100%; height:10px; background:#ecf1f8; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+  </style>
+</head>
+<body>
+  <div class="safe">Pago seguro con SSL</div>
+
+  <div class="wrap">
+    <div class="page-title">
+      Pago seguro <span style="font-size:18px">🔒</span>
+      <span class="stars">★★★★★</span>
+      <span class="reviews">(2777 Reseñas)</span>
+    </div>
+
+    <div class="grid">
+      <!-- LEFT: FORM -->
+      <div class="card">
+        <!-- STEP 1: Información -->
+        <section id="step1" class="step" aria-hidden="false">
+          <!-- Affiliate dynamic hero (optional) -->
+          <div id="hero" style="display:none; margin-bottom:8px; display:flex; align-items:center; gap:10px">
+            <img id="heroImg" alt="" style="width:44px;height:44px;border-radius:8px;border:1px solid #e6eaf1;object-fit:cover">
+            <div id="heroTitle" style="font-weight:900"></div>
+          </div>
+
+          <div class="h2">1. Información</div>
+
+          <div class="form-grid">
+            <div>
+              <div class="label">Nombre</div>
+              <input id="firstName" class="input" placeholder="Jane" autocomplete="given-name">
+            </div>
+            <div>
+              <div class="label">Apellido</div>
+              <input id="lastName" class="input" placeholder="Doe" autocomplete="family-name">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div style="grid-column:1 / -1">
+              <div class="label">Dirección</div>
+              <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Dirección">
+            </div>
+            <div>
+              <div class="label">Código postal</div>
+              <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Código postal">
+            </div>
+            <div>
+              <div class="label">Ciudad</div>
+              <input id="billingCity" class="input" autocomplete="address-level2" placeholder="Ciudad">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div>
+              <div class="label">Correo electrónico</div>
+              <input id="emailInput" class="input" placeholder="tu@ejemplo.com" type="email" autocomplete="email" required>
+            </div>
+            <div>
+              <div class="label">País</div>
+              <!-- free text to keep your country→ISO conversion -->
+              <input id="billingCountry" class="input" placeholder="País" value="Perú">
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div>
+              <div class="label">Prefijo telefónico del país</div>
+              <select id="phonePrefix" class="select" aria-label="Prefijo telefónico del país"></select>
+            </div>
+            <div>
+              <div class="label">Número de teléfono</div>
+              <input id="phoneNumber" class="input" inputmode="tel" placeholder="Tu número" autocomplete="tel-national">
+            </div>
+          </div>
+
+          <!-- Hidden full name field (keeps your existing payment code exactly the same) -->
+          <input id="nameInput" class="input" style="display:none">
+
+          <button id="nextBtn" class="btn">Continuar</button>
+
+          <div class="logos">
+            <img src="/visa.png" alt="Visa">
+            <img src="mastercard.png" alt="Mastercard">
+            <img src="amex.png" alt="American Express">
+            <img src="discover.jpg" alt="Discover">
+          </div>
+        </section>
+
+        <!-- STEP 2: Pago -->
+        <section id="step2" class="step" aria-hidden="true">
+          <div class="h2">2. Pago</div>
+          <p class="sub">Los datos de tu tarjeta se cifran y son procesados por Stripe.</p>
+
+          <div class="form-grid-1">
+            <div>
+              <div class="label">Número de tarjeta</div>
+              <div id="card-number" class="el"></div>
+            </div>
+            <div class="form-grid">
+              <div>
+                <div class="label">Fecha de expiración</div>
+                <div id="card-expiry" class="el"></div>
+              </div>
+              <div>
+                <div class="label">CVC</div>
+                <div id="card-cvc" class="el"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="err" class="err" role="alert" aria-hidden="true"></div>
+
+          <div style="display:flex; gap:10px; margin-top:12px">
+            <button id="backBtn" class="btn muted" style="width:40%">← Atrás</button>
+            <button id="payNow" class="btn" style="width:60%">Pagar de forma segura</button>
+          </div>
+
+          <p class="sub" style="text-align:center; margin-top:10px">🔒 SSL 256-bit · Operado por Stripe</p>
+        </section>
+      </div>
+
+      <!-- RIGHT: SIDEBAR -->
+      <aside>
+        <div class="widget">
+          <div class="w-title" style="text-align:center">Lo que dicen nuestros clientes</div>
+          <div style="text-align:center; font-weight:700; margin-bottom:4px">Fenella Lara</div>
+          <div style="text-align:center; color:#f6b80c; letter-spacing:1px">★★★★★</div>
+          <p class="tiny" style="text-align:center; margin-top:8px">
+            Recibí mi producto ayer. ¡Atención al cliente rápida y excelente! Muchas gracias.
+          </p>
+        </div>
+
+        <div class="widget">
+          <div class="delivery">
+            <img id="sidebarImg" alt="">
+            <div>
+              <div style="font-weight:800">Entrega rápida a tu dirección</div>
+              <div class="tiny">3–5 días hábiles</div>
+            </div>
+            <div style="margin-left:auto; font-weight:800">Gratis</div>
+          </div>
+
+          <div class="w-title" style="margin-top:14px">Resumen del pedido</div>
+          <div class="order-row"><span>Total</span><span id="orderTotal">S/ 6.73</span></div>
+
+          <div class="tiny" style="margin-top:10px; line-height:1.5">
+            🗃️ Solo quedan 13 en stock<br>
+            👀 <span id="viewingNow">31</span> personas están viendo esto ahora<br>
+            ✅ <span id="recentBuyer">J****s</span> lo consiguió (hace 10 minutos)<br>
+            💳 <span id="purchasedCount">715</span> personas compraron esto en los últimos 7 días
+          </div>
+        </div>
+
+        <div class="widget">
+          <div class="w-title">TIENDA DE CONFIANZA</div>
+          <div class="trust">
+            <div class="box">
+              <div class="big">99%</div>
+              <div class="small">Clientes satisfechos</div>
+            </div>
+            <div class="box">
+              <div class="big">Seguro</div>
+              <div class="small">Cifrado SSL</div>
+            </div>
+            <div class="box">
+              <div class="big">S/ 100K</div>
+              <div class="small">Protección al comprador</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true" style="display:none">
+    <div class="loading-box">
+      <div class="loading-title">Procesando tu pago…</div>
+      <div class="progress-wrap"><div class="progress-bar"></div></div>
+      <p class="sub" style="margin-top:10px">Por favor espera, esto puede tardar unos segundos.</p>
+    </div>
+  </div>
+
+  <!-- Stripe.js -->
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      // ----- DOM -----
+      const step1 = document.getElementById('step1');
+      const step2 = document.getElementById('step2');
+      const errBox = document.getElementById('err');
+      const nextBtn = document.getElementById('nextBtn');
+      const backBtn = document.getElementById('backBtn');
+
+      const firstName = document.getElementById('firstName');
+      const lastName  = document.getElementById('lastName');
+      const nameInput = document.getElementById('nameInput');
+
+      const phonePrefix = document.getElementById('phonePrefix');
+      const phoneNumber = document.getElementById('phoneNumber');
+
+      const billingStreet = document.getElementById('billingStreet');
+      const billingCity = document.getElementById('billingCity');
+      const billingCountry = document.getElementById('billingCountry'); // free text
+      const billingPostcode = document.getElementById('billingPostcode');
+
+      const orderTotal = document.getElementById('orderTotal');
+      const sidebarImg = document.getElementById('sidebarImg');
+
+      // ===== Constants =====
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-1250";
+      const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+      const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+      const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
+      const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
+
+      // ===== PEN DISPLAY (2 USD equivalent) =====
+      // Using mid-market ~3.37 PEN per 1 USD (as of Nov 11, 2025):contentReference[oaicite:0]{index=0}
+      const USD_TO_PEN = 3.3669;
+      const PRICE_USD = 2;
+      const formatPEN = (n)=> 'S/ ' + Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+      const usdToPen = (u)=> u * USD_TO_PEN;
+
+      try {
+        orderTotal.textContent = formatPEN(usdToPen(PRICE_USD)); // ≈ S/ 6.73
+      } catch {}
+
+      // Optional: if any "$" protection text is ever used, convert to PEN for display
+      (function convertBuyerProtection(){
+        document.querySelectorAll('.trust .big').forEach(el=>{
+          const t = (el.textContent||'').trim();
+          if (!t.startsWith('$')) return;
+          let num = t.slice(1).toUpperCase();
+          let usd = 0;
+          if (num.endsWith('K')) usd = parseFloat(num)*1000;
+          else if (num.endsWith('M')) usd = parseFloat(num)*1000000;
+          else usd = parseFloat(num);
+          if (!isNaN(usd)) el.textContent = formatPEN(usdToPen(usd));
+        });
+      })();
+
+      function show(o){ o?.setAttribute('aria-hidden','false'); }
+      function hide(o){ o?.setAttribute('aria-hidden','true'); }
+
+      // ===== Dynamic title + image via URL (sub1, sub2) =====
+      const urlQs = new URLSearchParams(window.location.search);
+      (function hydrateHeroFromURL(){
+        const title = urlQs.get('sub1') || urlQs.get('title') || urlQs.get('t') || '';
+        const imgUrlRaw = urlQs.get('sub2') || urlQs.get('img') || urlQs.get('image') || '';
+        const hero = document.getElementById('hero');
+        const heroTitle = document.getElementById('heroTitle');
+        const heroImg = document.getElementById('heroImg');
+        let showHero = false;
+        if (title){ heroTitle.textContent = decodeURIComponent(title); showHero = true; }
+        if (imgUrlRaw){
+          try{
+            const decoded = decodeURIComponent(imgUrlRaw);
+            if (/^https?:\/\//i.test(decoded)){ heroImg.src = decoded; sidebarImg.src = decoded; showHero = true; }
+          }catch{}
+        }
+        if (showHero) hero.style.display = 'flex';
+      })();
+
+      // ===== ONLY PE country + calling code =====
+      const CALLING_CODES = { PE:'+51' };
+      function populatePrefixOptions(){
+        phonePrefix.innerHTML = '';
+        const code = CALLING_CODES.PE;
+        phonePrefix.append(new Option(`${code} — Perú`, code));
+        phonePrefix.value = code;
+      }
+      populatePrefixOptions();
+
+      function countryTextToISO(text){
+        if(!text) return null;
+        const raw = String(text).trim().toLowerCase();
+        if (raw === 'pe' || raw === 'peru' || raw === 'perú') return 'PE';
+        return null;
+      }
+
+      // ===== URL PREFILL (sub3..sub10) =====
+      const urlPrefs = {
+        first:   urlQs.get('sub3') || '',
+        last:    urlQs.get('sub4') || '',
+        street:  urlQs.get('sub5') || '',
+        post:    urlQs.get('sub6') || '',
+        city:    urlQs.get('sub7') || '',
+        country: urlQs.get('sub8') || '',
+        email:   urlQs.get('sub9') || '',
+        phone:   urlQs.get('sub10') || ''
+      };
+
+      let prefixLockedFromURL = false;
+
+      function applyContactPrefill(){
+        if (urlPrefs.first) firstName.value = decodeURIComponent(urlPrefs.first);
+        if (urlPrefs.last)  lastName.value  = decodeURIComponent(urlPrefs.last);
+        if (urlPrefs.email) document.getElementById('emailInput').value = decodeURIComponent(urlPrefs.email);
+
+        const rawPhone = (urlPrefs.phone || '').trim();
+        if (rawPhone){
+          if (rawPhone.startsWith('+')){
+            const digits = rawPhone.replace(/[^\d]/g,'');
+            const m = digits.match(/^(\d{1,4})(\d{4,15})$/);
+            if (m){ phoneNumber.value = m[2]; prefixLockedFromURL = true; }
+            else { phoneNumber.value = digits; }
+          } else {
+            phoneNumber.value = rawPhone.replace(/[^\d]/g,'');
+          }
+        }
+        // Always show PE prefix
+        phonePrefix.value = CALLING_CODES.PE;
+      }
+
+      function applyAddressPrefill(){
+        if (urlPrefs.street) billingStreet.value    = decodeURIComponent(urlPrefs.street);
+        if (urlPrefs.post)   billingPostcode.value  = decodeURIComponent(urlPrefs.post);
+        if (urlPrefs.city)   billingCity.value      = decodeURIComponent(urlPrefs.city);
+
+        const iso = countryTextToISO(decodeURIComponent(urlPrefs.country||'')) || 'PE';
+        billingCountry.value = 'Perú';
+
+        phonePrefix.value = CALLING_CODES.PE;
+      }
+
+      applyContactPrefill();
+      applyAddressPrefill();
+
+      // Enforce PE no matter what user edits in country
+      function maybeSyncPrefixFromCountry(){
+        billingCountry.value = 'Perú';
+        phonePrefix.value = CALLING_CODES.PE;
+      }
+      billingCountry.addEventListener('change', maybeSyncPrefixFromCountry);
+      billingCountry.addEventListener('blur',   maybeSyncPrefixFromCountry);
+
+      // Step navigation — combine first/last into hidden full name for Stripe
+      nextBtn?.addEventListener('click', () => {
+        nameInput.value = [firstName.value || '', lastName.value || ''].join(' ').trim();
+        hide(step1); show(step2);
+      });
+      backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+
+      // ===== Stripe (kept) =====
+      let stripe, elements, cardNumber, cardExpiry, cardCvc;
+      try{
+        if(window.Stripe){
+          stripe = Stripe(PUBLISHABLE_KEY);
+          elements = stripe.elements();
+          cardNumber = elements.create('cardNumber');
+          cardExpiry = elements.create('cardExpiry');
+          cardCvc    = elements.create('cardCvc');
+          cardNumber.mount('#card-number');
+          cardExpiry.mount('#card-expiry');
+          cardCvc.mount('#card-cvc');
+        }
+      }catch(e){ console.warn('Stripe init skipped:', e); }
+
+      document.getElementById('payNow')?.addEventListener('click', async ()=>{
+        if(!stripe){ alert('Pago temporalmente no disponible. Por favor, inténtalo de nuevo.'); return; }
+        errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
+        const overlay = document.getElementById('loading-overlay');
+        overlay.style.display='flex'; overlay.setAttribute('aria-hidden','false');
+
+        const name = nameInput.value.trim();
+        const email = document.getElementById('emailInput')?.value.trim();
+        const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+        const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
+
+        // Always resolve to ISO PE for Stripe
+        const isoCountry = 'PE';
+
+        const address = {
+          line1: (billingStreet?.value||'').trim() || undefined,
+          city: (billingCity?.value||'').trim() || undefined,
+          country: isoCountry,
+          postal_code: (billingPostcode?.value||'').trim() || undefined
+        };
+
+        try{
+          const pmRes = await stripe.createPaymentMethod({
+            type:'card',
+            card:cardNumber,
+            billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
+          });
+          if(pmRes.error) throw new Error(pmRes.error.message);
+
+          const resp = await fetch(SUBSCRIBE_URL,{
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
+          });
+          const data = await resp.json();
+          if(!data.clientSecret) throw new Error(data.error || 'El pago no se pudo iniciar');
+
+          const conf = await stripe.confirmCardPayment(data.clientSecret);
+          if(conf.error) throw new Error(conf.error.message);
+          if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Pago no completado');
+
+          (function(){
+            const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/e1420adb-fbc5-4cfe-b0f1-10615c05e062';
+            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+            try{
+              const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
+              const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
+              if (sub) {
+                qp.set('sub_id',  sub);
+                qp.set('subid',   sub);
+                qp.set('aff_sub', sub);
+                qp.set('click_id',sub);
+                qp.set('cid',     sub);
+                qp.set('tid',     sub);
+              }
+            }catch(e){}
+            const sep = TRACKER_URL.includes('?') ? '&' : '?';
+            window.location.href = TRACKER_URL + sep + qp.toString();
+          })();
+
+        }catch(err){
+          if(errBox){ errBox.textContent = err.message || 'Algo salió mal.'; errBox.setAttribute('aria-hidden','false'); }
+          overlay.setAttribute('aria-hidden','true'); overlay.style.display='none';
+          window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
+        }
+      });
+    });
+  </script>
+
+  <!-- GoAffPro loader (kept) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</body>
+</html>
