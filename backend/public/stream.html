@@ -156,6 +156,12 @@
     const showLoading = () => show(overlay);
     const hideLoading = () => hide(overlay);
 
+    // --- NEW: Capture affiliate params for Stripe metadata ---
+    const urlParams   = new URLSearchParams(window.location.search);
+    const AFF_REF     = urlParams.get('ref') || '';
+    const AFF_SOURCE  = urlParams.get('source') || '';
+    // --------------------------------------------------------
+
     // Country code helper (kept from your original)
     const COUNTRY_CHOICES = { US:'United States', GB:'United Kingdom', AU:'Australia', NZ:'New Zealand', CA:'Canada' };
     const CALLING_CODES = { US:'+1', GB:'+44', AU:'+61', NZ:'+64', CA:'+1' };
@@ -204,7 +210,12 @@
           body: JSON.stringify({
             amount: 2500,
             currency: 'gbp',
-            metadata: { ref: 'movies-join' }
+            metadata: {
+              ref: 'movies-join',
+              // NEW: surface affiliate data in Stripe metadata
+              aff_ref: AFF_REF || undefined,
+              aff_source: AFF_SOURCE || undefined
+            }
           })
         });
         const data = await resp.json();

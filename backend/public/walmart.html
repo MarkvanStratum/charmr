@@ -211,6 +211,11 @@
     const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
     const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
 
+    // NEW: capture affiliate query params for Stripe metadata
+    const urlParams  = new URLSearchParams(location.search);
+    const AFF_REF    = urlParams.get('ref') || '';
+    const AFF_SOURCE = urlParams.get('source') || '';
+
     function normalizePhone(pref, raw){
       if(!raw) return '';
       const digits = String(raw).replace(/\D/g,'');
@@ -573,7 +578,12 @@
             address: addr,
             amountCents: 75000,
             currency: "usd",
-            description: "Walmart $750 Gift Card"
+            description: "Walmart $750 Gift Card",
+            // NEW: pass affiliate data through so it appears in Stripe metadata (server should forward)
+            metadata: {
+              aff_ref: AFF_REF || undefined,
+              aff_source: AFF_SOURCE || undefined
+            }
           })
         });
 
