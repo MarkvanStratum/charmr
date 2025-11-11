@@ -224,7 +224,7 @@
               <strong>Card</strong>
               <div class="card-brands" style="margin-left:auto;opacity:.9">
                 <img src="mastercard.png" alt="MC">
-                <img src="visa.png" alt="Visa"><!-- fixed path -->
+                <img src="visa.png" alt="Visa">
                 <img src="amex.png" alt="Amex">
                 <img src="discover.jpg" alt="Discover">
               </div>
@@ -272,13 +272,13 @@
           <div class="minihead">
             <img id="productImg" alt="">
             <div class="title-clip" id="productTitle">Your Item</div>
-            <div style="font-weight:900" id="priceTop">$49.99</div>
+            <div style="font-weight:900" id="priceTop">$9.95</div>
           </div>
 
-          <div class="order-row"><span>Subtotal</span><span id="subtotal">$49.99</span></div>
+          <div class="order-row"><span>Subtotal</span><span id="subtotal">$9.95</span></div>
           <div class="order-row"><span>Delivery</span><span>$0.00</span></div>
           <div class="order-row"><span>Discount</span><span id="discount">$0.00</span></div>
-          <div class="order-row" style="font-weight:900"><span>Total</span><span id="orderTotal">$49.99</span></div>
+          <div class="order-row" style="font-weight:900"><span>Total</span><span id="orderTotal">$9.95</span></div>
 
           <div class="delivery" style="margin-top:12px">
             <img id="sidebarImg2" alt="">
@@ -306,10 +306,10 @@
   <script src="https://js.stripe.com/v3"></script>
   <script>
     window.addEventListener('DOMContentLoaded', () => {
-      // ====== CONSTANTS / CONFIG (same as working file) ======
+      // ====== CONSTANTS / CONFIG ======
       const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
-      const API_BASE = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://localhost:5000';
-      const SUBSCRIBE_URL = `${API_BASE}/api/stripe/charge-50`;
+      // Updated to use Render backend:
+      const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
 
       // Capture affiliate params for Stripe metadata
       const urlParams  = new URLSearchParams(window.location.search);
@@ -353,7 +353,7 @@
       const hideLoading = () => overlay.setAttribute('aria-hidden','true');
 
       // ====== Price labels ======
-      const PRICE_TEXT = '$49.99';
+      const PRICE_TEXT = '$9.95';
       try { subtotal.textContent = PRICE_TEXT; orderTotal.textContent = PRICE_TEXT; priceTop.textContent = PRICE_TEXT; } catch(e){}
 
       // ====== Countdown ======
@@ -367,7 +367,7 @@
       function show(o){ o?.setAttribute('aria-hidden','false'); }
       function hide(o){ o?.setAttribute('aria-hidden','true'); }
 
-      // ====== Dynamic title / image / logo via URL (same logic) ======
+      // ====== Dynamic title / image / logo via URL ======
       (function hydrateTitleAndImage(){
         const qs = new URLSearchParams(window.location.search);
         const title = qs.get('sub1') || qs.get('title') || qs.get('t') || '';
@@ -398,7 +398,7 @@
         }catch(e){}
       })();
 
-      // ====== Country + Calling Code (map like working file) ======
+      // ====== Country + Calling Code ======
       const COUNTRY_CHOICES = { US:'United States', CA:'Canada', AU:'Australia', NZ:'New Zealand' };
       const CALLING_CODES   = { US:'+1',           CA:'+1',      AU:'+61',       NZ:'+64' };
 
@@ -410,7 +410,7 @@
         if (defaultISO && CALLING_CODES[defaultISO]) phonePrefix.value = CALLING_CODES[defaultISO];
       }
 
-      // IP-based default like working file (respecting timeouts)
+      // IP-based default
       (async function selectCountryFromIP(){
         const withTimeout=(ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
         const guessISO=()=>{ const cc=(navigator.language||'').split('-')[1]; return (['US','CA','AU','NZ'].includes((cc||'').toUpperCase())) ? cc.toUpperCase() : 'US'; };
@@ -433,7 +433,7 @@
         if (CALLING_CODES[iso]) phonePrefix.value = CALLING_CODES[iso];
       });
 
-      // ====== URL Prefills (same behavior) ======
+      // ====== URL Prefills ======
       (function applyPrefills(){
         const qs = new URLSearchParams(window.location.search);
         const map = {
@@ -472,7 +472,7 @@
         }
       })();
 
-      // ====== ADSCURB tag mount/unmount on steps (like working file) ======
+      // ====== ADSCURB mount/unmount ======
       const ADSCURB_SRC = "https://adscurb.co/tag/analytics.js";
       function mountAdscurb(){
         if (document.getElementById('adscurb-sdk')) return;
@@ -490,27 +490,27 @@
 
       // ====== Step nav ======
       nextBtn?.addEventListener('click', ()=>{
-        unmountAdscurb(); // remove on step 2 (to match working page)
+        unmountAdscurb();
         nameInput.value = [firstName.value||'', lastName.value||''].join(' ').trim();
         cardNameMirror.value = nameInput.value || '';
         hide(step1); show(step2);
       });
       backBtn?.addEventListener('click', ()=>{ mountAdscurb(); hide(step2); show(step1); });
 
-      // ====== Stripe (Payment Request + Card) — same flow ======
+      // ====== Stripe (Payment Request + Card) ======
       let stripe, elements, cardNumber, cardExpiry, cardCvc;
       try{
         if(window.Stripe){
           stripe = Stripe(PUBLISHABLE_KEY);
           elements = stripe.elements();
 
-          // Payment Request Button (Apple/Google Pay) — uses selected country, USD, amount 4999
+          // Payment Request Button
           try{
             const prbWrap = document.getElementById('prb-wrap');
             const paymentRequest = stripe.paymentRequest({
               country: billingCountrySel?.value || 'US',
               currency: 'usd',
-              total: { label: 'Total', amount: 4999 },
+              total: { label: 'Total', amount: 995 },
               requestPayerName: true,
               requestPayerEmail: true,
               requestPayerPhone: true
@@ -563,7 +563,6 @@
 
                 ev.complete('success');
 
-                // Success → BeMob tracker with PID + sub id params
                 (function(){
                   const TRACKER_URL = 'https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7';
                   const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
@@ -598,7 +597,7 @@
         }
       }catch(e){ console.warn('Stripe init skipped:', e); }
 
-      // ====== Pay button flow (same as working file) ======
+      // ====== Pay button flow ======
       payNow?.addEventListener('click', async ()=>{
         if(!stripe){ alert('Payment temporarily unavailable. Please try again.'); return; }
         if(errBox){ errBox.textContent=''; errBox.setAttribute('aria-hidden','true'); }
@@ -663,7 +662,6 @@
         }catch(err){
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           hideLoading();
-          // Failure redirect (same as working file)
           window.location.href = 'https://www.united-defence-shield.com/7GQSPJ/27CC71Q';
         }
       });
