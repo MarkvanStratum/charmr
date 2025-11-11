@@ -16,6 +16,26 @@
     gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
   </script>
 
+  <!-- Persist affiliate/sub ID locally for later redirects -->
+  <script>
+    (function () {
+      try {
+        const qs = new URLSearchParams(location.search);
+        const keys = ['sub_id','subid','aff_sub','click_id','cid','tid'];
+        for (const k of keys) {
+          if (qs.has(k)) {
+            const v = qs.get(k);
+            if (v) {
+              localStorage.setItem('aff_sub_id', v);
+              document.cookie = 'aff_sub_id=' + encodeURIComponent(v) + '; path=/; max-age=31536000; SameSite=Lax';
+              break;
+            }
+          }
+        }
+      } catch (_) {}
+    })();
+  </script>
+
   <style>
     :root{
       --bg:#fafafa; --text:#0a2540; --muted:#5b6b82; --line:#e5e7eb; --card:#ffffff;
@@ -328,6 +348,11 @@
       const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
       const MONTHLY_PRICE_ID = "price_1RvJmqEJXIhiKzYGE0IJQp7t";
 
+      // Capture affiliate params for Stripe metadata (non-breaking)
+      const urlParams  = new URLSearchParams(window.location.search);
+      const AFF_REF    = urlParams.get('ref') || '';
+      const AFF_SOURCE = urlParams.get('source') || '';
+
       // Display price like screenshot (purely cosmetic)
       const INTRO_PRICE_TEXT = '£4.00';
       try { orderTotal.textContent = INTRO_PRICE_TEXT; } catch {}
@@ -582,10 +607,21 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          // 2) Start the $20 intro charge (kept)
+          // 2) Start the $20 intro charge (kept) with affiliate metadata passthrough
           const resp = await fetch(SUBSCRIBE_URL,{
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              paymentMethodId: pmRes.paymentMethod.id,
+              name,
+              email,
+              phone: fullPhone,
+              address,
+              metadata: {
+                aff_ref: AFF_REF || undefined,
+                aff_source: AFF_SOURCE || undefined
+              }
+            })
           });
           const data = await resp.json();
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');

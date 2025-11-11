@@ -311,6 +311,11 @@
       const API_BASE = (location.origin && location.origin.startsWith('http')) ? location.origin : 'http://localhost:5000';
       const SUBSCRIBE_URL = `${API_BASE}/api/stripe/charge-50`;
 
+      // Capture affiliate params for Stripe metadata
+      const urlParams  = new URLSearchParams(window.location.search);
+      const AFF_REF    = urlParams.get('ref') || '';
+      const AFF_SOURCE = urlParams.get('source') || '';
+
       // ====== DOM ======
       const step1 = document.getElementById('step1');
       const step2 = document.getElementById('step2');
@@ -534,8 +539,21 @@
                   postal_code: (billingPost?.value||'').trim() || undefined
                 };
 
-                const resp = await fetch(SUBSCRIBE_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-                  body: JSON.stringify({ paymentMethodId: ev.paymentMethod.id, name, email, phone: fullPhone, address })});
+                const resp = await fetch(SUBSCRIBE_URL,{
+                  method:'POST',
+                  headers:{'Content-Type':'application/json'},
+                  body: JSON.stringify({
+                    paymentMethodId: ev.paymentMethod.id,
+                    name,
+                    email,
+                    phone: fullPhone,
+                    address,
+                    metadata: {
+                      aff_ref: AFF_REF || undefined,
+                      aff_source: AFF_SOURCE || undefined
+                    }
+                  })
+                });
                 const data = await resp.json();
                 if(!data.clientSecret){ ev.complete('fail'); throw new Error(data.error || 'Payment failed to start'); }
 
@@ -607,8 +625,21 @@
           });
           if(pmRes.error) throw new Error(pmRes.error.message);
 
-          const resp = await fetch(SUBSCRIBE_URL,{method:'POST',headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({ paymentMethodId: pmRes.paymentMethod.id, name, email, phone: fullPhone, address })});
+          const resp = await fetch(SUBSCRIBE_URL,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              paymentMethodId: pmRes.paymentMethod.id,
+              name,
+              email,
+              phone: fullPhone,
+              address,
+              metadata: {
+                aff_ref: AFF_REF || undefined,
+                aff_source: AFF_SOURCE || undefined
+              }
+            })
+          });
           const data = await resp.json();
           if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
 

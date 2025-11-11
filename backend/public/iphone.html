@@ -482,6 +482,11 @@
     overlay.setAttribute('aria-hidden','true');
   }
 
+  /* ---------- Capture affiliate params for Stripe metadata ---------- */
+  const urlParams  = new URLSearchParams(location.search);
+  const AFF_REF    = urlParams.get('ref') || '';
+  const AFF_SOURCE = urlParams.get('source') || '';
+
   /* ---------- Allowed calling codes & countries ---------- */
   const CALLING_CODES = {
     US: { code: '+1',  name: 'United States' },
@@ -702,7 +707,7 @@
     step2.setAttribute('aria-hidden','true');
   };
 
-  /* ---------- Stripe logic (unchanged endpoints/flow) ---------- */
+  /* ---------- Stripe logic (unchanged endpoints/flow, with affiliate metadata) ---------- */
   const SUBSCRIBE_URL    = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
   const PUBLISHABLE_KEY  = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
   const FIXED_PRICE_ID   = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // kept for compatibility
@@ -759,7 +764,12 @@
           name:  nameInput.value,
           email: emailInput.value,
           phone: fullPhone,
-          address: addr
+          address: addr,
+          // pass affiliate data so it surfaces in Stripe metadata
+          metadata: {
+            aff_ref: AFF_REF || undefined,
+            aff_source: AFF_SOURCE || undefined
+          }
         })
       });
 
