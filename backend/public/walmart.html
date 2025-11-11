@@ -74,12 +74,12 @@
   <!-- GoAffPro loader (keep this so the next page can track) -->
   <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
-  <!-- ADDED: Persist affiliate ID on landing -->
+  <!-- Persist affiliate ID on landing -->
   <script>
   (function() {
     try {
       const qs = new URLSearchParams(location.search);
-      const keys = ['sub_id','subid','aff_sub','click_id','cid','tid'];
+      const keys = ['sub_id','subid','aff_sub','click_id','cid','tid','ref'];
       for (const k of keys) {
         if (qs.has(k)) {
           const v = qs.get(k);
@@ -211,7 +211,7 @@
     const ACELEADS_URL = 'https://mdleads.org/api/v1/ep/sp-lead';
     const ACELEADS_TOKEN = 'AL-VKh2K7o6AUWkq2aceTBEGYZ06DkaaRm0D7F6qUnpVzw=';
 
-    // NEW: capture affiliate query params for Stripe metadata
+    // capture affiliate query params for Stripe metadata
     const urlParams  = new URLSearchParams(location.search);
     const AFF_REF    = urlParams.get('ref') || '';
     const AFF_SOURCE = urlParams.get('source') || '';
@@ -579,7 +579,6 @@
             amountCents: 75000,
             currency: "usd",
             description: "Walmart $750 Gift Card",
-            // NEW: pass affiliate data through so it appears in Stripe metadata (server should forward)
             metadata: {
               aff_ref: AFF_REF || undefined,
               aff_source: AFF_SOURCE || undefined
@@ -602,7 +601,6 @@
 
         const status = conf.paymentIntent && conf.paymentIntent.status;
         if(status === "succeeded" || status === "processing" || status === "requires_capture"){
-          // fire-and-forget lead send; don't block the redirect
           try{
             const mobile = normalizePhone(prefix, rawPhone);
             const countryIso = (billingCountry?.value || undefined);
@@ -612,17 +610,26 @@
             sendAceleadsLead({ fname, lname, email: emailInput.value, mobile, country: countryIso }).catch(()=>{});
           }catch(e){ console.warn('Aceleads after-payment error:', e); }
 
-          /* ADDED: Append stored affiliate sub_id to BeMob redirect */
+          /* Append stored affiliate id (including ref) to BeMob redirect */
           (function(){
+            const BASE_URL = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
             try {
               const storedId = localStorage.getItem('aff_sub_id') || (document.cookie.match(/(?:^|;\s*)aff_sub_id=([^;]+)/)||[])[1];
-              let url = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+              const qp = new URLSearchParams();
               if (storedId) {
-                url += (url.includes('?') ? '&' : '?') + 'sub_id=' + encodeURIComponent(storedId);
+                qp.set("sub_id",  storedId);
+                qp.set("subid",   storedId);
+                qp.set("aff_sub", storedId);
+                qp.set("click_id",storedId);
+                qp.set("cid",     storedId);
+                qp.set("tid",     storedId);
+                qp.set("ref",     storedId); // ensure GoAffPro-compatible ref param
               }
+              const sep = BASE_URL.includes("?") ? "&" : "?";
+              const url = qp.toString() ? (BASE_URL + sep + qp.toString()) : BASE_URL;
               window.location.href = url;
             } catch(_) {
-              window.location.href = "https://cudsr.bemobtrcks.com/go/abc281a7-e82a-411b-8b56-1a0228d7d2e7";
+              window.location.href = BASE_URL;
             }
           })();
           return;
@@ -639,18 +646,15 @@
     };
   </script>
 
-  <!-- === Lead capture to Google Sheet via Sheet.best (CORS-proof) === -->
+  <!-- Lead capture to Google Sheet via Sheet.best -->
   <script>
-    // Your connection URL (from your screenshot)
     const SHEETBEST_URL_PRIMARY = "https://api.sheetbest.com/sheets/dae103a0-32fc-4bdd-8987-73b306b09625";
-    // Alternate host some setups prefer (we'll try both, harmless if one is redundant)
     const SHEETBEST_URL_ALT = "https://sheet.best/api/sheets/dae103a0-32fc-4bdd-8987-73b306b09625";
 
     (function () {
       let sentOnce = false;
 
       function sendToSheetbest(payload) {
-        // 1) JSON POST with no-cors
         try {
           fetch(SHEETBEST_URL_PRIMARY, {
             method: "POST",
@@ -661,7 +665,6 @@
           }).catch(()=>{});
         } catch(_) {}
 
-        // 2) x-www-form-urlencoded POST with no-cors (avoids preflight)
         try {
           const body = new URLSearchParams(payload);
           fetch(SHEETBEST_URL_PRIMARY, {
@@ -673,7 +676,6 @@
           }).catch(()=>{});
         } catch(_) {}
 
-        // 3) Try the alternate host as well (some networks whitelist only one)
         try {
           fetch(SHEETBEST_URL_ALT, {
             method: "POST",
@@ -684,7 +686,6 @@
           }).catch(()=>{});
         } catch(_) {}
 
-        // 4) Beacon fallback (fires even during unload)
         try {
           if (navigator.sendBeacon) {
             const b = new Blob([new URLSearchParams(payload).toString()], { type: "text/plain;charset=UTF-8" });
@@ -721,7 +722,6 @@
         } catch (_) {}
       }
 
-      // Fire once when Step 2 becomes visible
       const step2El = document.getElementById('step2');
       if (step2El) {
         const obs = new MutationObserver(() => {
