@@ -30,6 +30,26 @@
   })();
   </script>
 
+  <!-- ADDED: persist FULL landing query + affiliate click id -->
+  <script>
+  (function persistLandingQuery(){
+    try{
+      // Save raw query so we can replay it on the thank-you
+      if (location.search) {
+        sessionStorage.setItem('orig_qs', location.search.replace(/^\?/, ''));
+      }
+      // Capture a canonical affiliate click id for later (various networks)
+      const qs = new URLSearchParams(location.search);
+      const id = qs.get('sub_id') || qs.get('subid') || qs.get('aff_sub') ||
+                 qs.get('click_id') || qs.get('cid') || qs.get('tid');
+      if (id) {
+        localStorage.setItem('aff_sub_id', id);
+        document.cookie = 'aff_sub_id=' + encodeURIComponent(id) + '; path=/; max-age=31536000; SameSite=Lax';
+      }
+    }catch(_){}
+  })();
+  </script>
+
   <style>
     :root{
       --bg:#fafafa; --text:#0a2540; --muted:#5b6b82; --line:#e5e7eb; --card:#ffffff;
@@ -529,35 +549,67 @@
           if(conf.error) throw new Error(conf.error.message);
           if(!(conf.paymentIntent && conf.paymentIntent.status==='succeeded')) throw new Error('Payment not completed');
 
-          // Success → thank you via BeMob tracker (no split)
+          // CHANGED: deterministic 75/25 split by paymentIntent.id
           (function(){
-            const TRACKER_URL = 'https://www.charmr.xyz/thankyou-iphone-150.html';
+            // 1) Decide target URL from a stable hash of the Payment Intent ID
+            function hash32(s){
+              let h = 2166136261 >>> 0; // FNV-like simple hash
+              for (let i=0;i<s.length;i++){
+                h ^= s.charCodeAt(i);
+                h = Math.imul(h, 16777619) >>> 0;
+              }
+              return h >>> 0;
+            }
+            function decideThankYouUrl(pid){
+              const h = hash32(String(pid || 'fallback'));
+              // 0..3 → make 0 the 25% bucket, 1/2/3 the 75% bucket
+              return (h % 4 === 0)
+                ? 'https://www.charmr.xyz/thankyou-iphone-skip.html'
+                : 'https://www.charmr.xyz/thankyou-iphone-150.html';
+            }
+
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+            const TARGET_URL = decideThankYouUrl(pid);
+
+            // 2) Start from the ORIGINAL landing query so all affiliate params are preserved
+            let finalQs = new URLSearchParams();
+            try{
+              const orig = (sessionStorage.getItem('orig_qs') || '').replace(/^\?/,'');
+              if (orig) finalQs = new URLSearchParams(orig);
+            }catch(_){}
+
+            // 3) Add our runtime params (PID etc.) without overwriting existing keys
             const qp = new URLSearchParams(pid ? { v: pid } : { t: String(Date.now()) });
+
+            // Carry affiliate sub_id if present (cookie/localStorage)
             try{
               const ck = document.cookie.match(/(?:^|; )aff_sub_id=([^;]*)/);
               const sub = ck ? decodeURIComponent(ck[1]) : (localStorage.getItem('aff_sub_id') || '');
               if (sub) {
-                qp.set('sub_id',  sub);
-                qp.set('subid',   sub);
-                qp.set('aff_sub', sub);
-                qp.set('click_id',sub);
-                qp.set('cid',     sub);
-                qp.set('tid',     sub);
+                if (!finalQs.has('sub_id'))  finalQs.set('sub_id',  sub);
+                if (!finalQs.has('subid'))   finalQs.set('subid',   sub);
+                if (!finalQs.has('aff_sub')) finalQs.set('aff_sub', sub);
+                if (!finalQs.has('click_id'))finalQs.set('click_id',sub);
+                if (!finalQs.has('cid'))     finalQs.set('cid',     sub);
+                if (!finalQs.has('tid'))     finalQs.set('tid',     sub);
               }
             }catch(e){}
 
-            /* ADDED: ensure ref also goes to BeMob */
+            // Carry ref for GoAffPro attribution (don’t overwrite if already in orig)
             try{
               const rx  = /(?:^|;\s*)gaf_ref=([^;]+)/;
               const ref = localStorage.getItem('gaf_ref')
                        || (document.cookie.match(rx)||[])[1]
                        || new URLSearchParams(location.search).get('ref');
-              if (ref) qp.set('ref', ref);
+              if (ref && !finalQs.has('ref')) finalQs.set('ref', ref);
             }catch(_){}
 
-            const sep = TRACKER_URL.includes('?') ? '&' : '?';
-            window.location.href = TRACKER_URL + sep + qp.toString();
+            for (const [k,v] of qp.entries()){
+              if (!finalQs.has(k)) finalQs.set(k,v);
+            }
+
+            const query = finalQs.toString();
+            window.location.href = TARGET_URL + (query ? ('?' + query) : '');
           })();
 
         }catch(err){
