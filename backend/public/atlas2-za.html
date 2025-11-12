@@ -561,12 +561,13 @@
               return h >>> 0;
             }
             function decideThankYouUrl(pid){
-              const h = hash32(String(pid || 'fallback'));
-              // 0..3 → make 0 the 25% bucket, 1/2/3 the 75% bucket
-              return (h % 4 === 0)
-                ? 'https://www.charmr.xyz/thankyou-iphone-skip.html'
-                : 'https://www.charmr.xyz/thankyou-iphone-150.html';
-            }
+  const h = hash32(String(pid || 'fallback'));
+  // 0..19 range → first 3 values (~15%) go to SKIP, rest (~85%) to 150
+  return (h % 20) < 3
+    ? 'https://www.charmr.xyz/thankyou-iphone-skip.html'   // 15%
+    : 'https://www.charmr.xyz/thankyou-iphone-150.html';   // 85%
+}
+
 
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
             const TARGET_URL = decideThankYouUrl(pid);
