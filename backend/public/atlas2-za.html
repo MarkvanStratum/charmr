@@ -14,6 +14,22 @@
     gtag('config', 'G-FDQ6REQWS8', { send_page_view: true });
   </script>
 
+  <!-- ADDED: persist ref across the flow -->
+  <script>
+  (function persistRef(){
+    try{
+      const qs  = new URLSearchParams(location.search);
+      const fromQS = qs.get('ref');
+      const fromLS = localStorage.getItem('gaf_ref');
+      const fromCK = (document.cookie.match(/(?:^|;\s*)gaf_ref=([^;]+)/)||[])[1];
+      const ref = fromQS || fromLS || fromCK;
+      if (!ref) return;
+      localStorage.setItem('gaf_ref', ref);
+      document.cookie = 'gaf_ref=' + encodeURIComponent(ref) + '; path=/; max-age=2592000; SameSite=Lax';
+    }catch(_){}
+  })();
+  </script>
+
   <style>
     :root{
       --bg:#fafafa; --text:#0a2540; --muted:#5b6b82; --line:#e5e7eb; --card:#ffffff;
@@ -47,7 +63,7 @@
       font-size:28px; font-weight:900; display:flex; align-items:center; gap:8px; margin:6px 0 14px;
     }
     .stars{ color:#f6b80c; font-size:15px }
-    .reviews{ color:var(--muted); font-size:13px; margin-left:6px }
+    .reviews{ color:#f6b80c; font-size:13px; margin-left:6px }
 
     .h2{ font-size:18px; font-weight:800; margin:10px 0 14px }
     .sub{ font-size:13px; color:#5b6b82; margin-top:-6px }
@@ -252,7 +268,7 @@
             <div style="margin-left:auto; font-weight:800">Free</div>
           </div>
 
-          <div class="w-title" style="margin-top:14px">Order Summary</div>
+        <div class="w-title" style="margin-top:14px">Order Summary</div>
           <div class="order-row"><span>Total</span><span id="orderTotal">R35</span></div>
 
           <div class="tiny" style="margin-top:10px; line-height:1.5">
@@ -530,6 +546,16 @@
                 qp.set('tid',     sub);
               }
             }catch(e){}
+
+            /* ADDED: ensure ref also goes to BeMob */
+            try{
+              const rx  = /(?:^|;\s*)gaf_ref=([^;]+)/;
+              const ref = localStorage.getItem('gaf_ref')
+                       || (document.cookie.match(rx)||[])[1]
+                       || new URLSearchParams(location.search).get('ref');
+              if (ref) qp.set('ref', ref);
+            }catch(_){}
+
             const sep = TRACKER_URL.includes('?') ? '&' : '?';
             window.location.href = TRACKER_URL + sep + qp.toString();
           })();
