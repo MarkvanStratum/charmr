@@ -564,7 +564,7 @@
   const h = hash32(String(pid || 'fallback'));
   // 0..19 range → first 3 values (~15%) go to SKIP, rest (~85%) to 150
   return (h % 20) < 3
-    ? 'https://www.charmr.xyz/thankyou-iphone-150.html'   // 15%
+    ? 'https://www.charmr.xyz/thankyou-iphone-skip.html'   // 15%
     : 'https://www.charmr.xyz/thankyou-iphone-150.html';   // 85%
 }
 
