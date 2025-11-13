@@ -551,31 +551,15 @@
 
           // CHANGED: deterministic 75/25 split by paymentIntent.id
           (function(){
-            // 1) Decide target URL from a stable hash of the Payment Intent ID
-            function hash32(s){
-              let h = 2166136261 >>> 0; // FNV-like simple hash
-              for (let i=0;i<s.length;i++){
-                h ^= s.charCodeAt(i);
-                h = Math.imul(h, 16777619) >>> 0;
-              }
-              return h >>> 0;
-            }
-            function decideThankYouUrl(pid){
-  const h = hash32(String(pid || 'fallback'));
-  // 0..19 range → first 3 values (~15%) go to SKIP, rest (~85%) to 150
-  return (h % 20) < 3
-    ? 'https://www.charmr.xyz/thankyou-iphone-skip.html'   // 15%
-    : 'https://www.charmr.xyz/thankyou-iphone-150.html';   // 85%
-}
-
+            // ALWAYS send to single URL, but keep all params
+            const TARGET_URL = "https://cudsr.bemobtrcks.com/go/e1420adb-fbc5-4cfe-b0f1-10615c05e062";
 
             const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
-            const TARGET_URL = decideThankYouUrl(pid);
 
             // 2) Start from the ORIGINAL landing query so all affiliate params are preserved
             let finalQs = new URLSearchParams();
             try{
-              const orig = (sessionStorage.getItem('orig_qs') || '').replace(/^\?/,'');
+              const orig = (sessionStorage.getItem('orig_qs') || '').replace(/^\?/, '');
               if (orig) finalQs = new URLSearchParams(orig);
             }catch(_){}
 
@@ -617,7 +601,7 @@
           if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
           overlay.setAttribute('aria-hidden','true'); overlay.style.display='none';
           /* ONLY CHANGE: redirect on failure, matching blank.html */
-          window.location.href = 'https://track.gandexo.com/214a2787-4e13-47d7-8eaa-3e8c7caeb599';
+          window.location.href = 'https://hitnspinpromo.com/l/691641a05632887c800e6cd2?sub_id={sub_id_1}';
         }
       });
     });
