@@ -1,0 +1,65 @@
+const params = new URLSearchParams(window.location.search);
+const girlId = parseInt(params.get("id"));
+const girl = girls.find(g => g.id === girlId);
+
+const chatBox = document.getElementById("chat-box");
+const chatHeader = document.getElementById("chat-header");
+const form = document.getElementById("chat-form");
+const input = document.getElementById("chat-input");
+
+// Display girl's name and image
+if (girl) {
+  chatHeader.innerHTML = `
+    <img src="${girl.photo}" alt="${girl.name}" style="width:60px; height:60px; border-radius:50%;" />
+    <h2>Chat with ${girl.name}</h2>
+  `;
+} else {
+  chatHeader.innerText = "Girl not found.";
+}
+
+// Load previous messages
+const storageKey = `chat_${girlId}`;
+let messages = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+function renderMessages() {
+  chatBox.innerHTML = "";
+  messages.forEach(msg => {
+    const div = document.createElement("div");
+    div.className = msg.sender === "user" ? "msg user" : "msg girl";
+    div.textContent = msg.text;
+    chatBox.appendChild(div);
+  });
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+renderMessages();
+
+// Send message
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const text = input.value.trim();
+  if (!text) return;
+  const userMsg = { sender: "user", text };
+  messages.push(userMsg);
+  localStorage.setItem(storageKey, JSON.stringify(messages));
+  renderMessages();
+  input.value = "";
+
+  // Reply from girl after delay
+  const delay = Math.floor(Math.random() * 15 + 1) * 1000;
+  setTimeout(() => {
+    const replies = [
+      "Heyy 😄",
+      "Lol that's funny!",
+      "So what do you do?",
+      "Where in the UK are you?",
+      "Wanna hang sometime?",
+      "Tell me more about you!"
+    ];
+    const reply = replies[Math.floor(Math.random() * replies.length)];
+    const girlMsg = { sender: "girl", text: reply };
+    messages.push(girlMsg);
+    localStorage.setItem(storageKey, JSON.stringify(messages));
+    renderMessages();
+  }, delay);
+});
