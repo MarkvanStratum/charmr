@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Girls That Want To Hookup Today</title>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-FDQ6REQWS8"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-FDQ6REQWS8');
+  </script>
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    :root{
+      --bg2:#ffe3ea;            /* soft pink bottom */
+      --primary:#d61b5a;
+      --primary-600:#b21449;
+      --ring: rgba(214,27,90,.35);
+      --ink:#1a1a1a;
+      --card:#ffffff;
+    }
+
+    /* Page background + base typography */
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: linear-gradient(to bottom, #ffffff 0%, var(--bg2) 100%); /* white top → pink bottom */
+      min-height: 100%;
+    }
+
+    /* NEW: White logo bar (like other pages) */
+    .logo-bar{
+      background:#fff;
+      border-bottom:1px solid #f0f0f0;
+      width:100%;
+      padding:20px;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+    .logo-bar img{ height:56px; width:auto; display:block; }
+
+    /* Keep your existing nav but make it sit nicely on theme */
+    nav{
+      background:#f8f8f8 !important;
+      border-bottom:1px solid #e8e8e8 !important;
+    }
+    nav a{ color:#333 !important; }
+
+    /* Header/title styling (reusing your <header>) */
+    header{
+      text-align:center;
+      padding: 28px 20px;
+      color: var(--primary-600);
+    }
+    header h1{
+      margin:0;
+      font-size: 2rem;
+      font-weight: 800;
+      text-shadow: none; /* remove old shadow for cleaner look */
+    }
+
+    /* TOP JUMP BUTTON */
+    .ai-jump{
+      margin-top:10px;
+      padding:10px 14px;
+      border:none;
+      border-radius:12px;
+      background: linear-gradient(180deg, var(--primary), var(--primary-600));
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      box-shadow: 0 10px 20px rgba(214,27,90,.18);
+    }
+    .ai-jump:hover{ filter:brightness(1.07); }
+    .ai-jump:active{ transform: translateY(1px); }
+
+    /* Credits chip */
+    #credit-info{
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      width: fit-content;
+      margin: 10px 12px;
+      background: #fff;
+      border: 1px solid #ece2e6;
+      box-shadow: 0 8px 20px rgba(214,27,90,.06);
+      color:#333;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+    }
+
+    /* Profile grid + cards */
+    .profile-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto 28px;
+    }
+    .profile-card {
+      background: var(--card);
+      border-radius: 14px;
+      box-shadow: 0 18px 40px rgba(214,27,90,.08);
+      border: 1px solid rgba(214,27,90,.10);
+      text-align: center;
+      padding: 12px;
+      transition: transform .16s ease, box-shadow .16s ease;
+    }
+    .profile-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 22px 50px rgba(214,27,90,.12);
+    }
+    .profile-card img {
+      width: 100%;
+      height: auto;
+      border-radius: 10px;
+      display:block;
+    }
+    .profile-card h3 {
+      margin: 10px 0 4px;
+      font-size: 1.05rem;
+      color:#222;
+    }
+    .profile-card p {
+      margin: 4px 0 0;
+      color:#555;
+      font-size: .95rem;
+    }
+
+    /* Buttons on cards */
+    .btn-group { margin-top: 10px; display:flex; justify-content:center; gap:8px; flex-wrap:wrap; }
+    .btn-group button {
+      margin: 0;
+      padding: 8px 12px;
+      background: linear-gradient(180deg, var(--primary), var(--primary-600));
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: filter .15s ease-in-out, transform .02s ease-in-out;
+    }
+    .btn-group button:hover { filter: brightness(1.08); }
+    .btn-group button:active { transform: translateY(1px); }
+
+    /* In-app notification style (kept, just slightly themed) */
+    .notification-popup {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      background: #fff;
+      color: #111;
+      padding: 10px 15px;
+      border-radius: 12px;
+      box-shadow: 0 14px 30px rgba(17,17,17,0.12);
+      cursor: pointer;
+      font-family: inherit;
+      max-width: 280px;
+      animation: slideIn 0.4s ease forwards;
+      z-index: 1000;
+      border:1px solid #eee;
+    }
+    .notif-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .notif-text { display: flex; flex-direction: column; }
+    .notif-text strong { font-size: 14px; margin-bottom: 3px; color:#222; }
+    .notif-text p { font-size: 13px; margin: 0; color: #555; }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(100%); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @media (max-width: 600px){
+      header{ padding: 20px 16px; }
+      .profile-container{ gap:16px; padding:16px; }
+    }
+
+    /* ===== Added for divider + title ===== */
+    .grid-full { grid-column: 1 / -1; }
+    .section-break hr {
+      border: 0;
+      border-top: 1px dashed #e6b3c5;
+      margin: 8px 0 6px;
+    }
+    .section-title {
+      font-weight: 800;
+      color: var(--primary-600);
+      margin-bottom: 6px;
+    }
+    /* ==================================== */
+
+    /* ======== Added: Prize banner styles (top of page) ======== */
+    .prize-banner {
+      background: linear-gradient(90deg, var(--primary), var(--primary-600));
+      color: #fff;
+      text-align: center;
+      padding: 10px 16px;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .prize-banner a {
+      color: #fff;
+      text-decoration: underline;
+    }
+    /* ========================================================== */
+  </style>
+
+  
+</head>
+<body>
+ 
+<script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+
+  <script type="text/javascript" src="https://api.goaffpro.com/loader.js?shop=nzyvwvfbde"></script>
+  <header style="display:flex; flex-direction:column; align-items:center; padding:12px 0;">
+  <img src="logo.png" alt="CHARMR logo" style="max-width:160px; height:auto; display:block; margin:0 auto;">
+  <p style="margin:6px 0 0; font-size:8px; color:#475569; font-weight:500; font-style:italic; text-align:center;">
+    The best AI girl chats online!
+  </p>
+
+  <div id="credit-info">Loading credits...</div>
+
+  <!-- Your nav kept as-is -->
+  <nav style="display:flex; justify-content:flex-end; align-items:center; padding:10px 20px; background:#f0f0f0; border-bottom:1px solid #ccc;">
+    <a href="inbox.html" title="Inbox" style="margin-right:20px; color:#333; font-size:24px; text-decoration:none;">
+      &#9993;
+    </a>
+    <a href="myprofile.html" title="My Profile" style="color:#333; font-size:24px; text-decoration:none;">
+      &#128100;
+    </a>
+  </nav>
+
+  <!-- Your header kept, just restyled via CSS above -->
+  <header>
+    <h1>The best AI girls chats!</h1>
+	<h1>Keep the chats respectfull. Even though the girls are AI, they do have feelings. This is not an adult site, treat the AI girls with respect!</h1>
+    <!-- NEW: Jump button -->
+    <button id="jumpToAi" class="ai-jump">CHAT WITH AI GIRLS!</button>
+  </header>
+
+  <div class="profile-container" id="profileContainer">
+    <!-- Profiles will be loaded here -->
+  </div>
+
+  <script>
+  window.onload = async function() {
+      const backendUrl = "https://charmr-jfmc.onrender.com";
+      const token = localStorage.getItem("token");
+      let lastMessageTime = null;
+
+      if (!token) {
+        alert("You're not logged in. Please log in to receive messages.");
+        window.location.href = "https://charmr.xyz/login.html";
+        return;
+      }
+
+      // Scroll-to-AI button
+      const jumpBtn = document.getElementById('jumpToAi');
+      jumpBtn.addEventListener('click', ()=>{
+        const el = document.getElementById('ai-section');
+        if (el){
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+
+      async function loadProfiles() {
+          const res = await fetch(`${backendUrl}/api/profiles`);
+          const profiles = await res.json();
+          const container = document.getElementById("profileContainer");
+          container.innerHTML = "";
+
+          // --- Render non-AI first (<=330), then divider + title, then AI (>=331)
+          const realGirls = profiles.filter(p => Number(p.id) <= 330);
+          const aiGirls   = profiles.filter(p => Number(p.id) >= 331);
+
+          function renderCard(profile){
+            const card = document.createElement("div");
+            card.className = "profile-card";
+            card.innerHTML = `
+                <img src="${profile.image}" alt="${profile.name}">
+                <h3>${profile.name}</h3>
+                <p>City: ${profile.city}</p>
+                <div class="btn-group">
+                  <button onclick="window.location.href='chat.html?id=${profile.id}'">Chat</button>
+                  <button onclick="window.location.href='profile.html?id=${profile.id}'">View Profile</button>
+                </div>
+            `;
+            return card;
+          }
+
+          realGirls.forEach(p => container.appendChild(renderCard(p)));
+
+          if (aiGirls.length){
+            const divider = document.createElement("div");
+            divider.className = "section-break grid-full";
+            divider.id = "ai-section";                 // <-- anchor target
+            divider.innerHTML = `<hr><div class="section-title"><strong>AI girls</strong></div>`;
+            container.appendChild(divider);
+
+            aiGirls.forEach(p => container.appendChild(renderCard(p)));
+
+            // make sure the button is visible only if we actually have AI girls
+            jumpBtn.style.display = 'inline-block';
+          } else {
+            jumpBtn.style.display = 'none';
+          }
+
+          return profiles;
+      }
+
+      function getRandomDelay() {
+          return Math.floor(Math.random() * (30000 - 3000 + 1)) + 3000;
+      }
+
+      function sendRandomMessageLoop(profiles) {
+          async function sendRandomMessage() {
+              const girl = profiles[Math.floor(Math.random() * profiles.length)];
+              try {
+                  await fetch(`${backendUrl}/api/send-initial-message`, {
+                      method: "POST",
+                      headers: {
+                          "Content-Type": "application/json",
+                          "Authorization": `Bearer ${token}`
+                      },
+                      body: JSON.stringify({ girlId: girl.id })
+                  });
+                  console.log(`💌 Message sent from ${girl.name}`);
+              } catch (err) {
+                  console.error("❌ Message send failed:", err);
+              }
+              setTimeout(sendRandomMessage, getRandomDelay());
+          }
+          sendRandomMessage();
+      }
+
+      function showNotification(from, text, avatar) {
+          const notif = document.createElement("div");
+          notif.className = "notification-popup";
+          notif.innerHTML = `
+              <img src="${avatar}" alt="${from}" class="notif-avatar">
+              <div class="notif-text">
+                  <strong>${from}</strong>
+                  <p>${text}</p>
+              </div>
+          `;
+          notif.onclick = () => window.location.href = "inbox.html";
+          document.body.appendChild(notif);
+          setTimeout(() => notif.remove(), 5000);
+      }
+
+      async function checkForNewMessages() {
+          const res = await fetch(`${backendUrl}/api/messages`, {
+              headers: { "Authorization": `Bearer ${token}` }
+          });
+          const msgsByChat = await res.json();
+          const allMsgs = Object.values(msgsByChat).flat();
+          if (allMsgs.length === 0) return;
+          const latest = allMsgs[allMsgs.length - 1];
+          if (!lastMessageTime || new Date(latest.time) > new Date(lastMessageTime)) {
+              lastMessageTime = latest.time;
+              showNotification(latest.from, latest.text, latest.avatar || "default-avatar.png");
+          }
+      }
+
+      const profiles = await loadProfiles();
+      sendRandomMessageLoop(profiles);
+
+      setTimeout(() => {
+          checkForNewMessages();
+          setInterval(checkForNewMessages, 5000);
+      }, 5000);
+  };
+  </script>
+
+  <script>
+  async function loadCredits() {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const res = await fetch("https://charmr-jfmc.onrender.com/api/credits", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      if (data.lifetime) {
+        document.getElementById("credit-info").textContent = "💎 Unlimited Credits";
+      } else {
+        document.getElementById("credit-info").textContent = `💌 ${data.credits} Messages Remaining`;
+      }
+    } catch (err) {
+      console.error("Error fetching credits:", err);
+      document.getElementById("credit-info").textContent = "Unable to load credits.";
+    }
+  }
+
+  loadCredits();
+  </script>
+<footer style="text-align:center; padding:20px; margin-top:40px; font-size:14px; color:#666;">
+  <a href="tc.html" style="margin:0 12px; color:#666; text-decoration:none;">Terms &amp; Conditions</a> |
+  <a href="privacy.html" style="margin:0 12px; color:#666; text-decoration:none;">Privacy Policy</a>
+</footer>
+
+</body>
+</html>
