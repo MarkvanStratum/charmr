@@ -1947,6 +1947,126 @@ app.post('/api/stripe/charge-50', async (req, res) => {
   }
 });
 
+// ========= ONE-OFF PAYMENT: $23.95 =========
+app.options('/api/stripe/charge-2395', cors());
+
+app.post('/api/stripe/charge-2395', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name, phone, address } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // 1) Find or create customer
+    let customer = null;
+    const list = await stripe.customers.list({ email, limit: 1 });
+    if (list.data.length) {
+      customer = list.data[0];
+    }
+
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // 2) Attach the payment method (safe-attach)
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // 3) Create the actual PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 2395,                  // $23.95
+      currency: 'usd',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirm: true,
+      description: 'The New Holy Bible order'
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      status: paymentIntent.status
+    });
+
+  } catch (err) {
+    console.error('charge-2395 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
+
+// ========= ONE-OFF PAYMENT: $33.95 =========
+app.options('/api/stripe/charge-3395', cors());
+
+app.post('/api/stripe/charge-3395', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name, phone, address } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // 1) Find or create customer
+    let customer = null;
+    const list = await stripe.customers.list({ email, limit: 1 });
+    if (list.data.length) {
+      customer = list.data[0];
+    }
+
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // 2) Attach payment method
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // 3) Create PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 3395,                  // $33.95
+      currency: 'usd',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirm: true,
+      description: 'The New Holy Bible order'
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      status: paymentIntent.status
+    });
+
+  } catch (err) {
+    console.error('charge-3395 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
 
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
