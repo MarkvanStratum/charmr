@@ -214,7 +214,11 @@ app.get("/api/get-stripe-session", async (req, res) => {
   }
 })();
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY
+});
+
 
 const profiles = [
   
