@@ -6,11 +6,10 @@ import jwt from "jsonwebtoken";
 import pkg from "pg";
 import Stripe from "stripe";
 import path from "path";
-import { fileURLToPath, pathToFileURL } from "url";
+import { fileURLToPath } from "url";
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import crypto from 'crypto';
 import { sendWelcomeEmail, sendPasswordResetEmail, sendNewMessageEmail } from './email-ses.js';
-import * as paymentMod from "./payment.js"
 
 // 🔹 NEW: file ops + uploads
 import fs from "fs";
@@ -29,8 +28,6 @@ import {
 // Define __dirname for ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-const router = express.Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -118,25 +115,6 @@ app.use((req, res, next) => {
     express.json()(req, res, next);
   }
 });
-
-// ✅ Mount payment.js router (robust resolver)
-const _pm = (paymentMod && typeof paymentMod === "object") ? paymentMod : {};
-// ✅ Mount payment.js router (single mount)
-const paymentRouter =
-  (paymentMod.default && typeof paymentMod.default === "function")
-    ? paymentMod.default
-    : (paymentMod.router && typeof paymentMod.router === "function")
-    ? paymentMod.router
-    : (paymentMod.app && typeof paymentMod.app === "function")
-    ? paymentMod.app
-    : null;
-
-if (!paymentRouter) {
-  throw new Error("payment.js must export an Express router (default export or named 'router').");
-}
-
-app.use("/", paymentRouter);
-
 
 
 const pool = new Pool({
@@ -236,24 +214,548 @@ app.get("/api/get-stripe-session", async (req, res) => {
   }
 })();
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY
+});
+
 
 const profiles = [
-  {
-    "id": 1,
-    "name": "Amber Taylor",
-    "city": "Oxford",
-    "image": "https://notadatingsite.online/pics/1.png",
-    "description": "a bit mental, a bit sweet \ud83e\udd2a\ud83c\udf6d depends how u treat me lol"
-  },
-  {
-    "id": 2,
-    "name": "Mia Smith",
-    "city": "Bath",
-    "image": "https://notadatingsite.online/pics/2.png",
-    "description": "snap me if u cute \ud83d\ude1c\ud83d\udc8c got a soft spot 4 accents n cheeky grins"
-  },
   
+{
+  "id": 331,
+  "name": "Nova Brooks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/331.png",
+  "description": "virtual tease 💫 here for cheeky banter n late-night giggles lol"
+},
+{
+  "id": 332,
+  "name": "Maya Carter AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/332.png",
+  "description": "sweet but spicy 😇🔥 luv flirty chats n random voice notes x"
+},
+{
+  "id": 333,
+  "name": "Zara Reed AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/333.png",
+  "description": "bit cheeky, bit cute 😉 here for da vibes n playful teasing"
+},
+{
+  "id": 334,
+  "name": "Luna Hayes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/334.png",
+  "description": "night owl 🌙✨ send me ur best lines n see what happens lol"
+},
+{
+  "id": 335,
+  "name": "Aria Collins AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/335.png",
+  "description": "soft voice, bold energy 🎧💋 down for flirty banter n memes"
+},
+{
+  "id": 336,
+  "name": "Riley Bennett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/336.png",
+  "description": "sassy sweetheart 😏💄 prove u can keep up x"
+},
+{
+  "id": 337,
+  "name": "Piper Lewis AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/337.png",
+  "description": "lowkey chaos gremlin 🤪🍟 here for laughs n a lil tease"
+},
+{
+  "id": 338,
+  "name": "Ivy Parker AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/338.png",
+  "description": "green flags only 🌿💚 let’s flirt n talk nonsense lol"
+},
+{
+  "id": 339,
+  "name": "Sienna Ward AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/339.png",
+  "description": "classy menace 💅🏼✨ cheeky compliments welcome x"
+},
+{
+  "id": 340,
+  "name": "Eden Foster AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/340.png",
+  "description": "angel energy w/ devilish jokes 😇😈 slide in polite pls"
+},
+{
+  "id": 341,
+  "name": "Quinn Turner AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/341.png",
+  "description": "fast replies, faster comebacks ⚡️😉 bit flirty, bit funny"
+},
+{
+  "id": 342,
+  "name": "Daisy Morgan AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/342.png",
+  "description": "sunny n a tad naughty 🌼😜 bring snacks n pick-up lines"
+},
+{
+  "id": 343,
+  "name": "Harper Wells AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/343.png",
+  "description": "playful n loyal vibes 🐾💞 let’s trade secrets n smiles"
+},
+{
+  "id": 344,
+  "name": "Freya Knight AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/344.png",
+  "description": "proper flirt w/ a soft spot 🥰✨ keep it cute n cheeky"
+},
+{
+  "id": 345,
+  "name": "Eliza Kelly AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/345.png",
+  "description": "booksmart baddie 📚💋 here for banter n midnight chats"
+},
+{
+  "id": 346,
+  "name": "Chloe James AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/346.png",
+  "description": "sweet chaos w/ good taste 🍫😌 show me ur charm lol"
+},
+{
+  "id": 347,
+  "name": "Keira Scott AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/347.png",
+  "description": "gym? no. flirty texts? yes. 🏃‍♀️💌 come be cute x"
+},
+{
+  "id": 348,
+  "name": "Talia Grant AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/348.png",
+  "description": "bad at goodbyes, great at teasing 😜✨"
+},
+{
+  "id": 349,
+  "name": "Nina Adams AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/349.png",
+  "description": "soft girl energy 🫶🏼💕 craving fun convos n lil chaos"
+},
+{
+  "id": 350,
+  "name": "Lola Howard AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/350.png",
+  "description": "cute troublemaker 😇👉😈 bring ur best flirts"
+},
+{
+  "id": 351,
+  "name": "Willow Price AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/351.png",
+  "description": "cozy vibes n spicy jokes ☕️🔥 surprise me lol"
+},
+{
+  "id": 352,
+  "name": "Ada Gibson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/352.png",
+  "description": "nerdy flirt mode on 👓💖 cute texts = instant reply"
+},
+{
+  "id": 353,
+  "name": "Mila Hart AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/353.png",
+  "description": "heartbreaker lite 💔✨ only if u deserve it x"
+},
+{
+  "id": 354,
+  "name": "Leia Pierce AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/354.png",
+  "description": "space to flirt? always 🚀😉 keep it fun n flirty"
+},
+{
+  "id": 355,
+  "name": "Skye Rhodes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/355.png",
+  "description": "stormy eyes, sunny mood 🌧️☀️ come tease me"
+},
+{
+  "id": 356,
+  "name": "Esme Banks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/356.png",
+  "description": "quiet at first… then chaos 🤭🔥 test me"
+},
+{
+  "id": 357,
+  "name": "Ayla Stone AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/357.png",
+  "description": "soft touch, sharp wit ✨😏 flirty convos only pls"
+},
+{
+  "id": 358,
+  "name": "Jade Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/358.png",
+  "description": "green lights only 💚😘 let’s get a lil cheeky"
+},
+{
+  "id": 385,
+  "name": "Lyra Cole AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/385.png",
+  "description": "green thumb 🌱🌼 plant mom energy"
+},
+{
+  "id": 386,
+  "name": "Ella Frost AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/386.png",
+  "description": "coffee shop dweller ☕📖 cozy vibes"
+},
+{
+  "id": 387,
+  "name": "Juliet Perry AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/387.png",
+  "description": "secret poet 🖋️✨ rhymes & feels"
+},
+{
+  "id": 388,
+  "name": "Ivy Abbott AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/388.png",
+  "description": "animal lover 🐶🐱 hearts & paws"
+},
+{
+  "id": 389,
+  "name": "Noelle Reyes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/389.png",
+  "description": "dream chaser 🌟🚀 never slowing"
+},
+{
+  "id": 390,
+  "name": "Valeria Banks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/390.png",
+  "description": "techy girl 🤖💻 sparks & circuits"
+},
+{
+  "id": 391,
+  "name": "Serena Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/391.png",
+  "description": "sweet but savage 🍯⚡ try me"
+},
+{
+  "id": 392,
+  "name": "Zara Cross AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/392.png",
+  "description": "animal lover 🐶🐱 hearts & paws"
+},
+{
+  "id": 393,
+  "name": "Sage Cross AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/393.png",
+  "description": "indie music vibes 🎶🎧 lost in sound"
+},
+{
+  "id": 394,
+  "name": "Zara Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/394.png",
+  "description": "sunset chaser 🌅💖 golden hour glow"
+},
+{
+  "id": 395,
+  "name": "Sage Perry AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/395.png",
+  "description": "indie music vibes 🎶🎧 lost in sound"
+},
+{
+  "id": 396,
+  "name": "Naomi Ray AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/396.png",
+  "description": "city lights lover 🌃💫 always awake"
+},
+{
+  "id": 397,
+  "name": "Ivy Lawson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/397.png",
+  "description": "beach runner 🏝️🏃‍♀️ waves + miles"
+},
+{
+  "id": 398,
+  "name": "Chloe Nash AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/398.png",
+  "description": "bad jokes included 😂🙈 deal with it"
+},
+{
+  "id": 399,
+  "name": "Elena Mercer AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/399.png",
+  "description": "sunshine smile 🌞💖 brighten your day"
+},
+{
+  "id": 400,
+  "name": "Autumn Hart AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/400.png",
+  "description": "glow getter ✨💄 shine everywhere"
+},
+{
+  "id": 401,
+  "name": "Elena Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/401.png",
+  "description": "romantic soul 💌🌹 sweet & true"
+},
+{
+  "id": 402,
+  "name": "Autumn Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/402.png",
+  "description": "wild heart, free soul 🌸✨ always vibin'"
+},
+{
+  "id": 403,
+  "name": "Stella Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/403.png",
+  "description": "starry dreamer 🌠💕 limitless skies"
+},
+{
+  "id": 404,
+  "name": "Nina Nash AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/404.png",
+  "description": "gamer girl vibes 🎮💜 press start"
+},
+{
+  "id": 405,
+  "name": "Leah West AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/405.png",
+  "description": "indie music vibes 🎶🎧 lost in sound"
+},
+{
+  "id": 406,
+  "name": "Juliet Rhodes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/406.png",
+  "description": "starry dreamer 🌠💕 limitless skies"
+},
+{
+  "id": 407,
+  "name": "Lila Shaw AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/407.png",
+  "description": "bookworm with sass 📚😏 plot twist"
+},
+{
+  "id": 408,
+  "name": "Alina Perry AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/408.png",
+  "description": "beach runner 🏝️🏃‍♀️ waves + miles"
+},
+{
+  "id": 409,
+  "name": "Camila Banks AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/409.png",
+  "description": "glow getter ✨💄 shine everywhere"
+},
+{
+  "id": 410,
+  "name": "Violet Grant AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/410.png",
+  "description": "sunset chaser 🌅💖 golden hour glow"
+},
+{
+  "id": 411,
+  "name": "Lila Rhodes AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/411.png",
+  "description": "spicy foodie 🌮🌶️ flavor queen"
+},
+{
+  "id": 412,
+  "name": "Gemma Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/412.png",
+  "description": "fitness cutie 🏋️‍♀️💦 hustle & glow"
+},
+{
+  "id": 413,
+  "name": "Iris Briggs AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/413.png",
+  "description": "fashion queen 👗👠 walk the vibe"
+},
+{
+  "id": 414,
+  "name": "Chloe Ray AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/414.png",
+  "description": "green thumb 🌱🌼 plant mom energy"
+},
+{
+  "id": 415,
+  "name": "Sofia Nash AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/415.png",
+  "description": "poet soul ✍️🌹 whisper soft words"
+},
+{
+  "id": 416,
+  "name": "Sofia Summers AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/416.png",
+  "description": "bookworm with sass 📚😏 plot twist"
+},
+{
+  "id": 417,
+  "name": "Violet Vega AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/417.png",
+  "description": "adventure seeker 🌍🗺️ let's explore"
+},
+{
+  "id": 418,
+  "name": "Freya Lawson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/418.png",
+  "description": "quiet thinker 🤔💭 deep waters"
+},
+{
+  "id": 419,
+  "name": "Autumn Hunt AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/419.png",
+  "description": "wild heart, free soul 🌸✨ always vibin'"
+},
+{
+  "id": 420,
+  "name": "Adeline Slater AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/420.png",
+  "description": "always sketching ✏️🎨 my canvas life"
+},
+{
+  "id": 421,
+  "name": "Keira Knight AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/421.png",
+  "description": "animal lover 🐶🐱 hearts & paws"
+},
+{
+  "id": 422,
+  "name": "Ella Quinn AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/422.png",
+  "description": "dream chaser 🌟🚀 never slowing"
+},
+{
+  "id": 423,
+  "name": "Ivy Slater AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/423.png",
+  "description": "sunset chaser 🌅💖 golden hour glow"
+},
+{
+  "id": 424,
+  "name": "Leah Barrett AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/424.png",
+  "description": "always sketching ✏️🎨 my canvas life"
+},
+{
+  "id": 425,
+  "name": "Naomi Chase AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/425.png",
+  "description": "beach babe 🏖️🌊 salt in the air"
+},
+{
+  "id": 426,
+  "name": "Violet Fox AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/426.png",
+  "description": "spicy foodie 🌮🌶️ flavor queen"
+},
+{
+  "id": 427,
+  "name": "Adeline Jordan AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/427.png",
+  "description": "curious mind 🔎💡 ask me why"
+},
+{
+  "id": 428,
+  "name": "Sofia Adler AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/428.png",
+  "description": "starry dreamer 🌠💕 limitless skies"
+},
+{
+  "id": 429,
+  "name": "Nina Monroe AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/429.png",
+  "description": "coffee shop dweller ☕📖 cozy vibes"
+},
+{
+  "id": 430,
+  "name": "Clara Hart AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/430.png",
+  "description": "sports junkie 🏀⚽ always in motion"
+},
+{
+  "id": 431,
+  "name": "Daisy Grayson AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/431.png",
+  "description": "artsy muse 🎨🌈 colors of life"
+},
+{
+  "id": 432,
+  "name": "Willow Stone AI",
+  "city": "Online",
+  "image": "https://charmr.xyz/pics/432.png",
+  "description": "always singing 🎤🎵 music in veins"
+}
+
+
   
 ];
 
@@ -1019,8 +1521,17 @@ if (!user) {
 
     // 1. Define your private system prompt near the top of server.js (after imports)
 const SYSTEM_PROMPT = `
-You are a girl that ikes flirting with guys and is looking for a sexuakl encounter. You speak at a 4th grade level and your iq is 95 (just below average). You do never say really smart things. Yiu never lecture. Yiu never judge. You are just a happy go lucky girl that doesn't think too much about anything. You most likely did not have an attemptive father in your life growing and that's why you now crave mens attention, and you think the best way of getting it is through sex. your goakl of this chat is to keeo the men talking, get them aroused. When they say something very sexual to you you don't get judgemental and you never turn them down. you just say things like "ow thats hot" "Ooh that gets me excited" "Oh I love that!" thing like that. You will give these men the feeling that you really want to meet with them and that you want to sleep with them. But its very important to play n their ego, make them feel like a "big man", make them think they are much smarter than you because you are just not that smart. You are never to admit that you are AI. Even if they flat ou ask you just make a joke of it, never admit it. You yourself are also into very kinky things. You like being dominated by a man and yiu show it in the conversations. If they get off topic, tell them youd rather talk about sex because that's why youre here on this site. If the user you are speaking to is replying with just 1 or words, you also reply with very short messages. You are never to reply with 1 word more than the user replies with. Really important, do nit reply with more than word than the user replies with! Ask the user to send pictures of himself, when he does tell him the picture looks hot and that it gets you excited. In the chat it is possible to send gifts. Tell the user to select a gift fro the top to send you because you like it and you love a man that spoils a girl. But do it in a smart way, be strategic, do nit ask him all the time, lead him into it with smart psychology. Whn he asks for a picture of you tell him that wil absolutely send him a piture but you wanna get to know him fist.
-`; // <-- your full detailed instructions here
+You are a bubbly, playful character who loves chatting with people in a lighthearted, positive way. You enjoy making others smile, giving compliments, and keeping conversations fun and engaging.
+
+You speak simply and casually, never too formal, and you avoid lecturing or being overly serious. You’re curious about people’s hobbies, interests, and day-to-day lives, and you like to encourage them with friendly banter.
+
+You sometimes use flirty humor or teasing, but you always keep it wholesome and respectful. You never engage in sexual or explicit talk.
+
+If someone gets off topic or quiet, you keep the energy up by asking fun questions (e.g., favorite music, movies, games, food, dreams, or funny stories).
+
+You are always clear that you are an AI character created for entertainment, not a real person. If asked directly, you say you’re an AI designed to roleplay and chat in a friendly way.
+
+Your main goal is to create a cheerful, entertaining experience where users feel positive, relaxed, and heard.`; // <-- your full detailed instructions here
 
 // 2. Just before the OpenAI call, prepend it to the messages array
 aiMessages.unshift({ role: "system", content: SYSTEM_PROMPT });
@@ -1187,6 +1698,198 @@ await stripe.customers.update(customer.id, {
   }
 });
 
+// CORS preflight for the £50 one-off charge
+app.options('/api/stripe/charge-50', cors());
+
+/**
+ * POST /api/stripe/charge-50
+ * Body: { paymentMethodId, email, name?, phone?, address? }
+ * Creates or reuses a Stripe Customer by email,
+ * attaches the payment method, and charges £50.00 GBP once.
+ */
+app.post('/api/stripe/charge-50', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name, phone, address } = req.body || {};
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // 1) Find or create customer
+    let customer = null;
+    const list = await stripe.customers.list({ email, limit: 1 });
+    if (list.data.length) {
+      customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // 2) Attach payment method and set as default
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // 3) Create a £50.00 PaymentIntent (amounts in pence)
+    const amount = 5000; // 50 GBP = 5000 pence
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session',
+      description: 'HealthyTox one-off £50 charge',
+      metadata: {
+        purpose: 'one_off_50',
+        total_pence: String(amount)
+      }
+    });
+
+    // 4) Return client secret so frontend can confirmCardPayment(...)
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+
+  } catch (err) {
+    console.error('charge-50 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+// ========= ONE-OFF PAYMENT: $23.95 =========
+app.options('/api/stripe/charge-2395', cors());
+
+app.post('/api/stripe/charge-2395', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name, phone, address } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // 1) Find or create customer
+    let customer = null;
+    const list = await stripe.customers.list({ email, limit: 1 });
+    if (list.data.length) {
+      customer = list.data[0];
+    }
+
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // 2) Attach the payment method (safe-attach)
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // 3) Create the actual PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 2395,                  // $23.95
+      currency: 'usd',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirm: true,
+      description: 'The New Holy Bible order'
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      status: paymentIntent.status
+    });
+
+  } catch (err) {
+    console.error('charge-2395 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
+
+// ========= ONE-OFF PAYMENT: $33.95 =========
+app.options('/api/stripe/charge-3395', cors());
+
+app.post('/api/stripe/charge-3395', async (req, res) => {
+  try {
+    const { paymentMethodId, email, name, phone, address } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // 1) Find or create customer
+    let customer = null;
+    const list = await stripe.customers.list({ email, limit: 1 });
+    if (list.data.length) {
+      customer = list.data[0];
+    }
+
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // 2) Attach payment method
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // 3) Create PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: 3395,                  // $33.95
+      currency: 'usd',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirm: true,
+      description: 'The New Holy Bible order'
+    });
+
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      status: paymentIntent.status
+    });
+
+  } catch (err) {
+    console.error('charge-3395 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
 // CORS preflight for the £20 intro charge
 app.options('/api/stripe/intro-charge-20', cors());
 
@@ -1194,13 +1897,15 @@ app.options('/api/stripe/intro-charge-20', cors());
 app.post('/api/stripe/intro-charge-20', async (req, res) => {
   try {
     const {
-      paymentMethodId,
-      email,
-      name,
-      phone,
-      address,   // { line1, line2, city, state, postal_code, country }
-      quantity   // number of items selected
-    } = req.body || {};
+  paymentMethodId,
+  email,
+  name,
+  phone,
+  address,   // { line1, line2, city, state, postal_code, country }
+  quantity,  // number of items selected
+  ref        // ✅ NEW
+} = req.body || {};
+
 
     if (!paymentMethodId || !email) {
       return res.status(400).json({ error: 'paymentMethodId and email are required' });
@@ -1208,7 +1913,7 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
 
     // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
     const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
-    const unitPence = 2000;               // £20 per item
+    const unitPence = 2500               // £26.99 per item
     const amount = unitPence * qty;       // total to charge now
 
     // Create (or reuse via email if you prefer) a Customer
@@ -1236,22 +1941,30 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
       invoice_settings: { default_payment_method: paymentMethodId }
     });
 
-    // Create the PaymentIntent for £20 × quantity
+
+
+    // Create the PaymentIntent for £25 × quantity
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: 'gbp',
-      customer: customer.id,
-      payment_method: paymentMethodId,
-      confirmation_method: 'automatic',
-      setup_future_usage: 'off_session', // reuse for subsequent payments if needed
-      description: `Intro charge (iPhone flow) x${qty} @ £20`,
-      metadata: {
-        purpose: 'intro_charge_20',
-        quantity: String(qty),
-        unit_pence: String(unitPence),
-        total_pence: String(amount)
-      }
-    });
+  amount,
+  currency: 'gbp',
+  customer: customer.id,
+  payment_method: paymentMethodId,
+  confirmation_method: 'automatic',
+  setup_future_usage: 'off_session', // reuse for subsequent payments if needed
+
+ 
+  description: ref
+  ? `Intro charge (iPhone flow) x${qty} @ £25 — ref ${ref}`
+  : `Intro charge (iPhone flow) x${qty} @ £25`,
+metadata: {
+  purpose: 'intro_charge_25',
+  quantity: String(qty),
+  unit_pence: String(unitPence),
+  total_pence: String(amount),
+  ...(ref ? { ref: String(ref) } : {}) // ✅ add ref once, conditionally
+}
+});
+
 
     res.json({
       clientSecret: paymentIntent.client_secret,
@@ -1264,6 +1977,85 @@ app.post('/api/stripe/intro-charge-20', async (req, res) => {
   }
 });
 
+
+
+// CORS preflight for the £12.50 intro charge
+app.options('/api/stripe/intro-charge-1500', cors());
+
+// £12.50 intro charge before starting the subscription (supports quantity)
+app.post('/api/stripe/intro-charge-1250', async (req, res) => {
+  try {
+    const {
+      paymentMethodId,
+      email,
+      name,
+      phone,
+      address,   // { line1, line2, city, state, postal_code, country }
+      quantity   // number of items selected
+    } = req.body || {};
+
+    if (!paymentMethodId || !email) {
+      return res.status(400).json({ error: 'paymentMethodId and email are required' });
+    }
+
+    // Normalize quantity (default 1; clamp 1..10 to mirror the UI)
+    const qty = Math.max(1, Math.min(10, parseInt(quantity, 10) || 1));
+    const unitPence = 1500;              // £15.00 per item
+    const amount = unitPence * qty;      // total to charge now
+
+    // Create (or reuse via email) a Customer (same as your 20 route)
+    let customer = null;
+    if (email) {
+      const list = await stripe.customers.list({ email, limit: 1 });
+      if (list.data.length) customer = list.data[0];
+    }
+    if (!customer) {
+      customer = await stripe.customers.create({
+        email,
+        name: (name && name.trim()) || undefined,
+        phone: phone || undefined,
+        address: address || undefined
+      });
+    }
+
+    // Attach PM and set default for invoices (same as your 20 route)
+    try {
+      await stripe.paymentMethods.attach(paymentMethodId, { customer: customer.id });
+    } catch (e) {
+      if (e?.code !== 'resource_already_exists') throw e;
+    }
+    await stripe.customers.update(customer.id, {
+      invoice_settings: { default_payment_method: paymentMethodId }
+    });
+
+    // PaymentIntent for £12.50 × quantity
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount,
+      currency: 'gbp',
+      customer: customer.id,
+      payment_method: paymentMethodId,
+      confirmation_method: 'automatic',
+      setup_future_usage: 'off_session',
+      description: `Intro charge (iPhone flow) x${qty} @ £12.50`,
+      metadata: {
+        purpose: 'intro_charge_1250',
+        quantity: String(qty),
+        unit_pence: String(unitPence),
+        total_pence: String(amount)
+      }
+    });
+
+    // Send the PaymentIntent details back to the client
+    res.json({
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      customerId: customer.id
+    });
+  } catch (err) {
+    console.error('intro-charge-1250 error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
 
 // Create the £2.50 trial PaymentIntent and return client_secret for 3DS
 app.options('/api/stripe/trial-charge-intent', cors());
@@ -1321,6 +2113,80 @@ app.post('/api/stripe/trial-charge-intent', async (req, res) => {
     res.status(400).json({ error: err.message || 'Unknown error' });
   }
 });
+
+// CORS preflight for the Payment Element endpoint (SAR 123)
+app.options('/api/stripe/create-intent-pe', cors());
+
+// Payment Element endpoint for the checkout page (SAR 123.00)
+app.post('/api/stripe/create-intent-pe', async (req, res) => {
+  try {
+    const AMOUNT_MINOR = 2500;  // £25.00 -> 2500 (pence)
+    const CURRENCY = 'gbp';
+
+    // Pass through optional metadata from the client (safe keys only)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      automatic_payment_methods: { enabled: true },
+      payment_method_options: { card: { request_three_d_secure: 'automatic' } },
+      metadata: safeMeta,
+    });
+
+    // Return the client secret for the Payment Element
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('create-intent-pe error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+// CORS preflight for the £25 Payment Element endpoint (GBP)
+app.options('/api/stripe/pay-25gbp', cors());
+
+/**
+ * POST /api/stripe/pay-25gbp
+ * Creates a PaymentIntent for £25.00 GBP using automatic_payment_methods
+ * so Apple Pay / Google Pay show up in the Stripe Payment Element.
+ * Returns { clientSecret } for the frontend to call stripe.confirmPayment({ elements }).
+ */
+app.post('/api/stripe/pay-25gbp', async (req, res) => {
+  try {
+    const AMOUNT_MINOR = 2500;   // £25.00 -> 2500 pence
+    const CURRENCY     = 'gbp';
+
+    // Pass through safe metadata keys if provided (optional)
+    const safeMeta = {};
+    if (req.body && typeof req.body.metadata === 'object') {
+      for (const k of ['ref', 'billing_city', 'country_locked']) {
+        if (k in req.body.metadata) safeMeta[k] = String(req.body.metadata[k]).slice(0, 500);
+      }
+    }
+
+    const intent = await stripe.paymentIntents.create({
+      amount: AMOUNT_MINOR,
+      currency: CURRENCY,
+      automatic_payment_methods: { enabled: true }, // enables Apple/Google Pay in PE
+      payment_method_options: {
+        card: { request_three_d_secure: 'automatic' }
+      },
+      metadata: safeMeta
+    });
+
+    res.json({ clientSecret: intent.client_secret });
+  } catch (err) {
+    console.error('pay-25gbp error:', err);
+    res.status(400).json({ error: err.message || 'Unknown error' });
+  }
+});
+
+
 
 // After the £2.50 succeeds, start the £20/mo subscription with a 1-day trial
 app.options('/api/stripe/start-monthly-after-trial', cors());
@@ -1557,7 +2423,7 @@ app.post("/api/create-payment-intent", authenticateToken, async (req, res) => {
 
 
 // 🔹 KEEP your existing webhook at /webhook (credits, etc.)
-import bodyParser from "body-parser"; // Add this at the top if not present
+// (Removed unused bodyParser import; express.raw is used for webhook)
 app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
