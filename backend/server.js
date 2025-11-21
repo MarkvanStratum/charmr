@@ -1537,7 +1537,11 @@ Your main goal is to create a cheerful, entertaining experience where users feel
 aiMessages.unshift({ role: "system", content: SYSTEM_PROMPT });
 
 const completion = await openai.chat.completions.create({
-  model: "gpt-4o-mini",
+  model: "meta-llama/llama-3.1-70b-instruct",
+extra_headers: {
+  "HTTP-Referer": "https://charmr.xyz",
+  "X-Title": "Charmr AI Chat"
+},
   messages: aiMessages
 });
 
