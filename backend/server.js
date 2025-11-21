@@ -1536,14 +1536,18 @@ Your main goal is to create a cheerful, entertaining experience where users feel
 // 2. Just before the OpenAI call, prepend it to the messages array
 aiMessages.unshift({ role: "system", content: SYSTEM_PROMPT });
 
-const completion = await openai.chat.completions.create({
-  model: "meta-llama/llama-3.1-70b-instruct",
-extra_headers: {
-  "HTTP-Referer": "https://charmr.xyz",
-  "X-Title": "Charmr AI Chat"
-},
-  messages: aiMessages
-});
+const completion = await openai.chat.completions.create(
+  {
+    model: "meta-llama/llama-3.1-70b-instruct",
+    messages: aiMessages
+  },
+  {
+    headers: {
+      "HTTP-Referer": "https://charmr.xyz",
+      "X-Title": "Charmr AI Chat"
+    }
+  }
+);
 
 
     const reply = completion.choices[0].message.content;
