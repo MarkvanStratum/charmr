@@ -1499,7 +1499,22 @@ if (!user) {
   return res.status(404).json({ error: "User not found" });
 }
 
-   
+  // --- FREE TRIAL LIMIT: 5 USER MESSAGES ---
+const countRes = await pool.query(
+  `SELECT COUNT(*) FROM messages 
+   WHERE user_id = $1 AND from_user = true`,
+  [userId]
+);
+const userMessageCount = Number(countRes.rows[0].count);
+
+// Allow 5 free messages, then block if not lifetime and no credits
+if (!user.lifetime && userMessageCount >= 5) {
+  return res.status(403).json({
+    error: "FREE_MESSAGES_EXCEEDED",
+    message: "You've used your 5 free messages. Please upgrade to continue.",
+  });
+}
+ 
 
     await pool.query(
       `INSERT INTO messages (user_id, girl_id, from_user, text) VALUES ($1, $2, true, $3)`,
