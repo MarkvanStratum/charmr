@@ -1488,8 +1488,18 @@ app.post("/api/chat", authenticateToken, async (req, res) => {
       return res.json({ takeover: true });
     }
 
-    const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
-    const user = userRes.rows[0];
+    const userRes = await pool.query(
+  "SELECT credits, lifetime FROM users WHERE id = $1",
+  [userId]
+);
+const user = userRes.rows[0];
+
+// UNIFIED PREMIUM CHECK (paste exactly as-is)
+const subscription = await getUserSubscription(pool, userId);
+
+// true if user has lifetime OR an active monthly subscription
+const isPremium = !!(user?.lifetime || subscription?.active);
+
 console.log("🧠 Chat user credits check:", {
   userId,
   credits: user?.credits,
@@ -1589,13 +1599,18 @@ app.post("/api/send-initial-message", authenticateToken, async (req, res) => {
 
   try {
     // ✅ 1. Check user's credit balance
-    const userRes = await pool.query("SELECT credits, lifetime FROM users WHERE id = $1", [userId]);
-    const user = userRes.rows[0];
-    if (!user) return res.status(404).json({ error: "User not found" });
+    const userRes = await pool.query(
+  "SELECT credits, lifetime FROM users WHERE id = $1",
+  [userId]
+);
+const user = userRes.rows[0];
 
-    if (!user.lifetime && user.credits <= 0) {
-      return res.status(403).json({ error: "You’ve run out of messages. Please purchase more credits." });
-    }
+// UNIFIED PREMIUM CHECK (paste exactly as-is)
+const subscription = await getUserSubscription(pool, userId);
+
+// true if user has lifetime OR an active monthly subscription
+const isPremium = !!(user?.lifetime || subscription?.active);
+
 
     // ✅ 2. Insert the message
     const messages = Object.values(firstMessages);
