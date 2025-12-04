@@ -694,10 +694,9 @@
         if (res.status === 403){
           const data = await res.json();
           typingBubble.remove();
-          appendMessage(data.error || "You're out of credits!", 'girl');
-          showCTA();
-          chatBox.scrollTop = chatBox.scrollHeight;
-          return;
+          appendPersistentNotice("Please upgrade to premium if you want to continue this chat.");
+showCTA();
+return;
         }
 
         const data = await res.json();
